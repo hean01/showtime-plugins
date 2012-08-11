@@ -1,6 +1,7 @@
 
 PLUGINS= \
-	xxxstream.zip
+	xxxstream.zip \
+	di.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
