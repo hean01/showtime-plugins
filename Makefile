@@ -6,6 +6,6 @@ PLUGINS= \
 
 %.zip:
 	@echo "Bundle plugin '$*'"
-	@cd $*; zip -9 ../plugins/$*.zip * > /dev/null; cd ..
+	@cd $*; zip -r9 ../plugins/$*.zip * > /dev/null; cd ..
 
 all: ${PLUGINS}

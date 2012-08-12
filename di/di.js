@@ -95,6 +95,7 @@
     // Start page
     plugin.addURI(PREFIX + "start", function(page) {
 	page.type = "directory";
+	page.metadata.glwview = plugin.path + "views/array.view";
 	page.contents = "items";
 	page.metadata.logo = plugin.path + "di_square.png";
 	page.metadata.title = "Digitally Imported";
