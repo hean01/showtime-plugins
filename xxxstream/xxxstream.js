@@ -26,6 +26,14 @@
     plugin.createService("xXx Stream", PREFIX + "start", "video", true,
 			 plugin.path + "xxxstream.png");
 
+    function fixup_html(doc) {
+	doc = doc.replace(/\&amp;/g,'&');
+	doc = doc.replace(/\&gt;/g,'>');
+	doc = doc.replace(/\&lt;/g,'<');
+	doc = doc.replace(/\&#039;/g,'\'');
+	return doc;
+    }
+
     function getValue(doc, start, end) {
 	var s = doc.indexOf(start);
 	if (s < 0)
@@ -68,6 +76,8 @@
 	var res = showtime.httpGet(url).toString();
 	if (res == null)
 	    return false;
+
+	res = fixup_html(res);
 
 	// cleanup document of stupid problems...
 	var itemmd = { 
