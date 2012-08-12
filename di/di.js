@@ -22,7 +22,7 @@
     var BASE_URL = "http://www.di.fm";
     var PREFIX = "di:";
 
-    plugin.createService("Digtally Imported", PREFIX + "start", "audio", true,
+    plugin.createService("Digitally Imported", PREFIX + "start", "audio", true,
 			 plugin.path + "di_square.png");
 
     function getValue(doc, start, end) {
