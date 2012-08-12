@@ -103,7 +103,7 @@
 	    str = getValue(res, "<img src=\"", "\"");
 	    if (str == null)
 		continue;
-	    str.replace("1.jpg","3.jpg");
+	    str = str.replace("1.jpg","3.jpg");
 	    itemmd.thumb_url = BASE_URL+str;
 
 	    str = getValue(res, "title=\"", "\"");
