@@ -152,14 +152,28 @@
 	    if (str == null) continue;
 	    itemmd.format = str;
 
+	    // create richtext as title
+	    var tt = "";
+	    tt += '<font color="00FF00">' + itemmd.title + '</font><br>';
+	    if (itemmd.description)
+		tt += '<font>' + itemmd.description + '</font><br>';
+
+	    tt += '<hr style="border: none; border-top: 1 px solid black;"><font>Current playing: ' + itemmd.current_track +'</font><br>';
+
+	    tt += '<font>';
+	    tt += itemmd.listeners + ' listeners'  + '    |    ';
+	    tt += itemmd.bitrate + ' (' + itemmd.format +')';
+	    tt += '</font>';
+
+
 	    // add item to showtime page
 	    page.appendItem("shoutcast:" + BASE_URL + itemmd.url, "audio", {
-		title: itemmd.title,
+		title: new showtime.RichText(tt),
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
 		format: itemmd.format,
 		listeners: itemmd.listeners,
-		current_track: itemmd.curren_track
+		current_track: itemmd.current_track
 	    }); 
 	}
     }
