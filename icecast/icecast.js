@@ -76,11 +76,15 @@
 
 	s = s + start.length;
 
-	var e = doc.indexOf(end,s);
-	if (e < 0)
-	    return null;
+	if (end != null) {
+	    var e = doc.indexOf(end,s);
+	    if (e < 0)
+		return null;
 
-	return doc.substr(s,e-s);
+	    return doc.substr(s, e-s);
+	} 
+
+	return doc.substr(s);
     }
 
     function scrape_page(page, doc) {
@@ -103,6 +107,25 @@
 		if (str == null) continue;
 	    }
 	    itemmd.title = str;
+
+	    // description [optional]
+	    str =  getValue(doc, "<p class=\"description\">","</p>");
+	    if (str)
+		itemmd.description = str;
+
+	    // get listeners
+	    str = getValue(doc, "<span class=\"listeners\">","</span>");
+	    if (str == null) continue;
+	    str = getValue(str, "[","&nbsp;listeners]");
+	    if (str == null) continue;
+	    itemmd.listeners = str;
+
+	    // get current track playing
+	    str = getValue(doc, "<p class=\"stream-onair\">","</p>");
+	    if (str == null) continue;
+	    str = getValue(str, "</strong>", null);
+	    if (str == null) continue;
+	    itemmd.current_track = str;
 	    
 	    // get playlist url
 	    var str = "<a href=\"/listen/";
@@ -114,9 +137,29 @@
 	    if(str == null) continue;
 	    itemmd.url = str;
 
+	    // get format and bitrate
+	    var str = "<p class=\"format\" title=\"";
+	    var s = doc.indexOf(str, 2);
+	    if (s < 0)
+		continue;
+	    doc = doc.substr(s);
+
+	    str = getValue(doc, "title=\"", "\"");
+	    if (str == null) continue;
+	    itemmd.bitrate = str;
+
+	    str = getValue(doc, "streams\">", "<span");
+	    if (str == null) continue;
+	    itemmd.format = str;
+
 	    // add item to showtime page
 	    page.appendItem("shoutcast:" + BASE_URL + itemmd.url, "audio", {
-		title: itemmd.title
+		title: itemmd.title,
+		description: itemmd.description,
+		bitrate: itemmd.bitrate,
+		format: itemmd.format,
+		listeners: itemmd.listeners,
+		current_track: itemmd.curren_track
 	    }); 
 	}
     }
