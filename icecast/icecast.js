@@ -61,6 +61,10 @@
     plugin.createService("icecast", PREFIX + "start", "audio", true,
 			 plugin.path + "icecast_square.png");
 
+    function trim(str) {
+        return str.replace(/^\s+|\s+$/g,"");
+    }
+
     function fixup_html(doc) {
 	doc = doc.replace(/\&amp;/g,'&');
 	doc = doc.replace(/\&gt;/g,'>');
@@ -106,26 +110,28 @@
 		str = getValue(str, ">","</a>");
 		if (str == null) continue;
 	    }
-	    itemmd.title = str;
+	    itemmd.title = trim(str);
 
 	    // description [optional]
-	    str =  getValue(doc, "<p class=\"description\">","</p>");
-	    if (str)
+	    str =  getValue(doc, "<p class=\"stream-description\">","</p>");
+	    if (str) {
 		itemmd.description = str;
+		showtime.trace("Description: '"+itemmd.description+"'");
+	    }
 
 	    // get listeners
 	    str = getValue(doc, "<span class=\"listeners\">","</span>");
 	    if (str == null) continue;
 	    str = getValue(str, "[","&nbsp;listeners]");
 	    if (str == null) continue;
-	    itemmd.listeners = str;
+	    itemmd.listeners = trim(str);
 
 	    // get current track playing
 	    str = getValue(doc, "<p class=\"stream-onair\">","</p>");
 	    if (str == null) continue;
 	    str = getValue(str, "</strong>", null);
 	    if (str == null) continue;
-	    itemmd.current_track = str;
+	    itemmd.current_track = trim(str);
 	    
 	    // get playlist url
 	    var str = "<a href=\"/listen/";
@@ -135,7 +141,7 @@
 	    doc = doc.substr(s);
 	    str = getValue(doc, "<a href=\"","\"");
 	    if(str == null) continue;
-	    itemmd.url = str;
+	    itemmd.url = trim(str);
 
 	    // get format and bitrate
 	    var str = "<p class=\"format\" title=\"";
@@ -146,21 +152,21 @@
 
 	    str = getValue(doc, "title=\"", "\"");
 	    if (str == null) continue;
-	    itemmd.bitrate = str;
+	    itemmd.bitrate = trim(str);
 
 	    str = getValue(doc, "streams\">", "<span");
 	    if (str == null) continue;
-	    itemmd.format = str;
+	    itemmd.format = trim(str);
 
 	    // create richtext as title
 	    var tt = "";
-	    tt += '<font color="00FF00">' + itemmd.title + '</font><br>';
+	    tt += '<font size="4" color="00FF00">' + itemmd.title + '</font><br>';
 	    if (itemmd.description)
-		tt += '<font>' + itemmd.description + '</font><br>';
+		tt += '<font color="f0f0f0">' + itemmd.description + '</font><br>';
 
-	    tt += '<hr style="border: none; border-top: 1 px solid black;"><font>Current playing: ' + itemmd.current_track +'</font><br>';
+	    tt += '<font color="b0b0b0">On Air: \'' + itemmd.current_track + '\'</font><br>';
 
-	    tt += '<font>';
+	    tt += '<font size="3" color="a0a0a0">';
 	    tt += itemmd.listeners + ' listeners'  + '    |    ';
 	    tt += itemmd.bitrate + ' (' + itemmd.format +')';
 	    tt += '</font>';
