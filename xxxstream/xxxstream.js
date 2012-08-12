@@ -31,6 +31,7 @@
 	doc = doc.replace(/\&gt;/g,'>');
 	doc = doc.replace(/\&lt;/g,'<');
 	doc = doc.replace(/\&#039;/g,'\'');
+	doc = doc.replace(/\&#39;/g,'\'');
 	return doc;
     }
 
