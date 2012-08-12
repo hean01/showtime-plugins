@@ -19,6 +19,7 @@
 
 
 (function(plugin) {
+
     var BASE_URL = "http://dir.xiph.org";
     var PREFIX = "icecast:";
 
@@ -58,8 +59,29 @@
     ];
 
 
+    // create plugin favorites store
+    var store = plugin.createStore('favorites', true)
+    if (!store.list) {
+        store.version = "1";
+        store.background = "";
+        store.title = "icecast » My Favorites";
+        store.list = "[]";
+    }
+
+    // create plugin service
     plugin.createService("icecast", PREFIX + "start", "audio", true,
 			 plugin.path + "icecast_square.png");
+
+    // create settins
+    var settings = plugin.createSettings("icecast", plugin.path + "icecast_square.png",
+			 "icecast: radio stream directory");
+
+    settings.createAction("cleanFavorites", "Clean Local Favorites", 
+			  function () {
+        store.list = "[]";
+        showtime.trace('Local Favorites were clean succesfully');
+    });
+
 
     function trim(str) {
         return str.replace(/^\s+|\s+$/g,"");
@@ -173,7 +195,7 @@
 
 
 	    // add item to showtime page
-	    page.appendItem("shoutcast:" + BASE_URL + itemmd.url, "audio", {
+	    var item = page.appendItem("shoutcast:" + BASE_URL + itemmd.url, "audio", {
 		title: new showtime.RichText(tt),
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
@@ -181,6 +203,29 @@
 		listeners: itemmd.listeners,
 		current_track: itemmd.current_track
 	    }); 
+
+	    item.url = "shoutcast:" + BASE_URL + itemmd.url;
+	    item.title = itemmd.title;
+	    item.description = itemmd.description;
+	    item.bitrate = itemmd.bitrate;
+	    item.format = itemmd.format;
+
+
+	    item.addOptAction("Add station to favorites", "addFavorite");
+	    
+	    item.onEvent("addFavorite", function(item) {
+		var entry = {
+		    url: this.url,
+		    title: this.title,
+		    description: this.description,
+		    format: this.format,
+		    bitrate: this.bitrate
+		};
+		var list = eval(store.list);
+                var array = [showtime.JSONEncode(entry)].concat(list);
+                store.list = showtime.JSONEncode(array);
+		showtime.notify("Station was added to your favorites.", 2);		
+	    });
 	}
     }
 
@@ -198,6 +243,54 @@
 	page.loading = true;
 	var doc = showtime.httpGet(BASE_URL + "/search?search=" + query, {}).toString();
 	scrape_page(page, doc);
+	page.loading = false;
+    });
+
+    // Favorites
+    plugin.addURI(PREFIX + "favorites", function(page) {
+	page.type = "directory";
+	page.contents = "items";
+	page.metadata.title = "Favorites";
+	page.metadata.logo = plugin.path + "icecast_square.png";
+
+	var list = eval(store.list);
+	for each (item in list) {
+	    var itemmd = showtime.JSONDecode(item);
+	    // create richtext as title
+	    var tt = "";
+	    tt += '<font size="4" color="00FF00">' + itemmd.title + '</font><br>';
+	    if (itemmd.description)
+		tt += '<font color="f0f0f0">' + itemmd.description + '</font><br>';
+
+	    tt += '<font size="3" color="a0a0a0">';
+	    tt += itemmd.bitrate + ' (' + itemmd.format +')';
+	    tt += '</font>';
+
+	    // add item to showtime page
+	    var item = page.appendItem(itemmd.url, "audio", {
+		title: new showtime.RichText(tt),
+		description: itemmd.description,
+		bitrate: itemmd.bitrate,
+		format: itemmd.format,
+		listeners: itemmd.listeners,
+		current_track: itemmd.current_track
+	    });
+
+	    item.url = itemmd.url;
+	    item.onEvent("delFavorite", function(item) {
+		var list = eval(store.list);
+		for each (item in list) {
+		    var itemmd = showtime.JSONDecode(item);
+		    if (itemmd.url == this.url) {
+			list.splice(this.url, 1)
+			store.list = showtime.JSONEncode(list);
+			showtime.notify("Station was removed to your favorites.", 2);
+		    }
+		}
+	    });
+
+	    item.addOptAction("Remove station to favorites", "delFavorite");   
+	}
 	page.loading = false;
     });
 
@@ -234,6 +327,12 @@
 	    title: "Search"
 	});
 
+	page.appendItem(PREFIX + "favorites", "item", {
+	    title: "My Favorites"
+	});
+
+        page.appendPassiveItem("divider");  
+	
 	for each (genre in genres) {
 	    page.appendItem(PREFIX + "genre:"+genre, "item", {
 		title: genre
