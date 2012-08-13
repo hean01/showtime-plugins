@@ -2,7 +2,8 @@
 PLUGINS= \
 	xxxstream.zip \
 	di.zip \
-	icecast.zip
+	icecast.zip \
+	somafm.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
