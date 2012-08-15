@@ -79,7 +79,7 @@
 	    itemmd.album = str;
 
 	    // add item to showtime page
-	    page.appendItem("shoutcast:http://listen.di.fm/public3/"+itemmd.key+".pls", "audio", {
+	    page.appendItem("shoutcast:http://listen.di.fm/public3/"+itemmd.key+".pls", "station", {
 		title: itemmd.title,
 		description: itemmd.description,
 		icon: itemmd.icon,

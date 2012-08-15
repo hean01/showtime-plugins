@@ -195,7 +195,7 @@
 
 
 	    // add item to showtime page
-	    var item = page.appendItem("shoutcast:" + BASE_URL + itemmd.url, "audio", {
+	    var item = page.appendItem("shoutcast:" + BASE_URL + itemmd.url, "station", {
 		title: new showtime.RichText(tt),
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
@@ -267,7 +267,7 @@
 	    tt += '</font>';
 
 	    // add item to showtime page
-	    var item = page.appendItem(itemmd.url, "audio", {
+	    var item = page.appendItem(itemmd.url, "station", {
 		title: new showtime.RichText(tt),
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
