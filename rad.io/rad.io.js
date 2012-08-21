@@ -156,6 +156,8 @@
 	page.metadata.title = "rad.io - search '" + query +"'";
 	page.metadata.logo = plugin.path + "rad.io.png";
 	page.metadata.glwview = plugin.path + "views/array.view";
+	page_menu(page);
+
 	page.loading = true;
 
 	var result = get_data('index/searchembeddedbroadcast', {
@@ -175,6 +177,7 @@
 	page.metadata.title = "Favorites";
 	page.metadata.logo = plugin.path + "rad.io.png";
 	page.metadata.glwview = plugin.path + "views/array.view";
+	page_menu(page);
 	
 	var list = eval(store.list);
 	for each (item in list) {
@@ -218,6 +221,8 @@
 	page.metadata.title = "rad.io - " + items[key].title;
 	page.metadata.glwview = plugin.path + "views/array.view";
 
+	page_menu(page);
+
 	var result = get_data(items[key].path, items[key].gets);
 	populate_stations(page, result);
 
@@ -230,6 +235,7 @@
 	page.metadata.logo = plugin.path + "rad.io.png";
 	page.metadata.title = "rad.io - " + "Stations near me";
 	page.metadata.glwview = plugin.path + "views/array.view";
+	page_menu(page);
 
 	var result = get_data('menu/broadcastsofcategory', {
 	    'category': "_country",
@@ -270,4 +276,19 @@
 
 	page.loading = false;
     });
+
+    function page_menu(page) {
+        page.options.createInt('childTilesX', 'Number of X Child Tiles', 6, 1, 10, 1, '', function (v) {
+            page.metadata.childTilesX = v;
+        }, true);
+
+        page.options.createInt('childTilesY', 'Number of Y Child Tiles', 3, 1, 4, 1, '', function (v) {
+            page.metadata.childTilesY = v;
+        }, true);
+
+        page.options.createBool('informationBar', 'Information Bar', true, function (v) {
+            page.metadata.informationBar = v;
+        }, true);
+    }
+
 })(this);
