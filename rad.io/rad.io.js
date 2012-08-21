@@ -108,19 +108,21 @@
 		    streamUrl = co['streamURL'];
 	    } catch(e) {}
 
-	    showtime.trace("Adding station "+ station.id +":"+streamUrl);
-
 	    if (streamUrl  != null) {
+		var iconUrl = null;
+		if (station.picture1Name)
+		    iconUrl = station.pictureBaseURL + station.picture1Name;
+
 		var item = page.appendItem("shoutcast:" + streamUrl, "station", {
 		    title: station.name,
-		    icon: station.pictureBaseURL + station.picture1Name,
+		    icon: iconUrl,
 		    current_track: station.current_track,
 		    bitrate: station.bitrate
 		});
 
 		item.url = "shoutcast:" + streamUrl;
 		item.title = station.name;
-		item.icon = station.pictureBaseURL + station.picture1Name;
+		item.icon = iconUrl;
 		item.bitrate = station.bitrate;
 
 		item.onEvent("addFavorite", function(item) {
