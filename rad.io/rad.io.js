@@ -21,6 +21,7 @@
 (function(plugin) {
     var BASE_URL = "http://www.rad.io";
     var PREFIX = "rad.io:";
+    var STREAMURL_STASH = "streamurl";
 
     var items = {};
     items['rs'] = { title: "Recommanded stations",
@@ -92,20 +93,32 @@
 
     function populate_stations(page, data) {
 	for each (station in data) {
+	    var streamUrl = null;
 	    var bce = {}
 	    try {
-		bce =  get_data("broadcast/getbroadcastembedded", 
-				{'broadcast': station.id});
+		var co = plugin.cacheGet(STREAMURL_STASH, station.id);
+		if (co == null) {
+		    bce =  get_data("broadcast/getbroadcastembedded",
+				    {'broadcast': station.id});
+		    if ('streamURL' in bce) {
+			streamUrl = bce['streamURL']
+			plugin.cachePut(STREAMURL_STASH, station.id, {streamURL: streamUrl}, 84600);
+		    }
+		} else
+		    streamUrl = co['streamURL'];
 	    } catch(e) {}
-	    if ('streamURL' in bce) {
-		var item = page.appendItem("shoutcast:" + bce['streamURL'], "station", {
+
+	    showtime.trace("Adding station "+ station.id +":"+streamUrl);
+
+	    if (streamUrl  != null) {
+		var item = page.appendItem("shoutcast:" + streamUrl, "station", {
 		    title: station.name,
 		    icon: station.pictureBaseURL + station.picture1Name,
 		    current_track: station.current_track,
 		    bitrate: station.bitrate
 		});
 
-		item.url = "shoutcast:" + bce['streamURL'];
+		item.url = "shoutcast:" + streamUrl;
 		item.title = station.name;
 		item.icon = station.pictureBaseURL + station.picture1Name;
 		item.bitrate = station.bitrate;
