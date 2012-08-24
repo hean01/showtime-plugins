@@ -132,7 +132,7 @@
 		str = getValue(str, ">","</a>");
 		if (str == null) continue;
 	    }
-	    itemmd.title = trim(str);
+	    itemmd.station = itemmd.title = trim(str);
 
 	    // description [optional]
 	    str =  getValue(doc, "<p class=\"stream-description\">","</p>");
@@ -180,32 +180,19 @@
 	    if (str == null) continue;
 	    itemmd.format = trim(str);
 
-	    // create richtext as title
-	    var tt = "";
-	    tt += '<font size="4" color="00FF00">' + itemmd.title + '</font><br>';
-	    if (itemmd.description)
-		tt += '<font color="f0f0f0">' + itemmd.description + '</font><br>';
-
-	    tt += '<font color="b0b0b0">On Air: \'' + itemmd.current_track + '\'</font><br>';
-
-	    tt += '<font size="3" color="a0a0a0">';
-	    tt += itemmd.listeners + ' listeners'  + '    |    ';
-	    tt += itemmd.bitrate + ' (' + itemmd.format +')';
-	    tt += '</font>';
-
-
 	    // add item to showtime page
-	    var item = page.appendItem("shoutcast:" + BASE_URL + itemmd.url, "station", {
-		title: new showtime.RichText(tt),
+	    var item = page.appendItem("shoutcast:" + BASE_URL + itemmd.url, "station", {		
+		title: itemmd.current_track,
+		station: itemmd.station,
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
 		format: itemmd.format,
-		listeners: itemmd.listeners,
-		current_track: itemmd.current_track
+		listeners: itemmd.listeners
 	    }); 
 
 	    item.url = "shoutcast:" + BASE_URL + itemmd.url;
 	    item.title = itemmd.title;
+	    item.station = itemmd.station;
 	    item.description = itemmd.description;
 	    item.bitrate = itemmd.bitrate;
 	    item.format = itemmd.format;
@@ -216,7 +203,8 @@
 	    item.onEvent("addFavorite", function(item) {
 		var entry = {
 		    url: this.url,
-		    title: this.title,
+		    title: this.station,
+		    station: this.station,
 		    description: this.description,
 		    format: this.format,
 		    bitrate: this.bitrate
@@ -240,6 +228,9 @@
 	page.contents = "items";
 	page.metadata.title = "Search result: " + query;
 	page.metadata.logo = plugin.path + "icecast_square.png";
+	page.metadata.glwview = plugin.path + "views/array.view";
+	page_menu(page);
+
 	page.loading = true;
 	var doc = showtime.httpGet(BASE_URL + "/search?search=" + query, {}).toString();
 	scrape_page(page, doc);
@@ -252,28 +243,21 @@
 	page.contents = "items";
 	page.metadata.title = "Favorites";
 	page.metadata.logo = plugin.path + "icecast_square.png";
+	page.metadata.glwview = plugin.path + "views/array.view";
+	page_menu(page);
 
 	var list = eval(store.list);
 	for each (item in list) {
 	    var itemmd = showtime.JSONDecode(item);
-	    // create richtext as title
-	    var tt = "";
-	    tt += '<font size="4" color="00FF00">' + itemmd.title + '</font><br>';
-	    if (itemmd.description)
-		tt += '<font color="f0f0f0">' + itemmd.description + '</font><br>';
-
-	    tt += '<font size="3" color="a0a0a0">';
-	    tt += itemmd.bitrate + ' (' + itemmd.format +')';
-	    tt += '</font>';
 
 	    // add item to showtime page
 	    var item = page.appendItem(itemmd.url, "station", {
-		title: new showtime.RichText(tt),
+		title: itemmd.station,
+		station: itemmd.station,
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
 		format: itemmd.format,
-		listeners: itemmd.listeners,
-		current_track: itemmd.current_track
+		listeners: itemmd.listeners
 	    });
 
 	    item.url = itemmd.url;
@@ -299,6 +283,8 @@
 	page.contents = "items";
 	page.metadata.title = "Search result: " + query;
 	page.metadata.logo = plugin.path + "icecast_square.png";
+	page.metadata.glwview = plugin.path + "views/array.view";
+	page_menu(page);
 	var doc = showtime.httpGet(BASE_URL + "/search?search=" + query, {}).toString();
 	scrape_page(page, BASE_URL + "/search?search=" + doc);
 	page.loading = false;
@@ -311,6 +297,8 @@
 	page.contents = "items";
 	page.metadata.logo = plugin.path + "di_square.png";
 	page.metadata.title = "icecast directory - " + genre;
+	page.metadata.glwview = plugin.path + "views/array.view";
+	page_menu(page);
 	var doc = showtime.httpGet(BASE_URL + "/by_genre/" + genre, {}).toString();
 	scrape_page(page, doc);
 	page.loading = false;
@@ -341,4 +329,19 @@
 
 	page.loading = false;
     });
+
+    function page_menu(page) {
+        page.options.createInt('childTilesX', 'Number of X Child Tiles', 6, 1, 10, 1, '', function (v) {
+            page.metadata.childTilesX = v;
+        }, true);
+
+        page.options.createInt('childTilesY', 'Number of Y Child Tiles', 3, 1, 4, 1, '', function (v) {
+            page.metadata.childTilesY = v;
+        }, true);
+
+        page.options.createBool('informationBar', 'Information Bar', true, function (v) {
+            page.metadata.informationBar = v;
+        }, true);
+    }
+
 })(this);
