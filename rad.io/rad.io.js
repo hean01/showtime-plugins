@@ -114,14 +114,14 @@
 		    iconUrl = station.pictureBaseURL + station.picture1Name;
 
 		var item = page.appendItem("shoutcast:" + streamUrl, "station", {
-		    title: station.name,
+		    station: station.name,
 		    icon: iconUrl,
-		    current_track: station.current_track,
+		    title: station.current_track,
 		    bitrate: station.bitrate
 		});
 
 		item.url = "shoutcast:" + streamUrl;
-		item.title = station.name;
+		item.station = station.name;
 		item.icon = iconUrl;
 		item.bitrate = station.bitrate;
 
@@ -129,7 +129,7 @@
 		    var entry = {
 			url: this.url,
 			icon: this.icon,
-			title: this.title,
+			station: this.station,
 			bitrate: this.bitrate
 		    };
 		    showtime.trace("item: "+showtime.JSONEncode(entry));
@@ -185,13 +185,12 @@
 
 	    // add item to showtime page
 	    var item = page.appendItem(itemmd.url, "station", {
-		title: itemmd.title,
+		station: itemmd.station,
 		icon: itemmd.icon,
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
 		format: itemmd.format,
-		listeners: itemmd.listeners,
-		current_track: itemmd.current_track
+		listeners: itemmd.listeners
 	    });
 
 	    item.url = itemmd.url;
