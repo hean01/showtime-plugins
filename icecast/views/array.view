@@ -134,6 +134,7 @@ widget(container_y, {
 				.source = $clone.focused.metadata.icon;
 				.align = left;
 				.shadow = true;
+				.hidden = !($clone.focused.metadata.icon);
 			});
 
 			widget(container_y, {
