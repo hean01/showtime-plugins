@@ -125,6 +125,9 @@ widget(container_y, {
 		padding: 10;
 		.hidden = !($clone.focused.metadata.station && $page.model.metadata.informationBar == true);
 		
+
+		widget(container_y, {
+
 		widget(container_x, {
 			.spacing = 5;
 			.padding = 5;
@@ -180,6 +183,8 @@ widget(container_y, {
 					  });
 
 			});
+		});
+		widget(dummy, { .height = $ui.size *2; });
 		});
 	});
 });

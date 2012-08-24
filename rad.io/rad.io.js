@@ -116,6 +116,7 @@
 		var item = page.appendItem("shoutcast:" + streamUrl, "station", {
 		    station: station.name,
 		    icon: iconUrl,
+		    album_art: iconUrl,
 		    title: station.current_track,
 		    bitrate: station.bitrate
 		});
@@ -123,12 +124,14 @@
 		item.url = "shoutcast:" + streamUrl;
 		item.station = station.name;
 		item.icon = iconUrl;
+		item.album_art = iconUrl;
 		item.bitrate = station.bitrate;
 
 		item.onEvent("addFavorite", function(item) {
 		    var entry = {
 			url: this.url,
 			icon: this.icon,
+			album_art: this.icon,
 			station: this.station,
 			bitrate: this.bitrate
 		    };
@@ -187,6 +190,7 @@
 	    var item = page.appendItem(itemmd.url, "station", {
 		station: itemmd.station,
 		icon: itemmd.icon,
+		album_art: itemmd.icon,
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
 		format: itemmd.format,
