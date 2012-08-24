@@ -74,7 +74,7 @@
 	    // get title
 	    str = getValue(doc, "<h3>", "</h3>");
 	    if (str == null) continue;
-	    itemmd.title = str;
+	    itemmd.station = str;
 	    
 	    // get desc
 	    str = getValue(doc, "<p class=\"descr\">", "</p>");
@@ -85,17 +85,16 @@
 	    str = getValue(doc, "<span class=\"playing\">", "</span>");
 	    str = getValue(str, "/played\">","</a>");
 	    if (str == null) continue;
-	    itemmd.current_track = str;
+	    itemmd.title = str;
 
 
 	    // add item to showtime page
 	    page.appendItem("shoutcast:" + BASE_URL + "/startstream=" + itemmd.key + ".pls", "station", {
+		station: itemmd.station,
 		title: itemmd.title,
 		description: itemmd.description,
 		icon: itemmd.icon,
-		listeners: itemmd.listeners,
-		current_track: itemmd.current_track
-		
+		listeners: itemmd.listeners
 	    }); 
 	}
     }
@@ -107,6 +106,19 @@
 	page.contents = "items";
 	page.metadata.logo = plugin.path + "somafm.png";
 	page.metadata.title = "soma fm";
+
+        page.options.createInt('childTilesX', 'Number of X Child Tiles', 6, 1, 10, 1, '', function (v) {
+            page.metadata.childTilesX = v;
+        }, true);
+
+        page.options.createInt('childTilesY', 'Number of Y Child Tiles', 3, 1, 4, 1, '', function (v) {
+            page.metadata.childTilesY = v;
+        }, true);
+
+        page.options.createBool('informationBar', 'Information Bar', true, function (v) {
+            page.metadata.informationBar = v;
+        }, true);
+
 	var doc = showtime.httpGet(BASE_URL + "/listen", {}).toString();
 	scrape_page(page, doc);
 	page.loading = false;
