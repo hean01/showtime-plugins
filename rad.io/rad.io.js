@@ -93,57 +93,55 @@
 
     function populate_stations(page, data) {
 	for each (station in data) {
-	    var streamUrl = null;
 	    var bce = {}
 	    try {
-		var co = plugin.cacheGet(STREAMURL_STASH, station.id);
-		if (co == null) {
+		bce = plugin.cacheGet(STREAMURL_STASH, station.id);
+		if (bce == null) {
 		    bce =  get_data("broadcast/getbroadcastembedded",
 				    {'broadcast': station.id});
-		    if ('streamURL' in bce) {
-			streamUrl = bce['streamURL']
-			plugin.cachePut(STREAMURL_STASH, station.id, {streamURL: streamUrl}, 84600);
-		    }
-		} else
-		    streamUrl = co['streamURL'];
+		    plugin.cachePut(STREAMURL_STASH, station.id, showtime.JSONEncode(bce), 84600);
+		}
 	    } catch(e) {}
 
-	    if (streamUrl  != null) {
-		var iconUrl = null;
-		if (station.picture1Name)
-		    iconUrl = station.pictureBaseURL + station.picture1Name;
+	    var iconUrl = null;
+	    if (station.picture1Name)
+		iconUrl = station.pictureBaseURL + station.picture1Name;
 
-		var item = page.appendItem("shoutcast:" + streamUrl, "station", {
-		    station: station.name,
-		    icon: iconUrl,
-		    album_art: iconUrl,
-		    title: station.current_track,
-		    bitrate: station.bitrate
-		});
+	    var item = page.appendItem("shoutcast:" + bce.streamURL, "station", {
+		station: station.name,
+		description: bce.description,
+		icon: iconUrl,
+		album_art: iconUrl,
+		title: station.current_track,
+		bitrate: station.bitrate,
+		format: bce.streamContentFormat
+	    });
 
-		item.url = "shoutcast:" + streamUrl;
-		item.station = station.name;
-		item.icon = iconUrl;
-		item.album_art = iconUrl;
-		item.bitrate = station.bitrate;
+	    item.url = "shoutcast:" + bce.streamURL;
+	    item.station = station.name;
+	    item.description = (bce.description?bce.description:"");
+	    item.icon = iconUrl;
+	    item.album_art = iconUrl;
+	    item.bitrate = station.bitrate;
+	    item.format = bce.streamContentFormat;
 
-		item.onEvent("addFavorite", function(item) {
-		    var entry = {
-			url: this.url,
-			icon: this.icon,
-			album_art: this.icon,
-			station: this.station,
-			bitrate: this.bitrate
-		    };
-		    showtime.trace("item: "+showtime.JSONEncode(entry));
-		    var list = eval(store.list);
-                    var array = [showtime.JSONEncode(entry)].concat(list);
-                    store.list = showtime.JSONEncode(array);
-		    showtime.notify("Station was added to your favorites.", 2);		
-		});
+	    item.onEvent("addFavorite", function(item) {
+		var entry = {
+		    url: this.url,
+		    icon: this.icon,
+		    album_art: this.icon,
+		    station: this.station,
+		    description: this.description,
+		    bitrate: this.bitrate
+		};
+		showtime.trace("item: "+showtime.JSONEncode(entry));
+		var list = eval(store.list);
+                var array = [showtime.JSONEncode(entry)].concat(list);
+                store.list = showtime.JSONEncode(array);
+		showtime.notify("Station was added to your favorites.", 2);
+	    });
 
-		item.addOptAction("Add station to favorites", "addFavorite");
-	    }
+	    item.addOptAction("Add station to favorites", "addFavorite");
 	}
     }
 
