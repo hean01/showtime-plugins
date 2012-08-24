@@ -64,12 +64,10 @@
 	    if (str == null) continue;
 	    itemmd.icon = str;
 
-	    
-
-	    // get title
+	    // get station name
 	    str = getValue(doc, "<a href=\"/" + itemmd.key + "\">", "</a>");
 	    if (str == null) continue;
-	    itemmd.title = str;
+	    itemmd.title = itemmd.station = str;
 
 	    // get current playing as description
 	    str = getValue(doc,"<p class=\"track\">", "</p>");
@@ -80,13 +78,11 @@
 
 	    // add item to showtime page
 	    page.appendItem("shoutcast:http://listen.di.fm/public3/"+itemmd.key+".pls", "station", {
-		title: itemmd.title,
+		station: itemmd.station,
+		title: itemmd.station,
 		description: itemmd.description,
 		icon: itemmd.icon,
 		album_art: itemmd.icon,
-		additional_artists: {
-		    artist: itemmd.artist
-		},
 		album: itemmd.album
 	    }); 
 	}
