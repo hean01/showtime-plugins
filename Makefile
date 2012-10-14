@@ -4,7 +4,8 @@ PLUGINS= \
 	di.zip \
 	icecast.zip \
 	somafm.zip \
-	rad.io.zip
+	rad.io.zip \
+	lubetube.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
