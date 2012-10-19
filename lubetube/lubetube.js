@@ -37,14 +37,14 @@
 
     function addItem(page, name, url, icon) {
 		page.appendItem(PREFIX+"play:"+url, "video", {
-			title: unescape(name)
+			title: unescape(name),
+			icon: icon
 		});
     }
 
     function addDir(page, name, url, image) {
 		page.appendItem(PREFIX + "category:" + name + ":" + url, "directory", {
-			title: name,
-			//icon: "http://lubetube.com/images/categories/"+name.toLowerCase()+".jpg"
+			title: name
 		});
     }
 
