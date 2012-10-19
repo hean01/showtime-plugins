@@ -59,9 +59,8 @@
 
     function index(page, url) {
 	var response = showtime.httpGet(url).toString();
-//	var re = new RegExp('<a class="frame[^"]*" href="(http://lubetube.com/video/[^"]+)" title="([^"]+)">.*?<img src="([^"]+)".+?Length:([^<]+)');
 
-	var re = /<a class="frame.*" href="(http:\/\/lubetube.com\/video\/([^\s]+))" title="(.*)">.*?<img src="([^\s]+)"/g;
+	var re = /<a class="frame" href="(http:\/\/lubetube.com\/video\/([^\s]+))" title="([^"]+)"><\/a><img src="([^\s]+)"/g;
 	var match = re.exec(response);
 	while(match) 
 	{
@@ -72,15 +71,13 @@
 
     function videolink(url) {
 	var response = showtime.httpGet(url).toString();
-	var re = /playlist_flow_player_flv.php\?vid=[0-9]+/g;
+	var re = /playlist_flow_player_flv.php\?vid=[0-9]+/;
 	var match = re.exec(response);
 	if (match) {
-	    showtime.trace("Player: " + BASE_URL + "/" + match[0]);
+	    re = /url="([^"]+)"/;
 	    var response = showtime.httpGet(BASE_URL + "/" + match[0]).toString();
 	    response = fixup_html(response);
-	    re = /url="(.*)" type/g;
 	    match = re.exec(response);
-	    showtime.trace("Player: " + unescape(match[1]));
 	    if(match)
 		return unescape(match[1])
 	}
