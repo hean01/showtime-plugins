@@ -20,7 +20,7 @@
 
 
 (function(plugin) {
-    var BASE_URL = "http://www.lubetube.com"
+    var BASE_URL = "http://lubetube.com"
     var PREFIX = "lubetube:"
  
     plugin.createService("LubeTube", PREFIX + "start", "video", true,
@@ -58,15 +58,34 @@
     }
 
     function index(page, url) {
-	var response = showtime.httpGet(url).toString();
+	var offset = 0;
 
-	var re = /<a class="frame" href="(http:\/\/lubetube.com\/video\/([^\s]+))" title="([^"]+)"><\/a><img src="([^\s]+)"/g;
-	var match = re.exec(response);
-	while(match) 
-	{
-	    addItem(page, match[3], match[1], match[4]);
+	function loader() {
+	    var entries = 0;
+	    var p = Math.floor( 1 + (offset / 50));
+	    var response = showtime.httpGet(url + "page=" + p).toString();
+	    var re = /<a class="frame" href="(http:\/\/lubetube.com\/video\/([^"]+))" title="([^"]+)"><\/a><img src="([^"]+)"/g;
+	    var match = re.exec(response);
+	    while(match)
+	    {
+		addItem(page, match[3], match[1], match[4]);
+		match = re.exec(response);
+		offset++;
+	    }
+
+	    re = /<strong>([0-9]+)<\/strong> videos/;
 	    match = re.exec(response);
+	    if (match)
+		page.entries = match[1];
+
+	    //showtime.trace("LubeTube loader: offeset " + offset + " page.entries " + page.entries);
+	    return offset < page.entries;
 	}
+
+	page.type = "directory";
+	loader();
+	page.loading = false;
+	page.paginator = loader;
     }
 
     function videolink(url) {
@@ -87,7 +106,6 @@
     // Start page
     plugin.addURI(PREFIX + "play:(.*)", function(page, url) {
 	page.type = "video";
-	showtime.trace("Opening: " + url);
 	var video_link = videolink(url);
 	page.source = video_link;
 	page.loading = false;
@@ -112,6 +130,12 @@
 
 	categories(page);
 	
+	page.loading = false;
+    });
+
+    plugin.addSearcher("LubeTube", plugin.path + "lubetube.png", function(page, query) {
+	page.type = "directory";
+	index(page, BASE_URL + "/search/videos?search_id=" +  showtime.paramEscape(query) + "&");
 	page.loading = false;
     });
 
