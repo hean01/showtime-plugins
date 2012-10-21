@@ -36,7 +36,7 @@
     }
 
     function addItem(page, name, url, icon) {
-	page.appendItem(PREFIX+"play:"+url, "video", {
+	page.appendItem(PREFIX+"play:"+url+":"+name, "video", {
 	    title: unescape(name),
 	    icon: icon
 	});
@@ -64,6 +64,8 @@
 	    var entries = 0;
 	    var p = Math.floor( 1 + (offset / 50));
 	    var response = showtime.httpGet(url + "page=" + p).toString();
+	    //showtime.trace(response);
+	    //<span class="details"><span class="length">Length: 02:00</span><span class="views">Views: 3138</span><span class="ratingbg"><span class="rating" style="width:00%;"></span></span></span>
 	    var re = /<a class="frame" href="(http:\/\/lubetube.com\/video\/([^"]+))" title="([^"]+)"><\/a><img src="([^"]+)"/g;
 	    var match = re.exec(response);
 	    while(match)
@@ -104,10 +106,15 @@
     }
 
     // Start page
-    plugin.addURI(PREFIX + "play:(.*)", function(page, url) {
+    plugin.addURI(PREFIX + "play:(.*):(.*)", function(page, url, title) {
 	page.type = "video";
 	var video_link = videolink(url);
-	page.source = video_link;
+	page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            sources: [{
+                url: video_link
+            }]
+        });
 	page.loading = false;
     });
 
