@@ -59,7 +59,6 @@
         return true;
     };
 
-
     function startPage(page) {
         if (!parental_control(page)) {
             page.loading = false;
