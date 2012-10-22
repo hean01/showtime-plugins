@@ -36,7 +36,7 @@
     }
 
     function addItem(page, name, url, icon) {
-	page.appendItem(PREFIX+"play:"+url+":"+name, "video", {
+	page.appendItem(PREFIX+"play:"+escape(url)+":"+name, "video", {
 	    title: unescape(name),
 	    icon: icon
 	});
@@ -108,11 +108,10 @@
     // Start page
     plugin.addURI(PREFIX + "play:(.*):(.*)", function(page, url, title) {
 	page.type = "video";
-	var video_link = videolink(url);
 	page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             sources: [{
-                url: video_link
+                url: videolink(unescape(url))
             }]
         });
 	page.loading = false;

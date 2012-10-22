@@ -109,10 +109,11 @@
 
     plugin.addURI(PREFIX + ":stars", function(page) {
         var jsonobj = showtime.JSONDecode(showtime.httpGet("http://api.redtube.com/?data=redtube.Stars.getStarList&output=json").toString());
+        if (!jsonobj) return;
         var starCounter = 0;
         for (var i in jsonobj.stars) starCounter++;
+        page.entries = starCounter;
         setPageHeader(page, 'Redtube - Stars (found ' + starCounter + ' stars)');
-
         var offset = 0;
 
         function showPage() {
@@ -128,8 +129,8 @@
         }
 
         showPage();
-        page.loading = false;
         page.paginator = showPage;
+        page.loading = false;
     });
 
     function getTimestamp(str) {
@@ -149,7 +150,6 @@
             var jsonobj = showtime.JSONDecode(showtime.httpGet(url + query + "&page=" + pageNum).toString());
             if (!jsonobj.videos) return -1;
             setPageHeader(page, 'Redtube - Search (found ' + jsonobj.count + ' videos)');
-            page.entries = jsonobj.count; // for searcher
             for (var i in jsonobj.videos) {
                 var description = '<font size="4" color="6699CC">Video ID: </font><font size="4">' + jsonobj.videos[i].video.video_id + '</font>\n\n';
                 description += '<font size="4" color="6699CC">Views: </font><font size="4">' + jsonobj.videos[i].video.views + '</font>\n\n';
@@ -188,13 +188,13 @@
                 });
                 offset++;
             };
-            return offset < jsonobj.count;
-        };
+            page.entries = jsonobj.count;
+            return offset < page.entries;
+        }
 
         showPage();
-        page.paginator = showPage;
         page.loading = false;
-        return;
+        page.paginator = showPage;
     };
 
     plugin.addURI(PREFIX + ":search:(.*)", function(page, query) {
