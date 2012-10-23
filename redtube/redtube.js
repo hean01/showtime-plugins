@@ -23,6 +23,28 @@
 
     var logo = plugin.path + "logo.png";
 
+    function fix_entity(doc) {
+	doc = doc.replace(/\&Atilde;\&iexcl;/g,'\u00e1');
+	doc = doc.replace(/\&Atilde;\&cent;/g,'\u00e2');
+	doc = doc.replace(/\&Atilde;\&pound;/g,'\u00e3');
+	doc = doc.replace(/\&Atilde;\&sect;/g,'\u00e7');
+	doc = doc.replace(/\&Atilde;\&copy;/g,'\u00e9');
+	doc = doc.replace(/\&Atilde;\&ordf;/g,'\u00ea');
+	doc = doc.replace(/\&Atilde;\&shy;/g,'\u00ed');
+	doc = doc.replace(/\&Atilde;\&plusmn;/g,'\u00f1');
+	doc = doc.replace(/\&Atilde;\&sup3;/g,'\u00f3');
+	doc = doc.replace(/\&Atilde;\&micro;/g,'\u00f5');
+	doc = doc.replace(/\&Atilde;\&para;/g,'\u00f6');
+	doc = doc.replace(/\&quot;/g,'\"');
+	doc = doc.replace(/\&amp;/g,'&');
+	doc = doc.replace(/\&gt;/g,'>');
+	doc = doc.replace(/\&lt;/g,'<');
+	doc = doc.replace(/\&#039;/g,'\'');
+	doc = doc.replace(/\&#39;/g,'\'');
+	// if (doc.indexOf('\&Atilde;')!=-1) showtime.message(doc,true,false);
+	return doc;
+    } 
+
     function setPageHeader(page, title) {
         if (page.metadata) {
             page.metadata.title = title;
@@ -65,18 +87,6 @@
         }
         return true;
     };
-
-    function unHTML(str) {
-	str = str.replace(/\&circ;/g,'\^');
-	str = str.replace(/\&tilde;/g,'\~');
-	str = str.replace(/\&quot;/g,'\"');
-	str = str.replace(/\&amp;/g,'&');
-	str = str.replace(/\&gt;/g,'>');
-	str = str.replace(/\&lt;/g,'<');
-	str = str.replace(/\&#039;/g,'\'');
-	str = str.replace(/\&#39;/g,'\'');
-	return str;
-    }
 
     function startPage(page) {
         if (!parental_control(page)) {
@@ -187,8 +197,13 @@
                 };
                 if (tags) description += '<font size="4" color="6699CC">Tags: </font><font size="4">' + tags + '.</font>\n';
 
-                var title = (!jsonobj.videos[i].video.title) ? "Unnamed video" : jsonobj.videos[i].video.title;
-		title = unHTML(title);
+                if (jsonobj.videos[i].video.title) 
+                	var title = jsonobj.videos[i].video.title
+		else {
+			var title = showtime.JSONDecode(showtime.httpGet("http://api.redtube.com/?data=redtube.Videos.getVideoById&video_id="+jsonobj.videos[i].video.video_id + "&output=json&thumbsize=none").toString());
+			title = title.video.title
+		}
+		title = showtime.entityDecode(fix_entity(title));
                 page.appendItem(PREFIX + ":play:" + jsonobj.videos[i].video.video_id + ":" + escape(title), "video", {
                     title: new showtime.RichText(title + '<font size="3" color="6699CC"> ( ' + jsonobj.videos[i].video.duration + ' )</font>'),
                     rating: +(jsonobj.videos[i].video.rating) * 20,
