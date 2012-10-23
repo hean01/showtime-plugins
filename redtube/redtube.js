@@ -66,6 +66,18 @@
         return true;
     };
 
+    function unHTML(str) {
+	str = str.replace(/\&circ;/g,'\^');
+	str = str.replace(/\&tilde;/g,'\~');
+	str = str.replace(/\&quot;/g,'\"');
+	str = str.replace(/\&amp;/g,'&');
+	str = str.replace(/\&gt;/g,'>');
+	str = str.replace(/\&lt;/g,'<');
+	str = str.replace(/\&#039;/g,'\'');
+	str = str.replace(/\&#39;/g,'\'');
+	return str;
+    }
+
     function startPage(page) {
         if (!parental_control(page)) {
             page.loading = false;
@@ -176,6 +188,7 @@
                 if (tags) description += '<font size="4" color="6699CC">Tags: </font><font size="4">' + tags + '.</font>\n';
 
                 var title = (!jsonobj.videos[i].video.title) ? "Unnamed video" : jsonobj.videos[i].video.title;
+		title = unHTML(title);
                 page.appendItem(PREFIX + ":play:" + jsonobj.videos[i].video.video_id + ":" + escape(title), "video", {
                     title: new showtime.RichText(title + '<font size="3" color="6699CC"> ( ' + jsonobj.videos[i].video.duration + ' )</font>'),
                     rating: +(jsonobj.videos[i].video.rating) * 20,
@@ -193,8 +206,8 @@
         }
 
         showPage();
-        page.loading = false;
         page.paginator = showPage;
+        page.loading = false;
     };
 
     plugin.addURI(PREFIX + ":search:(.*)", function(page, query) {
