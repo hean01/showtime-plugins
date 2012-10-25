@@ -17,49 +17,89 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 (function(plugin) {
     var BASE_URL = "http://lubetube.com"
     var PREFIX = "lubetube:"
+    var logo = plugin.path + "lubetube.png";
 
-    plugin.createService("LubeTube", PREFIX + "start", "video", true,
-    plugin.path + "lubetube.png");
-
-    function fixup_html(doc) {
-        doc = doc.replace(/\&amp;/g, '&');
-        doc = doc.replace(/\&gt;/g, '>');
-        doc = doc.replace(/\&lt;/g, '<');
-        doc = doc.replace(/\&#039;/g, '\'');
-        doc = doc.replace(/\&#39;/g, '\'');
-        return doc;
+    function setPageHeader(page, title) {
+        if (page.metadata) {
+            page.metadata.title = title;
+            page.metadata.logo = logo;
+        }
+        page.type = "directory";
+        page.contents = "items";
     }
 
-    function categories(page) {
-        var response = showtime.httpGet(BASE_URL + "/categories");
-        var re = /<a href="http:\/\/lubetube.com([^\s]+)page=1"><img width="[0-9]+" height="[0-9]+" alt="[^"]+" class="main_gallery" src="([^\s]+)" title="([^"]+)" \/><\/a><br \/>/g;
+    plugin.createService("LubeTube", PREFIX + "start", "video", true, plugin.path + "lubetube.png");
 
-        var match = re.exec(response);
-        while (match) {
-            page.appendItem(PREFIX + "category:" + match[3] + ":" + match[1], "directory", {
-                title: match[3],
-                icon: match[2]
-            });
+    function indexPornstars(page) {
+        var title = page.metadata.title;
+        var offset = 0;
+
+        function loader() {
+            var p = Math.floor(1 + (offset / 50));
+            var response = showtime.httpGet(BASE_URL + "/pornstars/?page=" + p).toString();
+            var re = /px;">[\S\s]*?<a href="([^"]+)[\S\s]*?class="main_gallery" src="([^"]+)[\S\s]*?title="Pornstar Name">([^\<]+)[\S\s]*?;">Videos: ([^\s\&]+)[\S\s]*?Views: ([^\<]+)/g;
             var match = re.exec(response);
+            while (match) {
+                page.appendItem(PREFIX + "pornstar:" + match[1] + ":" + match[3] + " (" + match[4] + ")", "video", {
+                    title: new showtime.RichText(match[3] + '<font color="6699CC"> (Videos: </font>' + match[4] + '<font color="6699CC"> Views: </font>' + match[5] + '<font color="6699CC">)</font>'),
+                    icon: match[2]
+                });
+                match = re.exec(response);
+                offset++;
+            }
+            re = />All Pornstars \(([0-9]+)\)</;
+            match = re.exec(response);
+            if (match) {
+                page.entries = match[1];
+                page.metadata.title = title + " (" + match[1] + ")"
+            }
+            //showtime.trace("LubeTube loader: offeset " + offset + " page.entries " + page.entries);
+            return offset < page.entries;
         }
+        loader();
+        page.loading = false;
+        page.paginator = loader;
+    }
+
+    function indexVideos(page, url) {
+        var offset = 0;
+
+        function loader() {
+            var p = Math.floor(1 + (offset / 50));
+            var response = showtime.httpGet(url + "page=" + p).toString();
+            var re = /">next<\/a>/;
+            if ((offset > 0) && (!re.exec(response))) return false;
+            re = /" href="(http:\/\/lubetube.com\/video\/([^"]+))" title="([^"]+)"><img src="([^"]+)[\S\s]*?<span class="length">Length: ([^\<]+)<[\S\s]*?<span class="views">Views: ([^\<]+)<[\S\s]*?<span class="rating" style="width:([^\%]+)\%/g;
+            var match = re.exec(response);
+            while (match) {
+                page.appendItem(PREFIX + "play:" + escape(match[1]) + ":" + escape(match[3]), "video", {
+                    title: new showtime.RichText(match[3] + '<font color="6699CC"> (' + match[5] + ')</font>'),
+                    icon: match[4],
+                    description: new showtime.RichText('<font color="6699CC">Views: </font>' + match[6]),
+                    genre: 'Adult',
+                    duration: match[5],
+                    rating: match[7] * 1
+                });
+                match = re.exec(response);
+                offset++;
+            }
+            return true;
+        }
+        loader();
+        page.loading = false;
+        page.paginator = loader;
     }
 
     function index(page, url) {
         var offset = 0;
-        if (page.metadata) {
-            var title = page.metadata.title;
-        }
+        if (page.metadata) var title = page.metadata.title;
 
         function loader() {
-            var entries = 0;
             var p = Math.floor(1 + (offset / 50));
             var response = showtime.httpGet(url + "&page=" + p).toString();
-            showtime.print(response);
             var re = /<a class="frame" href="(http:\/\/lubetube.com\/video\/([^"]+))" title="([^"]+)"><\/a><img src="([^"]+)[\S\s]*?<span class="length">Length: ([^\<]+)<[\S\s]*?<span class="views">Views: ([^\<]+)<[\S\s]*?<span class="rating" style="width:([^\%]+)\%/g;
             var match = re.exec(response);
             while (match) {
@@ -84,8 +124,6 @@
             //showtime.trace("LubeTube loader: offeset " + offset + " page.entries " + page.entries);
             return offset < page.entries;
         }
-
-        page.type = "directory";
         loader();
         page.loading = false;
         page.paginator = loader;
@@ -97,15 +135,14 @@
         var match = re.exec(response);
         if (match) {
             re = /url="([^"]+)"/;
-            var response = showtime.httpGet(BASE_URL + "/" + match[0]).toString();
-            response = fixup_html(response);
+            response = showtime.entityDecode(showtime.httpGet(BASE_URL + "/" + match[0]).toString());
             match = re.exec(response);
             if (match) return unescape(match[1])
         }
         return null;
     }
 
-    // Start page
+    // Play videolink
     plugin.addURI(PREFIX + "play:(.*):(.*)", function(page, url, title) {
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
@@ -114,36 +151,66 @@
                 url: videolink(unescape(url))
             }]
         });
-        page.loading = false;
     });
 
-    // Start page
+    // Enter category
     plugin.addURI(PREFIX + "category:(.*):(.*)", function(page, name, uri) {
-        page.type = "directory";
-        page.contents = "items";
-        page.metadata.title = name;
-        page.metadata.logo = plugin.path + "lubetube.png";
+        setPageHeader(page, name);
         index(page, BASE_URL + uri);
+    });
+
+    // Pornstar page
+    plugin.addURI(PREFIX + "pornstar:(.*):(.*)", function(page, uri, name) {
+        setPageHeader(page, 'Lubetube - ' + name);
+        indexVideos(page, BASE_URL + uri + "?");
+    });
+
+    // Pornstars page
+    plugin.addURI(PREFIX + "pornstars", function(page) {
+        setPageHeader(page, 'Lubetube - Pornstars');
+        indexPornstars(page);
+    });
+
+    // Most Recent page
+    plugin.addURI(PREFIX + "movies", function(page) {
+        setPageHeader(page, 'Lubetube - Most Recent');
+        indexVideos(page, BASE_URL + "/view/basic/mostrecent/");
+    });
+
+    // Categories page
+    plugin.addURI(PREFIX + "categories", function(page) {
+        setPageHeader(page, 'Lubetube - Categories');
+        var response = showtime.httpGet(BASE_URL + "/categories");
         page.loading = false;
+        var re = /<a href="http:\/\/lubetube.com([^\s]+)page=1"><img width="[0-9]+" height="[0-9]+" alt="[^"]+" class="main_gallery" src="([^\s]+)" title="([^"]+)" \/><\/a><br \/>/g;
+        var match = re.exec(response);
+        while (match) {
+            page.appendItem(PREFIX + "category:" + match[3] + ":" + match[1], "directory", {
+                title: match[3],
+                icon: match[2]
+            });
+            var match = re.exec(response);
+        }
     });
 
     // Start page
     plugin.addURI(PREFIX + "start", function(page) {
-        page.type = "directory";
-        page.contents = "items";
-        page.metadata.title = "Home";
-        page.metadata.logo = plugin.path + "lubetube.png";
-
-        categories(page);
-
+        setPageHeader(page, "LubeTube - Home");
         page.loading = false;
+        page.appendItem(PREFIX + 'movies', 'directory', {
+            title: 'Most Recent'
+        });
+        page.appendItem(PREFIX + 'categories', 'directory', {
+            title: 'Categories'
+        });
+        page.appendItem(PREFIX + 'pornstars', 'directory', {
+            title: 'Pornstars'
+        });
     });
 
-    plugin.addSearcher("LubeTube - Videos", plugin.path + "lubetube.png", function(page, query) {
+    plugin.addSearcher("LubeTube - Videos", logo, function(page, query) {
         page.type = "directory";
         index(page, BASE_URL + "/search/videos?search_id=" + query.replace(/\s/g, '\+'));
-        page.loading = false;
     });
 
 })(this);
-
