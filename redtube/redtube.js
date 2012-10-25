@@ -24,24 +24,34 @@
     var logo = plugin.path + "logo.png";
 
     function fix_entity(doc) {
+	doc = doc.replace(/\&Acirc;\&iexcl;/g,'\u00a1');
+	doc = doc.replace(/\&Atilde;\&nbsp;/g,'\u00e0');
 	doc = doc.replace(/\&Atilde;\&iexcl;/g,'\u00e1');
 	doc = doc.replace(/\&Atilde;\&cent;/g,'\u00e2');
 	doc = doc.replace(/\&Atilde;\&pound;/g,'\u00e3');
+	doc = doc.replace(/\&Atilde;\&curren;/g,'\u00e4');
+	doc = doc.replace(/\&Atilde;\&yen;/g,'\u00e5');
 	doc = doc.replace(/\&Atilde;\&sect;/g,'\u00e7');
 	doc = doc.replace(/\&Atilde;\&copy;/g,'\u00e9');
 	doc = doc.replace(/\&Atilde;\&ordf;/g,'\u00ea');
+	doc = doc.replace(/\&Atilde;\&laquo;/g,'\u00eb');
+	doc = doc.replace(/\&Atilde;\&reg;/g,'\u00ee');
 	doc = doc.replace(/\&Atilde;\&shy;/g,'\u00ed');
 	doc = doc.replace(/\&Atilde;\&plusmn;/g,'\u00f1');
 	doc = doc.replace(/\&Atilde;\&sup3;/g,'\u00f3');
+	doc = doc.replace(/\&Atilde;\&acute;/g,'\u00f4');
 	doc = doc.replace(/\&Atilde;\&micro;/g,'\u00f5');
 	doc = doc.replace(/\&Atilde;\&para;/g,'\u00f6');
+	doc = doc.replace(/\&Atilde;\&ordm;/g,'\u00fa');
+	doc = doc.replace(/\&Atilde;\&frac14;/g,'\u00fc');
 	doc = doc.replace(/\&quot;/g,'\"');
 	doc = doc.replace(/\&amp;/g,'&');
 	doc = doc.replace(/\&gt;/g,'>');
 	doc = doc.replace(/\&lt;/g,'<');
 	doc = doc.replace(/\&#039;/g,'\'');
 	doc = doc.replace(/\&#39;/g,'\'');
-	// if (doc.indexOf('\&Atilde;')!=-1) showtime.message(doc,true,false);
+	//if (doc.indexOf('\&Atilde;')!=-1) showtime.message(doc,true,false);
+	//if (doc.indexOf('\&Acirc;')!=-1) showtime.message(doc,true,false);
 	return doc;
     } 
 
@@ -205,7 +215,7 @@
 		}
 		title = showtime.entityDecode(fix_entity(title));
                 page.appendItem(PREFIX + ":play:" + jsonobj.videos[i].video.video_id + ":" + escape(title), "video", {
-                    title: new showtime.RichText(title + '<font size="3" color="6699CC"> ( ' + jsonobj.videos[i].video.duration + ' )</font>'),
+                    title: new showtime.RichText(title + '<font size="4" color="6699CC"> ( ' + jsonobj.videos[i].video.duration + ' )</font>'),
                     rating: +(jsonobj.videos[i].video.rating) * 20,
                     icon: jsonobj.videos[i].video.default_thumb,
                     duration: jsonobj.videos[i].video.duration,
