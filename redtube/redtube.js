@@ -25,6 +25,7 @@
 
     function fix_entity(doc) {
 	doc = doc.replace(/\&Acirc;\&iexcl;/g,'\u00a1');
+	doc = doc.replace(/\&Acirc;\&deg;/g,'\u00b0');
 	doc = doc.replace(/\&Atilde;\&nbsp;/g,'\u00e0');
 	doc = doc.replace(/\&Atilde;\&iexcl;/g,'\u00e1');
 	doc = doc.replace(/\&Atilde;\&cent;/g,'\u00e2');
@@ -32,6 +33,7 @@
 	doc = doc.replace(/\&Atilde;\&curren;/g,'\u00e4');
 	doc = doc.replace(/\&Atilde;\&yen;/g,'\u00e5');
 	doc = doc.replace(/\&Atilde;\&sect;/g,'\u00e7');
+	doc = doc.replace(/\&Atilde;\&uml;/g,'\u00e8');
 	doc = doc.replace(/\&Atilde;\&copy;/g,'\u00e9');
 	doc = doc.replace(/\&Atilde;\&ordf;/g,'\u00ea');
 	doc = doc.replace(/\&Atilde;\&laquo;/g,'\u00eb');
@@ -50,8 +52,8 @@
 	doc = doc.replace(/\&lt;/g,'<');
 	doc = doc.replace(/\&#039;/g,'\'');
 	doc = doc.replace(/\&#39;/g,'\'');
-	//if (doc.indexOf('\&Atilde;')!=-1) showtime.message(doc,true,false);
-	//if (doc.indexOf('\&Acirc;')!=-1) showtime.message(doc,true,false);
+	if (doc.indexOf('\&Atilde;')!=-1) showtime.message(doc,true,false);
+	if (doc.indexOf('\&Acirc;')!=-1) showtime.message(doc,true,false);
 	return doc;
     } 
 
@@ -183,9 +185,9 @@
             if (!jsonobj.videos) return -1;
             setPageHeader(page, 'Redtube - Search (found ' + jsonobj.count + ' videos)');
             for (var i in jsonobj.videos) {
-                var description = '<font size="4" color="6699CC">Video ID: </font><font size="4">' + jsonobj.videos[i].video.video_id + '</font>\n\n';
-                description += '<font size="4" color="6699CC">Views: </font><font size="4">' + jsonobj.videos[i].video.views + '</font>\n\n';
-                description += '<font size="4" color="6699CC">Ratings: </font><font size="4">' + jsonobj.videos[i].video.ratings + '</font>\n\n';
+                var description = '<font size="4" color="6699CC">Video ID: </font><font size="4">' + jsonobj.videos[i].video.video_id + '</font> ';
+                description += '<font size="4" color="6699CC">Views: </font><font size="4">' + jsonobj.videos[i].video.views + '</font> ';
+                description += '<font size="4" color="6699CC">Ratings: </font><font size="4">' + jsonobj.videos[i].video.ratings + '</font>\n';
 
                 var stars = 0;
                 if (jsonobj.videos[i].video.stars) {
@@ -195,7 +197,7 @@
                         stars += jsonobj.videos[i].video.stars[j].star_name;
                     };
                 };
-                if (stars) description += '<font size="4" color="6699CC">Starring: </font><font size="4">' + stars + '.</font>\n\n';
+                if (stars) description += '<font size="4" color="6699CC">Starring: </font><font size="4">' + stars + '.</font>\n';
 
                 var tags = 0;
                 if (jsonobj.videos[i].video.tags) {
@@ -205,7 +207,7 @@
                         tags += jsonobj.videos[i].video.tags[j].tag_name;
                     };
                 };
-                if (tags) description += '<font size="4" color="6699CC">Tags: </font><font size="4">' + tags + '.</font>\n';
+                if (tags) description += '<font size="4" color="6699CC">Tags: </font><font size="4">' + tags + '.</font>';
 
                 if (jsonobj.videos[i].video.title) 
                 	var title = jsonobj.videos[i].video.title
@@ -263,6 +265,7 @@
             return;
         };
         try {
+	    query=query.replace(/\s/g,'\+');
             preparePage(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&search="), escape(query));
         } catch (err) {
             showtime.trace('Redtube - Searcher error: ' + err)
