@@ -1,1 +1,12 @@
-{"description": "<p>Redtube - Home of free porn videos<p>For more information, visit <a href=\"http://www.redtube.com\">http://www.redtube.com</a>", "author": "lprot", "homepage": "http://redtube.com", "title": "Redtube", "synopsis": "Redtube: Video Sharing service", "version": "1.21", "file": "redtube.js", "showtimeVersion": "4.1.204", "type": "javascript", "id": "redtube", "icon": "logo.png"}
+{
+	"description": "<p>Redtube - Home of free porn videos<p>For more information, visit <a href=\"http://www.redtube.com\">http://www.redtube.com</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "Redtube",
+	"synopsis": "Redtube: Video Sharing service",
+	"version": "1.22", "file": "redtube.js",
+	"showtimeVersion": "4.1.204",
+	"type": "javascript", 
+	"id": "redtube",
+	"icon": "logo.png"
+}
