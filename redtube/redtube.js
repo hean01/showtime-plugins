@@ -205,7 +205,7 @@
     }
 
     // Enter Pornstar Directory
-    plugin.addURI(PREFIX + ":pornstar", function(page) {
+    plugin.addURI(PREFIX + ":pornstars", function(page) {
         setPageHeader(page, 'Redtube - Pornstar Directory');
         index_pornstars(page, BASE_URL + '/pornstar');
     });
