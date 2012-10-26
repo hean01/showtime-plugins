@@ -109,9 +109,48 @@
             page.loading = false;
             return;
         };
-
         setPageHeader(page, 'Redtube - Home Page');
         page.loading = false;
+        page.appendItem(PREFIX + ':index:/?', 'directory', {
+            title: 'Newest Videos',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/top?', 'directory', {
+            title: 'Top rated: Weekly',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/top?period=monthly&', 'directory', {
+            title: 'Top rated: Monthly',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/top?period=alltime&', 'directory', {
+            title: 'Top rated: All time',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostviewed?', 'directory', {
+            title: 'Most Viewed: Weekly',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostviewed?period=monthly&', 'directory', {
+            title: 'Most Viewed: Monthly',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostviewed?period=alltime&', 'directory', {
+            title: 'Most Viewed: All time',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostfavored?', 'directory', {
+            title: 'Most Favored: Weekly',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostfavored?period=monthly&', 'directory', {
+            title: 'Most Favored: Monthly',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostfavored?period=alltime&', 'directory', {
+            title: 'Most Favored: All time',
+            icon: logo
+        });
         page.appendItem(PREFIX + ':categories', 'directory', {
             title: 'Categories',
             icon: logo
@@ -138,20 +177,21 @@
         var offset = 0;
         if (page.metadata) var title = page.metadata.title;
         var response = showtime.httpGet(url).toString();
+
         function loader() {
-	    var items = 0;
+            var items = 0;
             var re = /class="pornStar">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?class="videosCount">([\d^\s]+)\s/g;
             var match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ":category:" + escape(match[1]) + ":" + escape(match[2]), "video", {
+                page.appendItem(PREFIX + ":category:" + escape(match[1]), "video", {
                     title: new showtime.RichText(match[2] + '<font color="6699CC"> (' + match[4] + ')</font>'),
                     icon: match[3]
                 });
                 offset++;
-		items++;
-		if (items > 50) {
-			break;			
-		};
+                items++;
+                if (items > 50) {
+                    break;
+                };
                 match = re.exec(response);
             }
 
@@ -169,20 +209,21 @@
     }
 
     function index(page, url) {
+        setPageHeader(page, '');
         var offset = 0;
-        if (page.metadata) var title = page.metadata.title;
+
         function loader() {
             var p = Math.floor(1 + (offset / 50));
-            var response = showtime.httpGet(url + "?page=" + p).toString();
-	    var re = /><b>Next<\/b>/;
+            var response = showtime.httpGet(url + "page=" + p).toString();
+            var re = /><b>Next<\/b>/;
             if ((offset > 0) && (!re.exec(response))) return false;
-            re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?class="d">([^\<]+)[\S\s]*?;">[\S\s]*?([0-9^\<].*)[\S\s]*?;">[\S\s]*?([0-9].*)\sviews/g;
+            re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?class="d">([^\<]+)[\S\s]*?;">[\S\s]*?([0-9^\<].*)[\S\s]*?;">[\S\s]*?([0-9].*)\s/g;
             var match = re.exec(response);
             while (match) {
                 page.appendItem(PREFIX + ":play:" + escape(match[1]) + ":" + escape(match[2]), "video", {
                     title: new showtime.RichText(match[2] + '<font color="6699CC"> (' + match[4] + ')</font>'),
                     icon: match[3],
-                    description: new showtime.RichText('<font color="6699CC">Views: </font>' + match[6]),
+                    description: new showtime.RichText(match[6]),
                     genre: 'Adult',
                     duration: match[4],
                     rating: +(match[5]) * 20
@@ -191,13 +232,10 @@
                 offset++;
             }
 
-            re = /categoryHeading">[\S\s^]*?([\d].*)\)/;
+            re = /categoryHeading">([\S\s]*?)\</;
             match = re.exec(response);
-            if (match) {
-                page.entries = match[1].replace(",", "");
-                if (page.metadata) page.metadata.title = title + " - found (" + match[1].replace(",", "") + ") videos"
-            }
-            return offset < page.entries;
+            if (match) if (page.metadata) page.metadata.title = match[1];
+            return true;
         }
         loader();
         page.loading = false;
@@ -208,13 +246,6 @@
     plugin.addURI(PREFIX + ":pornstars", function(page) {
         setPageHeader(page, 'Redtube - Pornstar Directory');
         index_pornstars(page, BASE_URL + '/pornstar');
-    });
-
-
-    // Enter category
-    plugin.addURI(PREFIX + ":category:(.*):(.*)", function(page, uri, name) {
-        setPageHeader(page, unescape(name));
-        index(page, BASE_URL + uri);
     });
 
     plugin.addURI(PREFIX + ":categoriesAPI", function(page) {
@@ -242,12 +273,39 @@
         var re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?numberVideos">[\S\s]*?([0-9].*)\sVideos/g;
         var match = re.exec(response);
         while (match) {
-            page.appendItem(PREFIX + ":category:" + match[1] + ":" + escape(match[2]), "video", {
-                title: new showtime.RichText(match[2] + '<font color="6699CC"> (</font>' + match[4].replace(',', '') + '<font color="6699CC">)</font>'),
+            page.appendItem(PREFIX + ":sorting:" + match[1] + ":" + match[2], "video", {
+                title: new showtime.RichText(match[2] + '<font color="6699CC"> (' + match[4].replace(',', '') + ')</font>'),
                 icon: match[3]
             });
             match = re.exec(response);
         }
+    });
+
+    // For sorting selected category
+    plugin.addURI(PREFIX + ":sorting:(.*):(.*)", function(page, uri, name) {
+        setPageHeader(page, 'Redtube - ' + name);
+        page.loading = false;
+        page.appendItem(PREFIX + ':index:' + uri + '&', 'directory', {
+            title: "Newest Videos",
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:' + uri + '?sorting=rating&', 'directory', {
+            title: "Top rated",
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:' + uri + '?sorting=mostviewed&', 'directory', {
+            title: "Most Viewed",
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:' + uri + '?sorting=mostfavored&', 'directory', {
+            title: "Most Favored",
+            icon: logo
+        });
+    });
+
+    // Index page at URL
+    plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
+        index(page, BASE_URL + url);
     });
 
     plugin.addURI(PREFIX + ":tags", function(page) {
