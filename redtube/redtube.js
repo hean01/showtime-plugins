@@ -163,10 +163,31 @@
             title: 'Tags',
             icon: logo
         });
-        page.appendItem(PREFIX + ':pornstars', 'directory', {
-            title: 'Pornstar Directory',
+        page.appendItem(PREFIX + ':index_stars:/pornstar', 'directory', {
+            title: 'Pornstar Directory (Female by Alphabet)',
             icon: logo
         });
+        page.appendItem(PREFIX + ':index_stars:/pornstar/videocount', 'directory', {
+            title: 'Pornstar Directory (Female by Videocount)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index_stars:/pornstar/male', 'directory', {
+            title: 'Pornstar Directory (Male by Alphabet)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index_stars:/pornstar/videocount/male', 'directory', {
+            title: 'Pornstar Directory (Male by Videocount)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index_stars:/pornstar/all', 'directory', {
+            title: 'Pornstar Directory (All by Alphabet)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index_stars:/pornstar/videocount/all', 'directory', {
+            title: 'Pornstar Directory (All by Videocount)',
+            icon: logo
+        });
+
         page.appendItem(PREFIX + ':stars', 'directory', {
             title: 'Stars',
             icon: logo
@@ -174,6 +195,7 @@
     };
 
     function index_pornstars(page, url) {
+        setPageHeader(page, 'Redtube - Pornstar Directory');
         var offset = 0;
         if (page.metadata) var title = page.metadata.title;
         var response = showtime.httpGet(url).toString();
@@ -183,7 +205,7 @@
             var re = /class="pornStar">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?class="videosCount">([\d^\s]+)\s/g;
             var match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ":category:" + escape(match[1]), "video", {
+                page.appendItem(PREFIX + ":index:" + match[1] + '?', "video", {
                     title: new showtime.RichText(match[2] + '<font color="6699CC"> (' + match[4] + ')</font>'),
                     icon: match[3]
                 });
@@ -211,14 +233,15 @@
     function index(page, url) {
         setPageHeader(page, '');
         var offset = 0;
+        var p = 1;
 
         function loader() {
-            var p = Math.floor(1 + (offset / 50));
             var response = showtime.httpGet(url + "page=" + p).toString();
-            var re = /><b>Next<\/b>/;
-            if ((offset > 0) && (!re.exec(response))) return false;
-            re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?class="d">([^\<]+)[\S\s]*?;">[\S\s]*?([0-9^\<].*)[\S\s]*?;">[\S\s]*?([0-9].*)\s/g;
+            var re = /categoryHeading">([\S\s]*?)\</;
             var match = re.exec(response);
+            if (match) if (page.metadata) page.metadata.title = match[1];
+            re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?class="d">([^\<]+)[\S\s]*?;">[\S\s]*?([0-9^\<].*)[\S\s]*?;">[\S\s]*?([0-9].*)\s/g;
+            match = re.exec(response);
             while (match) {
                 page.appendItem(PREFIX + ":play:" + escape(match[1]) + ":" + escape(match[2]), "video", {
                     title: new showtime.RichText(match[2] + '<font color="6699CC"> (' + match[4] + ')</font>'),
@@ -229,24 +252,19 @@
                     rating: +(match[5]) * 20
                 });
                 match = re.exec(response);
-                offset++;
             }
-
-            re = /categoryHeading">([\S\s]*?)\</;
-            match = re.exec(response);
-            if (match) if (page.metadata) page.metadata.title = match[1];
-            return true;
+            p++;
+            var re = /><b>Next<\/b>/;
+            if (!re.exec(response)) {
+                return false
+            } else {
+                return true;
+            }
         }
         loader();
         page.loading = false;
         page.paginator = loader;
     }
-
-    // Enter Pornstar Directory
-    plugin.addURI(PREFIX + ":pornstars", function(page) {
-        setPageHeader(page, 'Redtube - Pornstar Directory');
-        index_pornstars(page, BASE_URL + '/pornstar');
-    });
 
     plugin.addURI(PREFIX + ":categoriesAPI", function(page) {
         setPageHeader(page, 'Redtube - Categories');
@@ -285,7 +303,7 @@
     plugin.addURI(PREFIX + ":sorting:(.*):(.*)", function(page, uri, name) {
         setPageHeader(page, 'Redtube - ' + name);
         page.loading = false;
-        page.appendItem(PREFIX + ':index:' + uri + '&', 'directory', {
+        page.appendItem(PREFIX + ':index:' + uri + '?', 'directory', {
             title: "Newest Videos",
             icon: logo
         });
@@ -306,6 +324,11 @@
     // Index page at URL
     plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
         index(page, BASE_URL + url);
+    });
+
+    // Index Pornstar Directory page
+    plugin.addURI(PREFIX + ":index_stars:(.*)", function(page, url) {
+        index_pornstars(page, BASE_URL + url);
     });
 
     plugin.addURI(PREFIX + ":tags", function(page) {
