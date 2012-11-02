@@ -114,9 +114,9 @@
 
     plugin.addURI(PREFIX + ":play:(.*)", function(page, video_id) {
         page.type = "video";
-	var response = showtime.httpGet(BASE_URL + video_id).toString();
+	var response = showtime.httpGet(BASE_URL + video_id).toString().substring(0, 100000);
         var re = /<title>([\S\s]+)<\/title>[\S\s]*?<div class="b-view-material">[\S\s]*?<a href="([^"]+)/;
-        var m = re.exec(response);
+        var m = re.exec(response); // problem lives here
 	if (!m) {
 		re = /<title>([\S\s]+)<\/title>/;
 		m = re.exec(response);
@@ -127,6 +127,12 @@
 		var title = m[1];
         	re = /playlist: \[[\S\s]*?url: '([^']+)/;
 		m = re.exec(showtime.httpGet(BASE_URL + m[2]).toString());
+	}
+	if (!m) { // get first file from folder
+		re = /class="b-actions-panel b-clear"[\S\s]*?<a href="([^"]+)/;
+		m = re.exec(response);
+		re = /class="filelist m-current"[\S\s]*?" href="([^"]+)/;
+		m = re.exec(showtime.httpGet(BASE_URL + m[1]).toString());
 	}
 
         page.loading = false;
