@@ -47,32 +47,48 @@
     function startPage(page) {
         setPageHeader(page, 'fs.ua - Видео');
         page.loading = false;
-        page.appendItem(PREFIX + ':index:/films/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:/video/films/?sort=rating&view=list', 'directory', {
             title: 'Фильмы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/serials/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:/video/serials/?sort=rating&view=list', 'directory', {
             title: 'Сериалы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/cartoons/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:/video/cartoons/?sort=rating&view=list', 'directory', {
             title: 'Мультфильмы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/cartoonserials/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:/video/cartoonserials/?sort=rating&view=list', 'directory', {
             title: 'Мультсериалы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/tvshow/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:/video/tvshow/?sort=rating&view=list', 'directory', {
             title: 'Телепередачи',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/clips/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:/video/clips/?sort=rating&view=list', 'directory', {
             title: 'Клипы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/concerts/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:/video/concerts/?sort=rating&view=list', 'directory', {
             title: 'Концерты',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/audio/albums/?sort=rating&view=list', 'directory', {
+            title: 'Альбомы',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/audio/singles/?sort=rating&view=list', 'directory', {
+            title: 'Синглы',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/audio/collections/?sort=rating&view=list', 'directory', {
+            title: 'Сборники',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/audio/soundtracks/?sort=rating&view=list', 'directory', {
+            title: 'Саундтреки',
             icon: logo
         });
     };
@@ -125,8 +141,33 @@
 
     // Index page at URL
     plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
-        index(page, BASE_URL + "/video" + url);
+        index(page, BASE_URL + url);
     });
+
+    function getType(type) {
+        switch (type) {
+            case "file mkv":
+            case "file avi":
+            case "file flv":
+            case "file mp4":
+            case "file mov":
+                return "video";
+            case "file jpg":
+            case "file jpeg":
+            case "file png":
+            case "file bmp":
+                return "image";
+            case "file mp3":
+            case "file flac":
+            case "file wav":
+            case "file ogg":
+            case "file aac":
+            case "file m4a":
+                return "audio";
+            default:
+                return "file";
+        }
+    }
 
     plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
         title = unescape(title);
@@ -149,7 +190,7 @@
                 showtime.trace('listFolder: Regexing file item...');
                 var n = re2.exec(m[2]);
                 showtime.trace('listFolder: Done regexing file item...');
-                page.appendItem(n[1], "video", {
+                page.appendItem(n[1], getType(m[1]), {
                     title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
                 });
             } else {
@@ -159,12 +200,12 @@
                     var n = re2.exec(m[2]);
                     showtime.trace('listFolder: Done regexing folder item...');
                     if (n) { // checking for opened folder
-                        re2 = /[\S\s]*?" href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
+                        re2 = /<li class="([^"]+)[\S\s]*?" href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
                         showtime.trace('listFolder: Regexing for opened folder item...');
                         n = re2.exec(m[2]);
                         showtime.trace('listFolder: Done regexing for opened folder item...');
-                        page.appendItem(n[1], "video", {
-                            title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
+                        page.appendItem(n[2], getType(n[1]), {
+                            title: new showtime.RichText(n[3] + '<font color="6699CC"> (' + n[4] + ')</font>')
                         });
                     } else {
                         var re2 = /<a href="([^"]+)[\S\s]*?" rel="[\S\s]*?">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
