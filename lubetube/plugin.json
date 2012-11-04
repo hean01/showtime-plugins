@@ -4,9 +4,9 @@
 	"homepage": "https://github.com/hean01/showtime-plugin-lubetube", 
 	"title": "LubeTube", 
 	"synopsis": "The you tube of porn, Free Porn Movies updated daily!", 
-	"version": "0.5", 
+	"version": "0.51", 
 	"file": "lubetube.js", 
-	"showtimeVersion": "4.1.204", 
+	"showtimeVersion": "4.1.215", 
 	"type": "javascript", 
 	"id": "lubetube", 
 	"icon": "lubetube.png"

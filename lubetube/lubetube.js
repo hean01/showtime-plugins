@@ -147,6 +147,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
+	    canonicalUrl: PREFIX + "play:" + url + ":" + title,
             sources: [{
                 url: videolink(unescape(url))
             }]
