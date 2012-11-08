@@ -149,7 +149,7 @@
                 showtime.trace('listFolder: Regexing file item...');
                 var n = re2.exec(m[2]);
                 showtime.trace('listFolder: Done regexing file item...');
-                page.appendItem(n[1], "file", {
+                page.appendItem(n[1], "video", {
                     title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
                 });
             } else {
@@ -163,7 +163,7 @@
                         showtime.trace('listFolder: Regexing for opened folder item...');
                         n = re2.exec(m[2]);
                         showtime.trace('listFolder: Done regexing for opened folder item...');
-                        page.appendItem(n[1], "file", {
+                        page.appendItem(n[1], "video", {
                             title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
                         });
                     } else {
