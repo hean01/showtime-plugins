@@ -4,8 +4,8 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "FS.UA",
 	"synopsis": "FS.UA: Рекомендательная медиа сеть",
-	"version": "0.5", "file": "fs_ua.js",
-	"showtimeVersion": "4.1.215",
+	"version": "0.6", "file": "fs_ua.js",
+	"showtimeVersion": "4.1.273",
 	"type": "javascript", 
 	"id": "fs.ua",
 	"icon": "logo.png"

@@ -151,6 +151,11 @@
             case "file flv":
             case "file mp4":
             case "file mov":
+            case "file ts":
+            case "file mpg":
+            case "file mpeg":
+            case "file vob":
+            case "file iso":
                 return "video";
             case "file jpg":
             case "file jpeg":
@@ -163,6 +168,7 @@
             case "file ogg":
             case "file aac":
             case "file m4a":
+            case "file ape":
                 return "audio";
             default:
                 return "file";
@@ -180,19 +186,26 @@
         response = re.exec(response)[1]; // tagged list will live here
         showtime.trace('listFolder: Done regexing filelist...');
         re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
-        showtime.trace('listFolder: Regexing folder/file item list...');
         var m = re.exec(response); // parsed list will live here
         showtime.trace('listFolder: Done regexing folder/file item list...');
         while (m) {
             if (m[1].substring(0, 4) == "file") {
-                // 1 - type, 2 - link, 3 - name, 4 - size
-                var re2 = /[\S\s]*?href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
-                showtime.trace('listFolder: Regexing file item...');
+                // 1 - link, 2 - name, 3 - size, 4 - raw flv link
+                var re2 = /[\S\s]*?href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>([\S\s]*?)<\/tr>/;
+                showtime.trace('listFolder: Regexing the file item...');
                 var n = re2.exec(m[2]);
-                showtime.trace('listFolder: Done regexing file item...');
-                page.appendItem(n[1], getType(m[1]), {
+                showtime.trace('listFolder: Done regexing the file item...');
+                var re3 = /[\S\s]*?<a href="([^"]+)/;
+                showtime.trace('listFolder: Regexing flv link of the file item...');
+                var l = re3.exec(n[4]);
+                showtime.trace('listFolder: Done regexing flv link of the file item...');
+
+                var playURI = n[1];
+                if (l) playURI = PREFIX + ":play:" + l[1] + ":" + escape(playURI) + ":" + escape(n[2]);
+
+                page.appendItem(playURI, getType(m[1]), {
                     title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
-                });
+                })
             } else {
                 if (m[1] == "folder") {
                     var re2 = /<li class="([^"]+)[\S\s]*?href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
@@ -301,8 +314,21 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":play:(.*)", function(page, url) {
+    plugin.addURI(PREFIX + ":play:(.*):(.*):(.*)", function(page, url, url2, title2) {
         page.type = "video";
+
+        if (showtime.probe(unescape(url2)).result == 0) {
+            page.source = "videoparams:" + showtime.JSONEncode({
+                title: unescape(title2),
+                canonicalUrl: PREFIX + ":play:" + url + ":" + url2 + ":" + title2,
+                sources: [{
+                    url: unescape(url2)
+                }]
+            });
+            page.loading = false;
+            return;
+        }
+
         showtime.trace("play: Trying to httpGet: " + BASE_URL + url);
         var response = showtime.httpGet(BASE_URL + url).toString();
         showtime.trace("play: Got response from httpGet: " + BASE_URL + url);
