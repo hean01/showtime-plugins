@@ -316,7 +316,6 @@
 
     plugin.addURI(PREFIX + ":play:(.*):(.*):(.*)", function(page, url, url2, title2) {
         page.type = "video";
-
         if (showtime.probe(unescape(url2)).result == 0) {
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: unescape(title2),
@@ -370,6 +369,9 @@
             showtime.trace("play: Done trying regexing httpGet: " + BASE_URL + m[1]);
         }
         showtime.trace("play: Trying to play the link: " + m[1]);
+	if (title) {
+		title=unescape(title2);
+	}
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             canonicalUrl: PREFIX + ":play:" + url,
@@ -392,11 +394,11 @@
             var re = /class="selected">([\S\s]*?)\</;
             var match = re.exec(response);
             if (match) if (page.metadata) page.metadata.title = match[1];
-            //1-link 2-img 3-title 4-date 5-description
+            //1-link 2-title 3-image 
             re = /class="image-wrap">[\S\s]*?\<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)/g;
             match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ":play:" + escape(match[1]), "video", {
+                page.appendItem(PREFIX + ":listRoot:" + escape(match[1])+":"+escape(match[2]), "video", {
                     title: new showtime.RichText(match[2]),
                     icon: match[3]
                 });
