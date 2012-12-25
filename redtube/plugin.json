@@ -4,8 +4,8 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Redtube",
 	"synopsis": "Redtube: Video Sharing service",
-	"version": "1.31", "file": "redtube.js",
-	"showtimeVersion": "4.1.204",
+	"version": "1.32", "file": "redtube.js",
+	"showtimeVersion": "4.1.273",
 	"type": "javascript", 
 	"id": "redtube",
 	"icon": "logo.png"

@@ -446,7 +446,12 @@
     plugin.addURI(PREFIX + ":play:(.*):(.*)", function(page, video_id, title) {
         page.loading = false;
         var re = /flv_h264_url=(.*?)&/;
-        var m = re.exec(showtime.httpGet("http://www.redtube.com/" + video_id).toString());
+        var re2 = /flv_url=(.*?)&/;
+	var st = showtime.httpGet("http://www.redtube.com/" + video_id).toString();
+        var m = re.exec(st);
+	if (showtime.probe(unescape(m[1])).result != 0) {
+		m = re2.exec(st);
+	}
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
