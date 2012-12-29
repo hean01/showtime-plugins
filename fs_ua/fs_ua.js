@@ -24,6 +24,8 @@
 
     var logo = plugin.path + "logo.png";
 
+    var static2dynamic={};
+
     function setPageHeader(page, title) {
         if (page.metadata) {
             page.metadata.title = title;
@@ -199,13 +201,16 @@
                 showtime.trace('listFolder: Regexing flv link of the file item...');
                 var l = re3.exec(n[4]);
                 showtime.trace('listFolder: Done regexing flv link of the file item...');
-
-                var playURI = n[1];
-                if (l) playURI = PREFIX + ":play:" + l[1] + ":" + escape(playURI) + ":" + escape(n[2]);
-
-                page.appendItem(playURI, getType(m[1]), {
-                    title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
-                })
+		if (l) static2dynamic[n[1]] = l[1];
+		if (getType(m[1]) == "video") {
+                	page.appendItem(PREFIX + ":play:" + n[1], getType(m[1]), {
+                    		title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
+               		})
+		} else {
+                	page.appendItem(n[1], getType(m[1]), {
+				title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
+               		})
+		}
             } else {
                 if (m[1] == "folder") {
                     var re2 = /<li class="([^"]+)[\S\s]*?href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
@@ -314,19 +319,20 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":play:(.*):(.*):(.*)", function(page, url, url2, title2) {
+    plugin.addURI(PREFIX + ":play:(.*)", function(page, url) {
         page.type = "video";
-        if (showtime.probe(unescape(url2)).result == 0) {
+        if (showtime.probe(url).result == 0) {
             page.source = "videoparams:" + showtime.JSONEncode({
-                title: unescape(title2),
-                canonicalUrl: PREFIX + ":play:" + url + ":" + url2 + ":" + title2,
+                canonicalUrl: PREFIX + ":play:" + url,
                 sources: [{
-                    url: unescape(url2)
+                    url: url
                 }]
             });
             page.loading = false;
             return;
         }
+	var origURL = url;
+	if (static2dynamic[url]) url = static2dynamic[url];
 
         showtime.trace("play: Trying to httpGet: " + BASE_URL + url);
         var response = showtime.httpGet(BASE_URL + url).toString();
@@ -369,12 +375,9 @@
             showtime.trace("play: Done trying regexing httpGet: " + BASE_URL + m[1]);
         }
         showtime.trace("play: Trying to play the link: " + m[1]);
-	if (title) {
-		title=unescape(title2);
-	}
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            canonicalUrl: PREFIX + ":play:" + url,
+            canonicalUrl: PREFIX + ":play:" + origURL,
             sources: [{
                 url: m[1]
             }]
