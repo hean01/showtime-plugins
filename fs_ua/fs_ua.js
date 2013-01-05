@@ -24,7 +24,8 @@
 
     var logo = plugin.path + "logo.png";
 
-    var static2dynamic={};
+    var sURL={};
+    var sTitle={};
 
     function setPageHeader(page, title) {
         if (page.metadata) {
@@ -49,6 +50,10 @@
     function startPage(page) {
         setPageHeader(page, 'fs.ua - Видео');
         page.loading = false;
+        page.appendItem(PREFIX + ':updates', 'directory', {
+            title: 'Новое в каталоге',
+            icon: logo
+        });
         page.appendItem(PREFIX + ':index:/video/films/?sort=rating&view=list', 'directory', {
             title: 'Фильмы',
             icon: logo
@@ -93,7 +98,92 @@
             title: 'Саундтреки',
             icon: logo
         });
+        page.appendItem(PREFIX + ':index:/games/traditional/?sort=rating&view=list', 'directory', {
+            title: 'Игры традиционные',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/games/online/?sort=rating&view=list', 'directory', {
+            title: 'Игры онлан',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/games/casual/?sort=rating&view=list', 'directory', {
+            title: 'Игры казуальные',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/texts/fiction/?sort=rating&view=list', 'directory', {
+            title: 'Литература художественная',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/texts/other/?sort=rating&view=list', 'directory', {
+            title: 'Литература прикладная',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/texts/journals/?sort=rating&view=list', 'directory', {
+            title: 'Литература журналы',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/texts/comix/?sort=rating&view=list', 'directory', {
+            title: 'Литература комиксы',
+            icon: logo
+        });
     };
+
+    function getFontColor(type) {
+        switch (type) {
+            case "Видео":
+                return '"6699CC"';
+            case "Аудио":
+                return '"FF0000"';
+            case "Игры":
+                return '"92CD00"';
+            case "Литература":
+                return '"FFDE00"';
+            default:
+                return '"6699CC"';
+        }
+    }
+
+    // Show what's new page
+    plugin.addURI(PREFIX + ":updates", function(page) {
+        setPageHeader(page, '');
+	if (page.metadata) page.metadata.title = "Новое в каталоге";
+        var p = 0;
+	var url = BASE_URL + "/updates.aspx?page=";
+
+        function loader() {
+            showtime.trace('updates: Trying to httpGet: ' + url + p);
+            var response = showtime.httpGet(url + p);
+            showtime.trace("updates: Got response from httpGet: " + url + p);
+
+            //1-type 2-link 3-title 4-date 5-time
+            var re = /class="m-themed">([^\<]+)[\S\s]*?a href="([^"]+)" class="item-link">([^\<]+)[\S\s]*?class="col-date"[\S\s]*?\>([^\<]+)[\S\s]*?class="col-time">([^\<]+)/g;
+            showtime.trace('updates: Regexing the classes...');
+            var match = re.exec(response);
+            showtime.trace('updates: Done regexing the classes...');
+            while (match) {
+                page.appendItem(PREFIX + ":listRoot:" + escape(match[2]) + ":" + escape(match[3]), "directory", {
+                    title: new showtime.RichText(match[3] + '<font color=' + getFontColor(match[1])+ '> (' + match[1] + ')</font> '+ match[4] + ' ' + match[5])
+                });
+                showtime.trace('updates: Regexing an item inside of the loop...');
+                match = re.exec(response);
+                showtime.trace('updates: Done regexing the item inside of the loop...');
+            }
+            p++;
+            var re = /<b>Следующая страница<\/b>/;
+            showtime.trace('updates: Trying to check if the page is last...');
+            if (!re.exec(response)) {
+                showtime.trace('updates: This is the last page...');
+                return false
+            } else {
+                showtime.trace('updates: This is not the last page...');
+                return true;
+            }
+        }
+        loader();
+        page.loading = false;
+        page.paginator = loader;
+        showtime.trace('updates: PAGE IS LOADED...');
+    });
 
     function index(page, url) {
         setPageHeader(page, '');
@@ -128,10 +218,10 @@
             var re = /<b>Следующая страница<\/b>/;
             showtime.trace('index: Trying to check if the page is last...');
             if (!re.exec(response)) {
-                showtime.trace('index: This is a last page...');
+                showtime.trace('index: This is the last page...');
                 return false
             } else {
-                showtime.trace('index: This is not last page...');
+                showtime.trace('index: This is not the last page...');
                 return true;
             }
         }
@@ -201,8 +291,9 @@
                 showtime.trace('listFolder: Regexing flv link of the file item...');
                 var l = re3.exec(n[4]);
                 showtime.trace('listFolder: Done regexing flv link of the file item...');
-		if (l) static2dynamic[n[1]] = l[1];
+		if (l) sURL[n[1]] = l[1];
 		if (getType(m[1]) == "video") {
+			sTitle[n[1]]=unescape(n[2]);
                 	page.appendItem(PREFIX + ":play:" + n[1], getType(m[1]), {
                     		title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
                		})
@@ -323,6 +414,7 @@
         page.type = "video";
         if (showtime.probe(url).result == 0) {
             page.source = "videoparams:" + showtime.JSONEncode({
+		title: sTitle[url],
                 canonicalUrl: PREFIX + ":play:" + url,
                 sources: [{
                     url: url
@@ -332,7 +424,7 @@
             return;
         }
 	var origURL = url;
-	if (static2dynamic[url]) url = static2dynamic[url];
+	if (sURL[url]) url = sURL[url];
 
         showtime.trace("play: Trying to httpGet: " + BASE_URL + url);
         var response = showtime.httpGet(BASE_URL + url).toString();
