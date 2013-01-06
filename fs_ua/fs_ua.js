@@ -1,7 +1,7 @@
 /**
- * Redtube plugin for Showtime
+ * FS.UA plugin for Showtime
  *
- *  Copyright (C) 2012 lprot
+ *  Copyright (C) 2013 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 (function(plugin) {
@@ -24,8 +24,8 @@
 
     var logo = plugin.path + "logo.png";
 
-    var sURL={};
-    var sTitle={};
+    var sURL = {};
+    var sTitle = {};
 
     function setPageHeader(page, title) {
         if (page.metadata) {
@@ -103,7 +103,7 @@
             icon: logo
         });
         page.appendItem(PREFIX + ':index:/games/online/?sort=rating&view=list', 'directory', {
-            title: 'Игры онлан',
+            title: 'Игры онлайн',
             icon: logo
         });
         page.appendItem(PREFIX + ':index:/games/casual/?sort=rating&view=list', 'directory', {
@@ -131,24 +131,24 @@
     function getFontColor(type) {
         switch (type) {
             case "Видео":
-                return '"6699CC"';
+                return '"FFDE00"';
             case "Аудио":
                 return '"FF0000"';
             case "Игры":
                 return '"92CD00"';
             case "Литература":
-                return '"FFDE00"';
-            default:
                 return '"6699CC"';
+            default:
+                return '"FFDE00"';
         }
     }
 
     // Show what's new page
     plugin.addURI(PREFIX + ":updates", function(page) {
         setPageHeader(page, '');
-	if (page.metadata) page.metadata.title = "Новое в каталоге";
+        if (page.metadata) page.metadata.title = "Новое в каталоге";
         var p = 0;
-	var url = BASE_URL + "/updates.aspx?page=";
+        var url = BASE_URL + "/updates.aspx?page=";
 
         function loader() {
             showtime.trace('updates: Trying to httpGet: ' + url + p);
@@ -162,7 +162,7 @@
             showtime.trace('updates: Done regexing the classes...');
             while (match) {
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[2]) + ":" + escape(match[3]), "directory", {
-                    title: new showtime.RichText(match[3] + '<font color=' + getFontColor(match[1])+ '> (' + match[1] + ')</font> '+ match[4] + ' ' + match[5])
+                    title: new showtime.RichText(match[3] + '<font color=' + getFontColor(match[1]) + '> (' + match[1] + ')</font> ' + match[4] + ' ' + match[5])
                 });
                 showtime.trace('updates: Regexing an item inside of the loop...');
                 match = re.exec(response);
@@ -185,6 +185,15 @@
         showtime.trace('updates: PAGE IS LOADED...');
     });
 
+    function removeSlashes(str) {
+        str = str.replace(/\\'/g, '\'');
+        str = str.replace(/\\"/g, '"');
+        str = str.replace(/\\0/g, '\0');
+        str = str.replace(/\\\\/g, '\\');
+        return str;
+    }
+
+
     function index(page, url) {
         setPageHeader(page, '');
         var p = 0;
@@ -199,19 +208,32 @@
             showtime.trace('index: Done regexing class="selected"');
             if (match) if (page.metadata) page.metadata.title = match[1];
             //1-link 2-img 3-title 4-date 5-description
-            re = /class="subject-link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt=\'([^\']+)[\S\s]*?class="date">\(([^\)]+)[\S\s]*?class="subject-link m-full">[\S\s]*?\<span>([\S\s]*?)\<\/span>/g;
+            re = /class="subject-link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt=\'([\S\s]*?)'\/>([\S\s]*?)class="subject-link m-full">[\S\s]*?\<span>([\S\s]*?)\<\/span>/g;
             showtime.trace('index: Regexing an item...');
             match = re.exec(response);
             showtime.trace('index: Done regexing the item...');
+            var re2 = /class="date">\(([^\)]+)/;
+            showtime.trace('index: Regexing the date inside of the item...');
+            var match2 = re2.exec(match[4]);
+            showtime.trace('index: Done regexing the date inside of the item...');
+            var date = "";
+            if (match2) date = '<font color="6699CC"> (' + match2[1] + ')</font>';
+
             while (match) {
-                // PREFIX + ":play:" + escape(match[1])
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
-                    title: new showtime.RichText(match[3] + '<font color="6699CC"> (' + match[4] + ')</font>'),
+                    title: new showtime.RichText(removeSlashes(match[3]) + date),
                     icon: match[2],
                     description: new showtime.RichText(match[5])
                 });
                 showtime.trace('index: Regexing an item inside of the loop...');
                 match = re.exec(response);
+                if (match) {
+                    showtime.trace('index: Regexing the date inside of the item inside of the loop...');
+                    match2 = re2.exec(match[4]);
+                    showtime.trace('index: Done regexing the date inside of the item inside of the loop...');
+                    date = "";
+                    if (match2) date = '<font color="6699CC"> (' + match2[1] + ')</font>';
+                }
                 showtime.trace('index: Done regexing the item inside of the loop...');
             }
             p++;
@@ -291,17 +313,17 @@
                 showtime.trace('listFolder: Regexing flv link of the file item...');
                 var l = re3.exec(n[4]);
                 showtime.trace('listFolder: Done regexing flv link of the file item...');
-		if (l) sURL[n[1]] = l[1];
-		if (getType(m[1]) == "video") {
-			sTitle[n[1]]=unescape(n[2]);
-                	page.appendItem(PREFIX + ":play:" + n[1], getType(m[1]), {
-                    		title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
-               		})
-		} else {
-                	page.appendItem(n[1], getType(m[1]), {
-				title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
-               		})
-		}
+                if (l) sURL[n[1]] = l[1];
+                if (getType(m[1]) == "video") {
+                    sTitle[n[1]] = unescape(n[2]);
+                    page.appendItem(PREFIX + ":play:" + n[1], getType(m[1]), {
+                        title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
+                    })
+                } else {
+                    page.appendItem(n[1], getType(m[1]), {
+                        title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
+                    })
+                }
             } else {
                 if (m[1] == "folder") {
                     var re2 = /<li class="([^"]+)[\S\s]*?href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
@@ -414,7 +436,7 @@
         page.type = "video";
         if (showtime.probe(url).result == 0) {
             page.source = "videoparams:" + showtime.JSONEncode({
-		title: sTitle[url],
+                title: sTitle[url],
                 canonicalUrl: PREFIX + ":play:" + url,
                 sources: [{
                     url: url
@@ -423,8 +445,8 @@
             page.loading = false;
             return;
         }
-	var origURL = url;
-	if (sURL[url]) url = sURL[url];
+        var origURL = url;
+        if (sURL[url]) url = sURL[url];
 
         showtime.trace("play: Trying to httpGet: " + BASE_URL + url);
         var response = showtime.httpGet(BASE_URL + url).toString();
@@ -493,7 +515,7 @@
             re = /class="image-wrap">[\S\s]*?\<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)/g;
             match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ":listRoot:" + escape(match[1])+":"+escape(match[2]), "video", {
+                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[2]), "video", {
                     title: new showtime.RichText(match[2]),
                     icon: match[3]
                 });
