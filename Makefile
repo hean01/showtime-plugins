@@ -6,7 +6,9 @@ PLUGINS= \
 	somafm.zip \
 	rad.io.zip \
 	lubetube.zip \
-	redtube.zip
+	redtube.zip \
+	fs_ua.zip \
+	ex_ua.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

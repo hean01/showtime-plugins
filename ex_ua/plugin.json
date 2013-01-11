@@ -1,0 +1,12 @@
+{
+	"description": "<p>EX.UA - server of information exchange<p>For further info, visit <a href=\"http://ex.ua\">http://ex.ua</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "EX.UA",
+	"synopsis": "Express file - server of information exchange",
+	"version": "0.1", "file": "ex_ua.js",
+	"showtimeVersion": "4.1.393",
+	"type": "javascript", 
+	"id": "ex.ua",
+	"icon": "logo.png"
+}
