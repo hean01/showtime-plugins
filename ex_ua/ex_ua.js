@@ -88,7 +88,7 @@
 
     // Play megogo links
     plugin.addURI(PREFIX + ":playmego:(.*)", function(page, url) {
-        var re = /[\S\s]*?([\d+^\?]+)/gi;
+        var re = /[\S\s]*?([\d+^\?]+)/i;
         var match = re.exec(url);
         var sign = showtime.md5digest('video=' + match[1] + '1e5774f77adb843c');
         sign = showtime.httpGet('http://megogo.net/p/info?' + 'video=' + match[1] + '&sign=' + sign + '_samsungtv');
@@ -104,6 +104,41 @@
         page.loading = false;
     });
 
+    function getType(type) {
+	type = type.toLowerCase();
+        switch (type) {
+            case "mkv":
+            case "avi":
+            case "flv":
+            case "mp4":
+            case "mov":
+            case "ts":
+            case "mpg":
+            case "mpeg":
+            case "vob":
+            case "iso":
+                return "video";
+            case "jpg":
+            case "jpeg":
+            case "png":
+            case "bmp":
+                return "image";
+            case "mp3":
+            case "flac":
+            case "wav":
+            case "ogg":
+            case "aac":
+            case "m4a":
+            case "ape":
+	    case "dts":
+	    case "ac3":
+                return "audio";
+            default:
+                return "file";
+        }
+    }
+
+
     // Index page at URL
     plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
         function loader() {
@@ -112,7 +147,7 @@
                 'Cookie': 'ulang=' + service.lang
             });
             var re = /<title>([\S\s]*?)<\/title>/;
-            setPageHeader(page, re.exec(response)[1]);
+            setPageHeader(page, showtime.entityDecode(re.exec(response)[1]));
 
             re = /valign=center><a href='([\S\s]*?)'>([\S\s]*?)<b>([\S\s]*?)<\/b><\/a><.*?>([\S\s]*?)>\&nbsp\;/g;
             // 1 = link, 2 = raw image link or empty field, 3 = title, 4 = additional info
@@ -124,8 +159,8 @@
                 match = re.exec(response);
                 if (match) {
                     page.appendItem(PREFIX + ":playmego:" + match[1], "video", {
-                        title: new showtime.RichText(page.metadata.title), //new showtime.RichText(match[3] + (match[4] ? ('<font color="6699CC"> (' + (match[4]) + ')</font>') : "")),
-                        icon: icon
+                        title: new showtime.RichText(page.metadata.title),
+                        icon: logo
                     });
                     url = 0;
                     return false;
@@ -136,12 +171,18 @@
                 match = re.exec(response);
                 if (match) {
                     while (match) {
-                        var icon = logo;
-                        page.appendItem(BASE_URL + match[1], "video", {
-                            title: new showtime.RichText(match[2]),
-                            icon: icon
-                        });
-                        page.entries++;
+			var v = "videoparams:" + showtime.JSONEncode({
+				sources: [{
+					url: BASE_URL + match[1]
+				}],
+				  title: showtime.entityDecode(match[2])
+				});
+			if (getType(match[2].split('.').pop()) != "video") v = BASE_URL + match[1];
+			page.appendItem(v, getType(match[2].split('.').pop()), {
+   				title: showtime.entityDecode(match[2]),
+   				icon: logo
+			});
+                        //page.entries++;
                         match = re.exec(response);
                     }
                     url = 0;
@@ -171,12 +212,9 @@
             }
             var re = /alt='перейти на следующую страницу[\S\s]*?<a href='([^']+)/;
             url = re.exec(response);
-            if (!url) {
-                return false
-            } else {
-                url = url[1];
-                return true;
-            }
+            if (!url) return false;
+            url = url[1];
+            return true;
         }
         loader();
         page.loading = false;
@@ -190,8 +228,8 @@
     function(page, query) {
         try {
             var url = BASE_URL + "/search?s=" + query.replace(/\s/g, '\+');
+
             function loader() {
-                if (!url) return false;
                 var response = showtime.httpGet(url, "", {
                     'Cookie': 'ulang=' + service.lang
                 });
@@ -221,6 +259,5 @@
             showtime.trace('EX.UA - Search error: ' + err)
         }
     });
-
 })(this);
 
