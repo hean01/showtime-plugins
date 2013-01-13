@@ -91,8 +91,12 @@
         var re = /[\S\s]*?([\d+^\?]+)/i;
         var match = re.exec(url);
         var sign = showtime.md5digest('video=' + match[1] + '1e5774f77adb843c');
-        sign = showtime.httpGet('http://megogo.net/p/info?' + 'video=' + match[1] + '&sign=' + sign + '_samsungtv');
-        sign = showtime.JSONDecode(sign);
+        sign = showtime.JSONDecode(showtime.httpGet('http://megogo.net/p/info?video=' + match[1] + '&sign=' + sign + '_samsungtv'));
+	if (!sign.src) {
+		page.loading=false;
+		showtime.message("Error: This video is not available in your region :(", true, false);
+		return;
+	}
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(sign.title),
@@ -138,7 +142,6 @@
         }
     }
 
-
     // Index page at URL
     plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
         function loader() {
@@ -154,19 +157,36 @@
             var match = re.exec(response);
             if (!match) {
                 // check if that is megogo page
-                // TODO: add appendItem items fill code
                 re = /class="button">[\S\s]*?<a href="([^\?]+)/;
                 match = re.exec(response);
                 if (match) {
+		    var re = /[\S\s]*?([\d+^\?]+)/i;
+        	    var videoID = re.exec(match[1])[1];
+        	    var sign = showtime.md5digest('video=' + videoID + 'megogosign123');
+        	    sign = showtime.JSONDecode(showtime.httpGet('http://megogo.net/p/video?video=' + videoID + '&sign=' + sign));
                     page.appendItem(PREFIX + ":playmego:" + match[1], "video", {
                         title: new showtime.RichText(page.metadata.title),
-                        icon: logo
+                        icon: 'http://megogo.net' + unescape(sign.video[0].image.big),
+			year: +parseInt(sign.video[0].year),
+			genre: unescape(sign.video[0].genre_list[0].title),
+			rating: sign.video[0].rating_imdb * 10,
+			duration: +parseInt(sign.video[0].duration),
+			description: unescape(sign.video[0].description)
                     });
                     url = 0;
                     return false;
                 }
                 // Scraping the page as a folder
-                // 1 - link, 2 - title
+		re = /valign=top>[\S\s]*?<img src='([^\']+)[\S\s]*?<\/small>([\S\s]*?)\&nbsp\;/;
+                match = re.exec(response);
+		if (match) {
+			page.appendPassiveItem("video",  "", {
+  				title: page.metadata.title,
+   				icon: match[1],
+				description: new showtime.RichText(match[2].replace(/(\r\n|\n|\r)/gm,""))
+			});
+		};
+                // 1 - link, 2 - title		
                 re = /i_disk.jpg[\S\s]*?<a href='([^\']+)' title='([\S\s]*?)'/g;
                 match = re.exec(response);
                 if (match) {
@@ -182,7 +202,6 @@
    				title: showtime.entityDecode(match[2]),
    				icon: logo
 			});
-                        //page.entries++;
                         match = re.exec(response);
                     }
                     url = 0;
