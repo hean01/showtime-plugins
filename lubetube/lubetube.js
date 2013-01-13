@@ -56,7 +56,6 @@
                 page.entries = match[1];
                 page.metadata.title = title + " (" + match[1] + ")"
             }
-            //showtime.trace("LubeTube loader: offeset " + offset + " page.entries " + page.entries);
             return offset < page.entries;
         }
         loader();
@@ -64,12 +63,12 @@
         page.paginator = loader;
     }
 
-    function indexVideos(page, url) {
+    function indexVideos(page, uri) {
         var offset = 0;
 
         function loader() {
             var p = Math.floor(1 + (offset / 50));
-            var response = showtime.httpGet(url + "page=" + p).toString();
+            var response = showtime.httpGet(BASE_URL + uri + "page=" + p).toString();
             var re = /">next<\/a>/;
             if ((offset > 0) && (!re.exec(response))) return false;
             re = /" href="(http:\/\/lubetube.com\/video\/([^"]+))" title="([^"]+)"><img src="([^"]+)[\S\s]*?<span class="length">Length: ([^\<]+)<[\S\s]*?<span class="views">Views: ([^\<]+)<[\S\s]*?<span class="rating" style="width:([^\%]+)\%/g;
@@ -100,7 +99,7 @@
         function loader() {
             var p = Math.floor(1 + (offset / 50));
             var response = showtime.httpGet(url + "&page=" + p).toString();
-            var re = /<a class="frame" href="(http:\/\/lubetube.com\/video\/([^"]+))" title="([^"]+)"><\/a><img src="([^"]+)[\S\s]*?<span class="length">Length: ([^\<]+)<[\S\s]*?<span class="views">Views: ([^\<]+)<[\S\s]*?<span class="rating" style="width:([^\%]+)\%/g;
+            var re = /<a class="frame" href="(http:\/\/lubetube.com\/video\/([^"]+))" title="([^"]+)"><img src="([^"]+)[\S\s]*?<span class="length">Length: ([^\<]+)<[\S\s]*?<span class="views">Views: ([^\<]+)<[\S\s]*?<span class="rating" style="width:([^\%]+)\%/g;
             var match = re.exec(response);
             while (match) {
                 page.appendItem(PREFIX + "play:" + escape(match[1]) + ":" + escape(match[3]), "video", {
@@ -121,7 +120,6 @@
                 page.entries = match[1];
                 if (page.metadata) page.metadata.title = title + " - found (" + match[1] + ") videos"
             }
-            //showtime.trace("LubeTube loader: offeset " + offset + " page.entries " + page.entries);
             return offset < page.entries;
         }
         loader();
@@ -154,6 +152,28 @@
         });
     });
 
+    // Sorting selected category
+    plugin.addURI(PREFIX + "sorting:(.*):(.*)", function(page, name, uri) {
+        setPageHeader(page, 'Lubetube - ' + name);
+        page.loading = false;
+        page.appendItem(PREFIX + 'category:' + name + ":" + uri, 'directory', {
+            title: "Newest",
+            icon: logo
+        });
+        page.appendItem(PREFIX + 'category:' + name + ":" + uri.replace("adddate", "rate"), 'directory', {
+            title: "Highest rated",
+            icon: logo
+        });
+        page.appendItem(PREFIX + 'category:' + name + ":" + uri.replace("adddate", "viewnum"), 'directory', {
+            title: "Most Viewed",
+            icon: logo
+        });
+        page.appendItem(PREFIX + 'category:' + name + ":" + uri.replace("adddate", "title"), 'directory', {
+            title: "By Title",
+            icon: logo
+        });
+    });
+
     // Enter category
     plugin.addURI(PREFIX + "category:(.*):(.*)", function(page, name, uri) {
         setPageHeader(page, name);
@@ -163,7 +183,7 @@
     // Pornstar page
     plugin.addURI(PREFIX + "pornstar:(.*):(.*)", function(page, uri, name) {
         setPageHeader(page, 'Lubetube - ' + name);
-        indexVideos(page, BASE_URL + uri + "?");
+        indexVideos(page, uri + "?");
     });
 
     // Pornstars page
@@ -172,21 +192,23 @@
         indexPornstars(page);
     });
 
-    // Most Recent page
-    plugin.addURI(PREFIX + "movies", function(page) {
-        setPageHeader(page, 'Lubetube - Most Recent');
-        indexVideos(page, BASE_URL + "/view/basic/mostrecent/");
+    // Main page
+    plugin.addURI(PREFIX + "movies:(.*):(.*)", function(page, uri, title) {
+        setPageHeader(page, 'Lubetube - ' + title);
+        indexVideos(page, uri);
     });
+
 
     // Categories page
     plugin.addURI(PREFIX + "categories", function(page) {
         setPageHeader(page, 'Lubetube - Categories');
         var response = showtime.httpGet(BASE_URL + "/categories");
         page.loading = false;
+	// 1 - uri, 2 - image, 3 - title
         var re = /<a href="http:\/\/lubetube.com([^\s]+)page=1"><img width="[0-9]+" height="[0-9]+" alt="[^"]+" class="main_gallery" src="([^\s]+)" title="([^"]+)" \/><\/a><br \/>/g;
         var match = re.exec(response);
         while (match) {
-            page.appendItem(PREFIX + "category:" + match[3] + ":" + match[1], "directory", {
+            page.appendItem(PREFIX + "sorting:" + match[3] + ":" + match[1], "directory", {
                 title: match[3],
                 icon: match[2]
             });
@@ -198,8 +220,14 @@
     plugin.addURI(PREFIX + "start", function(page) {
         setPageHeader(page, "LubeTube - Home");
         page.loading = false;
-        page.appendItem(PREFIX + 'movies', 'directory', {
-            title: 'Most Recent'
+        page.appendItem(PREFIX + 'movies:/view/basic/mostrecent/:Newest', 'directory', {
+            title: 'Newest'
+        });
+        page.appendItem(PREFIX + 'movies:/view/basic/toprated/:Highest Rated', 'directory', {
+            title: 'Highest Rated'
+        });
+        page.appendItem(PREFIX + 'movies:/view/basic/mostviewed/:Most Viewed', 'directory', {
+            title: 'Most Viewed'
         });
         page.appendItem(PREFIX + 'categories', 'directory', {
             title: 'Categories'
