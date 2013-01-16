@@ -48,7 +48,7 @@
     }
 
     function startPage(page) {
-        setPageHeader(page, 'fs.ua - Видео');
+        setPageHeader(page, 'fs.ua - Рекомендательная видеосеть');
         page.loading = false;
         page.appendItem(PREFIX + ':updates', 'directory', {
             title: 'Новое в каталоге',
@@ -283,6 +283,8 @@
             case "file aac":
             case "file m4a":
             case "file ape":
+            case "file dts":
+            case "file ac3":
                 return "audio";
             default:
                 return "file";
@@ -292,14 +294,14 @@
     plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
         title = unescape(title);
         setPageHeader(page, title);
-        showtime.trace('listFolder: Trying to httpGet: ' + BASE_URL + unescape(url) + folder);
-        var response = showtime.httpGet(BASE_URL + unescape(url) + folder);
-        showtime.trace('listFolder: Got response from httpGet: ' + BASE_URL + unescape(url) + folder);
-        var re = /<ul class="filelist m-current">([\S\s]*?)<\/ul>/;
-        showtime.trace('listFolder: Regexing filelist...');
-        response = re.exec(response)[1]; // tagged list will live here
-        showtime.trace('listFolder: Done regexing filelist...');
-        re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
+        showtime.trace('listFolder: Trying to httpGet: ' + BASE_URL + unescape(url) + '?ajax&folder=' + folder);
+        var response = showtime.httpGet(BASE_URL + unescape(url) + '?ajax&folder=' + folder);
+        showtime.trace('listFolder: Got response from httpGet: ' + BASE_URL + unescape(url) + '?ajax&folder=' + folder);
+        //        var re = /<ul class="filelist m-current">([\S\s]*?)<\/ul>/;
+        //        showtime.trace('listFolder: Regexing filelist...');
+        //        response = re.exec(response)[1]; // tagged list will live here
+        //        showtime.trace('listFolder: Done regexing filelist...');
+        var re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
         var m = re.exec(response); // parsed list will live here
         showtime.trace('listFolder: Done regexing folder/file item list...');
         while (m) {
@@ -339,12 +341,12 @@
                             title: new showtime.RichText(n[3] + '<font color="6699CC"> (' + n[4] + ')</font>')
                         });
                     } else {
-                        var re2 = /<a href="([^"]+)[\S\s]*?" rel="[\S\s]*?">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
+                        var re2 = /rel="{parent_id: ([^}]+)}">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
                         showtime.trace('listFolder: Regexing a folder item...');
                         var n = re2.exec(m[2]);
                         showtime.trace('listFolder: Done regexing a folder item...');
                         n[2] = trim(n[2]);
-                        page.appendItem(PREFIX + ":listFolder:" + escape(url) + ":" + n[1] + ":" + escape(title), "directory", {
+                        page.appendItem(PREFIX + ":listFolder:" + escape(url) + ":" + n[1].replace("'", "") + ":" + escape(title), "directory", {
                             title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font> ' + n[4] + " " + n[5])
                         });
                     }
@@ -382,15 +384,16 @@
             description: description
         });
 
-        re = /class="b-actions-panel b-clear"[\S\s]*?<a href="([^"]+)/;
-        showtime.trace("listRoot: Regexing link to video...");
+        re = /class="b-actions-panel b-clear"[\S\s]*?baseurl: '([^']+)/;
+        showtime.trace("listRoot: Getting url of the root folder...");
         m = re.exec(response);
-        showtime.trace("listRoot: Got link to video...");
+        showtime.trace("listRoot: Got url of the root folder...");
 
         if (m) {
-            showtime.trace("listRoot: httpGet, getting sublink... " + BASE_URL + m[1]);
-            response = showtime.httpGet(BASE_URL + m[1]);
-            showtime.trace("listRoot: httpGet, got sublink... " + BASE_URL + m[1]);
+            url = m[1];
+            showtime.trace("listRoot: Listing root folder... " + BASE_URL + m[1] + '?ajax&folder=0');
+            response = showtime.httpGet(BASE_URL + m[1] + '?ajax&folder=0');
+            showtime.trace("listRoot: Done listing root folder... " + BASE_URL + m[1] + '?ajax&folder=0');
         }
         re = /<ul class="filelist ">[\S\s]*?<\/ul>/;
         showtime.trace("listRoot: Regexing filelist... ");
@@ -404,8 +407,8 @@
             showtime.trace("listRoot: b-transparent-area is removed... ");
             start = response.indexOf('<li class="', start + 1);
             end = response.indexOf('</li>', start + 1);
-            // 1 - type, 2 - link, 3 - name, 4 - size, 5 - details, 6 - date
-            re = /<li class="([^"]+)[\S\s]*?<a href="([^"]+)[\S\s]*?" rel="[\S\s]*?">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
+            // 1 - type, 2 - folder_id, 3 - name, 4 - size, 5 - details, 6 - date
+            re = /<li class="([^"]+)[\S\s]*?rel="{parent_id: ([^}]+)}">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
             showtime.trace("listRoot: Regexing folder/file... ");
             m = re.exec(response.substring(start, end));
             showtime.trace("listRoot: Done regexing folder/file... ");
@@ -418,7 +421,7 @@
             m[4] = m[4].replace(/<\/span>/g, "");
             m[4] = trim(m[4]);
             if (m[1] == "folder") {
-                page.appendItem(PREFIX + ":listFolder:" + escape(url) + ":" + m[2] + ":" + escape(title), "directory", {
+                page.appendItem(PREFIX + ":listFolder:" + escape(url) + ":" + m[2].replace("\'", "") + ":" + escape(title), "directory", {
                     title: new showtime.RichText(m[3] + '<font color="6699CC"> (' + m[4] + ')</font> ' + m[5] + " " + m[6])
                 });
             };
@@ -459,7 +462,7 @@
         showtime.trace("play: Regexing title...");
         var title = re.exec(response.substring(start, end))[1]; // problem lives here
         showtime.trace("play: Done regexing title...");
-        start = response.indexOf('<div class="b-view-material">', start + 1);
+        start = response.indexOf('class="b-view-material"', start + 1);
         end = response.indexOf('</div>', start + 1);
         re = /<a href="([^"]+)/;
         if (start > 0) {
@@ -502,48 +505,43 @@
 
     plugin.addURI(PREFIX + ":start", startPage);
 
-    function find(page, url) {
-        setPageHeader(page, '');
-        var p = 0;
-
-        function loader() {
-            var response = showtime.httpGet(unescape(url) + "&page=" + p);
-            var re = /class="selected">([\S\s]*?)\</;
-            var match = re.exec(response);
-            if (match) if (page.metadata) page.metadata.title = match[1];
-            //1-link 2-title 3-image 
-            re = /class="image-wrap">[\S\s]*?\<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)/g;
-            match = re.exec(response);
-            while (match) {
-                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[2]), "video", {
-                    title: new showtime.RichText(match[2]),
-                    icon: match[3]
-                });
-                page.entries++;
-                match = re.exec(response);
-            }
-            p++;
-            var re = /<b>Следующая страница<\/b>/;
-            if (!re.exec(response)) {
-                return false
-            } else {
-                return true;
-            }
-        }
-        loader();
-        page.loading = false;
-        page.paginator = loader;
-    };
-
     plugin.addSearcher("fs.ua", logo,
 
     function(page, query) {
         try {
-            query = query.replace(/\s/g, '\+');
-            find(page, BASE_URL + "/search.aspx?search=" + escape(query));
+            var url = BASE_URL + "/search.aspx?search=" + escape(query.replace(/\s/g, '\+'));
+            var p = 0;
+            setPageHeader(page, '');
+
+            function loader() {
+                var response = showtime.httpGet(unescape(url) + "&page=" + p);
+                var re = /class="selected">([\S\s]*?)\</;
+                var match = re.exec(response);
+                if (match) if (page.metadata) page.metadata.title = match[1];
+                //1-link 2-title 3-image 
+                re = /class="image-wrap">[\S\s]*?\<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)/g;
+                match = re.exec(response);
+                while (match) {
+                    page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[2]), "video", {
+                        title: new showtime.RichText(match[2]),
+                        icon: match[3]
+                    });
+                    page.entries++;
+                    match = re.exec(response);
+                }
+                p++;
+                var re = /<b>Следующая страница<\/b>/;
+                if (!re.exec(response)) return false
+                return true;
+            }
+            loader();
+            page.loading = false;
+            page.paginator = loader;
+
         } catch (err) {
             showtime.trace('FS.UA - Ошибка поиска: ' + err)
         }
     });
 
 })(this);
+
