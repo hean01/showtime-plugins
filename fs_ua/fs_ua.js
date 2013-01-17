@@ -143,10 +143,9 @@
         }
     }
 
-    // Show what's new page
+    // Shows what's new page
     plugin.addURI(PREFIX + ":updates", function(page) {
-        setPageHeader(page, '');
-        if (page.metadata) page.metadata.title = "Новое в каталоге";
+        setPageHeader(page, 'Новое в каталоге');
         var p = 0;
         var url = BASE_URL + "/updates.aspx?page=";
 
@@ -192,7 +191,6 @@
         str = str.replace(/\\\\/g, '\\');
         return str;
     }
-
 
     function index(page, url) {
         setPageHeader(page, '');
@@ -297,10 +295,6 @@
         showtime.trace('listFolder: Trying to httpGet: ' + BASE_URL + unescape(url) + '?ajax&folder=' + folder);
         var response = showtime.httpGet(BASE_URL + unescape(url) + '?ajax&folder=' + folder);
         showtime.trace('listFolder: Got response from httpGet: ' + BASE_URL + unescape(url) + '?ajax&folder=' + folder);
-        //        var re = /<ul class="filelist m-current">([\S\s]*?)<\/ul>/;
-        //        showtime.trace('listFolder: Regexing filelist...');
-        //        response = re.exec(response)[1]; // tagged list will live here
-        //        showtime.trace('listFolder: Done regexing filelist...');
         var re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
         var m = re.exec(response); // parsed list will live here
         showtime.trace('listFolder: Done regexing folder/file item list...');
@@ -358,6 +352,7 @@
         page.loading = false;
     });
 
+    // Appends the item and lists it's root folder
     plugin.addURI(PREFIX + ":listRoot:(.*):(.*)", function(page, url, title) {
         title = unescape(title);
         showtime.trace("listRoot: Trying to httpGet: " + BASE_URL + url);
@@ -384,17 +379,10 @@
             description: description
         });
 
-        re = /class="b-actions-panel b-clear"[\S\s]*?baseurl: '([^']+)/;
         showtime.trace("listRoot: Getting url of the root folder...");
-        m = re.exec(response);
+        response = showtime.httpGet(BASE_URL + url + '?ajax&folder=0');
         showtime.trace("listRoot: Got url of the root folder...");
 
-        if (m) {
-            url = m[1];
-            showtime.trace("listRoot: Listing root folder... " + BASE_URL + m[1] + '?ajax&folder=0');
-            response = showtime.httpGet(BASE_URL + m[1] + '?ajax&folder=0');
-            showtime.trace("listRoot: Done listing root folder... " + BASE_URL + m[1] + '?ajax&folder=0');
-        }
         re = /<ul class="filelist ">[\S\s]*?<\/ul>/;
         showtime.trace("listRoot: Regexing filelist... ");
         response = re.exec(response);
@@ -408,7 +396,7 @@
             start = response.indexOf('<li class="', start + 1);
             end = response.indexOf('</li>', start + 1);
             // 1 - type, 2 - folder_id, 3 - name, 4 - size, 5 - details, 6 - date
-            re = /<li class="([^"]+)[\S\s]*?rel="{parent_id: ([^}]+)}">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
+            re = /<li class="([^"]+)[\S\s]*?rel="{parent_id: ([^}]+)}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
             showtime.trace("listRoot: Regexing folder/file... ");
             m = re.exec(response.substring(start, end));
             showtime.trace("listRoot: Done regexing folder/file... ");
@@ -435,6 +423,7 @@
         page.loading = false;
     });
 
+    // Play URL
     plugin.addURI(PREFIX + ":play:(.*)", function(page, url) {
         page.type = "video";
         if (showtime.probe(url).result == 0) {
@@ -481,25 +470,23 @@
             var m = re.exec(showtime.httpGet(BASE_URL + link));
             showtime.trace("play: (2) Done regexing the link from playlist url...");
         }
-        if (!m) { // get first file from folder
-            re = /class="b-actions-panel b-clear"[\S\s]*?<a href="([^"]+)/;
-            showtime.trace("play: Regexing the link from b-actions-panel...");
-            m = re.exec(response);
-            showtime.trace("play: Done regexing the link from b-actions-panel...");
+        if (!m) { // first file from the first folder
             re = /class="filelist m-current"[\S\s]*?" href="([^"]+)/;
-            showtime.trace("play: Trying to regex httpGet: " + BASE_URL + m[1]);
-            m = re.exec(showtime.httpGet(BASE_URL + m[1]));
-            showtime.trace("play: Done trying regexing httpGet: " + BASE_URL + m[1]);
+            showtime.trace("play: Trying to regex httpGet: " + BASE_URL + url + '?ajax&folder=0');
+            m = re.exec(showtime.httpGet(BASE_URL + url + '?ajax&folder=0'));
+            showtime.trace("play: Done trying regexing httpGet: " + BASE_URL + url + '?ajax&folder=0');
         }
-        showtime.trace("play: Trying to play the link: " + m[1]);
-        page.source = "videoparams:" + showtime.JSONEncode({
-            title: unescape(title),
-            canonicalUrl: PREFIX + ":play:" + origURL,
-            sources: [{
-                url: m[1]
-            }]
-        });
-        showtime.trace("play: Done playing the link: " + m[1]);
+        if (m) {
+            showtime.trace("play: Trying to play the link: " + m[1]);
+            page.source = "videoparams:" + showtime.JSONEncode({
+                title: unescape(title),
+                canonicalUrl: PREFIX + ":play:" + origURL,
+                sources: [{
+                    url: m[1]
+                }]
+            });
+            showtime.trace("play: Done playing the link: " + m[1]);
+        };
         page.loading = false;
     });
 
@@ -544,4 +531,3 @@
     });
 
 })(this);
-
