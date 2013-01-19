@@ -227,7 +227,7 @@
                 while (m) {
                     title = trim(m[3].replace('<p>', " / "));
                     title = title.replace('</p><p>', " ");
-		    title = title.replace('</p>', "");
+                    title = title.replace('</p>', "");
                     page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
                         title: new showtime.RichText(title),
                         icon: m[2]
@@ -254,7 +254,7 @@
             while (match) {
                 var title = match[5].replace('<p>', " / ");
                 title = title.replace('</p><p>', " ");
-		title = title.replace('</p>', "");
+                title = title.replace('</p>', "");
                 title = removeSlashes(title);
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
                     title: new showtime.RichText(title + date),
@@ -401,7 +401,7 @@
         var m = re.exec(response);
         showtime.trace("listRoot: Got poster...");
         re = /<div class="b-posters">([\S\s]*?)<\/div>/;
-        var what_else = re.exec(response)[1];
+        var what_else = re.exec(response);
         var icon = 0;
         var description = '';
         if (m) {
@@ -460,21 +460,24 @@
             showtime.trace("listRoot: Done regexing folder/file inside of the loop... ");
         }
         showtime.trace("listRoot: THE PAGE IS LOADED... ");
-        page.appendItem("", "separator", {
-            title: 'Похожие материалы'
-        });
-        // 1 - link, 2 - image, 3 - title
-        re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="m-full">([\S\s]*?)<\/span>/g;
-        m = re.exec(what_else);
-        while (m) {
-            title = m[3].replace('<p>', " / ");
-            title = title.replace('</p><p>', " ");
-	    title = title.replace('</p>', "");
-            page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
-                title: new showtime.RichText(title),
-                icon: m[2]
+        if (what_else) {
+            what_else = what_else[1];
+            page.appendItem("", "separator", {
+                title: 'Похожие материалы'
             });
+            // 1 - link, 2 - image, 3 - title
+            re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="m-full">([\S\s]*?)<\/span>/g;
             m = re.exec(what_else);
+            while (m) {
+                title = m[3].replace('<p>', " / ");
+                title = title.replace('</p><p>', " ");
+                title = title.replace('</p>', "");
+                page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
+                    title: new showtime.RichText(title),
+                    icon: m[2]
+                });
+                m = re.exec(what_else);
+            }
         }
         page.loading = false;
     });
