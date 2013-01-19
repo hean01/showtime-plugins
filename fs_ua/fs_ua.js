@@ -205,7 +205,40 @@
             var match = re.exec(response);
             showtime.trace('index: Done regexing class="selected"');
             if (match) if (page.metadata) page.metadata.title = match[1];
-            //1-link 2-img 3-title 4-date 5-description
+
+            // Show populars only above the first page
+            if (p == 0) {
+                re = /<div class="b-posters ">([\S\s]*?)<\/div>/;
+                var what_else = re.exec(response);
+                if (!what_else) {
+                    re = /<div class="b-poster-series-wrap">([\S\s]*?)<\/div>/;
+                    what_else = re.exec(response)[1];
+                    // 1 - link, 2 - image, 3 - title
+                    re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span>([\S\s]*?)<\/span>/g;
+                } else {
+                    what_else = what_else[1];
+                    // 1 - link, 2 - image, 3 - title
+                    re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="m-full">([\S\s]*?)<\/span>/g;
+                }
+                page.appendItem("", "separator", {
+                    title: 'Популярно прямо сейчас'
+                });
+                var m = re.exec(what_else);
+                while (m) {
+                    title = trim(m[3].replace('<p>', " / "));
+                    title = title.replace('</p><p>', " ");
+                    page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
+                        title: new showtime.RichText(title),
+                        icon: m[2]
+                    });
+                    m = re.exec(what_else);
+                }
+                page.appendItem("", "separator", {
+                    title: ''
+                });
+            }
+
+            //1-link 2-img 3-short title 4-date 5-description
             re = /class="subject-link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt=\'([\S\s]*?)'\/>([\S\s]*?)class="subject-link m-full">[\S\s]*?\<span>([\S\s]*?)\<\/span>/g;
             showtime.trace('index: Regexing an item...');
             match = re.exec(response);
@@ -218,8 +251,11 @@
             if (match2) date = '<font color="6699CC"> (' + match2[1] + ')</font>';
 
             while (match) {
+                var title = match[5].replace('<p>', " / ");
+                title = title.replace('</p><p>', " ");
+                title = removeSlashes(title);
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
-                    title: new showtime.RichText(removeSlashes(match[3]) + date),
+                    title: new showtime.RichText(title + date),
                     icon: match[2],
                     description: new showtime.RichText(match[5])
                 });
@@ -362,6 +398,8 @@
         showtime.trace("listRoot: Trying to regex poster...");
         var m = re.exec(response);
         showtime.trace("listRoot: Got poster...");
+        re = /<div class="b-posters">([\S\s]*?)<\/div>/;
+        var what_else = re.exec(response)[1];
         var icon = 0;
         var description = '';
         if (m) {
@@ -420,6 +458,21 @@
             showtime.trace("listRoot: Done regexing folder/file inside of the loop... ");
         }
         showtime.trace("listRoot: THE PAGE IS LOADED... ");
+        page.appendItem("", "separator", {
+            title: 'Похожие материалы'
+        });
+        // 1 - link, 2 - image, 3 - title
+        re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="m-full">([\S\s]*?)<\/span>/g;
+        m = re.exec(what_else);
+        while (m) {
+            title = m[3].replace('<p>', " / ");
+            title = title.replace('</p><p>', " ");
+            page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
+                title: new showtime.RichText(title),
+                icon: m[2]
+            });
+            m = re.exec(what_else);
+        }
         page.loading = false;
     });
 
@@ -486,7 +539,7 @@
                 }]
             });
             showtime.trace("play: Done playing the link: " + m[1]);
-        };
+        } else page.error("Линк не проигрывается :(");
         page.loading = false;
     });
 
