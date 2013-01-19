@@ -227,6 +227,7 @@
                 while (m) {
                     title = trim(m[3].replace('<p>', " / "));
                     title = title.replace('</p><p>', " ");
+		    title = title.replace('</p>', "");
                     page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
                         title: new showtime.RichText(title),
                         icon: m[2]
@@ -253,6 +254,7 @@
             while (match) {
                 var title = match[5].replace('<p>', " / ");
                 title = title.replace('</p><p>', " ");
+		title = title.replace('</p>', "");
                 title = removeSlashes(title);
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
                     title: new showtime.RichText(title + date),
@@ -467,6 +469,7 @@
         while (m) {
             title = m[3].replace('<p>', " / ");
             title = title.replace('</p><p>', " ");
+	    title = title.replace('</p>', "");
             page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
                 title: new showtime.RichText(title),
                 icon: m[2]
