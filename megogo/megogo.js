@@ -53,7 +53,7 @@
         setPageHeader(page, 'megogo.net - онлайн-кинотеатр с легальным контентом');
         var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/categories?&sign=' + showtime.md5digest(sign) + devType));
         for (i in json.category_list) {
-            page.appendItem(PREFIX + ':genres:' + json.category_list[i].id + ':' + json.category_list[i].title, 'directory', {
+            page.appendItem(PREFIX + ':genres:' + json.category_list[i].id + ':' + escape(json.category_list[i].title), 'directory', {
                 title: new showtime.RichText(unescape(json.category_list[i].title) + blueStr(json.category_list[i].total_num)),
                 icon: logo
             });
@@ -62,10 +62,10 @@
 
     // Shows genres of the category
     plugin.addURI(PREFIX + ":genres:(.*):(.*)", function(page, id, title) {
-        setPageHeader(page, title);
+        setPageHeader(page, unescape(title));
         var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/genres?category=' + id + '&sign=' + showtime.md5digest('category=' + id + sign) + devType));
         for (var i in json.genre_list) {
-            page.appendItem(PREFIX + ':videos:' + id + ':' + json.genre_list[i].id + ':' + json.genre_list[i].title, 'directory', {
+            page.appendItem(PREFIX + ':videos:' + id + ':' + json.genre_list[i].id + ':' + escape(json.genre_list[i].title), 'directory', {
                 title: new showtime.RichText(unescape(json.genre_list[i].title) + blueStr(json.genre_list[i].total_num)),
                 icon: logo
             });
@@ -76,7 +76,7 @@
     plugin.addURI(PREFIX + ":videos:(.*):(.*):(.*)", function(page, category_id, genre_id, title) {
         var offset = 0;
         var counter = 0;
-        setPageHeader(page, title);
+        setPageHeader(page, unescape(title));
 
         function loader() {
             var params = 'category=' + category_id + '&genre=' + genre_id + '&limit=20' + '&offset=' + offset;
@@ -84,7 +84,7 @@
             for (var i in json.video_list) {
                 var type = "video";
                 if (json.video_list[i].isSeries) type = "directory";
-                page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + json.video_list[i].title, "video", {
+                page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + escape(json.video_list[i].title), "video", {
                     title: showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " / " + showtime.entityDecode(json.video_list[i].title_orig) : ""),
                     year: +parseInt(json.video_list[i].year),
                     genre: unescape(json.video_list[i].genre_list[0].title),
@@ -106,7 +106,7 @@
 
     // Shows seasons of the video
     plugin.addURI(PREFIX + ":directory:(.*):(.*)", function(page, id, title) {
-        setPageHeader(page, title);
+        setPageHeader(page, unescape(title));
         var params = 'video=' + id;
         var request = BASE_URL + '/video?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + 'megogosign123');
         var json = showtime.JSONDecode(showtime.httpGet(request));
@@ -123,7 +123,7 @@
     });
 
     // Play megogo links
-    plugin.addURI(PREFIX + ":video:(.*):", function(page, id, title) {
+    plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, id, title) {
         var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/info?video=' + id + '&sign=' + showtime.md5digest('video=' + id + sign) + devType));
         if (!json.src) {
             page.loading = false;
@@ -133,7 +133,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(json.title),
-            canonicalUrl: PREFIX + ":play:" + id,
+            canonicalUrl: PREFIX + ":video:" + id + ":" + title,
             sources: [{
                 url: unescape(json.src)
             }]
