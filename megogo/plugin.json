@@ -1,0 +1,12 @@
+{
+	"description": "<p>MEGOGO.NET - Онлайн кинотеатр с легальным контентом<p>Для дополнительной информации, посетите <a href=\"http://megogo.net\">http://megogo.net</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "MEGOGO.NET",
+	"synopsis": "MEGOGO.NET: Онлайн кинотеатр с легальным контентом",
+	"version": "0.1", "file": "megogo.js",
+	"showtimeVersion": "4.1.397",
+	"type": "javascript", 
+	"id": "megogo.net",
+	"icon": "logo.png"
+}
