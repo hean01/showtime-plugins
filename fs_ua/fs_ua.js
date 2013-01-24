@@ -306,11 +306,14 @@
             case "file mpeg":
             case "file vob":
             case "file iso":
+            case "file m4v":
+            case "file wmv":
                 return "video";
             case "file jpg":
             case "file jpeg":
             case "file png":
             case "file bmp":
+            case "file gif":
                 return "image";
             case "file mp3":
             case "file flac":
@@ -423,7 +426,7 @@
         response = showtime.httpGet(BASE_URL + url + '?ajax&folder=0');
         showtime.trace("listRoot: Got url of the root folder...");
 
-        re = /<ul class="filelist ">[\S\s]*?<\/ul>/;
+        re = /<ul class="filelist[^"]+[\S\s]*?<\/ul>/;
         showtime.trace("listRoot: Regexing filelist... ");
         response = re.exec(response);
         showtime.trace("listRoot: Got filelist... ");
