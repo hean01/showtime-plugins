@@ -9,7 +9,8 @@ PLUGINS= \
 	redtube.zip \
 	fs_ua.zip \
 	ex_ua.zip \
-	megogo.zip
+	megogo.zip \
+	uletno.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

@@ -1,0 +1,12 @@
+{
+	"description": "<p>Uletno.info - Новый Улетный кинотеатр<p>Для дополнительной информации, посетите <a href=\"http://uletno.info\">http://uletno.info</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "Uletno.info",
+	"synopsis": "Uletno.info: Новый Улетный кинотеатр",
+	"version": "0.1", "file": "uletno.js",
+	"showtimeVersion": "4.1.397",
+	"type": "javascript", 
+	"id": "uletno.info",
+	"icon": "logo.png"
+}
