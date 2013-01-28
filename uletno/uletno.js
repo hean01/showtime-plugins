@@ -249,7 +249,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             //title: unescape(title),
-            //canonicalUrl: PREFIX + ":video:" + url,
+            canonicalUrl: PREFIX + ":video:" + url,
             sources: [{
                 url: response
             }]
