@@ -208,7 +208,7 @@
 
             // Show populars only above the first page
             if (p == 0) {
-                re = /<div class="b-posters ">([\S\s]*?)<\/div>/;
+                re = /<div class="b-posters[\S\s]*?">([\S\s]*?)<\/div>/;
                 var what_else = re.exec(response);
                 if (!what_else) {
                     re = /<div class="b-poster-series-wrap">([\S\s]*?)<\/div>/;
@@ -308,6 +308,7 @@
             case "file iso":
             case "file m4v":
             case "file wmv":
+            case "file m2ts":
                 return "video";
             case "file jpg":
             case "file jpeg":
