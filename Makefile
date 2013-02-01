@@ -10,7 +10,8 @@ PLUGINS= \
 	fs_ua.zip \
 	ex_ua.zip \
 	megogo.zip \
-	uletno.zip
+	uletno.zip \
+	uletfilm.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

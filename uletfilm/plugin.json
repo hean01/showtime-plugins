@@ -1,0 +1,12 @@
+{
+	"description": "<p>uletfilm.net - Улетный кинотеатр<p>Для дополнительной информации, посетите <a href=\"http://uletfilm.net\">http://uletfilm.net</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "uletfilm.net",
+	"synopsis": "uletfilm.net: Улетный кинотеатр",
+	"version": "0.1", "file": "uletfilm.js",
+	"showtimeVersion": "4.1.397",
+	"type": "javascript", 
+	"id": "uletfilm.net",
+	"icon": "logo.png"
+}
