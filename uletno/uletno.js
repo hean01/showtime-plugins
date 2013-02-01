@@ -138,7 +138,7 @@
             re = /<li><div class="stitle"><h2>(.*?)<\/h2><\/div><span class="poster"><a href="(.*?)" title=".*?"><img src="(.*?)" alt=".*?" \/><\/a><\/span><div class="shview">(.*?)<\/div><\/li>/g;
             var match = re.exec(htmlBlob);
             while (match) {
-                page.appendItem(PREFIX + ':video:' + match[2], 'video', {
+                page.appendItem(PREFIX + ':video:' + match[2] + ':' + escape(match[1]), 'video', {
                     title: new showtime.RichText(match[1] + blueStr(match[4])),
                     icon: BASE_URL + match[3]
                 });
@@ -177,7 +177,7 @@
                 re = /<li><div class="stitle"><h2>(.*?)<\/h2><\/div><span class="poster"><a href="(.*?)" title=".*?"><img src="(.*?)" alt=".*?" \/><\/a><\/span>\s*<div class="shview">(.*?)<\/div><\/li>/g;
                 match = re.exec(htmlBlob);
                 while (match) {
-                    page.appendItem(PREFIX + ':video:' + escape(match[2]), 'video', {
+                    page.appendItem(PREFIX + ':video:' + escape(match[2]) + ':' + escape(match[1]), 'video', {
                         title: new showtime.RichText(match[1] + blueStr(match[4])),
                         icon: BASE_URL + match[3]
                     });
@@ -208,7 +208,7 @@
                 re = /<li><div class="stitle"><h2>(.*?)<\/h2><\/div><span class="poster"><a href="(.*?)" title=".*?"><img src="(.*?)" alt=".*?" \/><\/a><\/span>\s*<div class="shview">(.*?)<\/div><\/li>/g;
                 var match = re.exec(htmlBlob);
                 while (match) {
-                    page.appendItem(PREFIX + ':video:' + escape(match[2]), 'video', {
+                    page.appendItem(PREFIX + ':video:' + escape(match[2]) + ':' + escape(match[1]), 'video', {
                         title: new showtime.RichText(match[1] + blueStr(match[4])),
                         icon: BASE_URL + match[3]
                     });
@@ -230,25 +230,22 @@
         var hash1 = "QWXBMI52cxps6Rk0Hzlb431t8=";
         var hash2 = "yaV9LwniuvZ7GYmJDdTgfoNUeq";
         for (var i = 0; i < hash1.length; i++) {
-            var re1 = hash1[i],
-                re2 = hash2[i];
-            hash = hash.split(re1).join('--');
-            hash = hash.split(re2).join(re1);
-            hash = hash.split('--').join(re2);
+            hash = hash.split(hash1[i]).join('--');
+            hash = hash.split(hash2[i]).join(hash1[i]);
+            hash = hash.split('--').join(hash2[i]);
         }
         return base64_decode(hash);
     }
 
     // Play uletno links
-    plugin.addURI(PREFIX + ":video:(.*)", function(page, url) {
+    plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
         var response = showtime.httpGet(unescape(url));
         var re = /"file":"(.*?)"/;
         response = re.exec(response);
-        showtime.print(response[1]);
         if (response) response = unhash(response[1]);
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
-            //title: unescape(title),
+            title: unescape(title),
             canonicalUrl: PREFIX + ":video:" + url,
             sources: [{
                 url: response
@@ -278,7 +275,7 @@
                     re = /<li><div class="stitle"><h2>(.*?)<\/h2><\/div><span class="poster"><a href="(.*?)" ><img src="(.*?)" alt=".*?" \/><\/a><\/span><\/li>/g;
                     var match = re.exec(htmlBlob);
                     while (match) {
-                        page.appendItem(PREFIX + ':video:' + escape(match[2]), 'video', {
+                        page.appendItem(PREFIX + ':video:' + escape(match[2]) + ':' + escape(match[1]), 'video', {
                             title: new showtime.RichText(match[1]),
                             icon: BASE_URL + match[3]
                         });
@@ -290,7 +287,6 @@
                 match = re.exec(response);
                 if (!match) {
                     counter = 1;
-                    showtime.print("ffff");
                     return false;
                 }
                 response = showtime.httpGet(match[1]);
