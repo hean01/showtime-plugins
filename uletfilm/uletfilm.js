@@ -138,7 +138,7 @@
             re = /<li><h2>(.*?)<\/h2><a href="(.*?)" title=".*?"><img src="(.*?)"/g;
             var match = re.exec(htmlBlob);
             while (match) {
-                page.appendItem(PREFIX + ':video:' + match[2], 'video', {
+                page.appendItem(PREFIX + ':video:' + match[2] + ':' + escape(match[1]), 'video', {
                     title: new showtime.RichText(match[1]),
                     icon: BASE_URL + match[3]
                 });
@@ -174,7 +174,7 @@
             re = /class="roltitle">[\S\s]*?<a href="([^"]+)">([\S\s]*?)<\/a>[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?align="absmiddle"> (\d+)[\S\s]*?class="storyinfo"[\S\s]*?<tr>([\S\s]*?)<\/div></g;
             match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ':video:' + escape(match[1]), 'video', {
+                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ':' + escape(match[2]), 'video', {
                     title: new showtime.RichText(match[2] + blueStr(match[4])),
                     icon: BASE_URL + match[3],
                     description: new showtime.RichText(match[5])
@@ -202,7 +202,7 @@
             var re = /class="roltitle">[\S\s]*?<a href="([^"]+)">([\S\s]*?)<\/a>[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?align="absmiddle"> (\d+)[\S\s]*?class="storyinfo"[\S\s]*?<tr>([\S\s]*?)<\/div></g;
             var match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ':video:' + escape(match[1]), 'video', {
+                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ':' + escape(match[2]), 'video', {
                     title: new showtime.RichText(match[2] + blueStr(match[4])),
                     icon: BASE_URL + match[3],
                     description: new showtime.RichText(match[5])
@@ -232,7 +232,7 @@
     }
 
     // Play uletfilm links
-    plugin.addURI(PREFIX + ":video:(.*)", function(page, url) {
+    plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
         var response = showtime.httpGet(unescape(url));
         var re = /"file":"(.*?)"/;
         response = re.exec(response);
@@ -240,7 +240,7 @@
         if (response) response = unhash(response[1]);
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
-            //title: unescape(title),
+            title: unescape(title),
             canonicalUrl: PREFIX + ":video:" + url,
             sources: [{
                 url: response
@@ -266,7 +266,7 @@
                 var re = /<img src="([\S\s]*?)" [\S\s]*?class="quote">[\S\s]*?<div id='[\S\s]*?'>([\S\s]*?)<\/div>[\S\s]*?class="roltitle"><br \/><a href="([\S\s]*?)" > ([\S\s]*?)<\/a>/g;
                 var match = re.exec(response);
                 while (match) {
-                    page.appendItem(PREFIX + ':video:' + escape(match[3]), 'video', {
+                    page.appendItem(PREFIX + ':video:' + escape(match[3]) + ':' + escape(match[4]), 'video', {
                         title: new showtime.RichText(match[4]),
                         icon: BASE_URL + match[1],
                         description: new showtime.RichText(match[2])
