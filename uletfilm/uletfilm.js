@@ -138,7 +138,7 @@
             re = /<li><h2>(.*?)<\/h2><a href="(.*?)" title=".*?"><img src="(.*?)"/g;
             var match = re.exec(htmlBlob);
             while (match) {
-                page.appendItem(PREFIX + ':video:' + match[2] + ':' + escape(match[1]), 'video', {
+                page.appendItem(PREFIX + ':video:' + escape(match[2]) + ':' + escape(match[1]), 'video', {
                     title: new showtime.RichText(match[1]),
                     icon: BASE_URL + match[3]
                 });
@@ -241,7 +241,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            canonicalUrl: PREFIX + ":video:" + url,
+            canonicalUrl: PREFIX + ":video:" + url + ":" + title,
             sources: [{
                 url: response
             }]

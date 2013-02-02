@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "uletfilm.net",
 	"synopsis": "uletfilm.net: Улетный кинотеатр",
-	"version": "0.1.1", "file": "uletfilm.js",
+	"version": "0.1.2", "file": "uletfilm.js",
 	"showtimeVersion": "4.1.397",
 	"type": "javascript", 
 	"id": "uletfilm.net",
