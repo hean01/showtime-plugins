@@ -104,14 +104,21 @@
             var credentials = plugin.getAuthCredentials("Watch.is - Онлайн фильмы", "Login required", showAuthCredentials);
             if (credentials.rejected) return; //rejected by user
             if (credentials) {
-                var v = showtime.httpPost(BASE_URL + '/login', {
+//                var v = showtime.httpPost(BASE_URL + '/login', {
+//                    'username': credentials.username,
+//                    'password': credentials.password,
+//                    'login': '+'
+//                }, "", "", {
+//                    'noFollow': 'true'
+//                });
+//                var re = /class="page-login"/;
+                var v = showtime.httpGet(BASE_URL + '/api/', {
                     'username': credentials.username,
-                    'password': credentials.password,
-                    'login': '+'
-                }, "", "", {
+                    'password': credentials.password
+                }, "", {
                     'noFollow': 'true'
                 });
-                var re = /class="page-login"/;
+                var re = /<error>/;
                 showAuthCredentials = re.exec(v);
                 if (!showAuthCredentials) break;
             };
@@ -273,14 +280,24 @@
 
     // Play links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
-        var v = showtime.httpGet(BASE_URL + unescape(url), "", multiheaders);
-        var re = /file:"(.*?)"/;
+        var re = /[\S\s]*?([\d+]+)/i;
+        var match = re.exec(unescape(url));
+        //var v = showtime.httpGet(BASE_URL + unescape(url), "", multiheaders);
+	var v = showtime.httpGet(BASE_URL + '/api/watch/'+match[1], "", multiheaders);
+	re = /<hdvideo>([\s\S]*?)<\/hdvideo>/;
+	match = re.exec(v);
+	if (!match) {
+		re = /<video>([\s\S]*?)<\/video>/;
+		match = re.exec(v);
+	}
+//        var re = /file:"(.*?)"/;
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             canonicalUrl: PREFIX + ":video:" + url + ":" + title,
             sources: [{
-                url: re.exec(v)[1]
+                //url: re.exec(v)[1]
+		url: match[1]
             }]
         });
         page.loading = false;
