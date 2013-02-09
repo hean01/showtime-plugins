@@ -11,7 +11,8 @@ PLUGINS= \
 	ex_ua.zip \
 	megogo.zip \
 	uletno.zip \
-	uletfilm.zip
+	uletfilm.zip \
+	watch_is.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
