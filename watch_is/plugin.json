@@ -5,7 +5,7 @@
 	"title": "Watch.is",
 	"synopsis": "Watch.is: Онлайн фильмы",
 	"version": "0.1", "file": "watch_is.js",
-	"showtimeVersion": "4.1.483",
+	"showtimeVersion": "4.3.9",
 	"type": "javascript", 
 	"id": "watch_is",
 	"icon": "logo.png"
