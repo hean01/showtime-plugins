@@ -55,7 +55,7 @@
         var v, counter = 0;
 
         function topPart() {
-            page.appendItem(PREFIX + ':best:', 'directory', {
+            page.appendItem(PREFIX + ':best', 'directory', {
                 title: "Лучшие"
             });
             v = showtime.httpGet(BASE_URL + "/?genre=" + Genre + "&year=" + Year + "&sorting=" + Sorting + "&order=" + Order, "", multiheaders);
