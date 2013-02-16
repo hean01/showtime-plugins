@@ -1,0 +1,12 @@
+{
+	"description": "<p>Porntube - Watch FREE Porn Movies<p>For additional info, visit <a href=\"http://www.porntube.com\">http://www.porntube.com</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "Porntube",
+	"synopsis": "Porntube: Watch FREE Porn Movies",
+	"version": "0.1", "file": "porntube.js",
+	"showtimeVersion": "4.3.9",
+	"type": "javascript", 
+	"id": "porntube",
+	"icon": "logo.png"
+}

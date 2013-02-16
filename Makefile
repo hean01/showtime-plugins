@@ -12,7 +12,8 @@ PLUGINS= \
 	megogo.zip \
 	uletno.zip \
 	uletfilm.zip \
-	watch_is.zip
+	watch_is.zip \
+	porntube.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
