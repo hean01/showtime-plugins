@@ -236,7 +236,6 @@
         var response = showtime.httpGet(unescape(url));
         var re = /"file":"(.*?)"/;
         response = re.exec(response);
-        showtime.print(response[1]);
         if (response) response = unhash(response[1]);
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({

@@ -135,6 +135,7 @@
             case "iso":
             case "m4v":
             case "wmv":
+            case "m2ts":
                 return "video";
             case "jpg":
             case "jpeg":

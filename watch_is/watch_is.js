@@ -52,7 +52,7 @@
         Order = "desc";
 
     function startPage(page) {
-        var v, counter = 0;
+        var v, done = false;
 
         function topPart() {
             page.appendItem(PREFIX + ':best', 'directory', {
@@ -74,7 +74,7 @@
         };
 
         function loader() {
-            if (counter) return false;
+            if (done) return false;
             // 1 - link, 2 - image, 3 - HD, 4 - votes, 5 - views, 6 - comments, 7 - title_rus, 8 - title_orig
             var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
             var match = re.exec(v);
@@ -91,7 +91,7 @@
             re = /class="page next" href="([^"]+)">/;
             match = re.exec(v);
             if (!match) {
-                counter = 1;
+                done = true;
                 return false;
             }
             v = showtime.httpGet(BASE_URL + match[1], "", multiheaders);
@@ -210,12 +210,10 @@
             Order = res;
         });
         page.options.createAction('apply', 'Выбрать', function() {
-            page.paginator = function dummyPaginator() {
-                return false;
-            };
+            page.paginator = function dummy() { return true };
             page.flush();
             topPart();
-	    counter = 0;
+	    done = false;
             loader();
             page.paginator = loader;
         });
@@ -227,10 +225,10 @@
     plugin.addURI(PREFIX + ":genres:(.*):(.*)", function(page, url, title) {
         var v = showtime.httpGet(BASE_URL + unescape(url), "", multiheaders);
         setPageHeader(page, unescape(title));
-        var counter = 0;
+        var done = false;
 
         function loader() {
-            if (counter) return false;
+            if (done) return false;
             // 1 - link, 2 - image, 3 - HD, 4 - votes, 5 - views, 6 - comments, 7 - title_rus, 8 - title_orig
             var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
             var match = re.exec(v);
@@ -247,7 +245,7 @@
             re = /class="page next" href="([^"]+)">/;
             match = re.exec(v);
             if (!match) {
-                counter = 1;
+                done = true;
                 return false;
             }
             v = showtime.httpGet(BASE_URL + match[1], "", multiheaders);
@@ -305,11 +303,11 @@
 
     plugin.addURI(PREFIX + ":start", startPage);
 
-    plugin.addSearcher("watch.is", logo,
+    plugin.addSearcher("Watch.is", logo,
 
     function(page, query) {
         try {
-            setPageHeader(page, 'watch.is - ' + query);
+            setPageHeader(page, 'Watch.is - ' + query);
             query = query.replace(/\s/g, '\+');
             var credentials = plugin.getAuthCredentials("Watch.is - Онлайн фильмы", "Login required", false);
             if (credentials) {
@@ -326,10 +324,10 @@
             };
             multiheaders = v.multiheaders;
             var v = showtime.httpGet(BASE_URL + '/?search=' + query, "", multiheaders);
-            var counter = 0;
+            var done = false;
 
             function loader() {
-                if (counter) return false;
+                if (done) return false;
                 // 1 - link, 2 - image, 3 - HD, 4 - votes, 5 - views, 6 - comments, 7 - title_rus, 8 - title_orig
                 var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
                 var match = re.exec(v);
@@ -347,7 +345,7 @@
                 re = /class="page next" href="([^"]+)">/;
                 match = re.exec(v);
                 if (!match) {
-                    counter = 1;
+                    done = 1;
                     return false;
                 }
                 v = showtime.httpGet(BASE_URL + match[1], "", multiheaders);
