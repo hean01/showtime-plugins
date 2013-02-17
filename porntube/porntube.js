@@ -41,19 +41,6 @@
         Quality = "",
         Age = "";
 
-    //http://www.porntube.com/videos?p=1&order=age&quality=hd&age=month
-    //&order=rating Top Rated
-    //&order=numviews Most Viewed
-    //&order:popularity Most Popular
-    //&order:duration Duration
-    //&order:age Date Added
-    //&quality=hd HD (720p - 1080p)
-    //&quality=all All
-    //&age=today Today
-    //&age=week This Week
-    //&age=month This Month
-    //&age=alltime All Time
-
     function getRating(str) {
         if (str == "&nbsp;") return 0;
         return +(str.replace("%", ""));
@@ -118,10 +105,13 @@
         setPageHeader(page, 'Porntube - ' + unescape(title));
         var pageNum = 1;
         var done = false;
+        var Order = "age",
+            Quality = "all",
+            Age = "alltime";
 
         function loader() {
             if (done) return false;
-            var v = showtime.httpGet(BASE_URL + unescape(url) + '?p=' + pageNum);
+            var v = showtime.httpGet(BASE_URL + unescape(url) + '?p=' + pageNum + '&order=' + Order + '&quality=' + Quality + '&age=' + Age);
             var re = /<ul class="pictures" id="pictures">([\S\s]*?)<\/ul>/;
             var bw = re.exec(v)[1];
             // 1 - link, 2 - img, 3 - title, 4 - rating, 5 - duration, 6 - HDflag, 7 - views, 8 - was added, 9 - time units
@@ -150,6 +140,38 @@
             }
             return true;
         };
+        page.options.createMultiOpt("order", "Sort by", [
+            ['age', 'Date Added', true],
+            ['rating', 'Top Rated'],
+            ['numviews', 'Most Viewed'],
+            ['popularity', 'Most popular'],
+            ['duration', 'Duration']
+        ], function(res) {
+            Order = res;
+        });
+        page.options.createMultiOpt("quality", "Quality", [
+            ['all', 'All', true],
+            ['hd', 'HD (720p - 1080p)']
+        ], function(res) {
+            Quality = res;
+        });
+        page.options.createMultiOpt("age", "Uploaded", [
+            ['alltime', 'All Time', true],
+            ['today', 'Today'],
+            ['week', 'This Week'],
+            ['month', 'This Month']
+        ], function(res) {
+            Age = res;
+        });
+        page.options.createAction('apply', 'Apply', function() {
+            page.paginator = function dummy() {
+                return true
+            };
+            page.flush();
+            pageNum = 1, done = false;
+            loader();
+            page.paginator = loader;
+        });
         loader();
         page.paginator = loader;
     });
@@ -176,8 +198,8 @@
         var pageNum = 1;
         var done = false;
         var Letter = "all",
-            Order = "popularity",
-            Age = "today";
+            Order = "age",
+            Age = "alltime";
 
         function loader() {
             if (done) return false;
@@ -237,20 +259,20 @@
             Letter = res;
         });
         page.options.createMultiOpt("order", "Sort by", [
-            ['popularity', 'Most popular', true],
+            ['age', 'Date Added', true],
+            ['popularity', 'Most popular'],
             ['rating', 'Top Rated'],
             ['name', 'Alphabetically'],
             ['videos', 'Most videos'],
-            ['numviews', 'Most Viewed'],
-            ['age', 'Date Added']
+            ['numviews', 'Most Viewed']
         ], function(res) {
             Order = res;
         });
         page.options.createMultiOpt("age", "Uploaded", [
-            ['today', 'Today', true],
+            ['alltime', 'All Time', true],
+            ['today', 'Today'],
             ['week', 'This Week'],
-            ['month', 'This Month'],
-            ['alltime', 'All Time']
+            ['month', 'This Month']
         ], function(res) {
             Age = res;
         });
@@ -422,5 +444,6 @@
         }
     });
 })(this);
+0
 0
 
