@@ -175,10 +175,13 @@
         setPageHeader(page, 'Porntube - Channels');
         var pageNum = 1;
         var done = false;
+        var Letter = "all",
+            Order = "popularity",
+            Age = "today";
 
         function loader() {
             if (done) return false;
-            var v = showtime.httpGet(BASE_URL + '/channels?p=' + pageNum);
+            var v = showtime.httpGet(BASE_URL + '/channels?p=' + pageNum + '&letter=' + Letter + '&order=' + Order + '&age=' + Age);
             var re = /<ul class="sites pictures" id="pictures">([\S\s]*?)<\/ul>/;
             var bw = re.exec(v)[1];
             // 1 - link, 2 - img, 3 - title, 4 - rating, 5 - videos, 6 - views
@@ -202,22 +205,82 @@
             };
             return true;
         };
+        page.options.createMultiOpt("letter", "Filter by letter", [
+            ['all', 'ALL', true],
+            ['A', 'A'],
+            ['B', 'B'],
+            ['C', 'C'],
+            ['D', 'D'],
+            ['E', 'E'],
+            ['F', 'F'],
+            ['G', 'G'],
+            ['H', 'H'],
+            ['I', 'I'],
+            ['J', 'J'],
+            ['K', 'K'],
+            ['L', 'L'],
+            ['M', 'M'],
+            ['N', 'N'],
+            ['O', 'O'],
+            ['P', 'P'],
+            ['Q', 'Q'],
+            ['R', 'R'],
+            ['S', 'S'],
+            ['T', 'T'],
+            ['U', 'U'],
+            ['V', 'V'],
+            ['W', 'W'],
+            ['X', 'X'],
+            ['Y', 'Y'],
+            ['Z', 'Z']
+        ], function(res) {
+            Letter = res;
+        });
+        page.options.createMultiOpt("order", "Sort by", [
+            ['popularity', 'Most popular', true],
+            ['rating', 'Top Rated'],
+            ['name', 'Alphabetically'],
+            ['videos', 'Most videos'],
+            ['numviews', 'Most Viewed'],
+            ['age', 'Date Added']
+        ], function(res) {
+            Order = res;
+        });
+        page.options.createMultiOpt("age", "Uploaded", [
+            ['today', 'Today', true],
+            ['week', 'This Week'],
+            ['month', 'This Month'],
+            ['alltime', 'All Time']
+        ], function(res) {
+            Age = res;
+        });
+        page.options.createAction('apply', 'Apply', function() {
+            page.paginator = function dummy() {
+                return true
+            };
+            page.flush();
+            pageNum = 1, done = false;
+            loader();
+            page.paginator = loader;
+        });
         loader();
         page.paginator = loader;
     });
 
     plugin.addURI(PREFIX + ":pornstars", function(page) {
         setPageHeader(page, 'Porntube - Pornstars');
+
         var pageNum = 1;
         var done = false;
+        var Letter = "all",
+            Order = "popularity";
 
         function loader() {
             if (done) return false;
-            var v = showtime.httpGet(BASE_URL + '/pornstars?p=' + pageNum);
+            var v = showtime.httpGet(BASE_URL + '/pornstars?p=' + pageNum + '&letter=' + Letter + '&order=' + Order);
             var re = /<ul class="pornstars">([\S\s]*?)<\/ul>/;
             var bw = re.exec(v)[1];
             // 1 - title, 2 - link, 3 - img, 4 - videos, 5 - views
-            //								            <span class="side-right">Videos: <span>35</span></span>fgdg<span class="side-left">Visits: <span>256,065</span>
             re = /<a title="([\S\s]*?)" href="([\S\s]*?)">[\S\s]*?" src="([\S\s]*?)"[\S\s]*?<span class="side-right">[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<span class="side-left">[\S\s]*?<span>([\S\s]*?)<\/span>/g;
             var match = re.exec(bw);
             while (match) {
@@ -237,6 +300,56 @@
             };
             return true;
         };
+
+        page.options.createMultiOpt("letter", "Filter by letter", [
+            ['all', 'ALL', true],
+            ['A', 'A'],
+            ['B', 'B'],
+            ['C', 'C'],
+            ['D', 'D'],
+            ['E', 'E'],
+            ['F', 'F'],
+            ['G', 'G'],
+            ['H', 'H'],
+            ['I', 'I'],
+            ['J', 'J'],
+            ['K', 'K'],
+            ['L', 'L'],
+            ['M', 'M'],
+            ['N', 'N'],
+            ['O', 'O'],
+            ['P', 'P'],
+            ['Q', 'Q'],
+            ['R', 'R'],
+            ['S', 'S'],
+            ['T', 'T'],
+            ['U', 'U'],
+            ['V', 'V'],
+            ['W', 'W'],
+            ['X', 'X'],
+            ['Y', 'Y'],
+            ['Z', 'Z']
+        ], function(res) {
+            Letter = res;
+        });
+        page.options.createMultiOpt("order", "Sort by", [
+            ['popularity', 'Most popular', true],
+            ['views', 'Most viewed'],
+            ['videos', 'Most videos'],
+            ['name', 'Alphabetically'],
+            ['date', 'Latest added']
+        ], function(res) {
+            Order = res;
+        });
+        page.options.createAction('apply', 'Apply', function() {
+            page.paginator = function dummy() {
+                return true
+            };
+            page.flush();
+            pageNum = 1, done = false;
+            loader();
+            page.paginator = loader;
+        });
         loader();
         page.paginator = loader;
     });
@@ -309,3 +422,5 @@
         }
     });
 })(this);
+0
+
