@@ -13,7 +13,8 @@ PLUGINS= \
 	uletno.zip \
 	uletfilm.zip \
 	watch_is.zip \
-	porntube.zip
+	porntube.zip \
+	docuim.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
