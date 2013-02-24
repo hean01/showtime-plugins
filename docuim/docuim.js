@@ -88,7 +88,7 @@
             hash = hash.split(hash2[i]).join(hash1[i]);
             hash = hash.split('--').join(hash2[i]);
         }
-        //showtime.print(base64_decode(hash));
+        showtime.print(base64_decode(hash));
         return base64_decode(hash);
     }
 
@@ -295,9 +295,25 @@
                     for (i in tracks) {
                         if (trim(tracks[i]) == '') continue;
                         if (trim(links[i]) != '') link = links[i];
-                        page.appendItem(json.playlist[n].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i]), 'video', {
+                        var videoparams = {
+                            sources: [{
+                                url: json.playlist[n].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
+                            }],
+                            title: seasonName + ' - ' + json.playlist[n].comment,
+                            subtitles: []
+                        };
+                        if (json.playlist[n].sub) {
+                            videoparams.subtitles.push({
+                                url: BASE_URL + json.playlist[n].sub,
+                                language: 'Русский'
+                            });
+                        };
+                        var v = "videoparams:" + showtime.JSONEncode(videoparams);
+
+                        page.appendItem(v, 'video', {
                             title: new showtime.RichText(blueStr('[' + i + ']') + seasonName + ' - ' + json.playlist[n].comment),
-                            icon: icon
+                            icon: icon,
+                            canonicalUrl: PREFIX + ':index:' + url + ':' + title
                         });
                     }
                 };
@@ -314,9 +330,25 @@
             for (i in tracks) {
                 if (trim(tracks[i]) == "") continue;
                 if (trim(links[i]) != '') link = links[i];
-                page.appendItem(json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i]), 'video', {
+                var videoparams = {
+                    sources: [{
+                        url: json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
+                    }],
+                    title: unescape(title),
+                    subtitles: []
+                };
+                if (json.playlist[0].sub) {
+                    videoparams.subtitles.push({
+                        url: BASE_URL + json.playlist[0].sub,
+                        language: 'Русский'
+                    });
+                };
+                var v = "videoparams:" + showtime.JSONEncode(videoparams);
+
+                page.appendItem(v, 'video', {
                     title: new showtime.RichText(blueStr('[' + i + ']') + unescape(title)),
-                    icon: icon
+                    icon: icon,
+                    canonicalUrl: PREFIX + ':index:' + url + ':' + title
                 });
             };
         };
@@ -325,11 +357,44 @@
 
     plugin.addURI(PREFIX + ":start", startPage);
 
-    //    plugin.addSearcher("Docu.im", logo,
-    //    function(page, query) {
-    //    });
+    plugin.addSearcher("Docu.im", logo,
 
+    function(page, query) {
+        var pageNum = 1,
+            done = false;
+
+        function loader() {
+            if (done) return false;
+            var response = showtime.JSONDecode(showtime.httpPost(BASE_URL + '/search/result', {
+                'viewAs': 'list',
+                'p': pageNum,
+                'f': '{"title":"' + query + '","genres":[],"directors":[],"actors":[],"countries":[],"studios":[]}'
+            }, "", {
+                'X-Requested-With': 'XMLHttpRequest'
+            }));
+            for (var i in response.items) {
+                // 1 - poster, 2 - likes, 3 - views, 4 - comments, 5 - link, 6 - title, 7 - altTitle, 8 - year, 9 - description 
+                var re = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/;
+                var match = re.exec(response.items[i].html);
+                if (match) {
+                    page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(titleJoin(match[6], match[7])), 'video', {
+                        title: new showtime.RichText(titleJoin(match[6], match[7])),
+                        year: +match[8],
+                        icon: match[1],
+                        description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + match[9].replace(/<br \/>\s+/gm, '\n'))
+                    });
+                    page.entries++;
+                };
+            };
+            if (response.pagination.totalPages == pageNum) {
+                done = 1;
+                return false;
+            }
+            pageNum++;
+            return true;
+        };
+        loader();
+        page.loading = false;
+        page.paginator = loader;
+    });
 })(this);
-0
-0
-
