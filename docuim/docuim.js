@@ -88,7 +88,7 @@
             hash = hash.split(hash2[i]).join(hash1[i]);
             hash = hash.split('--').join(hash2[i]);
         }
-        showtime.print(base64_decode(hash));
+        //rshowtime.print(base64_decode(hash));
         return base64_decode(hash);
     }
 
@@ -300,6 +300,7 @@
                                 url: json.playlist[n].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
                             }],
                             title: seasonName + ' - ' + json.playlist[n].comment,
+                            canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[n].id,
                             subtitles: []
                         };
                         if (json.playlist[n].sub) {
@@ -309,11 +310,9 @@
                             });
                         };
                         var v = "videoparams:" + showtime.JSONEncode(videoparams);
-
                         page.appendItem(v, 'video', {
                             title: new showtime.RichText(blueStr('[' + i + ']') + seasonName + ' - ' + json.playlist[n].comment),
-                            icon: icon,
-                            canonicalUrl: PREFIX + ':index:' + url + ':' + title
+                            icon: icon
                         });
                     }
                 };
@@ -335,6 +334,7 @@
                         url: json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
                     }],
                     title: unescape(title),
+                    canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[0].id,
                     subtitles: []
                 };
                 if (json.playlist[0].sub) {
@@ -347,8 +347,7 @@
 
                 page.appendItem(v, 'video', {
                     title: new showtime.RichText(blueStr('[' + i + ']') + unescape(title)),
-                    icon: icon,
-                    canonicalUrl: PREFIX + ':index:' + url + ':' + title
+                    icon: icon
                 });
             };
         };
