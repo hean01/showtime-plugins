@@ -260,8 +260,10 @@
                             sources: [{
                                 url: BASE_URL + match[1]
                             }],
-                            title: showtime.entityDecode(match[2])
+                            title: showtime.entityDecode(match[2]),
+			    canonicalUrl: match[1]
                         });
+			showtime.print("I'm here!");
                         if (getType(match[2].split('.').pop()) != "video") v = BASE_URL + match[1];
                         page.appendItem(v, getType(match[2].split('.').pop()), {
                             title: showtime.entityDecode(match[2]),
