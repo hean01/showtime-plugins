@@ -193,13 +193,13 @@
 
             // Show populars only above the first page
             if (p == 0) {
-                re = /<div class="b-posters[\S\s]*?">([\S\s]*?)<\/div>/;
+                re = /<div class="b-posters[\S\s]*?">([\S\s]*?)<div class="b-clear">/;
                 var what_else = re.exec(response);
                 if (!what_else) {
-                    re = /<div class="b-poster-series-wrap">([\S\s]*?)<\/div>/;
+                    re = /<div class="b-poster-series[\S\s]*?">([\S\s]*?)<div class="b-clear">/;
                     what_else = re.exec(response)[1];
                     // 1 - link, 2 - image, 3 - title
-                    re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span>([\S\s]*?)<\/span>/g;
+                    re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span[\S\s]*?>([\S\s]*?)<\/span>/g;
                 } else {
                     what_else = what_else[1];
                     // 1 - link, 2 - image, 3 - title
@@ -354,7 +354,7 @@
         var response = showtime.httpGet(BASE_URL + url);
         var re = /<div class="poster-main">[\S\s]*?<img src="([^"]+)" alt="([^"]+)/;
         var m = re.exec(response);
-        re = /<div class="b-posters">([\S\s]*?)<\/div>/;
+        re = /<div class="b-posters">([\S\s]*?)<div class="clear">/;
         var what_else = re.exec(response);
         var icon = 0;
         var description = '';
