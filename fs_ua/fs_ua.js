@@ -303,7 +303,8 @@
     plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
         title = unescape(title);
         setPageHeader(page, title);
-        var response = showtime.httpGet(BASE_URL + unescape(url) + '?ajax&folder=' + folder);
+        var response = showtime.httpGet(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
+	showtime.print(response);
         var re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
         var m = re.exec(response); // parsed list will live here
         while (m) {
@@ -370,7 +371,7 @@
             icon: icon,
             description: description
         });
-        response = showtime.httpGet(BASE_URL + url + '?ajax&folder=0');
+        response = showtime.httpGet(BASE_URL + url + '?ajax&blocked=0&folder=0');
         re = /<ul class="filelist[^"]+[\S\s]*?<\/ul>/;
         response = re.exec(response);
         var start = 0,
@@ -458,7 +459,7 @@
         }
         if (!m) { // first file from the first folder
             re = /class="filelist m-current"[\S\s]*?" href="([^"]+)/;
-            m = re.exec(showtime.httpGet(BASE_URL + url + '?ajax&folder=0'));
+            m = re.exec(showtime.httpGet(BASE_URL + url + '?ajax&blocked=0&folder=0'));
         }
         if (m) {
             page.source = "videoparams:" + showtime.JSONEncode({

@@ -88,7 +88,7 @@
             hash = hash.split(hash2[i]).join(hash1[i]);
             hash = hash.split('--').join(hash2[i]);
         }
-        //rshowtime.print(base64_decode(hash));
+        //showtime.print(base64_decode(hash));
         return base64_decode(hash);
     }
 
@@ -201,7 +201,6 @@
                 page.appendItem("", "separator", {
                     title: 'Лучшие сериалы:'
                 });
-
             };
         };
     });
