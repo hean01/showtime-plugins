@@ -126,7 +126,7 @@
                 title: new showtime.RichText(titleJoin(match[6], match[7])),
                 year: +match[8],
                 icon: match[1],
-                description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + match[9].replace(/<br \/>\s+/gm, '\n'))
+                description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>\s+/gm, '\n'))
             });
             match = re.exec(response);
         };
@@ -225,7 +225,7 @@
                     title: new showtime.RichText(titleJoin(match[6], match[7])),
                     year: +match[8],
                     icon: match[1],
-                    description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + match[9].replace(/<br \/>\s+/gm, '\n'))
+                    description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>\s+/gm, '\n'))
                 });
                 match = re.exec(response);
             };
@@ -268,38 +268,41 @@
         // 1 - poster, 2 - likes, 3 - views, 4 - comments, 5 - link, 6 - title, 7 - altTitle, 8 - year, 9 - description 
         var re = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/;
         var match = re.exec(response);
+        var year = +match[8];
         var icon = match[1];
+        var description = new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>\s+/gm, '\n'));
         var re = /[\S\s]*?([\d+^\?]+)/i;
         var movieID = re.exec(unescape(url))[1];
         re = /<div id='season-switch-items'>/;
         if (re.exec(response)) { // serials
-            page.appendPassiveItem('video', unescape(title), {
-                title: new showtime.RichText(titleJoin(match[6], match[7])),
-                year: +match[8],
-                icon: match[1],
-                description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + match[9].replace(/<br \/>\s+/gm, '\n'))
-            });
             re = /<a class='season'>([\S\s]*?)<\/a>/g;
             match = re.exec(response);
             var season = 1;
             while (match) {
                 var seasonName = match[1];
                 var json = showtime.JSONDecode(unhash(showtime.httpGet(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=' + season)));
-                for (n in json.playlist) {
-                    var re2 = /audioIndex={(.*?)}/;
-                    var tracks = re2.exec(json.playlist[n].file)[1].split(';');
-                    re2 = /\[(.*?)\]/;
-                    var links = re2.exec(json.playlist[n].file)[1].split(',');
-                    var link = links[0];
-                    for (i in tracks) {
-                        if (trim(tracks[i]) == '') continue;
+                var re2 = /audioIndex={(.*?)}/;
+                if (json.playlist[0] == null) {
+                    page.error("Видео временно не доступно");
+                    return;
+                };
+                var tracks = re2.exec(json.playlist[0].file)[1].split(';');
+                for (i in tracks) {
+                    if (trim(tracks[i]) == '') continue;
+                    page.appendItem("", "separator", {
+                        title: 'Soundtrack ' + i
+                    });
+                    for (n in json.playlist) {
+                        re2 = /\[(.*?)\]/;
+                        var links = re2.exec(json.playlist[n].file)[1].split(',');
+                        var link = links[0];
                         if (trim(links[i]) != '') link = links[i];
                         var videoparams = {
                             sources: [{
                                 url: json.playlist[n].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
                             }],
                             title: seasonName + ' - ' + json.playlist[n].comment,
-                            canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[n].id,
+                            canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[n].id + ':' + i,
                             subtitles: []
                         };
                         if (json.playlist[n].sub) {
@@ -310,10 +313,12 @@
                         };
                         var v = "videoparams:" + showtime.JSONEncode(videoparams);
                         page.appendItem(v, 'video', {
-                            title: new showtime.RichText(blueStr('[' + i + ']') + seasonName + ' - ' + json.playlist[n].comment),
+                            title: new showtime.RichText(seasonName + ' - ' + json.playlist[n].comment),
+                            year: year,
+                            description: description,
                             icon: icon
                         });
-                    }
+                    };
                 };
                 match = re.exec(response);
                 season++;
@@ -327,6 +332,9 @@
             var link = links[0];
             for (i in tracks) {
                 if (trim(tracks[i]) == "") continue;
+                page.appendItem("", "separator", {
+                    title: 'Soundtrack ' + i
+                });
                 if (trim(links[i]) != '') link = links[i];
                 var videoparams = {
                     sources: [{
@@ -345,7 +353,9 @@
                 var v = "videoparams:" + showtime.JSONEncode(videoparams);
 
                 page.appendItem(v, 'video', {
-                    title: new showtime.RichText(blueStr('[' + i + ']') + unescape(title)),
+                    title: new showtime.RichText(unescape(title)),
+                    year: year,
+                    description: description,
                     icon: icon
                 });
             };
@@ -379,7 +389,7 @@
                         title: new showtime.RichText(titleJoin(match[6], match[7])),
                         year: +match[8],
                         icon: match[1],
-                        description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + match[9].replace(/<br \/>\s+/gm, '\n'))
+                        description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>\s+/gm, '\n'))
                     });
                     page.entries++;
                 };
