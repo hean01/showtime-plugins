@@ -135,8 +135,8 @@
             title: unescape(json.title),
             canonicalUrl: PREFIX + ":video:" + id + ":" + title,
             sources: [{
-                url: unescape(json.src)
-            }]
+                url: json.src
+            }]	    
         });
         page.loading = false;
     });

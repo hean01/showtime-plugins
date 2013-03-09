@@ -114,7 +114,7 @@
             title: unescape(sign.title),
             canonicalUrl: PREFIX + ":playmego:" + url,
             sources: [{
-                url: unescape(sign.src)
+                url: sign.src
             }]
         });
         page.loading = false;
