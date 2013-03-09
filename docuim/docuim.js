@@ -341,7 +341,7 @@
                         url: json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
                     }],
                     title: unescape(title),
-                    canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[0].id,
+                    canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[0].id + ':' + i,
                     subtitles: []
                 };
                 if (json.playlist[0].sub) {
