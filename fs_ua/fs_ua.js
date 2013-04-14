@@ -264,66 +264,71 @@
     });
 
     function getType(type) {
+        type = type.toLowerCase();
         switch (type) {
-            case "file mkv":
-            case "file avi":
-            case "file flv":
-            case "file mp4":
-            case "file mov":
-            case "file ts":
-            case "file mpg":
-            case "file mpeg":
-            case "file vob":
-            case "file iso":
-            case "file m4v":
-            case "file wmv":
-            case "file m2ts":
+            case "mkv":
+            case "avi":
+            case "flv":
+            case "mp4":
+            case "mov":
+            case "ts":
+            case "mpg":
+            case "mpeg":
+            case "vob":
+            case "iso":
+            case "m4v":
+            case "wmv":
+            case "m2ts":
                 return "video";
-            case "file jpg":
-            case "file jpeg":
-            case "file png":
-            case "file bmp":
-            case "file gif":
+            case "jpg":
+            case "jpeg":
+            case "png":
+            case "bmp":
+            case "gif":
                 return "image";
-            case "file mp3":
-            case "file flac":
-            case "file wav":
-            case "file ogg":
-            case "file aac":
-            case "file m4a":
-            case "file ape":
-            case "file dts":
-            case "file ac3":
+            case "mp3":
+            case "flac":
+            case "wav":
+            case "ogg":
+            case "aac":
+            case "m4a":
+            case "ape":
+            case "dts":
+            case "ac3":
                 return "audio";
             default:
                 return "file";
         }
     }
 
+
     plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
         title = unescape(title);
         setPageHeader(page, title);
         var response = showtime.httpGet(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
-	showtime.print(response);
         var re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
         var m = re.exec(response); // parsed list will live here
         while (m) {
-            if (m[1].substring(0, 4) == "file") {
-                // 1 - link, 2 - name, 3 - size, 4 - raw flv link
-                var re2 = /[\S\s]*?href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>([\S\s]*?)<\/tr>/;
-                var n = re2.exec(m[2]);
-                var re3 = /[\S\s]*?<a href="([^"]+)/;
-                var l = re3.exec(n[4]);
-                if (l) sURL[n[1]] = l[1];
-                if (getType(m[1]) == "video") {
-                    sTitle[n[1]] = unescape(n[2]);
-                    page.appendItem(PREFIX + ":play:" + n[1], getType(m[1]), {
-                        title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
-                    })
+            if (m[1].indexOf("file") > -1) {
+                var re2 = /a href="([^"]+)/;
+                var flv_link = "";
+                if (re2.exec(m[2])) flv_link = re2.exec(m[2])[1];
+                re2 = /span class="[\S\s]*?filename-text">([\S\s]*?)<\/span>/;
+                var name = re2.exec(m[2])[1];
+                re2 = /span class="[\S\s]*?material-size">([\S\s]*?)<\/span>/;
+                var size = re2.exec(m[2])[1];
+                re2 = /" href="([^"]+)/;
+                var direct_link = re2.exec(m[2])[1];
+                if (getType(direct_link.split('.').pop()) == 'video') {
+                    sURL[direct_link] = flv_link;
+                    sTitle[direct_link] = name;
+                    page.appendItem(PREFIX + ":play:" + direct_link, getType(direct_link.split('.').pop()), {
+                        title: new showtime.RichText(name + '<font color="6699CC"> (' + size + ')</font>')
+                    });
                 } else {
-                    page.appendItem(n[1], getType(m[1]), {
-                        title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font>')
-                    })
+                    page.appendItem(direct_link, getType(direct_link.split('.').pop()), {
+                        title: new showtime.RichText(name + '<font color="6699CC"> (' + size + ')</font>')
+                    });
                 }
             } else {
                 if (m[1] == "folder") {
@@ -476,10 +481,13 @@
     plugin.addURI(PREFIX + ":start", startPage);
 
     plugin.addSearcher("fs.ua", logo,
+
     function(page, query) {
-        var p = 0, done = false;
+        var p = 0,
+            done = false;
+
         function loader() {
-	    if (done) return false;
+            if (done) return false;
             var response = showtime.httpGet(BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+') + "&page=" + p);
             //1-link, 2-title, 3-image, 4 - description, 5 - type, 6 - type in text, 7 - genre
             var re = /class="image-wrap">[\S\s]*?<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)[\S\s]*?<p class="text">([\S\s]*?)<\/p>[\S\s]*?<span class="section ([^"]+)">([\S\s]*?)<\/span>[\S\s]*?<span class="genre"><span class="caption">Жанр:<\/span><span>([\S\s]*?)<\/span>/g;
@@ -487,8 +495,8 @@
             while (match) {
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[2]), "video", {
                     title: new showtime.RichText(match[2]),
-		    description: new showtime.RichText('Раздел: '+blueStr(match[6])+'\n'+match[4]),
-		    genre: match[7],
+                    description: new showtime.RichText('Раздел: ' + blueStr(match[6]) + '\n' + match[4]),
+                    genre: match[7],
                     icon: match[3]
                 });
                 page.entries++;
@@ -497,7 +505,7 @@
             p++;
             re = /<b>Следующая страница<\/b>/;
             if (re.exec(response)) return true;
-	    done = true;
+            done = true;
             return false;
         }
         loader();
