@@ -241,14 +241,29 @@
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
         var response = showtime.httpGet(unescape(url));
         var re = /"file":"(.*?)"/;
-        response = re.exec(response);
-        if (response) response = unhash(response[1]);
+        var link = re.exec(response);
+        if (link) link = unhash(link[1])
+        else { // try vk.com
+            re = /<iframe src="(.*?)"/;
+            link = re.exec(response);
+            if (link) {
+                response = showtime.httpGet(link[1]);
+                re = /url720=(.*?)&/;
+                link = re.exec(response);
+                if (link) link = link[1]
+                else {
+                    page.error('Это видео изъято из публичного доступа. / This video is not available, sorry :(')
+                    page.loading = false;
+                    return;
+                }
+            }
+        };
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             canonicalUrl: PREFIX + ":video:" + url + ":" + title,
             sources: [{
-                url: response
+                url: link
             }]
         });
         page.loading = false;
