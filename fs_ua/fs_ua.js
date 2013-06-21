@@ -20,7 +20,7 @@
 (function(plugin) {
 
     var PREFIX = 'fs_ua';
-    var BASE_URL = 'http://fs.ua';
+    var BASE_URL = 'http://fs.to';
 
     var logo = plugin.path + "logo.png";
 
@@ -61,7 +61,7 @@
     }
 
     function startPage(page) {
-        setPageHeader(page, 'fs.ua - Рекомендательная видеосеть');
+        setPageHeader(page, 'FS.UA - Рекомендательная видеосеть');
         page.loading = false;
         page.appendItem(PREFIX + ':updates', 'directory', {
             title: 'Новое в каталоге',
@@ -301,59 +301,6 @@
         }
     }
 
-
-    plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
-        title = unescape(title);
-        setPageHeader(page, title);
-        var response = showtime.httpGet(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
-        var re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
-        var m = re.exec(response); // parsed list will live here
-        while (m) {
-            if (m[1].indexOf("file") > -1) {
-                var re2 = /a href="([^"]+)/;
-                var flv_link = "";
-                if (re2.exec(m[2])) flv_link = re2.exec(m[2])[1];
-                re2 = /span class="[\S\s]*?filename-text">([\S\s]*?)<\/span>/;
-                var name = re2.exec(m[2])[1];
-                re2 = /span class="[\S\s]*?material-size">([\S\s]*?)<\/span>/;
-                var size = re2.exec(m[2])[1];
-                re2 = /" href="([^"]+)/;
-                var direct_link = re2.exec(m[2])[1];
-                if (getType(direct_link.split('.').pop()) == 'video') {
-                    sURL[direct_link] = flv_link;
-                    sTitle[direct_link] = name;
-                    page.appendItem(PREFIX + ":play:" + direct_link, getType(direct_link.split('.').pop()), {
-                        title: new showtime.RichText(name + '<font color="6699CC"> (' + size + ')</font>')
-                    });
-                } else {
-                    page.appendItem(direct_link, getType(direct_link.split('.').pop()), {
-                        title: new showtime.RichText(name + '<font color="6699CC"> (' + size + ')</font>')
-                    });
-                }
-            } else {
-                if (m[1] == "folder") {
-                    var re2 = /<li class="([^"]+)[\S\s]*?href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
-                    var n = re2.exec(m[2]);
-                    if (n) { // checking for opened folder
-                        re2 = /<li class="([^"]+)[\S\s]*?" href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
-                        n = re2.exec(m[2]);
-                        page.appendItem(n[2], getType(n[1]), {
-                            title: new showtime.RichText(n[3] + '<font color="6699CC"> (' + n[4] + ')</font>')
-                        });
-                    } else {
-                        var re2 = /rel="{parent_id: ([^}]+)}">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
-                        var n = re2.exec(m[2]);
-                        n[2] = trim(n[2]);
-                        page.appendItem(PREFIX + ":listFolder:" + escape(url) + ":" + n[1].replace("'", "") + ":" + escape(title), "directory", {
-                            title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font> ' + n[4] + " " + n[5])
-                        });
-                    }
-                }
-            }
-            m = re.exec(response);
-        }
-    });
-
     // Appends the item and lists it's root folder
     plugin.addURI(PREFIX + ":listRoot:(.*):(.*)", function(page, url, title) {
         title = unescape(title);
@@ -371,7 +318,7 @@
             description = new showtime.RichText(trim(re.exec(response)[1].toString()).replace('>еще</a>', ""));
         }
         setPageHeader(page, title);
-        page.appendItem(PREFIX + ":play:" + url, "video", {
+        page.appendItem(PREFIX + ":playOnline:" + url + ":" + escape(title), "video", {
             title: new showtime.RichText(title),
             icon: icon,
             description: description
@@ -426,15 +373,94 @@
         page.loading = false;
     });
 
+    plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
+        title = unescape(title);
+        setPageHeader(page, title);
+        var response = showtime.httpGet(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
+        var re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
+        var m = re.exec(response); // parsed list will live here
+        while (m) {
+            if (m[1].indexOf("file") > -1) {
+                var re2 = /a href="([^"]+)/;
+                var flv_link = "";
+                if (re2.exec(m[2])) flv_link = re2.exec(m[2])[1];
+                re2 = /span class="[\S\s]*?filename-text">([\S\s]*?)<\/span>/;
+                var name = re2.exec(m[2])[1];
+                re2 = /span class="[\S\s]*?material-size">([\S\s]*?)<\/span>/;
+                var size = re2.exec(m[2])[1];
+                re2 = /" href="([^"]+)/;
+                var direct_link = re2.exec(m[2])[1];
+                if (getType(direct_link.split('.').pop()) == 'video') {
+                    sURL[direct_link] = flv_link;
+                    sTitle[direct_link] = name;
+                    page.appendItem(PREFIX + ":play:" + direct_link, getType(direct_link.split('.').pop()), {
+                        title: new showtime.RichText(name + '<font color="6699CC"> (' + size + ')</font>')
+                    });
+                } else {
+                    page.appendItem(BASE_URL + direct_link, getType(direct_link.split('.').pop()), {
+                        title: new showtime.RichText(name + '<font color="6699CC"> (' + size + ')</font>')
+                    });
+                }
+            } else {
+                if (m[1] == "folder") {
+                    var re2 = /<li class="([^"]+)[\S\s]*?href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
+                    var n = re2.exec(m[2]);
+                    if (n) { // checking for opened folder
+                        re2 = /<li class="([^"]+)[\S\s]*?" href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
+                        n = re2.exec(m[2]);
+                        page.appendItem(n[2], getType(n[1]), {
+                            title: new showtime.RichText(n[3] + '<font color="6699CC"> (' + n[4] + ')</font>')
+                        });
+                    } else {
+                        var re2 = /rel="{parent_id: ([^}]+)}">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
+                        var n = re2.exec(m[2]);
+                        n[2] = trim(n[2]);
+                        page.appendItem(PREFIX + ":listFolder:" + escape(url) + ":" + n[1].replace("'", "") + ":" + escape(title), "directory", {
+                            title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font> ' + n[4] + " " + n[5])
+                        });
+                    }
+                }
+            }
+            m = re.exec(response);
+        }
+    });
+
+    // Processes "Play online" button 
+    plugin.addURI(PREFIX + ":playOnline:(.*):(.*)", function(page, url, title) {
+        var response = showtime.httpGet(BASE_URL + url).toString();
+        var re = /playlist: \[[\S\s]*?url: '([^']+)/;
+        url = re.exec(response) // Some clips autoplay
+        if (!url) {
+            re = /<div id="page-item-viewonline"[\S\s]*?<a href="([^"]+)/;
+            response = showtime.httpGet(BASE_URL + re.exec(response)[1]).toString();
+            re = /<a id="[\S\s]*?" href="([\S\s]*?)" title="([\S\s]*?)"/;
+            response = re.exec(response);
+            if (!response) {
+                page.error("Линк на проигрывание отсутствует :(");
+                return;
+            }
+            re = /playlist: \[[\S\s]*?url: '([^']+)/;
+            url = re.exec(showtime.httpGet(BASE_URL + response[1]));
+        }
+        page.type = "video";
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            sources: [{
+                url: BASE_URL + url[1]
+            }]
+        });
+        page.loading = false;
+    });
+
     // Play URL
     plugin.addURI(PREFIX + ":play:(.*)", function(page, url) {
         page.type = "video";
-        if (showtime.probe(url).result == 0) {
+        if (showtime.probe(BASE_URL + url).result == 0) {
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: sTitle[url],
                 canonicalUrl: PREFIX + ":play:" + url,
                 sources: [{
-                    url: url
+                    url: BASE_URL + url
                 }]
             });
             page.loading = false;
@@ -471,7 +497,7 @@
                 title: unescape(title),
                 canonicalUrl: PREFIX + ":play:" + origURL,
                 sources: [{
-                    url: m[1]
+                    url: BASE_URL + m[1]
                 }]
             });
         } else page.error("Линк не проигрывается :(");
