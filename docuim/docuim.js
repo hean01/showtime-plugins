@@ -277,15 +277,17 @@
         if (re.exec(response)) { // serials
             re = /<a class='season'>([\S\s]*?)<\/a>/g;
             match = re.exec(response);
+
             var season = 1;
             while (match) {
                 var seasonName = match[1];
                 var json = showtime.JSONDecode(unhash(showtime.httpGet(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=' + season)));
-                var re2 = /audioIndex={(.*?)}/;
+                var re2 = /aindex={(.*?)}/;
                 if (json.playlist[0] == null) {
                     page.error("Видео временно не доступно");
                     return;
                 };
+
                 var tracks = re2.exec(json.playlist[0].file)[1].split(';');
                 for (i in tracks) {
                     if (trim(tracks[i]) == '') continue;
@@ -299,7 +301,7 @@
                         if (trim(links[i]) != '') link = links[i];
                         var videoparams = {
                             sources: [{
-                                url: json.playlist[n].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
+                                url: json.playlist[n].file.replace(/\[(.*?)\]/, link).replace(/aindex={(.*?)}/, "aindex=" + tracks[i])
                             }],
                             title: seasonName + ' - ' + json.playlist[n].comment,
                             canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[n].id + ':' + i,
@@ -325,7 +327,7 @@
             }
         } else { // movies
             var json = showtime.JSONDecode(unhash(showtime.httpGet(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=1')));
-            re = /audioIndex={(.*?)}/;
+            re = /aindex={(.*?)}/;
             var tracks = re.exec(json.playlist[0].file)[1].split(';');
             re = /\[(.*?)\]/;
             var links = re.exec(json.playlist[0].file)[1].split(',');
@@ -338,7 +340,7 @@
                 if (trim(links[i]) != '') link = links[i];
                 var videoparams = {
                     sources: [{
-                        url: json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
+                        url: json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/aindex={(.*?)}/, "aindex=" + tracks[i])
                     }],
                     title: unescape(title),
                     canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[0].id + ':' + i,
