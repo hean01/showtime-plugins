@@ -78,12 +78,19 @@
             var re2 = /(hd-icon)/;
             if (match) match[6] = re2.exec(match[6]);
             while (match) {
+                var re3 = /data-original="([\S\s]*?$)/;
+                var icon = re3.exec(match[2]);
+                if (!icon) {
+                    icon = match[2]
+                } else {
+                    icon = icon[1]
+                };
                 page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText((match[6] ? blueStr("HD ") : "") + match[3]),
                     duration: match[5],
                     rating: getRating(match[4]),
                     description: new showtime.RichText("Views: " + blueStr(match[7]) + "\nAdded:" + blueStr(match[8]) + match[9]),
-                    icon: match[2]
+                    icon: icon
                 });
                 match = re.exec(bw);
                 if (match) match[6] = re2.exec(match[6]);
@@ -120,12 +127,19 @@
             var re2 = /(hd-icon)/;
             if (match) match[6] = re2.exec(match[6]);
             while (match) {
+                var re3 = /data-original="([\S\s]*?$)/;
+                var icon = re3.exec(match[2]);
+                if (!icon) {
+                    icon = match[2]
+                } else {
+                    icon = icon[1]
+                };
                 page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText((match[6] ? blueStr("HD ") : "") + match[3]),
                     duration: match[5],
                     rating: getRating(match[4]),
                     description: new showtime.RichText("Views: " + blueStr(match[7]) + "\nAdded:" + blueStr(match[8]) + match[9]),
-                    icon: match[2]
+                    icon: icon
                 });
                 page.entries++;
                 match = re.exec(bw);
@@ -185,9 +199,17 @@
         re = /<a class="link" href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?alt="([\S\s]*?)"[\S\s]*?<span class="total"><span class="bg">Total: <span>([\S\s]*?)<\/span>/g;
         var match = re.exec(bw);
         while (match) {
+            var re3 = /data-original="([\S\s]*?$)/;
+            var icon = re3.exec(match[2]);
+            if (!icon) {
+                icon = match[2]
+            } else {
+                icon = icon[1]
+            };
+
             page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                 title: new showtime.RichText(match[3] + blueStr(" (" + match[4] + ")")),
-                icon: match[2]
+                icon: icon
             });
             match = re.exec(bw);
         };
@@ -210,11 +232,19 @@
             re = /<a href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?class="[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="time">([\S\s]*?)<\/span>[\S\s]*?<span class="right-side"><span>([\S\s]*?)<\/span>/g;
             var match = re.exec(bw);
             while (match) {
+                var re3 = /data-original="([\S\s]*?$)/;
+                var icon = re3.exec(match[2]);
+                if (!icon) {
+                    icon = match[2]
+                } else {
+                    icon = icon[1]
+                };
+
                 page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText(match[3]),
                     rating: getRating(match[4]),
                     description: new showtime.RichText("Views: " + blueStr(match[6]) + "\nVideos: " + blueStr(match[5].replace(/[A-Za-z$-]/g, ""))),
-                    icon: match[2]
+                    icon: icon
                 });
                 match = re.exec(bw);
             }
@@ -306,10 +336,18 @@
             re = /<a title="([\S\s]*?)" href="([\S\s]*?)">[\S\s]*?" src="([\S\s]*?)"[\S\s]*?<span class="side-right">[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<span class="side-left">[\S\s]*?<span>([\S\s]*?)<\/span>/g;
             var match = re.exec(bw);
             while (match) {
+                var re3 = /data-original="([\S\s]*?$)/;
+                var icon = re3.exec(match[3]);
+                if (!icon) {
+                    icon = match[3]
+                } else {
+                    icon = icon[1]
+                };
+
                 page.appendItem(PREFIX + ':videos:' + escape(match[2]) + ":" + escape(match[1]), 'video', {
                     title: new showtime.RichText(match[1]),
                     description: new showtime.RichText("Views: " + blueStr(match[5]) + "\nVideos: " + blueStr(match[4])),
-                    icon: match[3]
+                    icon: icon
                 });
                 match = re.exec(bw);
             }
@@ -379,17 +417,15 @@
     // Play links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
         var v = showtime.httpGet(BASE_URL + unescape(url));
-        var re = /'config', '([\S\s]*?)'/;
+        var re = /playerFallbackFile = '([\s\S]*?)'/;
         var match = re.exec(v);
-        var w = showtime.httpGet(BASE_URL + match[1]);
-        re = /<file>([\s\S]*?)<\/file>/;
-        match = re.exec(w);
+        showtime.print(showtime.entityDecode(match[1]));
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             canonicalUrl: PREFIX + ":video:" + url + ":" + title,
             sources: [{
-                url: showtime.entityDecode(match[1])
+                url: unescape(showtime.entityDecode(match[1]))
             }]
         });
         page.loading = false;
@@ -417,12 +453,20 @@
                 var re2 = /(hd-icon)/;
                 if (match) match[6] = re2.exec(match[6]);
                 while (match) {
+                    var re3 = /data-original="([\S\s]*?$)/;
+                    var icon = re3.exec(match[2]);
+                    if (!icon) {
+                        icon = match[2]
+                    } else {
+                        icon = icon[1]
+                    };
+
                     page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                         title: new showtime.RichText((match[6] ? blueStr("HD ") : "") + match[3]),
                         duration: match[5],
                         rating: getRating(match[4]),
                         description: new showtime.RichText("Views: " + blueStr(match[7]) + "\nAdded:" + blueStr(match[8]) + match[9]),
-                        icon: match[2]
+                        icon: icon
                     });
                     page.entries++;
                     match = re.exec(bw);
