@@ -282,7 +282,7 @@
             while (match) {
                 var seasonName = match[1];
                 var json = showtime.JSONDecode(unhash(showtime.httpGet(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=' + season)));
-                var re2 = /aindex={(.*?)}/;
+                var re2 = /audioIndex={(.*?)}/;
                 if (json.playlist[0] == null) {
                     page.error("Видео временно не доступно");
                     return;
@@ -301,7 +301,7 @@
                         if (trim(links[i]) != '') link = links[i];
                         var videoparams = {
                             sources: [{
-                                url: json.playlist[n].file.replace(/\[(.*?)\]/, link).replace(/aindex={(.*?)}/, "aindex=" + tracks[i])
+                                url: json.playlist[n].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
                             }],
                             title: seasonName + ' - ' + json.playlist[n].comment,
                             canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[n].id + ':' + i,
@@ -327,7 +327,7 @@
             }
         } else { // movies
             var json = showtime.JSONDecode(unhash(showtime.httpGet(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=1')));
-            re = /aindex={(.*?)}/;
+            re = /audioIndex={(.*?)}/;
             var tracks = re.exec(json.playlist[0].file)[1].split(';');
             re = /\[(.*?)\]/;
             var links = re.exec(json.playlist[0].file)[1].split(',');
@@ -340,7 +340,7 @@
                 if (trim(links[i]) != '') link = links[i];
                 var videoparams = {
                     sources: [{
-                        url: json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/aindex={(.*?)}/, "aindex=" + tracks[i])
+                        url: json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
                     }],
                     title: unescape(title),
                     canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[0].id + ':' + i,
