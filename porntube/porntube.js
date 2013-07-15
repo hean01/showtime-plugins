@@ -229,22 +229,14 @@
             var re = /<ul class="sites pictures" id="pictures">([\S\s]*?)<\/ul>/;
             var bw = re.exec(v)[1];
             // 1 - link, 2 - img, 3 - title, 4 - rating, 5 - videos, 6 - views
-            re = /<a href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?class="[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="time">([\S\s]*?)<\/span>[\S\s]*?<span class="right-side"><span>([\S\s]*?)<\/span>/g;
+            re = /<a href="([\S\s]*?)">[\S\s]*?" data-original="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?class="[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="time">([\S\s]*?)<\/span>[\S\s]*?<span class="right-side"><span>([\S\s]*?)<\/span>/g;
             var match = re.exec(bw);
             while (match) {
-                var re3 = /data-original="([\S\s]*?$)/;
-                var icon = re3.exec(match[2]);
-                if (!icon) {
-                    icon = match[2]
-                } else {
-                    icon = icon[1]
-                };
-
                 page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText(match[3]),
                     rating: getRating(match[4]),
                     description: new showtime.RichText("Views: " + blueStr(match[6]) + "\nVideos: " + blueStr(match[5].replace(/[A-Za-z$-]/g, ""))),
-                    icon: icon
+                    icon: match[2]
                 });
                 match = re.exec(bw);
             }
@@ -333,21 +325,13 @@
             var re = /<ul class="pornstars">([\S\s]*?)<\/ul>/;
             var bw = re.exec(v)[1];
             // 1 - title, 2 - link, 3 - img, 4 - videos, 5 - views
-            re = /<a title="([\S\s]*?)" href="([\S\s]*?)">[\S\s]*?" src="([\S\s]*?)"[\S\s]*?<span class="side-right">[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<span class="side-left">[\S\s]*?<span>([\S\s]*?)<\/span>/g;
+            re = /<a title="([\S\s]*?)" href="([\S\s]*?)">[\S\s]*?" data-original="([\S\s]*?)"[\S\s]*?<span class="side-right">[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<span class="side-left">[\S\s]*?<span>([\S\s]*?)<\/span>/g;
             var match = re.exec(bw);
             while (match) {
-                var re3 = /data-original="([\S\s]*?$)/;
-                var icon = re3.exec(match[3]);
-                if (!icon) {
-                    icon = match[3]
-                } else {
-                    icon = icon[1]
-                };
-
                 page.appendItem(PREFIX + ':videos:' + escape(match[2]) + ":" + escape(match[1]), 'video', {
                     title: new showtime.RichText(match[1]),
                     description: new showtime.RichText("Views: " + blueStr(match[5]) + "\nVideos: " + blueStr(match[4])),
-                    icon: icon
+                    icon: match[3]
                 });
                 match = re.exec(bw);
             }
