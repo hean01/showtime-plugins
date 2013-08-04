@@ -403,7 +403,6 @@
         var v = showtime.httpGet(BASE_URL + unescape(url));
         var re = /playerFallbackFile = '([\s\S]*?)'/;
         var match = re.exec(v);
-        showtime.print(showtime.entityDecode(match[1]));
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
@@ -429,10 +428,10 @@
             function loader() {
                 if (done) return false;
                 var v = showtime.httpGet(BASE_URL + '/search?q=' + query + "&p=" + pageNum);
-                var re = /<ul class="pictures" id="pictures">([\S\s]*?)<\/ul>/;
+                var re = /<div class="overlay"([\S\s]*?)<div class="relax"/;
                 var bw = re.exec(v)[1];
                 // 1 - link, 2 - img, 3 - title, 4 - rating, 5 - duration, 6 - HDflag, 7 - views, 8 - was added, 9 - time units
-                re = /<a href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?class="RotatingThumbs[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="time">([\S\s]*?)<\/span>([\S\s]*?)<span class="right-side"><span>([\S\s]*?)<\/span>[\S\s]*?<span class="left-side"><span>([\S\s]*?)<\/span>([\S\s]*?)<\/span>[\S\s]*?<\/a>/g;
+                re = /<a href="([\S\s]*?)"[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>([\S\s]*?)<span class="right-side"><span>([\S\s]*?)<\/span>[\S\s]*?<span class="left-side"><span>([\S\s]*?)<\/span>([\S\s]*?)<\/span>[\S\s]*?<\/a>/g;
                 var match = re.exec(bw);
                 var re2 = /(hd-icon)/;
                 if (match) match[6] = re2.exec(match[6]);
