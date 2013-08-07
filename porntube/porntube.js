@@ -41,8 +41,15 @@
         Quality = "",
         Age = "";
 
+    function trim(s) {
+        s = s.replace(/(\r\n|\n|\r)/gm, "");
+        s = s.replace(/(^\s*)|(\s*$)/gi, "");
+        return s.replace(/[ ]{2,}/gi, " ");
+    }
+
     function getRating(str) {
-        if (str == "&nbsp;") return 0;
+        str = trim(str);
+        if (str == "&nbsp;" || str == '') return 0;
         return +(str.replace("%", ""));
     }
 
@@ -72,11 +79,11 @@
                 title: name
             });
             var bw = re.exec(v)[1];
-            // 1 - link, 2 - img, 3 - title, 4 - rating, 5 - duration, 6 - HDflag, 7 - views, 8 - was added, 9 - time units
-            re = /<a href="([\S\s]*?)"[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>([\S\s]*?)<span class="right-side"><span>([\S\s]*?)<\/span>[\S\s]*?<span class="left-side"><span>([\S\s]*?)<\/span>([\S\s]*?)<\/span>[\S\s]*?<\/a>/g;
+            // 1-link, 2-img, 3-title, 4-HDflag, 5-views, 6-duration, 7-rating, 8-was added, 9-time units
+            re = /<a href="([\S\s]*?)"[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?<a href="[\S\s]*?">([\S\s]*?)<span>([\S\s]*?) views <\/span>([\S\s]*?)<\/a>[\S\s]*?<strong>([\S\s]*?)like this<\/strong>[\S\s]*?<span>([\S\s]*?)<\/span>([\S\s]*?)<\/a>/g;
             var match = re.exec(bw);
-            var re2 = /(hd-icon)/;
-            if (match) match[6] = re2.exec(match[6]);
+            var re2 = /"hd"/;
+            if (match) match[4] = re2.exec(match[4]);
             while (match) {
                 var re3 = /data-original="([\S\s]*?$)/;
                 var icon = re3.exec(match[2]);
@@ -86,21 +93,21 @@
                     icon = icon[1]
                 };
                 page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
-                    title: new showtime.RichText((match[6] ? blueStr("HD ") : "") + match[3]),
-                    duration: match[5],
-                    rating: getRating(match[4]),
-                    description: new showtime.RichText("Views: " + blueStr(match[7]) + "\nAdded:" + blueStr(match[8]) + match[9]),
+                    title: new showtime.RichText((match[4] ? blueStr("HD ") : "") + match[3]),
+                    duration: trim(match[6]),
+                    rating: getRating(match[7]),
+                    description: new showtime.RichText("Views: " + blueStr(match[5]) + "\nAdded:" + blueStr(match[8]) + match[9]),
                     icon: icon
                 });
                 match = re.exec(bw);
-                if (match) match[6] = re2.exec(match[6]);
+                if (match) match[4] = re2.exec(match[4]);
             }
         }
 
         var v = showtime.httpGet(BASE_URL);
 
         // Being watched now
-        re = /<div class="most-viewed-home" id="ajax-holder">([\S\s]*?)<\/div>/;
+        re = /<div class="most-viewed-home" id="ajax-holder">([\S\s]*?)<div class="relax">/;
         addSectionAndScrape("Being watched now:");
 
         // Recent videos
@@ -110,22 +117,22 @@
 
     plugin.addURI(PREFIX + ":videos:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, 'Porntube - ' + unescape(title));
-        var pageNum = 1;
-        var done = false;
+        var fromPage = 1,
+            tryToSearch = true;
         var Order = "age",
             Quality = "all",
             Age = "alltime";
 
         function loader() {
-            if (done) return false;
-            var v = showtime.httpGet(BASE_URL + unescape(url) + '?p=' + pageNum + '&order=' + Order + '&quality=' + Quality + '&age=' + Age);
+            if (!tryToSearch) return false;
+            var v = showtime.httpGet(BASE_URL + unescape(url) + '?p=' + fromPage + '&order=' + Order + '&quality=' + Quality + '&age=' + Age);
             var re = /<div class="overlay"([\S\s]*?)<div class="relax"/;
             var bw = re.exec(v)[1];
-            // 1 - link, 2 - img, 3 - title, 4 - rating, 5 - duration, 6 - HDflag, 7 - views, 8 - was added, 9 - time units
-            re = /<a href="([\S\s]*?)"[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>([\S\s]*?)<span class="right-side"><span>([\S\s]*?)<\/span>[\S\s]*?<span class="left-side"><span>([\S\s]*?)<\/span>([\S\s]*?)<\/span>[\S\s]*?<\/a>/g;
+            // 1-link, 2-img, 3-title, 4-HDflag, 5-views, 6-duration, 7-rating, 8-was added, 9-time units
+            re = /<a href="([\S\s]*?)"[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?<a href="[\S\s]*?">([\S\s]*?)<span>([\S\s]*?) views <\/span>([\S\s]*?)<\/a>[\S\s]*?<strong>([\S\s]*?)like this<\/strong>[\S\s]*?<span>([\S\s]*?)<\/span>([\S\s]*?)<\/a>/g;
             var match = re.exec(bw);
-            var re2 = /(hd-icon)/;
-            if (match) match[6] = re2.exec(match[6]);
+            var re2 = /"hd"/;
+            if (match) match[4] = re2.exec(match[4]);
             while (match) {
                 var re3 = /data-original="([\S\s]*?$)/;
                 var icon = re3.exec(match[2]);
@@ -135,23 +142,19 @@
                     icon = icon[1]
                 };
                 page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
-                    title: new showtime.RichText((match[6] ? blueStr("HD ") : "") + match[3]),
-                    duration: match[5],
-                    rating: getRating(match[4]),
-                    description: new showtime.RichText("Views: " + blueStr(match[7]) + "\nAdded:" + blueStr(match[8]) + match[9]),
+                    title: new showtime.RichText((match[4] ? blueStr("HD ") : "") + match[3]),
+                    duration: trim(match[6]),
+                    rating: getRating(match[7]),
+                    description: new showtime.RichText("Views: " + blueStr(match[5]) + "\nAdded:" + blueStr(match[8]) + match[9]),
                     icon: icon
                 });
                 page.entries++;
                 match = re.exec(bw);
-                if (match) match[6] = re2.exec(match[6]);
+                if (match) match[4] = re2.exec(match[4]);
             }
-            pageNum++;
-            re = /page-next.gif/;
-            match = re.exec(v);
-            if (!match) {
-                done = true;
-                return false;
-            }
+            re = /navNext">Next/;
+            if (!re.exec(v)) return tryToSearch = false;
+            fromPage++;
             return true;
         };
         page.options.createMultiOpt("order", "Sort by", [
@@ -182,7 +185,7 @@
                 return true
             };
             page.flush();
-            pageNum = 1, done = false;
+            fromPage = 1, tryToSearch = false;
             loader();
             page.paginator = loader;
         });
@@ -195,7 +198,7 @@
         var v = showtime.httpGet(BASE_URL + "/categories");
         var re = /<!-- Most popular categories([\S\s]*?)<!-- Most popular categories. -->/;
         var bw = re.exec(v)[1];
-        // 1 - link, 2 - img, 3 - title, 4 - total
+        // 1-link, 2-img, 3-title, 4-total
         re = /<a class="link" href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?alt="([\S\s]*?)"[\S\s]*?<span class="total"><span class="bg">Total: <span>([\S\s]*?)<\/span>/g;
         var match = re.exec(bw);
         while (match) {
@@ -217,15 +220,15 @@
 
     plugin.addURI(PREFIX + ":channels", function(page) {
         setPageHeader(page, 'Porntube - Channels');
-        var pageNum = 1;
-        var done = false;
+        var fromPage = 1,
+            tryToSearch = true;
         var Letter = "all",
             Order = "age",
             Age = "alltime";
 
         function loader() {
-            if (done) return false;
-            var v = showtime.httpGet(BASE_URL + '/channels?p=' + pageNum + '&letter=' + Letter + '&order=' + Order + '&age=' + Age);
+            if (!tryToSearch) return false;
+            var v = showtime.httpGet(BASE_URL + '/channels?p=' + fromPage + '&letter=' + Letter + '&order=' + Order + '&age=' + Age);
             var re = /<ul class="sites pictures" id="pictures">([\S\s]*?)<\/ul>/;
             var bw = re.exec(v)[1];
             // 1 - link, 2 - img, 3 - title, 4 - rating, 5 - videos, 6 - views
@@ -240,13 +243,9 @@
                 });
                 match = re.exec(bw);
             }
-            pageNum++;
-            re = /page-next.gif/;
-            match = re.exec(v);
-            if (!match) {
-                done = true;
-                return false;
-            };
+            re = /navNext">Next/;
+            if (!re.exec(v)) return tryToSearch = false;
+            fromPage++;
             return true;
         };
         page.options.createMultiOpt("letter", "Filter by letter", [
@@ -303,7 +302,7 @@
                 return true
             };
             page.flush();
-            pageNum = 1, done = false;
+            fromPage = 1, tryToSearch = true;
             loader();
             page.paginator = loader;
         });
@@ -314,17 +313,17 @@
     plugin.addURI(PREFIX + ":pornstars", function(page) {
         setPageHeader(page, 'Porntube - Pornstars');
 
-        var pageNum = 1;
-        var done = false;
+        var fromPage = 1,
+            tryToSearch = true;
         var Letter = "all",
             Order = "popularity";
 
         function loader() {
-            if (done) return false;
-            var v = showtime.httpGet(BASE_URL + '/pornstars?p=' + pageNum + '&letter=' + Letter + '&order=' + Order);
+            if (!tryToSearch) return false;
+            var v = showtime.httpGet(BASE_URL + '/pornstars?p=' + fromPage + '&letter=' + Letter + '&order=' + Order);
             var re = /<ul class="pornstars">([\S\s]*?)<\/ul>/;
             var bw = re.exec(v)[1];
-            // 1 - title, 2 - link, 3 - img, 4 - videos, 5 - views
+            // 1-title, 2-link, 3-img, 4-videos, 5-views
             re = /<a title="([\S\s]*?)" href="([\S\s]*?)">[\S\s]*?" data-original="([\S\s]*?)"[\S\s]*?<span class="side-right">[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<span class="side-left">[\S\s]*?<span>([\S\s]*?)<\/span>/g;
             var match = re.exec(bw);
             while (match) {
@@ -335,13 +334,9 @@
                 });
                 match = re.exec(bw);
             }
-            pageNum++;
-            re = /page-next.gif/;
-            match = re.exec(v);
-            if (!match) {
-                done = true;
-                return false;
-            };
+            re = /navNext">Next/;
+            if (!re.exec(v)) return tryToSearch = false;
+            fromPage++;
             return true;
         };
 
@@ -390,7 +385,7 @@
                 return true
             };
             page.flush();
-            pageNum = 1, done = false;
+            fromPage = 1, tryToSearch = true;
             loader();
             page.paginator = loader;
         });
@@ -419,55 +414,45 @@
     plugin.addSearcher("Porntube", logo,
 
     function(page, query) {
-        try {
-            setPageHeader(page, 'Porntube - ' + query);
-            query = query.replace(/\s/g, '\+');
-            var pageNum = 1;
-            var done = false;
+        var fromPage = 1,
+            tryToSearch = true;
 
-            function loader() {
-                if (done) return false;
-                var v = showtime.httpGet(BASE_URL + '/search?q=' + query + "&p=" + pageNum);
-                var re = /<div class="overlay"([\S\s]*?)<div class="relax"/;
-                var bw = re.exec(v)[1];
-                // 1 - link, 2 - img, 3 - title, 4 - rating, 5 - duration, 6 - HDflag, 7 - views, 8 - was added, 9 - time units
-                re = /<a href="([\S\s]*?)"[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>([\S\s]*?)<span class="right-side"><span>([\S\s]*?)<\/span>[\S\s]*?<span class="left-side"><span>([\S\s]*?)<\/span>([\S\s]*?)<\/span>[\S\s]*?<\/a>/g;
-                var match = re.exec(bw);
-                var re2 = /(hd-icon)/;
-                if (match) match[6] = re2.exec(match[6]);
-                while (match) {
-                    var re3 = /data-original="([\S\s]*?$)/;
-                    var icon = re3.exec(match[2]);
-                    if (!icon) {
-                        icon = match[2]
-                    } else {
-                        icon = icon[1]
-                    };
-
-                    page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
-                        title: new showtime.RichText((match[6] ? blueStr("HD ") : "") + match[3]),
-                        duration: match[5],
-                        rating: getRating(match[4]),
-                        description: new showtime.RichText("Views: " + blueStr(match[7]) + "\nAdded:" + blueStr(match[8]) + match[9]),
-                        icon: icon
-                    });
-                    page.entries++;
-                    match = re.exec(bw);
-                    if (match) match[6] = re2.exec(match[6]);
-                }
-                pageNum++;
-                re = /page-next.gif/;
-                match = re.exec(v);
-                if (!match) {
-                    done = true;
-                    return false;
-                }
-                return true;
-            };
-            loader();
-            page.paginator = loader;
-        } catch (err) {
-            showtime.trace('Porntube - Search error: ' + err)
-        }
+        function loader() {
+            if (!tryToSearch) return false;
+            var response = showtime.httpGet(BASE_URL + '/search?q=' + query.replace(/\s/g, '\+') + "&p=" + fromPage);
+            var re = /<div class="overlay"([\S\s]*?)<div class="relax"/;
+            var response2 = re.exec(response)[1];
+            // 1-link, 2-img, 3-title, 4-rating, 5-duration, 6-HDflag, 7-views, 8-was added, 9-time units
+            // 1-link, 2-img, 3-title, 4-HDflag, 5-views, 6-duration, 7-rating, 8-was added, 9-time units
+            re = /<a href="([\S\s]*?)"[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?<a href="[\S\s]*?">([\S\s]*?)<span>([\S\s]*?) views <\/span>([\S\s]*?)<\/a>[\S\s]*?<strong>([\S\s]*?)like this<\/strong>[\S\s]*?<span>([\S\s]*?)<\/span>([\S\s]*?)<\/a>/g;
+            var match = re.exec(response2);
+            var re2 = /"hd"/;
+            if (match) match[4] = re2.exec(match[4]);
+            while (match) {
+                var re3 = /data-original="([\S\s]*?$)/;
+                var icon = re3.exec(match[2]);
+                if (!icon) {
+                    icon = match[2]
+                } else {
+                    icon = icon[1]
+                };
+                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
+                    title: new showtime.RichText((match[4] ? blueStr("HD ") : "") + match[3]),
+                    duration: trim(match[6]),
+                    rating: getRating(match[7]),
+                    description: new showtime.RichText("Views: " + blueStr(match[5]) + "\nAdded:" + blueStr(match[8]) + match[9]),
+                    icon: icon
+                });
+                page.entries++;
+                match = re.exec(response2);
+                if (match) match[4] = re2.exec(match[4]);
+            }
+            re = /navNext">Next/;
+            if (!re.exec(response)) return tryToSearch = false;
+            fromPage++;
+            return true;
+        };
+        loader();
+        page.paginator = loader;
     });
 })(this);

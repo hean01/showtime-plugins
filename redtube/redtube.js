@@ -473,8 +473,7 @@
             return;
         };
         try {
-            query = query.replace(/\s/g, '\+');
-            preparePage(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&search="), escape(query));
+            preparePage(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&search="), escape(query.replace(/\s/g, '\+')));
         } catch (err) {
             showtime.trace('Redtube - Searcher error: ' + err)
         }

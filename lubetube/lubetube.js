@@ -238,7 +238,6 @@
     });
 
     plugin.addSearcher("LubeTube - Videos", logo, function(page, query) {
-        page.type = "directory";
         index(page, BASE_URL + "/search/videos?search_id=" + query.replace(/\s/g, '\+'));
     });
 

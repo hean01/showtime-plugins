@@ -370,41 +370,36 @@
     plugin.addSearcher("Docu.im", logo,
 
     function(page, query) {
-        var pageNum = 1,
-            done = false;
+        var fromPage = 1, tryToSearch = true;
+        // 1-poster, 2-likes, 3-views, 4-comments, 5-link, 6-title, 7-altTitle, 8-year, 9-description 
+        var re = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/;
 
         function loader() {
-            if (done) return false;
+            if (!tryToSearch) return false;
             var response = showtime.JSONDecode(showtime.httpPost(BASE_URL + '/search/result', {
                 'viewAs': 'list',
-                'p': pageNum,
+                'p': fromPage,
                 'f': '{"title":"' + query + '","genres":[],"directors":[],"actors":[],"countries":[],"studios":[]}'
             }, "", {
                 'X-Requested-With': 'XMLHttpRequest'
             }));
             for (var i in response.items) {
-                // 1 - poster, 2 - likes, 3 - views, 4 - comments, 5 - link, 6 - title, 7 - altTitle, 8 - year, 9 - description 
-                var re = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/;
                 var match = re.exec(response.items[i].html);
                 if (match) {
                     page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(titleJoin(match[6], match[7])), 'video', {
                         title: new showtime.RichText(titleJoin(match[6], match[7])),
-                        year: +match[8],
                         icon: match[1],
+                        year: +match[8],
                         description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>\s+/gm, '\n'))
                     });
                     page.entries++;
                 };
             };
-            if (response.pagination.totalPages == pageNum) {
-                done = 1;
-                return false;
-            }
-            pageNum++;
+            if (response.pagination.totalPages == fromPage) return tryToSearch = false;
+            fromPage++;
             return true;
         };
         loader();
-        page.loading = false;
         page.paginator = loader;
     });
 })(this);

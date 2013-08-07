@@ -347,25 +347,25 @@
 
     function(page, query) {
         try {
+            var tryToSearch = true;
             var url = BASE_URL + "/search?s=" + query.replace(/\s/g, '\+');
-
+            //1-link 2-title 3-additional info
+            var re = /<tr><td><a href='([^']+)'><img src='[\S\s]*?<b>([\S\s]*?)<\/b><\/a>([\S\s]*?)<\/td>/g;
+            var re2 = /class=info>([^<]+)/;
+            var re3 = /<small>([\S\s]*?)<\/small>[\S\s]*?<small>([\S\s]*?)<\/small>/;
+            var re4 = /alt='перейти на следующую страницу[\S\s]*?<a href='([^']+)/;
             function loader() {
+                if (!tryToSearch) return false;
                 var response = showtime.httpGet(url, "", {
                     'Cookie': 'ulang=' + service.lang
                 });
-                var re = /<title>([\S\s]*?)<\/title>/;
-                setPageHeader(page, re.exec(response)[1]);
-                //1-link 2-title 3 - additional info
-                re = /<tr><td><a href='([^']+)'><img src='[\S\s]*?<b>([\S\s]*?)<\/b><\/a>([\S\s]*?)<\/td>/g;
                 var match = re.exec(response);
                 while (match) {
                     var title = "";
-                    var re2 = /class=info>([^<]+)/;
                     if (re2.exec(match[3])) title += re2.exec(match[3])[1];
-                    re2 = /<small>([\S\s]*?)<\/small>[\S\s]*?<small>([\S\s]*?)<\/small>/;
-                    if (re2.exec(match[3])) {
+                    if (re3.exec(match[3])) {
                         if (title) title += ", ";
-                        title += re2.exec(match[3])[2];
+                        title += re3.exec(match[3])[2];
                     }
 
                     page.appendItem(PREFIX + ":index:" + match[1], "directory", {
@@ -375,14 +375,12 @@
                     page.entries++;
                     match = re.exec(response);
                 };
-                re = /alt='перейти на следующую страницу[\S\s]*?<a href='([^']+)/;
-                url = re.exec(response);
-                if (!url) return false;
+                url = re4.exec(response);
+                if (!url) return tryToSearch = false;
                 url = BASE_URL + url[1];
                 return true;
             };
             loader();
-            page.loading = false;
             page.paginator = loader;
         } catch (err) {
             showtime.trace('EX.UA - Search error: ' + err)

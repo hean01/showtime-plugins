@@ -1,10 +1,5 @@
 
 PLUGINS= \
-	xxxstream.zip \
-	di.zip \
-	icecast.zip \
-	somafm.zip \
-	rad.io.zip \
 	lubetube.zip \
 	redtube.zip \
 	fs_ua.zip \
@@ -14,7 +9,8 @@ PLUGINS= \
 	uletfilm.zip \
 	watch_is.zip \
 	porntube.zip \
-	docuim.zip
+	docuim.zip \
+	baskino.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

@@ -149,8 +149,6 @@
         try {
             var offset = 0;
             var counter = 0;
-            setPageHeader(page, 'megogo.net - ' + query);
-
             function loader() {
                 var params = 'text=' + query + '&limit=20' + '&offset=' + offset;
                 var request = BASE_URL + '/search?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + sign) + devType;
@@ -175,7 +173,6 @@
                 return true;
             };
             loader();
-            page.loading = false;
             page.paginator = loader;
 
         } catch (err) {
