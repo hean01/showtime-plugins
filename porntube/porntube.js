@@ -422,7 +422,6 @@
             var response = showtime.httpGet(BASE_URL + '/search?q=' + query.replace(/\s/g, '\+') + "&p=" + fromPage);
             var re = /<div class="overlay"([\S\s]*?)<div class="relax"/;
             var response2 = re.exec(response)[1];
-            // 1-link, 2-img, 3-title, 4-rating, 5-duration, 6-HDflag, 7-views, 8-was added, 9-time units
             // 1-link, 2-img, 3-title, 4-HDflag, 5-views, 6-duration, 7-rating, 8-was added, 9-time units
             re = /<a href="([\S\s]*?)"[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?<a href="[\S\s]*?">([\S\s]*?)<span>([\S\s]*?) views <\/span>([\S\s]*?)<\/a>[\S\s]*?<strong>([\S\s]*?)like this<\/strong>[\S\s]*?<span>([\S\s]*?)<\/span>([\S\s]*?)<\/a>/g;
             var match = re.exec(response2);
