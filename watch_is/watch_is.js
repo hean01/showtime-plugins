@@ -57,7 +57,7 @@
             page.appendItem(PREFIX + ':best', 'directory', {
                 title: "Лучшие"
             });
-            v = showtime.httpReq(BASE_URL + "/?genre=" + Genre + "&year=" + Year + "&sorting=" + Sorting + "&order=" + Order);
+            v = showtime.httpGet(BASE_URL + "/?genre=" + Genre + "&year=" + Year + "&sorting=" + Sorting + "&order=" + Order);
 
             // let's show genres
             var re = /<ul>([\S\s]*?)<\/ul>/;
@@ -93,7 +93,7 @@
                 done = true;
                 return false;
             }
-            v = showtime.httpReq(BASE_URL + match[1]);
+            v = showtime.httpGet(BASE_URL + match[1]);
             return true;
         };
 
@@ -103,21 +103,21 @@
             var credentials = plugin.getAuthCredentials("Watch.is - Онлайн фильмы", "Login required", showAuthCredentials);
             if (credentials.rejected) return; //rejected by user
             if (credentials) {
-                var v = showtime.httpPost(BASE_URL + '/login', {
-                    'username': credentials.username,
-                    'password': credentials.password,
-                    'login': '+'
-                }, "", "", {
-                    'noFollow': 'true'
-                });
-                var re = /class="page-login"/;
-//                var v = showtime.httpReq(BASE_URL + '/api/', {
+//                var v = showtime.httpPost(BASE_URL + '/login', {
 //                    'username': credentials.username,
-//                    'password': credentials.password
-//                }, "", {
+//                    'password': credentials.password,
+//                    'login': '+'
+//                }, "", "", {
 //                    'noFollow': 'true'
 //                });
-//                var re = /<error>/;
+//                var re = /class="page-login"/;
+                var v = showtime.httpGet(BASE_URL + '/api/', {
+                    'username': credentials.username,
+                    'password': credentials.password
+                }, "", {
+                    'noFollow': 'true'
+                });
+                var re = /<error>/;
                 showAuthCredentials = re.exec(v);
                 if (!showAuthCredentials) break;
             };
@@ -221,7 +221,7 @@
     };
 
     plugin.addURI(PREFIX + ":genres:(.*):(.*)", function(page, url, title) {
-        var v = showtime.httpReq(BASE_URL + unescape(url));
+        var v = showtime.httpGet(BASE_URL + unescape(url));
         setPageHeader(page, unescape(title));
         var done = false;
 
@@ -246,7 +246,7 @@
                 done = true;
                 return false;
             }
-            v = showtime.httpReq(BASE_URL + match[1]);
+            v = showtime.httpGet(BASE_URL + match[1]);
             return true;
         };
         loader();
@@ -255,7 +255,7 @@
     });
 
     plugin.addURI(PREFIX + ":best", function(page) {
-        var v = showtime.httpReq(BASE_URL + "/top");
+        var v = showtime.httpGet(BASE_URL + "/top");
         var re = /<title>(.*?)<\/title>/;
         setPageHeader(page, re.exec(v)[1]);
         page.loading = false;
@@ -276,12 +276,12 @@
 
     // Play links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
-	var resp = showtime.httpReq('http://www.google.com/search?q=imdb+'+encodeURIComponent(unescape(title).replace(" (HD)","").split(" / ")[0]).toString()).toString().match(/http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/);
+	var resp = showtime.httpGet('http://www.google.com/search?q=imdb+'+encodeURIComponent(unescape(title).replace(" (HD)","").split(" / ")[0]).toString()).toString().match(/http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/);
 	var imdbid = '';
 	if (resp) imdbid = resp[1];
         var re = /[\S\s]*?([\d+]+)/i;
         var match = re.exec(unescape(url));
-	var v = showtime.httpReq(BASE_URL + '/api/watch/'+match[1]);
+	var v = showtime.httpGet(BASE_URL + '/api/watch/'+match[1]);
 	re = /<hdvideo>([\s\S]*?)<\/hdvideo>/;
 	match = re.exec(v);
 	if (!match) {
@@ -321,7 +321,7 @@
                 var showAuthCredentials = re.exec(v);
                 if (showAuthCredentials) return;
             };
-            var v = showtime.httpReq(BASE_URL + '/?search=' + query);
+            var v = showtime.httpGet(BASE_URL + '/?search=' + query);
             var done = false;
 
             function loader() {
@@ -346,7 +346,7 @@
                     done = 1;
                     return false;
                 }
-                v = showtime.httpReq(BASE_URL + match[1]);
+                v = showtime.httpGet(BASE_URL + match[1]);
                 return true;
             };
             loader();
