@@ -24,10 +24,7 @@
     var logo = plugin.path + "logo.png";
 
     function trim(s) {
-        s = s.replace(/(\r\n|\n|\r)/gm, "");
-        s = s.replace(/(^\s*)|(\s*$)/gi, "");
-        s = s.replace(/[ ]{2,}/gi, " ");
-        return s;
+        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
     }
 
     function blueStr(str) {
@@ -51,18 +48,17 @@
         Order = "desc";
 
     function startPage(page) {
-        var v, done = false;
+        var v, tryToSearch = true;
 
         function topPart() {
             page.appendItem(PREFIX + ':best', 'directory', {
                 title: "Лучшие"
             });
-            v = showtime.httpGet(BASE_URL + "/?genre=" + Genre + "&year=" + Year + "&sorting=" + Sorting + "&order=" + Order);
+            v = showtime.httpGet(BASE_URL + "/?genre=" + Genre + "&year=" + Year + "&sorting=" + Sorting + "&order=" + Order).toString();
 
             // let's show genres
-            var re = /<ul>([\S\s]*?)<\/ul>/;
-            var genres = re.exec(v);
-            re = /<li><a href="([\S\s]*?)">([\S\s]*?)<\/a><\/li>/g;
+            var genres = v.match(/<ul>([\S\s]*?)<\/ul>/);
+            var re = /<li><a href="([\S\s]*?)">([\S\s]*?)<\/a><\/li>/g;
             var match = re.exec(genres[1]);
             while (match) {
                 page.appendItem(PREFIX + ':genres:' + escape(match[1]) + ":" + escape(match[2]), 'directory', {
@@ -73,15 +69,14 @@
         };
 
         function loader() {
-            if (done) return false;
+            if (!tryToSearch) return false;
             // 1 - link, 2 - image, 3 - HD, 4 - votes, 5 - views, 6 - comments, 7 - title_rus, 8 - title_orig
             var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
             var match = re.exec(v);
             while (match) {
-                var re2 = /<div class="hd">/;
-                var hd = re2.exec(match[3]);
-                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " / " + trim(match[8]) : "")), 'video', {
-                    title: new showtime.RichText(trim(match[7]) + (match[8] ? " / " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
+                var hd = match[3].match(/<div class="hd">/);
+                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")), 'video', {
+                    title: new showtime.RichText(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
                     icon: BASE_URL + match[2],
                     description: new showtime.RichText("Голосов: " + blueStr(match[4]) + "\nПросмотров: " + blueStr(match[5]) + "\nКомментариев: " + blueStr(match[6]))
                 });
@@ -89,10 +84,7 @@
             };
             re = /class="page next" href="([^"]+)">/;
             match = re.exec(v);
-            if (!match) {
-                done = true;
-                return false;
-            }
+            if (!match) return tryToSearch = false;
             v = showtime.httpGet(BASE_URL + match[1]);
             return true;
         };
@@ -103,22 +95,21 @@
             var credentials = plugin.getAuthCredentials("Watch.is - Онлайн фильмы", "Login required", showAuthCredentials);
             if (credentials.rejected) return; //rejected by user
             if (credentials) {
-//                var v = showtime.httpPost(BASE_URL + '/login', {
-//                    'username': credentials.username,
-//                    'password': credentials.password,
-//                    'login': '+'
-//                }, "", "", {
-//                    'noFollow': 'true'
-//                });
-//                var re = /class="page-login"/;
+                // var v = showtime.httpPost(BASE_URL + '/login', {
+                //  'username': credentials.username,
+                //  'password': credentials.password,
+                //  'login': '+'
+                // }, "", "", {
+                //  'noFollow': 'true'
+                // });
+                // var re = /class="page-login"/;
                 var v = showtime.httpGet(BASE_URL + '/api/', {
                     'username': credentials.username,
                     'password': credentials.password
                 }, "", {
                     'noFollow': 'true'
                 });
-                var re = /<error>/;
-                showAuthCredentials = re.exec(v);
+                showAuthCredentials = v.toString().match(/<error>/);
                 if (!showAuthCredentials) break;
             };
             showAuthCredentials = true;
@@ -129,7 +120,7 @@
         // add genres to the page.options
         var genre = [],
             obj = [];
-        re = /<select name="genre">([\S\s]*?)<\/select>/;
+        var re = /<select name="genre">([\S\s]*?)<\/select>/;
         var genres = re.exec(v);
         re = /<option label="([\S\s]*?)" value="([\S\s]*?)"[\S\s]*?<\/option>/g;
         var match = re.exec(genres[1]);
@@ -208,10 +199,12 @@
             Order = res;
         });
         page.options.createAction('apply', 'Выбрать', function() {
-            page.paginator = function dummy() { return true };
+            page.paginator = function dummy() {
+                return true
+            };
             page.flush();
             topPart();
-	    done = false;
+            tryToSearch = true;
             loader();
             page.paginator = loader;
         });
@@ -231,10 +224,9 @@
             var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
             var match = re.exec(v);
             while (match) {
-                var re2 = /<div class="hd">/;
-                var hd = re2.exec(match[3]);
-                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " / " + trim(match[8]) : "")), 'video', {
-                    title: new showtime.RichText(trim(match[7]) + (match[8] ? " / " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
+                var hd = match[3].match(/<div class="hd">/);
+                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")), 'video', {
+                    title: new showtime.RichText(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
                     icon: BASE_URL + match[2],
                     description: new showtime.RichText("Голосов: " + blueStr(match[4]) + "\nПросмотров: " + blueStr(match[5]) + "\nКомментариев: " + blueStr(match[6]))
                 });
@@ -263,10 +255,9 @@
         var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
         var match = re.exec(v);
         while (match) {
-            var re2 = /<div class="hd">/;
-            var hd = re2.exec(match[3]);
-            page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " / " + trim(match[8]) : "")), 'video', {
-                title: new showtime.RichText(trim(match[7]) + (match[8] ? " / " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
+            var hd = match[3].match(/<div class="hd">/);
+            page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")), 'video', {
+                title: new showtime.RichText(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
                 icon: BASE_URL + match[2],
                 description: new showtime.RichText("Голосов: " + blueStr(match[4]) + "\nПросмотров: " + blueStr(match[5]) + "\nКомментариев: " + blueStr(match[6]))
             });
@@ -276,25 +267,37 @@
 
     // Play links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
-	var resp = showtime.httpGet('http://www.google.com/search?q=imdb+'+encodeURIComponent(unescape(title).replace(" (HD)","").split(" / ")[0]).toString()).toString().match(/http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/);
-	var imdbid = '';
-	if (resp) imdbid = resp[1];
+        var resp = showtime.httpGet('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title)).replace(" (HD)", "")).toString()).toString();
+        var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
+        var imdbid = re.exec(resp);
+        if (imdbid) imdbid = imdbid[1];
+        else {
+            re = /http:\/\/<b>imdb<\/b>.com\/title\/(tt\d+).*?\//;
+            imdbid = re.exec(resp);
+            if (imdbid) imdbid = imdbid[1];
+        }
         var re = /[\S\s]*?([\d+]+)/i;
         var match = re.exec(unescape(url));
-	var v = showtime.httpGet(BASE_URL + '/api/watch/'+match[1]);
-	re = /<hdvideo>([\s\S]*?)<\/hdvideo>/;
-	match = re.exec(v);
-	if (!match) {
-		re = /<video>([\s\S]*?)<\/video>/;
-		match = re.exec(v);
+        var v = showtime.httpGet(BASE_URL + '/api/watch/' + match[1]);
+        re = /<hdvideo>([\s\S]*?)<\/hdvideo>/;
+        match = re.exec(v);
+        if (!match) {
+            re = /<video>([\s\S]*?)<\/video>/;
+            match = re.exec(v);
+        }
+
+	if (showtime.probe(match[1]).result) { // handling API database errors
+		v = showtime.httpGet(BASE_URL+unescape(url)).toString();
+		match = v.match(/file:"([^"]+)/);
 	}
+
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
-            title: unescape(title),
-	    imdbid: imdbid,
+            title: showtime.entityDecode(unescape(title)),
+            imdbid: imdbid,
             canonicalUrl: PREFIX + ":video:" + url + ":" + title,
             sources: [{
-		url: match[1]
+                url: match[1]
             }]
         });
         page.loading = false;
@@ -305,57 +308,43 @@
     plugin.addSearcher("Watch.is", logo,
 
     function(page, query) {
-        try {
-            setPageHeader(page, 'Watch.is - ' + query);
-            query = query.replace(/\s/g, '\+');
-            var credentials = plugin.getAuthCredentials("Watch.is - Онлайн фильмы", "Login required", false);
-            if (credentials) {
-                var v = showtime.httpPost(BASE_URL + '/login', {
-                    'username': credentials.username,
-                    'password': credentials.password,
-                    'login': '+'
-                }, "", "", {
-                    'noFollow': 'true'
+        var credentials = plugin.getAuthCredentials("Watch.is - Онлайн фильмы", "Login required", false);
+        if (credentials) {
+            var v = showtime.httpPost(BASE_URL + '/login', {
+                'username': credentials.username,
+                'password': credentials.password,
+                'login': '+'
+            }, "", "", {
+                'noFollow': 'true'
+            }).toString();
+            if (v.match(/class="page-login"/)) return;
+        };
+        var v = showtime.httpGet(BASE_URL + '/?search=' + query.replace(/\s/g, '\+'));
+        var tryToSearch = true;
+
+        function loader() {
+            if (!tryToSearch) return false;
+            // 1 - link, 2 - image, 3 - HD, 4 - votes, 5 - views, 6 - comments, 7 - title_rus, 8 - title_orig
+            var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
+            var match = re.exec(v);
+            while (match) {
+                var hd = match[3].match(/<div class="hd">/);
+                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")), 'video', {
+                    title: new showtime.RichText(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
+                    icon: BASE_URL + match[2],
+                    description: new showtime.RichText("Голосов: " + blueStr(match[4]) + "\nПросмотров: " + blueStr(match[5]) + "\nКомментариев: " + blueStr(match[6]))
                 });
-                var re = /class="page-login"/;
-                var showAuthCredentials = re.exec(v);
-                if (showAuthCredentials) return;
-            };
-            var v = showtime.httpGet(BASE_URL + '/?search=' + query);
-            var done = false;
-
-            function loader() {
-                if (done) return false;
-                // 1 - link, 2 - image, 3 - HD, 4 - votes, 5 - views, 6 - comments, 7 - title_rus, 8 - title_orig
-                var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
-                var match = re.exec(v);
-                while (match) {
-                    var re2 = /<div class="hd">/;
-                    var hd = re2.exec(match[3]);
-                    page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " / " + trim(match[8]) : "")), 'video', {
-                        title: new showtime.RichText(trim(match[7]) + (match[8] ? " / " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
-                        icon: BASE_URL + match[2],
-                        description: new showtime.RichText("Голосов: " + blueStr(match[4]) + "\nПросмотров: " + blueStr(match[5]) + "\nКомментариев: " + blueStr(match[6]))
-                    });
-                    page.entries++;
-                    match = re.exec(v);
-                };
-                re = /class="page next" href="([^"]+)">/;
+                page.entries++;
                 match = re.exec(v);
-                if (!match) {
-                    done = 1;
-                    return false;
-                }
-                v = showtime.httpGet(BASE_URL + match[1]);
-                return true;
             };
-            loader();
-            page.loading = false;
-            page.paginator = loader;
-
-        } catch (err) {
-            showtime.trace('watch.is - Ошибка поиска: ' + err)
-        }
+            re = /class="page next" href="([^"]+)">/;
+            match = re.exec(v);
+            if (!match) return tryToSearch = false;
+            v = showtime.httpGet(BASE_URL + match[1]);
+            return true;
+        };
+        loader();
+        page.loading = false;
+        page.paginator = loader;
     });
-
 })(this);

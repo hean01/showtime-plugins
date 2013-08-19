@@ -8,5 +8,6 @@
 	"showtimeVersion": "4.1.273",
 	"type": "javascript", 
 	"id": "fs.ua",
-	"icon": "logo.png"
+	"icon": "logo.png",
+	"category": "video"
 }

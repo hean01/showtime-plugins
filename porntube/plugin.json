@@ -8,5 +8,6 @@
 	"showtimeVersion": "4.3.9",
 	"type": "javascript", 
 	"id": "porntube",
-	"icon": "logo.png"
+	"icon": "logo.png",
+	"category": "video"
 }

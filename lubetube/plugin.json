@@ -9,5 +9,6 @@
 	"showtimeVersion": "4.1.215", 
 	"type": "javascript", 
 	"id": "lubetube", 
-	"icon": "lubetube.png"
+	"icon": "lubetube.png",
+	"category": "video"
 }

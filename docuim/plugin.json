@@ -8,5 +8,6 @@
 	"showtimeVersion": "4.3.9",
 	"type": "javascript", 
 	"id": "docu.im",
-	"icon": "logo.png"
+	"icon": "logo.png",
+	"category": "video"
 }
