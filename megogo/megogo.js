@@ -122,6 +122,20 @@
         };
     });
 
+    // Search IMDB ID by title
+    function getIMDBid(title) {
+        var resp = showtime.httpGet('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
+        var imdbid = re.exec(resp);
+        if (imdbid) imdbid = imdbid[1];
+        else {
+            re = /http:\/\/<b>imdb<\/b>.com\/title\/(tt\d+).*?\//;
+            imdbid = re.exec(resp);
+            if (imdbid) imdbid = imdbid[1];
+        };
+        return imdbid;
+    };
+
     // Play megogo links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, id, title) {
         var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/info?video=' + id + '&sign=' + showtime.md5digest('video=' + id + sign) + devType));
@@ -130,10 +144,12 @@
             showtime.message("Error: This video is not available in your region :(", true, false);
             return;
         }
+
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(json.title),
             canonicalUrl: PREFIX + ":video:" + id + ":" + title,
+            imdbid: getIMDBid(json.title),
             sources: [{
                 url: json.src
             }]	    
@@ -146,9 +162,9 @@
     plugin.addSearcher("megogo.net", logo,
 
     function(page, query) {
-        try {
             var offset = 0;
             var counter = 0;
+
             function loader() {
                 var params = 'text=' + query + '&limit=20' + '&offset=' + offset;
                 var request = BASE_URL + '/search?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + sign) + devType;
@@ -173,11 +189,8 @@
                 return true;
             };
             loader();
+            page.loading = false;
             page.paginator = loader;
-
-        } catch (err) {
-            showtime.trace('megogo.net - Ошибка поиска: ' + err)
-        }
     });
 
 })(this);
