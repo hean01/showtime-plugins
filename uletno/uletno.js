@@ -243,7 +243,6 @@
     }
 
     // Search IMDB ID by title
-
     function getIMDBid(title) {
         var resp = showtime.httpGet('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
         var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
