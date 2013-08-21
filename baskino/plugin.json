@@ -1,0 +1,13 @@
+{
+	"description": "<p>Baskino.com - Онлайн фильмы в HD качестве<p>Для дополнительной информации, посетите <a href=\"http://baskino.com\">http://baskino.com</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "Baskino.com",
+	"synopsis": "Baskino.com: Онлайн фильмы в HD качестве",
+	"version": "0.1", "file": "baskino.js",
+	"showtimeVersion": "4.3.9",
+	"type": "javascript", 
+	"id": "baskino.com",
+	"category": "video",
+	"icon": "logo.png"
+}
