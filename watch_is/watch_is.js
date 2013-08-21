@@ -265,8 +265,8 @@
         };
     });
 
-    // Play links
-    plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
+    // Search IMDB ID by title
+    function getIMDBid(title) {
         var resp = showtime.httpGet('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title)).replace(" (HD)", "")).toString()).toString();
         var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
         var imdbid = re.exec(resp);
@@ -276,6 +276,11 @@
             imdbid = re.exec(resp);
             if (imdbid) imdbid = imdbid[1];
         }
+	return imdbid;
+    };
+
+    // Play links
+    plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
         var re = /[\S\s]*?([\d+]+)/i;
         var match = re.exec(unescape(url));
         var v = showtime.httpGet(BASE_URL + '/api/watch/' + match[1]);
@@ -294,7 +299,8 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: showtime.entityDecode(unescape(title)),
-            imdbid: imdbid,
+            imdbid: getIMDBid(title),
+	    no_fs_scan: true,
             canonicalUrl: PREFIX + ":video:" + url + ":" + title,
             sources: [{
                 url: match[1]

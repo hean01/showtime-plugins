@@ -169,7 +169,10 @@
             title: 'Все HD фильмы онлайн:'
         });
 
+        var tryToSearch = true;
+
         function loader() {
+            if (!tryToSearch) return false;
             re = /<!-- frontpage page content -->([\S\s]*?)<!-- \/\/frontpage page content -->/;
             var htmlBlob = re.exec(response);
             if (htmlBlob) {
@@ -186,7 +189,7 @@
             }
             re = /<a href="([^"]+)">Вперед<\/a>/;
             match = re.exec(response);
-            if (!match) return false;
+            if (!match) return tryToSearch = false;
             response = showtime.httpGet(match[1]);
             return true;
         };
@@ -199,8 +202,10 @@
     plugin.addURI(PREFIX + ":index:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, title);
         var response = showtime.httpGet(BASE_URL + url);
+        var tryToSearch = true;
 
         function loader() {
+            if (!tryToSearch) return false;
             var re = /<!-- frontpage page content -->([\S\s]*?)<!-- \/\/frontpage page content -->/;
             var htmlBlob = re.exec(response);
             if (htmlBlob) {
@@ -217,7 +222,7 @@
             }
             re = /<a href="([^"]+)">Вперед<\/a>/;
             match = re.exec(response);
-            if (!match) return false;
+            if (!match) return tryToSearch = false;
             response = showtime.httpGet(match[1]);
             return true;
         };
@@ -236,6 +241,21 @@
         }
         return base64_decode(hash);
     }
+
+    // Search IMDB ID by title
+
+    function getIMDBid(title) {
+        var resp = showtime.httpGet('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
+        var imdbid = re.exec(resp);
+        if (imdbid) imdbid = imdbid[1];
+        else {
+            re = /http:\/\/<b>imdb<\/b>.com\/title\/(tt\d+).*?\//;
+            imdbid = re.exec(resp);
+            if (imdbid) imdbid = imdbid[1];
+        };
+        return imdbid;
+    };
 
     // Play uletno links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
@@ -258,10 +278,12 @@
                 }
             }
         };
+
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             canonicalUrl: PREFIX + ":video:" + url + ":" + title,
+            imdbid: getIMDBid(title),
             sources: [{
                 url: link
             }]
@@ -274,46 +296,36 @@
     plugin.addSearcher("uletno.info", logo,
 
     function(page, query) {
-        try {
-            setPageHeader(page, 'uletno.info - ' + query);
-            var response = showtime.httpGet(BASE_URL + '/?do=search&subaction=search&story=' + unicode2win1251(query));
+        var response = showtime.httpGet(BASE_URL + '/?do=search&subaction=search&story=' + unicode2win1251(query));
+        var tryToSearch = true;
 
-            var counter = 0;
-
-            function loader() {
-                if (counter) return false;
-                var re = /<!-- frontpage page content -->([\S\s]*?)<!-- \/\/frontpage page content -->/;
-                var htmlBlob = re.exec(response);
-                if (htmlBlob) {
-                    htmlBlob = htmlBlob[0];
-                    //1 - title, 2 - link, 3 - image 
-                    re = /<li><div class="stitle"><h2>(.*?)<\/h2><\/div><span class="poster"><a href="(.*?)" ><img src="(.*?)" alt=".*?" \/><\/a><\/span><\/li>/g;
-                    var match = re.exec(htmlBlob);
-                    while (match) {
-                        page.appendItem(PREFIX + ':video:' + escape(match[2]) + ':' + escape(match[1]), 'video', {
-                            title: new showtime.RichText(match[1]),
-                            icon: BASE_URL + match[3]
-                        });
-                        page.entries++;
-                        match = re.exec(htmlBlob);
-                    }
+        function loader() {
+            if (!tryToSearch) return false;
+            var re = /<!-- frontpage page content -->([\S\s]*?)<!-- \/\/frontpage page content -->/;
+            var htmlBlob = re.exec(response);
+            if (htmlBlob) {
+                htmlBlob = htmlBlob[0];
+                //1 - title, 2 - link, 3 - image 
+                re = /<li><div class="stitle"><h2>(.*?)<\/h2><\/div><span class="poster"><a href="(.*?)" ><img src="(.*?)" alt=".*?" \/><\/a><\/span><\/li>/g;
+                var match = re.exec(htmlBlob);
+                while (match) {
+                    page.appendItem(PREFIX + ':video:' + escape(match[2]) + ':' + escape(match[1]), 'video', {
+                        title: new showtime.RichText(match[1]),
+                        icon: BASE_URL + match[3]
+                    });
+                    page.entries++;
+                    match = re.exec(htmlBlob);
                 }
-                re = /<a href="([^"]+)">Вперед<\/a>/;
-                match = re.exec(response);
-                if (!match) {
-                    counter = 1;
-                    return false;
-                }
-                response = showtime.httpGet(match[1]);
-                return true;
-            };
-            loader();
-            page.loading = false;
-            page.paginator = loader;
-
-        } catch (err) {
-            showtime.trace('uletno.info - Ошибка поиска: ' + err)
-        }
+            }
+            re = /<a href="([^"]+)">Вперед<\/a>/;
+            match = re.exec(response);
+            if (!match) return tryToSearch = false;
+            response = showtime.httpGet(match[1]);
+            return true;
+        };
+        loader();
+        page.loading = false;
+        page.paginator = loader;
     });
-
 })(this);
+

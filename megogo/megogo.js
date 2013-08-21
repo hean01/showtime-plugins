@@ -162,7 +162,7 @@
                         genre: unescape(json.video_list[i].genre_list[0].title),
                         rating: json.video_list[i].rating_imdb * 10,
                         duration: +parseInt(json.video_list[i].duration),
-                        description: new showtime.RichText(trim(unescape(json.video_list[i].description))),
+                        description: new showtime.RichText(trim(showtime.entityDecode(unescape(json.video_list[i].description)))),
                         icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
                     });
                     page.entries++;

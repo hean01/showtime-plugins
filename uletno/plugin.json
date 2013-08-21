@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Uletno.info",
 	"synopsis": "Uletno.info: Новый Улетный кинотеатр",
-	"version": "0.2", "file": "uletno.js",
+	"version": "0.3", "file": "uletno.js",
 	"showtimeVersion": "4.1.397",
 	"type": "javascript", 
 	"id": "uletno.info",

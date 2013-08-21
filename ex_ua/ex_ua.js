@@ -197,7 +197,7 @@
                         genre: unescape(sign.video[0].genre_list[0].title),
                         rating: sign.video[0].rating_imdb * 10,
                         duration: +parseInt(sign.video[0].duration),
-                        description: unescape(sign.video[0].description)
+                        description: showtime.entityDecode(unescape(sign.video[0].description))
                     });
                     url = 0;
                     return false;
