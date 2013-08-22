@@ -84,7 +84,7 @@
         while (match) {
             page.appendItem(PREFIX + ':index:' + escape(BASE_URL + match[1]), 'video', {
                 title: new showtime.RichText(match[2]),
-                icon: BASE_URL + match[3],
+                icon: match[3],
                 description: new showtime.RichText('Режиссер: ' + colorStr(match[4], blue))
             });
             match = re.exec(response);
@@ -101,7 +101,7 @@
         while (match) {
             page.appendItem(PREFIX + ':index:' + escape(BASE_URL + match[1]), 'video', {
                 title: new showtime.RichText(match[2] + ' ' + (match[4] == "quality_hd" ? colorStr("HD", blue) : colorStr("DVD", orange))),
-                icon: BASE_URL + match[3]
+                icon: match[3]
             });
             match = re.exec(n);
         };
@@ -138,7 +138,6 @@
     };
 
     // Search IMDB ID by title
-
     function getIMDBid(title) {
         var resp = showtime.httpGet('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
         var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
@@ -361,7 +360,7 @@
         while (match) {
             page.appendItem(PREFIX + ":index:" + escape(match[1]), 'video', {
                 title: new showtime.RichText(match[3] + ' ' + (match[4] == "quality_hd" ? colorStr("HD", blue) : colorStr("DVD", orange))),
-                icon: BASE_URL + match[2]
+                icon: match[2]
             });
 
             match = re.exec(response);
