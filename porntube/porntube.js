@@ -42,15 +42,13 @@
         Age = "";
 
     function trim(s) {
-        s = s.replace(/(\r\n|\n|\r)/gm, "");
-        s = s.replace(/(^\s*)|(\s*$)/gi, "");
-        return s.replace(/[ ]{2,}/gi, " ");
+        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
     }
 
     function getRating(str) {
         str = trim(str);
         if (str == "&nbsp;" || str == '') return 0;
-        return +(str.replace("%", ""));
+        return +(str.match(/\d+/));
     }
 
     function startPage(page) {
@@ -196,25 +194,15 @@
     plugin.addURI(PREFIX + ":categories", function(page) {
         setPageHeader(page, 'Porntube - Categories');
         var v = showtime.httpGet(BASE_URL + "/categories");
-        var re = /<!-- Most popular categories([\S\s]*?)<!-- Most popular categories. -->/;
-        var bw = re.exec(v)[1];
         // 1-link, 2-img, 3-title, 4-total
-        re = /<a class="link" href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?alt="([\S\s]*?)"[\S\s]*?<span class="total"><span class="bg">Total: <span>([\S\s]*?)<\/span>/g;
-        var match = re.exec(bw);
+        var re = /<div class="video-thumb category-thumb[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?alt="([\S\s]*?)"[\S\s]*?<h3>[\S\s]*?<a href="[\S\s]*?">([\S\s]*?) videos/g;
+        var match = re.exec(v);
         while (match) {
-            var re3 = /data-original="([\S\s]*?$)/;
-            var icon = re3.exec(match[2]);
-            if (!icon) {
-                icon = match[2]
-            } else {
-                icon = icon[1]
-            };
-
             page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
-                title: new showtime.RichText(match[3] + blueStr(" (" + match[4] + ")")),
-                icon: icon
+                title: new showtime.RichText(match[3] + blueStr(" (" + trim(match[4].replace(',','')) + ")")),
+                icon: match[2]
             });
-            match = re.exec(bw);
+            match = re.exec(v);
         };
     });
 
@@ -223,25 +211,23 @@
         var fromPage = 1,
             tryToSearch = true;
         var Letter = "all",
-            Order = "age",
+            Order = "popularity",
             Age = "alltime";
 
         function loader() {
             if (!tryToSearch) return false;
             var v = showtime.httpGet(BASE_URL + '/channels?p=' + fromPage + '&letter=' + Letter + '&order=' + Order + '&age=' + Age);
-            var re = /<ul class="sites pictures" id="pictures">([\S\s]*?)<\/ul>/;
-            var bw = re.exec(v)[1];
-            // 1 - link, 2 - img, 3 - title, 4 - rating, 5 - videos, 6 - views
-            re = /<a href="([\S\s]*?)">[\S\s]*?" data-original="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?class="[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="time">([\S\s]*?)<\/span>[\S\s]*?<span class="right-side"><span>([\S\s]*?)<\/span>/g;
-            var match = re.exec(bw);
+            // 1-link, 2-img, 3-title, 4-views, 5-rating, 6-videos
+            var re = /<div class="video-thumb site-thumb[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?alt="([\S\s]*?)"[\S\s]*?<a href="[\S\s]*?<span>([\S\s]*?) views <\/span>[\S\s]*?<strong>([\S\s]*?)<\/strong>([\S\s]*?) videos/g;
+            var match = re.exec(v);
             while (match) {
                 page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
-                    title: new showtime.RichText(match[3]),
-                    rating: getRating(match[4]),
-                    description: new showtime.RichText("Views: " + blueStr(match[6]) + "\nVideos: " + blueStr(match[5].replace(/[A-Za-z$-]/g, ""))),
+		    title: new showtime.RichText(match[3] + blueStr(" (" + match[6].match(/\d+/) + ")")),
+                    rating: getRating(match[5]),
+                    description: new showtime.RichText("Views: " + blueStr(match[4])),
                     icon: match[2]
                 });
-                match = re.exec(bw);
+                match = re.exec(v);
             }
             re = /navNext">Next/;
             if (!re.exec(v)) return tryToSearch = false;
@@ -280,8 +266,8 @@
             Letter = res;
         });
         page.options.createMultiOpt("order", "Sort by", [
-            ['age', 'Date Added', true],
-            ['popularity', 'Most popular'],
+            ['age', 'Date Added'],
+            ['popularity', 'Most popular', true],
             ['rating', 'Top Rated'],
             ['name', 'Alphabetically'],
             ['videos', 'Most videos'],
@@ -321,18 +307,16 @@
         function loader() {
             if (!tryToSearch) return false;
             var v = showtime.httpGet(BASE_URL + '/pornstars?p=' + fromPage + '&letter=' + Letter + '&order=' + Order);
-            var re = /<ul class="pornstars">([\S\s]*?)<\/ul>/;
-            var bw = re.exec(v)[1];
-            // 1-title, 2-link, 3-img, 4-videos, 5-views
-            re = /<a title="([\S\s]*?)" href="([\S\s]*?)">[\S\s]*?" data-original="([\S\s]*?)"[\S\s]*?<span class="side-right">[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<span class="side-left">[\S\s]*?<span>([\S\s]*?)<\/span>/g;
-            var match = re.exec(bw);
+            // 1-link, 2-title, 3-img, 4-views, 5-rank, 6-videos
+            var re = /<div class="video-thumb pornstar-thumb[\S\s]*?<a href="([\S\s]*?)" title="([\S\s]*?)">[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?<a href="[\S\s]*?<span>([\S\s]*?) profile views <\/span>[\S\s]*?<strong>([\S\s]*?)<\/strong>([\S\s]*?) videos/g;
+            var match = re.exec(v);
             while (match) {
-                page.appendItem(PREFIX + ':videos:' + escape(match[2]) + ":" + escape(match[1]), 'video', {
-                    title: new showtime.RichText(match[1]),
-                    description: new showtime.RichText("Views: " + blueStr(match[5]) + "\nVideos: " + blueStr(match[4])),
+                page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[2]), 'video', {
+		    title: new showtime.RichText(match[2] + blueStr(" (" + match[6].match(/\d+/) + ")")),
+                    description: new showtime.RichText("Views: " + blueStr(match[4])+"\n"+match[5]),
                     icon: match[3]
                 });
-                match = re.exec(bw);
+                match = re.exec(v);
             }
             re = /navNext">Next/;
             if (!re.exec(v)) return tryToSearch = false;
