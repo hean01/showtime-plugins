@@ -23,6 +23,50 @@
     var BASE_URL = 'http://baskino.com';
     var logo = plugin.path + "logo.png";
 
+    function base64_decode(data) { // http://kevin.vanzonneveld.net
+        var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
+            ac = 0,
+            dec = "",
+            tmp_arr = [];
+        if (!data) {
+            return data;
+        }
+        data += '';
+        do { // unpack four hexets into three octets using index points in b64
+            h1 = b64.indexOf(data.charAt(i++));
+            h2 = b64.indexOf(data.charAt(i++));
+            h3 = b64.indexOf(data.charAt(i++));
+            h4 = b64.indexOf(data.charAt(i++));
+            bits = h1 << 18 | h2 << 12 | h3 << 6 | h4;
+            o1 = bits >> 16 & 0xff;
+            o2 = bits >> 8 & 0xff;
+            o3 = bits & 0xff;
+            if (h3 == 64) {
+                tmp_arr[ac++] = String.fromCharCode(o1);
+            } else if (h4 == 64) {
+                tmp_arr[ac++] = String.fromCharCode(o1, o2);
+            } else {
+                tmp_arr[ac++] = String.fromCharCode(o1, o2, o3);
+            }
+        } while (i < data.length);
+        dec = tmp_arr.join('');
+        return dec;
+    }
+
+    function unhash(hash) {
+        hash = "" + hash;
+        var hash1 = "Ddaf4bI7i6XeRNZ3ToJcHmlv5E",
+            hash2 = "YWyzpnxMu90Ltwk2GUQBsV81g=";
+        for (var i = 0; i < hash1.length; i++) {
+            hash = hash.split(hash1[i]).join('--');
+            hash = hash.split(hash2[i]).join(hash1[i]);
+            hash = hash.split('--').join(hash2[i]);
+        }
+        //showtime.print(base64_decode(hash));
+        return base64_decode(hash);
+    }
+
     const blue = "6699CC", orange = "FFA500";
 
     function colorStr(str, color) {
@@ -54,29 +98,47 @@
 
     var service = plugin.createService("Baskino.com", PREFIX + ":start", "video", true, logo);
 
+    // Top-250
+    plugin.addURI(PREFIX + ":top", function(page) {
+        var response = showtime.httpReq(BASE_URL + '/top/').toString();
+        setPageHeader(page, response.match(/<title>([\S\s]*?)<\/title>/)[1]);
+        page.loading = false;
+        response = response.match(/<ul class="content_list_top"[\S\s]*?<\/ul>/);
+        // 1-link, 2-number, 3-title, 4-year, 5-rating
+        var re = /<a href="([\S\s]*?)">[\S\s]*?<b>([\S\s]*?)<\/b>[\S\s]*?<s>([\S\s]*?)<\/s>[\S\s]*?<em>([\S\s]*?)<\/em>[\S\s]*?<u>([\S\s]*?)<\/u>/g;
+        var match = re.exec(response);
+        while (match) {
+            page.appendItem(PREFIX + ':index:' + escape(match[1]), 'video', {
+                title: new showtime.RichText(match[3] + ' ' + coloredStr(match[4], blue)),
+                rating: match[5].replace(',', '.') * 10
+            });
+            match = re.exec(response);
+        };
+    });
+
     function startPage(page) {
         setPageHeader(page, 'Baskino.com - Онлайн фильмы в HD качестве');
-//        page.appendItem(PREFIX + ':movies', 'directory', {
-//            title: 'Фильмы',
-//            icon: logo
-//        });
-//        page.appendItem(PREFIX + ':new', 'directory', {
-//            title: 'Новинки',
-//            icon: logo
-//        });
-//        page.appendItem(PREFIX + ':best', 'directory', {
-//            title: 'Топ-250',
-//            icon: logo
-//        });
-//        page.appendItem(PREFIX + ':serials', 'directory', {
-//            title: 'Сериалы',
-//            icon: logo
-//        });
+        //        page.appendItem(PREFIX + ':movies', 'directory', {
+        //            title: 'Фильмы',
+        //            icon: logo
+        //        });
+        //        page.appendItem(PREFIX + ':new', 'directory', {
+        //            title: 'Новинки',
+        //            icon: logo
+        //        });
+        page.appendItem(PREFIX + ':top', 'directory', {
+            title: 'Топ-250',
+            icon: logo
+        });
+        //        page.appendItem(PREFIX + ':serials', 'directory', {
+        //            title: 'Сериалы',
+        //            icon: logo
+        //        });
 
         page.appendItem("", "separator", {
             title: 'Рекомендуемое:'
         });
-        var response = showtime.httpGet(BASE_URL);
+        var response = showtime.httpReq(BASE_URL);
         page.loading = false;
         // 1 - link, 2 - title, 3 - image, 4 - regie
         var re = /<img  onclick=\(window.location.href='(.*?)'\); title="(.*?)"[\S\s]*?src="(.*?)"[\S\s]*?'\);>(.*?)<\/span>/g;
@@ -128,7 +190,7 @@
             p++;
             re = /">Вперед<\/a>/;
             if (re.exec(response)) {
-                response = showtime.httpGet(BASE_URL + "/page/" + p + "/");
+                response = showtime.httpReq(BASE_URL + "/page/" + p + "/");
                 return true;
             };
             return false;
@@ -138,8 +200,9 @@
     };
 
     // Search IMDB ID by title
+
     function getIMDBid(title) {
-        var resp = showtime.httpGet('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var resp = showtime.httpReq('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
         var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
         var imdbid = re.exec(resp);
         if (imdbid) imdbid = imdbid[1];
@@ -160,7 +223,7 @@
     //Play vk.com links
     plugin.addURI(PREFIX + ":vk:(.*):(.*)", function(page, url, title) {
         page.loading = true;
-        var response = showtime.httpGet(unescape(url));
+        var response = showtime.httpReq(unescape(url));
         var re = /url720=(.*?)&/;
         var link = re.exec(response);
         if (!link) {
@@ -202,12 +265,48 @@
         page.loading = false;
     });
 
+    //Play kinostok.tv links
+    plugin.addURI(PREFIX + ":kinostok:(.*):(.*)", function(page, url, title) {
+        var v = showtime.httpReq('http://kinostok.tv/embed' + unhash(unescape(url)).match(/_video\/.*\//));
+        page.loading = true;
+        page.type = "video";
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            imdbid: getIMDBid(title),
+            sources: [{
+                url: showtime.JSONDecode(unhash(v)).playlist[0].file
+            }]
+        });
+        page.loading = false;
+    });
+
+    //Play moonlight links
+    plugin.addURI(PREFIX + ":moonwalk:(.*):(.*)", function(page, url, title) {
+        var v = showtime.JSONDecode(showtime.httpPost('http://moonwalk.cc/sessions/create', {
+                        'video_token': unescape(url)
+                    }, "", {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }));
+        page.loading = true;
+        page.type = "video";
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            imdbid: getIMDBid(title),
+            sources: [{
+                url: v['manifest_m3u8']
+            }]
+        });
+        page.loading = false;
+    });
+
+
+
     // Play megogo links
     plugin.addURI(PREFIX + ":megogo:(.*)", function(page, url) {
         var re = /[\S\s]*?([\d+^\?]+)/i;
         var match = re.exec(url);
         var sign = showtime.md5digest('video=' + match[1] + '1e5774f77adb843c');
-        sign = showtime.JSONDecode(showtime.httpGet('http://megogo.net/p/info?video=' + match[1] + '&sign=' + sign + '_samsungtv'));
+        sign = showtime.JSONDecode(showtime.httpReq('http://megogo.net/p/info?video=' + match[1] + '&sign=' + sign + '_samsungtv'));
         if (!sign.src) {
             page.loading = false;
             showtime.message("Error: This video is not available in your region :(", true, false);
@@ -227,7 +326,7 @@
 
     // Index page
     plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
-        var response = showtime.httpGet(unescape(url)).toString();
+        var response = showtime.httpReq(unescape(url)).toString();
         var re = /<title>(.*?)<\/title>/;
         setPageHeader(page, showtime.entityDecode(re.exec(response)[1]).replace(' - смотреть онлайн бесплатно в хорошем качестве', ''));
         re = /<div class="description"[\S\s]*?<div id="[\S\s]*?">([\S\s]*?)<br\s\/>/;
@@ -310,17 +409,33 @@
                 match = re.exec(response);
             };
         } else { // this is a single movie
-            re = /<iframe src="http:\/\/vk.com(.*?)"/; // try vk.com link
+            re = /<iframe src="http:\/\/vk(.*?)"/; // try to get vk link
             var link = re.exec(response);
             if (link) {
-                link = PREFIX + ":vk:" + escape("http://vk.com" + link[1]) + ":" + escape(title);
-            } else {
+                link = PREFIX + ":vk:" + escape("http://vk" + link[1]) + ":" + escape(title);
+            };
+            if (!link) {
+                re = /<iframe src="http:\/\/moonwalk.cc\/video\/(.*?)\//; // try to get moonwalk link
+                link = re.exec(response);
+                if (link) {
+                    link = PREFIX + ":moonwalk:" + escape(link[1]) + ":" + escape(title);
+                }
+            }
+            if (!link) {
+                re = /value="pl=c:(.*?)&amp;/; // try kinostok links
+                link = re.exec(response);
+                if (link) {
+                    link = PREFIX + ":kinostok:" + escape(link[1]) + ":" + escape(title);
+                }
+            }
+            if (!link) {
                 re = /src="http:\/\/megogo.net(.*?)"/; // try megogo.net link
                 link = re.exec(response);
                 if (link) {
                     link = PREFIX + ":megogo:" + escape(link[1]) + ":" + escape(title);
                 }
             }
+            if (!link) showtime.print("No!!!!!!!!!!");
             if (!link) { // try baskino links
                 link = response.match(/file:"([^"]+)/);
                 if (link) {
@@ -381,7 +496,7 @@
 
         function loader() {
             if (!tryToSearch) return false;
-            var response = showtime.httpGet(BASE_URL + '/index.php?do=search&subaction=search&search_start=' + fromPage + '&story=' + query.replace(/\s/g, '\+'));
+            var response = showtime.httpReq(BASE_URL + '/index.php?do=search&subaction=search&search_start=' + fromPage + '&story=' + query.replace(/\s/g, '\+'));
             var match = re.exec(response);
             while (match) {
                 page.appendItem(PREFIX + ':index:' + escape(match[1]), 'video', {
