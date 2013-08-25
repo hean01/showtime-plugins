@@ -220,7 +220,7 @@
         page.loading = false;
     });
 
-    //Play vk.com links
+    //Play vk* links
     plugin.addURI(PREFIX + ":vk:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         var response = showtime.httpReq(unescape(url));
@@ -267,7 +267,8 @@
 
     //Play kinostok.tv links
     plugin.addURI(PREFIX + ":kinostok:(.*):(.*)", function(page, url, title) {
-        var v = showtime.httpReq('http://kinostok.tv/embed' + unhash(unescape(url)).match(/_video\/.*\//));
+	url = unescape(url).match(/value="pl=c:(.*?)&amp;/)[1];
+        var v = showtime.httpReq('http://kinostok.tv/embed' + unhash(url).match(/_video\/.*\//));
         page.loading = true;
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
@@ -280,13 +281,13 @@
         page.loading = false;
     });
 
-    //Play moonlight links
+    //Play HDSerials links
     plugin.addURI(PREFIX + ":moonwalk:(.*):(.*)", function(page, url, title) {
         var v = showtime.JSONDecode(showtime.httpPost('http://moonwalk.cc/sessions/create', {
-                        'video_token': unescape(url)
-                    }, "", {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }));
+            'video_token': unescape(url).match(/<iframe src="http:\/\/moonwalk.cc\/video\/(.*?)\//)[1]
+        }, "", {
+            'X-Requested-With': 'XMLHttpRequest'
+        }));
         page.loading = true;
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
@@ -299,12 +300,10 @@
         page.loading = false;
     });
 
-
-
     // Play megogo links
     plugin.addURI(PREFIX + ":megogo:(.*)", function(page, url) {
         var re = /[\S\s]*?([\d+^\?]+)/i;
-        var match = re.exec(url);
+        var match = re.exec(unescape(url));
         var sign = showtime.md5digest('video=' + match[1] + '1e5774f77adb843c');
         sign = showtime.JSONDecode(showtime.httpReq('http://megogo.net/p/info?video=' + match[1] + '&sign=' + sign + '_samsungtv'));
         if (!sign.src) {
@@ -370,8 +369,8 @@
             match = re.exec(response);
         };
 
-        var links = new Array();
-        if (timestamp) { // that is a series
+        if (timestamp) { // serial
+            var links = new Array();
             re = /"([0-9]+)":"([\S\s]*?)>"/g;
             match = re.exec(response);
             while (match) {
@@ -408,60 +407,54 @@
                 };
                 match = re.exec(response);
             };
-        } else { // this is a single movie
-            re = /<iframe src="http:\/\/vk(.*?)"/; // try to get vk link
-            var link = re.exec(response);
-            if (link) {
-                link = PREFIX + ":vk:" + escape("http://vk" + link[1]) + ":" + escape(title);
+        } else { // movie
+            var player_tabs = response.match(/<ul id="player_tabs" class="tabs">([\S\s]*?)<\/ul>/)[1];
+            re = /<li rel="([\S\s]*?)">([\S\s]*?)<\/li>/g;
+            match = re.exec(player_tabs);
+	    var num = 0;
+            while (match) {
+                var link = response.match(/<iframe src="http:\/\/vk.*?"/g); // try to get vk link
+                if (link && link[num]) link = PREFIX + ":vk:" + escape(link[num]) + ":" + escape(title); else link = 0;
+                if (!link) {
+                    link = response.match(/<iframe src="http:\/\/moonwalk.cc\/video\/.*?\//g); // try to get hdserials link
+                    if (link && link[num]) link = PREFIX + ":moonwalk:" + escape(link[num]) + ":" + escape(title); else link = 0;
+                }
+                if (!link) {
+                    link = response.match(/value="pl=c:(.*?)&amp;/g); // try kinostok link
+                    if (link && link[num]) link = PREFIX + ":kinostok:" + escape(link[num]) + ":" + escape(title); else link = 0;
+                }
+                if (!link) {
+                    link = response.match(/src="http:\/\/megogo.net(.*?)"/g); // try megogo.net link
+                    if (link && link[num]) link = PREFIX + ":megogo:" + escape(link[num]) + ":" + escape(title);  else link = 0;
+                }
+                if (!link) { // try baskino links
+                    link = response.match(/file:"([^"]+)/);
+                    if (link) {
+                        link = link[1];
+                        var videoparams = {
+                            sources: [{
+                                url: link
+                            }],
+                            title: title,
+                            imdbid: getIMDBid(escape(title))
+                        };
+                        link = "videoparams:" + showtime.JSONEncode(videoparams);
+                    }
+                }
+                page.appendItem(link, 'video', {
+                    title: new showtime.RichText(title + ' ' + coloredStr(match[2], orange)),
+                    icon: icon,
+                    year: year,
+                    genre: genre,
+                    duration: duration,
+                    rating: rating,
+                    timestamp: timestamp,
+                    description: new showtime.RichText(coloredStr("Страна: ", orange) + country + coloredStr(" Слоган: ", orange) + slogan + coloredStr(" Режиссер: ", orange) + director + coloredStr(" В ролях: ", orange) + actors + "\n\n" + description)
+                });
+                match = re.exec(player_tabs);
+		num++;
             };
-            if (!link) {
-                re = /<iframe src="http:\/\/moonwalk.cc\/video\/(.*?)\//; // try to get moonwalk link
-                link = re.exec(response);
-                if (link) {
-                    link = PREFIX + ":moonwalk:" + escape(link[1]) + ":" + escape(title);
-                }
-            }
-            if (!link) {
-                re = /value="pl=c:(.*?)&amp;/; // try kinostok links
-                link = re.exec(response);
-                if (link) {
-                    link = PREFIX + ":kinostok:" + escape(link[1]) + ":" + escape(title);
-                }
-            }
-            if (!link) {
-                re = /src="http:\/\/megogo.net(.*?)"/; // try megogo.net link
-                link = re.exec(response);
-                if (link) {
-                    link = PREFIX + ":megogo:" + escape(link[1]) + ":" + escape(title);
-                }
-            }
-            if (!link) showtime.print("No!!!!!!!!!!");
-            if (!link) { // try baskino links
-                link = response.match(/file:"([^"]+)/);
-                if (link) {
-                    link = link[1];
 
-                    var videoparams = {
-                        sources: [{
-                            url: link
-                        }],
-                        title: title,
-                        imdbid: getIMDBid(escape(title))
-                    };
-                    link = "videoparams:" + showtime.JSONEncode(videoparams);
-                }
-            }
-
-            page.appendItem(link, 'video', {
-                title: title,
-                icon: icon,
-                year: year,
-                genre: genre,
-                duration: duration,
-                rating: rating,
-                timestamp: timestamp,
-                description: new showtime.RichText(coloredStr("Страна: ", orange) + country + coloredStr(" Слоган: ", orange) + slogan + coloredStr(" Режиссер: ", orange) + director + coloredStr(" В ролях: ", orange) + actors + "\n\n" + description)
-            });
         };
         re = /<div class="related_news">([\S\s]*?)<\/li><\/ul>/;
         response = re.exec(response)[1];

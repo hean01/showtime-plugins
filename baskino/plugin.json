@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Baskino.com",
 	"synopsis": "Baskino.com: Онлайн фильмы в HD качестве",
-	"version": "0.1.2", "file": "baskino.js",
+	"version": "0.1.3", "file": "baskino.js",
 	"showtimeVersion": "4.3.9",
 	"type": "javascript", 
 	"id": "baskino.com",
