@@ -54,10 +54,8 @@
         return dec;
     }
 
-    function unhash(hash) {
+    function unhash(hash, hash1, hash2) {
         hash = "" + hash;
-        var hash1 = "Ddaf4bI7i6XeRNZ3ToJcHmlv5E",
-            hash2 = "YWyzpnxMu90Ltwk2GUQBsV81g=";
         for (var i = 0; i < hash1.length; i++) {
             hash = hash.split(hash1[i]).join('--');
             hash = hash.split(hash2[i]).join(hash1[i]);
@@ -84,6 +82,7 @@
     }
 
     function setPageHeader(page, title) {
+        page.loading = false;
         if (page.metadata) {
             page.metadata.title = title;
             page.metadata.logo = logo;
@@ -116,30 +115,80 @@
         };
     });
 
+
+    function scrapePageAtURL(page, url, titleIsSet) {
+        var p = 1,
+            tryToSearch = true;
+
+        function loader() {
+            if (!tryToSearch) return false;
+            var response = showtime.httpReq(BASE_URL + url + "/page/" + p + "/").toString();
+            if (!titleIsSet) {
+                setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1]);
+                titleIsSet = true;
+            }
+            // 1 - link, 2 - title, 3 - image, 4 - quality, 5 - quoted full title, 6 - raiting, 7 - number of comments, 8 - date added, 9 - production date
+            var re = /<div class="postcover">[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?<img title="([\S\s]*?)" src="([\S\s]*?)"[\S\s]*?class="quality_type ([\S\s]*?)">[\S\s]*?<div class="posttitle">[\S\s]*?">([\S\s]*?)<\/a>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>[\S\s]*?<!-- <div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="rinline">([\S\s]*?)<\/div>/g;
+            var match = re.exec(response);
+            while (match) {
+                page.appendItem(PREFIX + ':index:' + escape(match[1]), 'video', {
+                    title: new showtime.RichText(match[5] + ' ' + (match[4] == "quality_hd" ? colorStr("HD", blue) : colorStr("DVD", orange))),
+                    rating: +(match[6]) / 2,
+                    icon: match[3],
+                    description: match[7] + '\n' + match[8] + '\n' + match[9].replace(/<span class="tvs_new">/, "").replace(/<\/span>/, "")
+                });
+                match = re.exec(response);
+            };
+            if (!response.match(/">Вперед<\/a>/)) tryToSearch = false;
+            p++;
+            return true;
+        };
+        loader();
+        page.paginator = loader;
+    };
+
+    plugin.addURI(PREFIX + ":indexURL:(.*)", function(page, url) {
+        scrapePageAtURL(page, url, false);
+    });
+
+    plugin.addURI(PREFIX + ":movies", function(page) {
+        var response = showtime.httpReq(BASE_URL).toString();
+        setPageHeader(page, response.match(/<title>([\S\s]*?)<\/title>/)[1]);
+        response = response.match(/<ul class="sf-menu">([\s\S]*?)<\/ul>/)[1];
+        var re = /<li><a href="([\s\S]*?)">([\s\S]*?)<\/a><\/li>/g;
+        var match = re.exec(response);
+        while (match) {
+            page.appendItem(PREFIX + ":indexURL:" + match[1], 'directory', {
+                title: match[2]
+            });
+            match = re.exec(response);
+        };
+    });
+
     function startPage(page) {
+        var response = showtime.httpReq(BASE_URL).toString();
         setPageHeader(page, 'Baskino.com - Онлайн фильмы в HD качестве');
-        //        page.appendItem(PREFIX + ':movies', 'directory', {
-        //            title: 'Фильмы',
-        //            icon: logo
-        //        });
-        //        page.appendItem(PREFIX + ':new', 'directory', {
-        //            title: 'Новинки',
-        //            icon: logo
-        //        });
+
+        page.appendItem(PREFIX + ':movies', 'directory', {
+            title: 'Фильмы',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':indexURL:/new', 'directory', {
+            title: 'Новинки',
+            icon: logo
+        });
         page.appendItem(PREFIX + ':top', 'directory', {
             title: 'Топ-250',
             icon: logo
         });
-        //        page.appendItem(PREFIX + ':serials', 'directory', {
-        //            title: 'Сериалы',
-        //            icon: logo
-        //        });
+        page.appendItem(PREFIX + ':indexURL:/serial', 'directory', {
+            title: 'Сериалы',
+            icon: logo
+        });
 
         page.appendItem("", "separator", {
             title: 'Рекомендуемое:'
         });
-        var response = showtime.httpReq(BASE_URL);
-        page.loading = false;
         // 1 - link, 2 - title, 3 - image, 4 - regie
         var re = /<img  onclick=\(window.location.href='(.*?)'\); title="(.*?)"[\S\s]*?src="(.*?)"[\S\s]*?'\);>(.*?)<\/span>/g;
         var match = re.exec(response);
@@ -172,31 +221,7 @@
             title: 'Фильмы онлайн:'
         });
 
-        var p = 1;
-
-        function loader() {
-            // 1 - link, 2 - title, 3 - image, 4 - quality, 5 - quoted full title, 6 - raiting, 7 - number of comments, 8 - date added, 9 - production date
-            re = /<div class="postcover">[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?<img title="([\S\s]*?)" src="([\S\s]*?)"[\S\s]*?class="quality_type ([\S\s]*?)">[\S\s]*?<div class="posttitle">[\S\s]*?">([\S\s]*?)<\/a>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>[\S\s]*?<!-- <div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="rinline">([\S\s]*?)<\/div>/g;
-            var match = re.exec(response);
-            while (match) {
-                page.appendItem(PREFIX + ':index:' + escape(match[1]), 'video', {
-                    title: new showtime.RichText(match[5] + ' ' + (match[4] == "quality_hd" ? colorStr("HD", blue) : colorStr("DVD", orange))),
-                    rating: +(match[6]) / 2,
-                    icon: match[3],
-                    description: match[7] + '\n' + match[8] + '\n' + match[9].replace(/<span class="tvs_new">/, "").replace(/<\/span>/, "")
-                });
-                match = re.exec(response);
-            };
-            p++;
-            re = /">Вперед<\/a>/;
-            if (re.exec(response)) {
-                response = showtime.httpReq(BASE_URL + "/page/" + p + "/");
-                return true;
-            };
-            return false;
-        }
-        loader();
-        page.paginator = loader;
+        scrapePageAtURL(page, '', true);
     };
 
     // Search IMDB ID by title
@@ -267,15 +292,53 @@
 
     //Play kinostok.tv links
     plugin.addURI(PREFIX + ":kinostok:(.*):(.*)", function(page, url, title) {
-	url = unescape(url).match(/value="pl=c:(.*?)&amp;/)[1];
-        var v = showtime.httpReq('http://kinostok.tv/embed' + unhash(url).match(/_video\/.*\//));
+        var hash1 = "Ddaf4bI7i6XeRNZ3ToJcHmlv5E",
+            hash2 = "YWyzpnxMu90Ltwk2GUQBsV81g=";
+
+        url = unescape(url).match(/value="pl=c:(.*?)&amp;/)[1];
+        var v = showtime.httpReq('http://kinostok.tv/embed' + unhash(url, hash1, hash2).match(/_video\/.*\//));
         page.loading = true;
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(title),
             sources: [{
-                url: showtime.JSONDecode(unhash(v)).playlist[0].file
+                url: showtime.JSONDecode(unhash(v, hash1, hash2)).playlist[0].file
+            }]
+        });
+        page.loading = false;
+    });
+
+    //Play meta.ua links
+    plugin.addURI(PREFIX + ":metaua:(.*):(.*)", function(page, url, title) {
+        var hash1 = "N3wxDvVdIbop1c5eiYZaWL6tnq",
+            hash2 = "JBmX0z4T9gkMGRy7l8sUHfu2Q=";
+        var v = showtime.httpReq('http://media.meta.ua/players/getparam/?v=' + unescape(unescape(url).match(/value="fileID=(.*?)&/)[1]));
+        page.loading = true;
+        page.type = "video";
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            imdbid: getIMDBid(title),
+            sources: [{
+                url: showtime.JSONDecode(unhash(v, hash1, hash2))
+            }]
+        });
+        page.loading = false;
+    });
+
+    //Play arm-tube.am links
+    plugin.addURI(PREFIX + ":armtube:(.*):(.*)", function(page, url, title) {
+        var hash1 = "kVI7xeanT6ispD9l3HfGYvgBcE",
+            hash2 = "XU2R1bWow0Mm4JtQy8zuNdZL5=";
+
+        url = unescape(url).match(/;file=(.*?)&amp;/)[1];
+        page.loading = true;
+        page.type = "video";
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            imdbid: getIMDBid(title),
+            sources: [{
+                url: "hls:" + unhash(url, hash1, hash2).replace('manifest.f4m', 'master.m3u8')
             }]
         });
         page.loading = false;
@@ -294,7 +357,7 @@
             title: unescape(title),
             imdbid: getIMDBid(title),
             sources: [{
-                url: v['manifest_m3u8']
+                url: 'hls:' + v['manifest_m3u8']
             }]
         });
         page.loading = false;
@@ -326,29 +389,20 @@
     // Index page
     plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
         var response = showtime.httpReq(unescape(url)).toString();
-        var re = /<title>(.*?)<\/title>/;
-        setPageHeader(page, showtime.entityDecode(re.exec(response)[1]).replace(' - смотреть онлайн бесплатно в хорошем качестве', ''));
-        re = /<div class="description"[\S\s]*?<div id="[\S\s]*?">([\S\s]*?)<br\s\/>/;
-        var description = trim(re.exec(response)[1]);
-        re = /<td itemprop="name">([\S\s]*?)<\/td>/;
-        var title = re.exec(response)[1];
-        re = /<td itemprop="alternativeHeadline">([\S\s]*?)<\/td>/;
-        var origTitle = re.exec(response);
+        var re;
+        setPageHeader(page, showtime.entityDecode(response.match(/<title>(.*?)<\/title>/)[1].replace(' - смотреть онлайн бесплатно в хорошем качестве', '')));
+        var description = trim(response.match(/<div class="description"[\S\s]*?<div id="[\S\s]*?">([\S\s]*?)<br\s\/>/)[1]);
+        var title = response.match(/<td itemprop="name">([\S\s]*?)<\/td>/)[1];
+        var origTitle = response.match(/<td itemprop="alternativeHeadline">([\S\s]*?)<\/td>/);
         if (origTitle) title += " | " + origTitle[1];
-        re = /<img itemprop="image"[\S\s]*?src="([\S\s]*?)"/;
-        var icon = re.exec(response)[1];
-        re = />Год:<\/td>[\S\s]*?<a href="[\S\s]*?">([\S\s]*?)<\/a>/;
-        var year = +re.exec(response)[1];
-        re = />Страна:<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>/;
-        var country = re.exec(response)[1];
-        re = />Слоган:<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>/;
-        var slogan = re.exec(response)[1];
-        re = /<td itemprop="duration">([\S\s]*?)<\/td>/;
-        var duration = re.exec(response)[1];
-        re = /<b itemprop="ratingValue">([\S\s]*?)<\/b>/;
-        var rating = re.exec(response)[1].replace(",", ".") * 10;
-        re = /<a itemprop="director" href="[\S\s]*?">([\S\s]*?)<\/a>/;
-        var director = re.exec(response)[1];
+        var icon = response.match(/<img itemprop="image"[\S\s]*?src="([\S\s]*?)"/)[1];
+        var year = +response.match(/>Год:<\/td>[\S\s]*?<a href="[\S\s]*?">([\S\s]*?)<\/a>/)[1];
+        var country = response.match(/>Страна:<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>/)[1];
+        var slogan = response.match(/>Слоган:<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>/)[1];
+        var duration = response.match(/<td itemprop="duration">([\S\s]*?)<\/td>/);
+        if (duration) duration = duration[1];
+        var rating = response.match(/<b itemprop="ratingValue">([\S\s]*?)<\/b>/)[1].replace(",", ".") * 10;
+        var director = response.match(/<a itemprop="director" href="[\S\s]*?">([\S\s]*?)<\/a>/)[1];
         re = /<div class="last_episode">Последняя серия добавлена ([\S\s]*?)<\/div>/;
         var timestamp = re.exec(response);
         if (timestamp) timestamp = getTimestamp(timestamp[1]);
@@ -411,21 +465,35 @@
             var player_tabs = response.match(/<ul id="player_tabs" class="tabs">([\S\s]*?)<\/ul>/)[1];
             re = /<li rel="([\S\s]*?)">([\S\s]*?)<\/li>/g;
             match = re.exec(player_tabs);
-	    var num = 0;
+            var num = 0;
             while (match) {
-                var link = response.match(/<iframe src="http:\/\/vk.*?"/g); // try to get vk link
-                if (link && link[num]) link = PREFIX + ":vk:" + escape(link[num]) + ":" + escape(title); else link = 0;
+                var link = response.match(/<iframe src="http:\/\/vk(.*?)"/g); // try to get vk link
+                if (link && link[num]) link = PREFIX + ":vk:" + escape(link[num]) + ":" + escape(title);
+                else link = 0;
                 if (!link) {
-                    link = response.match(/<iframe src="http:\/\/moonwalk.cc\/video\/.*?\//g); // try to get hdserials link
-                    if (link && link[num]) link = PREFIX + ":moonwalk:" + escape(link[num]) + ":" + escape(title); else link = 0;
+                    link = response.match(/<iframe src="http:\/\/moonwalk.cc\/video\/(.*?)\//g); // try to get hdserials link
+                    if (link && link[num]) link = PREFIX + ":moonwalk:" + escape(link[num]) + ":" + escape(title);
+                    else link = 0;
                 }
                 if (!link) {
                     link = response.match(/value="pl=c:(.*?)&amp;/g); // try kinostok link
-                    if (link && link[num]) link = PREFIX + ":kinostok:" + escape(link[num]) + ":" + escape(title); else link = 0;
+                    if (link && link[num]) link = PREFIX + ":kinostok:" + escape(link[num]) + ":" + escape(title);
+                    else link = 0;
                 }
                 if (!link) {
                     link = response.match(/src="http:\/\/megogo.net(.*?)"/g); // try megogo.net link
-                    if (link && link[num]) link = PREFIX + ":megogo:" + escape(link[num]) + ":" + escape(title);  else link = 0;
+                    if (link && link[num]) link = PREFIX + ":megogo:" + escape(link[num]) + ":" + escape(title);
+                    else link = 0;
+                }
+                if (!link) {
+                    link = response.match(/;file=(.*?)&amp;/g); // try armtube link
+                    if (link && link[num]) link = PREFIX + ":armtube:" + escape(link[num]) + ":" + escape(title);
+                    else link = 0;
+                }
+                if (!link) {
+                    link = response.match(/value="fileID=(.*?)&/g); // try meta.ua link
+                    if (link && link[num]) link = PREFIX + ":metaua:" + escape(link[num]) + ":" + escape(title);
+                    else link = 0;
                 }
                 if (!link) { // try baskino links
                     link = response.match(/file:"([^"]+)/);
@@ -452,7 +520,7 @@
                     description: new showtime.RichText(coloredStr("Страна: ", orange) + country + coloredStr(" Слоган: ", orange) + slogan + coloredStr(" Режиссер: ", orange) + director + coloredStr(" В ролях: ", orange) + actors + "\n\n" + description)
                 });
                 match = re.exec(player_tabs);
-		num++;
+                num++;
             };
 
         };
@@ -510,3 +578,5 @@
         page.paginator = loader;
     });
 })(this);
+0
+
