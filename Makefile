@@ -2,7 +2,7 @@
 PLUGINS= \
 	lubetube.zip \
 	redtube.zip \
-	fs_ua.zip \
+	fs_to.zip \
 	ex_ua.zip \
 	megogo.zip \
 	uletno.zip \

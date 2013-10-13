@@ -1,5 +1,5 @@
 /**
- * FS.UA plugin for Showtime
+ * FS.TO plugin for Showtime
  *
  *  Copyright (C) 2013 lprot
  *
@@ -19,7 +19,7 @@
 
 (function(plugin) {
 
-    var PREFIX = 'fs_ua';
+    var PREFIX = 'fs_to';
     var BASE_URL = 'http://fs.to';
 
     var logo = plugin.path + "logo.png";
@@ -27,7 +27,7 @@
     var sURL = {};
     var sTitle = {};
 
-    var service = plugin.createService("fs.ua", PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService("fs.to", PREFIX + ":start", "video", true, logo);
 
     function setPageHeader(page, title) {
         if (page.metadata) {
@@ -40,20 +40,12 @@
     }
 
     // remove multiple, leading or trailing spaces and line feeds
-
     function trim(s) {
-        s = s.replace(/(\r\n|\n|\r)/gm, "");
-        s = s.replace(/(^\s*)|(\s*$)/gi, "");
-        s = s.replace(/[ ]{2,}/gi, " ");
-        return s;
+        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
     }
 
-    function removeSlashes(str) {
-        str = str.replace(/\\'/g, '\'');
-        str = str.replace(/\\"/g, '"');
-        str = str.replace(/\\0/g, '\0');
-        str = str.replace(/\\\\/g, '\\');
-        return str;
+    function removeSlashes(s) {
+        return s.replace(/\\'/g, '\'').replace(/\\"/g, '"').replace(/\\0/g, '\0').replace(/\\\\/g, '\\');
     }
 
     function blueStr(str) {
@@ -61,7 +53,7 @@
     }
 
     function startPage(page) {
-        setPageHeader(page, 'FS.UA - Рекомендательная видеосеть');
+        setPageHeader(page, 'FS.TO - Рекомендательная видеосеть');
         page.loading = false;
         page.appendItem(PREFIX + ':updates', 'directory', {
             title: 'Новое в каталоге',
@@ -304,27 +296,20 @@
     // Appends the item and lists it's root folder
     plugin.addURI(PREFIX + ":listRoot:(.*):(.*)", function(page, url, title) {
         title = unescape(title);
-        var response = showtime.httpGet(BASE_URL + url);
-        var re = /<div class="poster-main">[\S\s]*?<img src="([^"]+)" alt="([^"]+)/;
-        var m = re.exec(response);
-        re = /<div class="b-posters">([\S\s]*?)<div class="clear">/;
-        var what_else = re.exec(response);
-        var icon = 0;
-        var description = '';
-        if (m) {
-            icon = m[1];
-            title = m[2];
-            re = /<div class="item-info">([\S\s]*?)<\/div>/;
-            description = new showtime.RichText(trim(re.exec(response)[1].toString()).replace('>еще</a>', ""));
-        }
         setPageHeader(page, title);
+        var response = showtime.httpGet(BASE_URL + url).toString();
+	var icon = response.match(/<link rel="image_src" href="([^"]+)"/);
+	if (icon) icon = icon[1];
+	var description = response.match(/<p class="item-decription [^"]+">([\S\s]*?)<\/p>/);
+	if (description) description = description[1]; else description = '';
+        var what_else = response.match(/<div class="b-posters">([\S\s]*?)<div class="clear">/);
         page.appendItem(PREFIX + ":playOnline:" + url + ":" + escape(title), "video", {
             title: new showtime.RichText(title),
             icon: icon,
-            description: description
+            description: new showtime.RichText(description)
         });
         response = showtime.httpGet(BASE_URL + url + '?ajax&blocked=0&folder=0');
-        re = /<ul class="filelist[^"]+[\S\s]*?<\/ul>/;
+        var re = /<ul class="filelist[^"]+[\S\s]*?<\/ul>/;
         response = re.exec(response);
         var start = 0,
             end = 0;
@@ -334,7 +319,7 @@
             end = response.indexOf('</li>', start + 1);
             // 1 - type, 2 - folder_id, 3 - name, 4 - size, 5 - details, 6 - date
             re = /<li class="([^"]+)[\S\s]*?rel="{parent_id: ([^}]+)}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
-            m = re.exec(response.substring(start, end));
+            var m = re.exec(response.substring(start, end));
         }
         while (m && (start > 0)) {
             m[3] = trim(m[3]);
@@ -370,7 +355,6 @@
                 m = re.exec(what_else);
             }
         }
-        page.loading = false;
     });
 
     plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
@@ -506,9 +490,7 @@
 
     plugin.addURI(PREFIX + ":start", startPage);
 
-    plugin.addSearcher("fs.ua", logo,
-
-    function(page, query) {
+    plugin.addSearcher("fs.to", logo, function(page, query) {
         var fromPage = 1, tryToSearch = true;
         //1-link, 2-title, 3-image, 4 - description, 5 - type, 6 - type in text, 7 - genre
         var re = /class="image-wrap">[\S\s]*?<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)[\S\s]*?<p class="text">([\S\s]*?)<\/p>[\S\s]*?<span class="section ([^"]+)">([\S\s]*?)<\/span>[\S\s]*?<span class="genre"><span class="caption">Жанр:<\/span><span>([\S\s]*?)<\/span>/g;

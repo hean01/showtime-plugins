@@ -1,0 +1,13 @@
+{
+	"description": "<p>FS.TO - Рекомендательная медиа сеть<p>Для дополнительной информации, посетите <a href=\"http://fs.to\">http://fs.to</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "FS.TO",
+	"synopsis": "FS.TO: Рекомендательная медиа сеть",
+	"version": "0.9.2", "file": "fs_to.js",
+	"showtimeVersion": "4.1.273",
+	"type": "javascript", 
+	"id": "fs.to",
+	"icon": "logo.png",
+	"category": "video"
+}
