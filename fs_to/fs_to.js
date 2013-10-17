@@ -179,35 +179,21 @@
 
         function loader() {
             var response = showtime.httpGet(url + "&page=" + p);
-            var re = /class="selected">([\S\s]*?)\</;
-            var match = re.exec(response);
-            if (match) if (page.metadata) page.metadata.title = match[1];
 
             // Show populars only above the first page
             if (p == 0) {
-                re = /<div class="b-posters[\S\s]*?">([\S\s]*?)<div class="b-clear">/;
-                var what_else = re.exec(response);
-                if (!what_else) {
-                    re = /<div class="b-poster-series[\S\s]*?">([\S\s]*?)<div class="b-clear">/;
-                    what_else = re.exec(response)[1];
-                    // 1 - link, 2 - image, 3 - title
-                    re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span[\S\s]*?>([\S\s]*?)<\/span>/g;
-                } else {
-                    what_else = what_else[1];
-                    // 1 - link, 2 - image, 3 - title
-                    re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="m-poster-new__full_title">([\S\s]*?)<\/span>/g;
-                }
                 page.appendItem("", "separator", {
                     title: 'Самое просматриваемое сейчас'
                 });
-                var m = re.exec(what_else);
+		re = /<div class="b-poster-[\S\s]*?<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>/g;
+                var m = re.exec(response);
                 while (m) {
-                    title = trim(m[3].replace('<p>', " / ")).replace('</p><p>', " ").replace('</p>', "");
+		    title = trim(m[3]).replace(/(<([^>]+)>)/ig, "");
                     page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
                         title: new showtime.RichText(title),
                         icon: m[2]
                     });
-                    m = re.exec(what_else);
+                    m = re.exec(response);
                 }
                 page.appendItem("", "separator", {
                     title: ''
@@ -216,7 +202,7 @@
 
             //1-link 2-img 3-short title 4-date 5-description
 	    re = /class="subject-link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt=\'([\S\s]*?)'\/>([\S\s]*?)class="subject-link m-full">[\S\s]*?\<span>([\S\s]*?)\<\/span>/g;
-            match = re.exec(response);
+            var match = re.exec(response);
             var re2 = /class="date">\(([^\)]+)/;
 	    if (!match) return p = 1;
             var match2 = re2.exec(match[4]);
@@ -340,9 +326,7 @@
             re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="m-poster-new__full_title">([\S\s]*?)<\/span>/g;
             m = re.exec(what_else);
             while (m) {
-                title = m[3].replace('<p>', " / ");
-                title = title.replace('</p><p>', " ");
-                title = title.replace('</p>', "");
+                title = m[3].replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', "");
                 page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
                     title: new showtime.RichText(title),
                     icon: m[2]
