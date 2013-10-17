@@ -1,5 +1,5 @@
 /**
- * FS.TO plugin for Showtime
+ * sdf.to plugin for Showtime
  *
  *  Copyright (C) 2013 lprot
  *
@@ -19,15 +19,15 @@
 
 (function(plugin) {
 
-    var PREFIX = 'fs_to';
-    var BASE_URL = 'http://fs.to';
+    var PREFIX = 'sdf_to';
+    var BASE_URL = 'http://sdf.to';
 
     var logo = plugin.path + "logo.png";
 
     var sURL = {};
     var sTitle = {};
 
-    var service = plugin.createService("fs.to", PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService("sdf.to", PREFIX + ":start", "video", true, logo);
 
     function setPageHeader(page, title) {
         if (page.metadata) {
@@ -53,10 +53,10 @@
     }
 
     function startPage(page) {
-        setPageHeader(page, 'FS.TO - Рекомендательная видеосеть');
+        setPageHeader(page, 'sdf.to - Рекомендательная видеосеть');
         page.loading = false;
         page.appendItem(PREFIX + ':updates', 'directory', {
-            title: 'Новое в каталоге',
+            title: 'Последние обновления',
             icon: logo
         });
         page.appendItem(PREFIX + ':index:/video/films/?sort=rating&view=list', 'directory', {
@@ -150,13 +150,13 @@
 
     // Shows what's new page
     plugin.addURI(PREFIX + ":updates", function(page) {
-        setPageHeader(page, 'Новое в каталоге');
+        setPageHeader(page, 'Последние обновления');
         var p = 0;
 
         function loader() {
             var response = showtime.httpGet(BASE_URL + "/updates.aspx?page=" + p);
             //1-type 2-link 3-title 4-date 5-time
-            var re = /class="m-themed">([^\<]+)[\S\s]*?a href="([^"]+)" class="item-link">([^\<]+)[\S\s]*?class="col-date"[\S\s]*?\>([^\<]+)[\S\s]*?class="col-time">([^\<]+)/g;
+            var re = /class="m-themed">([^\<]+)[\S\s]*?a href="([^"]+)" class="item-link" title="[^"]+">([^\<]+)[\S\s]*?class="col-date"[\S\s]*?\>([^\<]+)[\S\s]*?class="col-time">([^\<]+)/g;
             var match = re.exec(response);
             while (match) {
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[2]) + ":" + escape(match[3]), "directory", {
@@ -195,16 +195,14 @@
                 } else {
                     what_else = what_else[1];
                     // 1 - link, 2 - image, 3 - title
-                    re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="m-full">([\S\s]*?)<\/span>/g;
+                    re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="m-poster-new__full_title">([\S\s]*?)<\/span>/g;
                 }
                 page.appendItem("", "separator", {
-                    title: 'Популярно прямо сейчас'
+                    title: 'Самое просматриваемое сейчас'
                 });
                 var m = re.exec(what_else);
                 while (m) {
-                    title = trim(m[3].replace('<p>', " / "));
-                    title = title.replace('</p><p>', " ");
-                    title = title.replace('</p>', "");
+                    title = trim(m[3].replace('<p>', " / ")).replace('</p><p>', " ").replace('</p>', "");
                     page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
                         title: new showtime.RichText(title),
                         icon: m[2]
@@ -217,18 +215,15 @@
             }
 
             //1-link 2-img 3-short title 4-date 5-description
-            re = /class="subject-link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt=\'([\S\s]*?)'\/>([\S\s]*?)class="subject-link m-full">[\S\s]*?\<span>([\S\s]*?)\<\/span>/g;
+	    re = /class="subject-link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt=\'([\S\s]*?)'\/>([\S\s]*?)class="subject-link m-full">[\S\s]*?\<span>([\S\s]*?)\<\/span>/g;
             match = re.exec(response);
             var re2 = /class="date">\(([^\)]+)/;
+	    if (!match) return p = 1;
             var match2 = re2.exec(match[4]);
             var date = "";
             if (match2) date = '<font color="6699CC"> (' + match2[1] + ')</font>';
-
             while (match) {
-                var title = match[5].replace('<p>', " / ");
-                title = title.replace('</p><p>', " ");
-                title = title.replace('</p>', "");
-                title = removeSlashes(title);
+                var title = removeSlashes(match[5].replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', ""));
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
                     title: new showtime.RichText(title + date),
                     icon: match[2],
@@ -342,7 +337,7 @@
                 title: 'Похожие материалы'
             });
             // 1 - link, 2 - image, 3 - title
-            re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="m-full">([\S\s]*?)<\/span>/g;
+            re = /<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="m-poster-new__full_title">([\S\s]*?)<\/span>/g;
             m = re.exec(what_else);
             while (m) {
                 title = m[3].replace('<p>', " / ");
@@ -490,7 +485,7 @@
 
     plugin.addURI(PREFIX + ":start", startPage);
 
-    plugin.addSearcher("fs.to", logo, function(page, query) {
+    plugin.addSearcher("sdf.to", logo, function(page, query) {
         var fromPage = 1, tryToSearch = true;
         //1-link, 2-title, 3-image, 4 - description, 5 - type, 6 - type in text, 7 - genre
         var re = /class="image-wrap">[\S\s]*?<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)[\S\s]*?<p class="text">([\S\s]*?)<\/p>[\S\s]*?<span class="section ([^"]+)">([\S\s]*?)<\/span>[\S\s]*?<span class="genre"><span class="caption">Жанр:<\/span><span>([\S\s]*?)<\/span>/g;
