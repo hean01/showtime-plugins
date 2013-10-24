@@ -185,19 +185,23 @@
                 page.appendItem("", "separator", {
                     title: 'Самое просматриваемое сейчас'
                 });
-		re = /<div class="b-poster-[\S\s]*?<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>/g;
-                var m = re.exec(response);
-                while (m) {
-		    title = trim(m[3]).replace(/(<([^>]+)>)/ig, "");
-                    page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
-                        title: new showtime.RichText(title),
-                        icon: m[2]
-                    });
-                    m = re.exec(response);
-                }
-                page.appendItem("", "separator", {
-                    title: ''
-                });
+		re = /<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-delimiter">/;
+		var match = re.exec(response);
+		if (match) {
+			re = /<div class="b-poster-[\S\s]*?<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>/g;
+	                var m = re.exec(match[1]);
+        	        while (m) {
+			    title = trim(m[3]).replace(/(<([^>]+)>)/ig, "");
+        	            page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
+        	                title: new showtime.RichText(title),
+        	                icon: m[2]
+        	            });
+        	            m = re.exec(match[1]);
+        	        }
+	                page.appendItem("", "separator", {
+        	            title: ''
+        	        });
+		}
             }
 
             //1-link 2-img 3-short title 4-date 5-description
