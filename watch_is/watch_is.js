@@ -285,10 +285,12 @@
     // Play links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
 	setPageHeader(page, unescape(title));
+	page.loading = true;
         var v = showtime.httpGet(BASE_URL + '/api/watch/' + unescape(url).match(/[\S\s]*?([\d+]+)/i)[1]).toString();
 	function addItem(link, type) {
 		link = "videoparams:" + showtime.JSONEncode({
 			title: showtime.entityDecode(unescape(title)),
+			canonicalUrl: PREFIX + ":video:" + url + ":" + title + ":" + type,
 			imdbid: getIMDBid(title),
 			no_fs_scan: true,
 			sources: [{
@@ -306,6 +308,7 @@
 				orangeStr(" В ролях: ")+v.match(/<cast>([\S\s]*?)<\/cast>/)[1] + "<br>" +
 				orangeStr("Описание: ")+v.match(/<about>([\S\s]*?)<\/about>/)[1])
 		});
+		page.loading = false;
 	}
 	if (v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp>/))
 		if (!showtime.probe(v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp>/)[1]).result) 
@@ -319,9 +322,30 @@
 	if (v.match(/<video>([\S\s]*?)<\/video>/)) 
 		if (!showtime.probe(v.match(/<video>([\S\s]*?)<\/video>/)[1]).result) 
 			addItem(v.match(/<video>([\S\s]*?)<\/video>/)[1], blueStr("SD MP4"));
-	var match = showtime.httpGet(BASE_URL+unescape(url)).toString();
-	addItem(match.match(/file:"([^"]+)/)[1], blueStr("FILE")); 
+	var html = showtime.httpGet(BASE_URL+unescape(url)).toString();
+	addItem(html.match(/file:"([^"]+)/)[1], blueStr("FILE")); 
 	page.loading = false;
+
+	// 1-icon, 2-nick, 3-age, 4-date/time, 5-comment
+	var re = /<div class="avatar"><a href="[\s\S]*?"><img src="([\s\S]*?)"[\s\S]*?<strong>([\s\S]*?)<\/strong>[\s\S]*?<div class="sex">([\s\S]*?)<\/span>[\s\S]*?<div class="date">([\s\S]*?)<\/div>[\s\S]*?<div class="comment" id="[\s\S]*?">([\s\S]*?)<\/div>/g;
+        var match = re.exec(html);
+	var counter = 0;
+	while (match) {
+		if (counter == 0) {
+			page.appendItem("", "separator", {
+				title: 'Коментарии:'
+			});
+			counter++;
+		}
+	showtime.print(match[1]);
+	showtime.print(match[2]);
+                page.appendPassiveItem('video', "", {
+			title: new showtime.RichText(orangeStr(match[2])+" "+match[3]+" "+match[4]),
+			description: new showtime.RichText(match[5]),
+			icon: match[1][0] == "/" ?  BASE_URL + match[1] : match[1]
+		});
+		match = re.exec(html);
+	}
     });
 
     plugin.addURI(PREFIX + ":start", startPage);
