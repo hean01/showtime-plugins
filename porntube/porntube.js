@@ -380,8 +380,17 @@
     // Play links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
         var v = showtime.httpGet(BASE_URL + unescape(url));
-        var re = /playerFallbackFile = '([\s\S]*?)'/;
+        var re = /embedPlayer\(([\d^]+)[\S\s]*?\[([\S\s]*?)\]/;
         var match = re.exec(v);
+	var res = match[2].split(",");
+	var maxRes = '0';
+	for (var i in res) if (parseInt(maxRes) < parseInt(res[i])) maxRes = res[i];
+	var v = showtime.httpReq('http://tkn.porntube.com/'+match[1]+'/desktop/'+maxRes, {
+		'method' : 'POST',
+		'headers': { 'Host': 'tkn.porntube.com', 'Origin': BASE_URL,
+			'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36' }
+		}).toString();
+	match = v.match(/"token":"([\S\s]*?)"}/);
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
