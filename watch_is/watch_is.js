@@ -337,8 +337,6 @@
 			});
 			counter++;
 		}
-	showtime.print(match[1]);
-	showtime.print(match[2]);
                 page.appendPassiveItem('video', "", {
 			title: new showtime.RichText(orangeStr(match[2])+" "+match[3]+" "+match[4]),
 			description: new showtime.RichText(match[5]),
