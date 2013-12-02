@@ -10,7 +10,8 @@ PLUGINS= \
 	watch_is.zip \
 	porntube.zip \
 	docuim.zip \
-	baskino.zip
+	baskino.zip \
+	bugtester.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

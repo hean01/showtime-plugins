@@ -1,0 +1,13 @@
+{
+	"description": "Bugtester - simple plugin to test bugs on RPI, etc.",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "Bugtester",
+	"synopsis": "Bugtester: bugtester",
+	"version": "0.1", "file": "bugtester.js",
+	"showtimeVersion": "4.1.397",
+	"type": "javascript", 
+	"id": "bugtester",
+	"icon": "logo.png",
+	"category": "video"
+}
