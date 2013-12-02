@@ -27,6 +27,9 @@
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
     }
 
+    function orangeStr(str) {
+        return '<font color="FFA500">' + str + '</font>';
+    }
     function blueStr(str) {
         return '<font color="6699CC">' + str + '</font>';
     }
@@ -281,32 +284,44 @@
 
     // Play links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
-        var re = /[\S\s]*?([\d+]+)/i;
-        var match = re.exec(unescape(url));
-        var v = showtime.httpGet(BASE_URL + '/api/watch/' + match[1]);
-        re = /<hdvideo>([\s\S]*?)<\/hdvideo>/;
-        match = re.exec(v);
-        if (!match) {
-            re = /<video>([\s\S]*?)<\/video>/;
-            match = re.exec(v);
-        }
-
-	if (showtime.probe(match[1]).result) { // handling API database errors
-		v = showtime.httpGet(BASE_URL+unescape(url)).toString();
-		match = v.match(/file:"([^"]+)/);
+	setPageHeader(page, unescape(title));
+        var v = showtime.httpGet(BASE_URL + '/api/watch/' + unescape(url).match(/[\S\s]*?([\d+]+)/i)[1]).toString();
+	function addItem(link, type) {
+		link = "videoparams:" + showtime.JSONEncode({
+			title: showtime.entityDecode(unescape(title)),
+			imdbid: getIMDBid(title),
+			no_fs_scan: true,
+			sources: [{
+				url: link
+			}]
+		});
+		page.appendItem(link, 'video', {
+			title: new showtime.RichText(type+" "+v.match(/<title>([\S\s]*?)<\/title>/)[1]),
+			icon: v.match(/<poster>([\S\s]*?)<\/poster>/)[1],
+			genre: v.match(/<genre>([\S\s]*?)<\/genre>/)[1],
+			year: parseInt(v.match(/<year>([\S\s]*?)<\/year>/)[1]),
+			duration: parseInt(v.match(/<duration>([\S\s]*?)<\/duration>/)[1]),
+			description: new showtime.RichText(orangeStr("Страна: ")+v.match(/<country>([\S\s]*?)<\/country>/)[1] + 
+				orangeStr(" Режиссер: ")+v.match(/<director>([\S\s]*?)<\/director>/)[1] +
+				orangeStr(" В ролях: ")+v.match(/<cast>([\S\s]*?)<\/cast>/)[1] + "<br>" +
+				orangeStr("Описание: ")+v.match(/<about>([\S\s]*?)<\/about>/)[1])
+		});
 	}
-
-        page.type = "video";
-        page.source = "videoparams:" + showtime.JSONEncode({
-            title: showtime.entityDecode(unescape(title)),
-            imdbid: getIMDBid(title),
-	    no_fs_scan: true,
-            canonicalUrl: PREFIX + ":video:" + url + ":" + title,
-            sources: [{
-                url: match[1]
-            }]
-        });
-        page.loading = false;
+	if (v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp>/))
+		if (!showtime.probe(v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp>/)[1]).result) 
+			addItem(v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp/)[1], blueStr("HD RTMP"));
+	if (v.match(/<rtmp>([\S\s]*?)<\/rtmp>/))
+		if (!showtime.probe(v.match(/<rtmp>([\S\s]*?)<\/rtmp>/)[1]).result) 
+			addItem(v.match(/<rtmp>([\S\s]*?)<\/rtmp>/)[1], blueStr("SD RTMP"));
+	if (v.match(/<hdvideo>([\S\s]*?)<\/hdvideo>/)) 
+		if (!showtime.probe(v.match(/<hdvideo>([\S\s]*?)<\/hdvideo>/)[1]).result) 
+			addItem(v.match(/<hdvideo>([\S\s]*?)<\/hdvideo>/)[1], blueStr("HD MP4"));
+	if (v.match(/<video>([\S\s]*?)<\/video>/)) 
+		if (!showtime.probe(v.match(/<video>([\S\s]*?)<\/video>/)[1]).result) 
+			addItem(v.match(/<video>([\S\s]*?)<\/video>/)[1], blueStr("SD MP4"));
+	var match = showtime.httpGet(BASE_URL+unescape(url)).toString();
+	addItem(match.match(/file:"([^"]+)/)[1], blueStr("FILE")); 
+	page.loading = false;
     });
 
     plugin.addURI(PREFIX + ":start", startPage);
