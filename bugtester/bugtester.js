@@ -53,8 +53,11 @@
     plugin.addSearcher("bugtester", logo,
 
     function(page, query) {
+	page.type = "directory";
+        page.loading = false;
+
         var response = showtime.httpGet("http://www.google.com");
-	showtime.trace("HELLO WORLD!!!");
+	showtime.trace(response);
 
         page.appendPassiveItem('video', {
             title: 'Test'
@@ -63,7 +66,6 @@
 	showtime.trace("HELLO WORLD AGAIN !!!");
 
         page.entries++;
-        page.loading = false;
         return false;
     });
 })(this);
