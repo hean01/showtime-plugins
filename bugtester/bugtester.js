@@ -43,7 +43,7 @@
             title: 'Separator'
         });
 
-	showtime.print("HELLO WORLD!!!");
+	showtime.trace("HELLO WORLD!!!");
 
         page.loading = false;
     };
@@ -54,13 +54,13 @@
 
     function(page, query) {
         var response = showtime.httpGet("http://www.google.com");
-	showtime.print("HELLO WORLD!!!");
+	showtime.trace("HELLO WORLD!!!");
 
         page.appendPassiveItem('video', {
             title: 'Test'
         });
 
-	showtime.print("HELLO WORLD AGAIN !!!");
+	showtime.trace("HELLO WORLD AGAIN !!!");
 
         page.entries++;
         page.loading = false;

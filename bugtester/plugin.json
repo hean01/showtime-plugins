@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Bugtester",
 	"synopsis": "Bugtester: bugtester",
-	"version": "0.1.1", "file": "bugtester.js",
+	"version": "0.1.2", "file": "bugtester.js",
 	"showtimeVersion": "4.1.397",
 	"type": "javascript", 
 	"id": "bugtester",
