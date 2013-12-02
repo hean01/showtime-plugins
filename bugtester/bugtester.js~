@@ -44,7 +44,6 @@
         });
 
         page.loading = false;
-        page.paginator = loader;
     };
 
     plugin.addURI(PREFIX + ":start", startPage);

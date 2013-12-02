@@ -43,6 +43,8 @@
             title: 'Separator'
         });
 
+	showtime.print("HELLO WORLD!!!");
+
         page.loading = false;
     };
 
