@@ -130,7 +130,7 @@
 
     // Play videolink
     plugin.addURI(PREFIX + "play:(.*):(.*)", function(page, url, title) {
-		var link = '';
+	var link = '';
         var response = showtime.httpGet(unescape(url)).toString();
         var match = response.match(/playlist_flow_player_flv.php\?vid=[0-9]+/);
         if (match) {
@@ -202,7 +202,7 @@
         var response = showtime.httpGet(BASE_URL + "/categories");
         page.loading = false;
 	// 1 - uri, 2 - image, 3 - title
-        var re = /<a href="http:\/\/lubetube.com([^\s]+)page=1"><img width="[0-9]+" height="[0-9]+" alt="[^"]+" class="main_gallery" src="([^\s]+)" title="([^"]+)" \/><\/a><br \/>/g;
+        var re = /<a href="http:\/\/lubetube.com([^\s]+)"><img width="[0-9]+" height="[0-9]+" alt="[^"]+" class="main_gallery" src="([^\s]+)" title="([^"]+)" \/><\/a><br \/>/g;
         var match = re.exec(response);
         while (match) {
             page.appendItem(PREFIX + "sorting:" + match[3] + ":" + match[1], "directory", {
