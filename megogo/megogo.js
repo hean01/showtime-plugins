@@ -1,7 +1,7 @@
 /**
  * megogo.net plugin for Showtime
  *
- *  Copyright (C) 2013 lprot
+ *  Copyright (C) 2014 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,10 +27,7 @@
     var logo = plugin.path + "logo.png";
 
     function trim(s) {
-        s = s.replace(/(\r\n|\n|\r)/gm, "");
-        s = s.replace(/(^\s*)|(\s*$)/gi, "");
-        s = s.replace(/[ ]{2,}/gi, " ");
-        return s;
+        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
     }
 
     function blueStr(str) {
@@ -100,7 +97,6 @@
             return true;
         };
         loader();
-        page.loading = false;
         page.paginator = loader;
     });
 
@@ -159,13 +155,9 @@
 
     plugin.addURI(PREFIX + ":start", startPage);
 
-    plugin.addSearcher("megogo.net", logo,
-
-    function(page, query) {
-	        page.entries = 0;
-            var offset = 0;
-            var counter = 0;
-
+    plugin.addSearcher("megogo.net", logo, function(page, query) {
+	    page.entries = 0;
+            var offset = 0, counter = 0;
             function loader() {
                 var params = 'text=' + query + '&limit=20' + '&offset=' + offset;
                 var request = BASE_URL + '/search?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + sign) + devType;
@@ -176,7 +168,7 @@
                     page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + json.video_list[i].title, "video", {
                         title: showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " / " + showtime.entityDecode(json.video_list[i].title_orig) : ""),
                         year: +parseInt(json.video_list[i].year),
-                        genre: unescape(json.video_list[i].genre_list[0].title),
+                        genre: (json.video_list[i].genre_list[0] ? unescape(json.video_list[i].genre_list[0].title) : ''),
                         rating: json.video_list[i].rating_imdb * 10,
                         duration: +parseInt(json.video_list[i].duration),
                         description: new showtime.RichText(trim(showtime.entityDecode(unescape(json.video_list[i].description)))),
@@ -193,5 +185,4 @@
             page.loading = false;
             page.paginator = loader;
     });
-
 })(this);
