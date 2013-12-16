@@ -55,13 +55,16 @@
         //1-link, 2-title, 3-image, 4 - description, 5 - type, 6 - type in text, 7 - genre
         var re = /class="image-wrap">[\S\s]*?<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)[\S\s]*?<p class="text">([\S\s]*?)<\/p>[\S\s]*?<span class="section ([^"]+)">([\S\s]*?)<\/span>[\S\s]*?<span class="genre"><span class="caption">Жанр:<\/span><span>([\S\s]*?)<\/span>/g;
         var re2 = /<b>Следующая страница<\/b>/;
-
+		showtime.trace("loader");
         function loader() {
             if (!tryToSearch) return false;
 	    var link = BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+') 
+	    showtime.trace("link");
             if (fromPage != 1) link = link + "&page=" + fromPage;
             var response = showtime.httpGet(link);
+            showtime.trace("link2");
             var match = re.exec(response);
+            showtime.trace("response");
             while (match) {
 				showtime.trace(match[2]);
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[2]), "video", {
@@ -78,8 +81,11 @@
             fromPage++;
             return true;
         };
+        showtime.trace("loader1");
         loader();
+        showtime.trace("loader2");
         page.paginator = loader;
+        showtime.trace("loader3");
     });
 
 })(this);
