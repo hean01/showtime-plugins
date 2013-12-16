@@ -87,6 +87,5 @@
         page.paginator = loader;
         showtime.trace("loader3");
     });
-
 })(this);
 
