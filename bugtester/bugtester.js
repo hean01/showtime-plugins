@@ -1,4 +1,4 @@
-﻿/**
+/**
  * bugtester plugin for Showtime
  *
  *  Copyright (C) 2013 lprot
