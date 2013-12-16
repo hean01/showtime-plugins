@@ -71,7 +71,7 @@
                     title: match[2],
                     icon: match[3],
                     genre: match[7],
-                    description: 'Раздел: ' + blueStr(match[6]) + '\n' + match[4]
+                    description: 'Раздел: ' + match[6] + match[4]
                 });
                 page.entries++;
                 match = re.exec(response);
