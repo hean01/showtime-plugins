@@ -1,4 +1,4 @@
-/**
+п»ї/**
  * bugtester plugin for Showtime
  *
  *  Copyright (C) 2013 lprot
@@ -54,7 +54,7 @@
         var fromPage = 1, tryToSearch = true;
         //1-link, 2-title, 3-image, 4 - description, 5 - type, 6 - type in text, 7 - genre
         var re = /class="image-wrap">[\S\s]*?<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)[\S\s]*?<p class="text">([\S\s]*?)<\/p>[\S\s]*?<span class="section ([^"]+)">([\S\s]*?)<\/span>[\S\s]*?<span class="genre"><span class="caption">Жанр:<\/span><span>([\S\s]*?)<\/span>/g;
-        var re2 = /<b>Следующая страница<\/b>/;
+        var re2 = /<b>РЎР»РµРґСѓСЋС‰Р°СЏ СЃС‚СЂР°РЅРёС†Р°<\/b>/;
 		showtime.trace("loader");
         function loader() {
             if (!tryToSearch) return false;
@@ -71,7 +71,7 @@
                     title: new showtime.RichText(match[2]),
                     icon: match[3],
                     genre: match[7],
-                    description: new showtime.RichText('Раздел: ' + blueStr(match[6]) + '\n' + match[4]);
+                    description: new showtime.RichText('Р Р°Р·РґРµР»: ' + blueStr(match[6]) + '\n' + match[4])
                 });
                 page.entries++;
                 match = re.exec(response);
