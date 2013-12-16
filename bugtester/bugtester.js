@@ -79,7 +79,7 @@
 
             if (!re2.exec(response)) return tryToSearch = false;
             fromPage++;
-            return true;
+            return page.entries;
         };
         showtime.trace("loader1");
         loader();
