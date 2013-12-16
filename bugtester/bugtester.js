@@ -58,7 +58,7 @@
 		showtime.trace("loader");
         function loader() {
             if (!tryToSearch) return false;
-	    var link = BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+') 
+	    var link = BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+'); 
 	    showtime.trace("link");
             if (fromPage != 1) link = link + "&page=" + fromPage;
             var response = showtime.httpGet(link);
@@ -71,7 +71,7 @@
                     title: new showtime.RichText(match[2]),
                     icon: match[3],
                     genre: match[7],
-                    description: new showtime.RichText('Раздел: ' + blueStr(match[6]) + '\n' + match[4])
+                    description: new showtime.RichText('Раздел: ' + blueStr(match[6]) + '\n' + match[4]);
                 });
                 page.entries++;
                 match = re.exec(response);
