@@ -51,6 +51,7 @@
     plugin.addURI(PREFIX + ":start", startPage);
 
     plugin.addSearcher("bugtester", logo, function(page, query) {
+		try {
 	    page.type = "directory";
 		page.contents = "items";
 		page.loading = false;
@@ -59,6 +60,7 @@
         var re = /class="image-wrap">[\S\s]*?<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)[\S\s]*?<p class="text">([\S\s]*?)<\/p>[\S\s]*?<span class="section ([^"]+)">([\S\s]*?)<\/span>[\S\s]*?<span class="genre"><span class="caption">Жанр:<\/span><span>([\S\s]*?)<\/span>/g;
         var re2 = /<b>Следующая страница<\/b>/;
 		showtime.trace("loader");
+		page.entries=0;
         function loader() {
             if (!tryToSearch) return false;
 	    var link = BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+'); 
@@ -86,6 +88,10 @@
         showtime.trace("loader2");
         page.paginator = loader;
         showtime.trace("loader3");
+		} catch (err) {
+            showtime.trace('anidub - Ошибка поиска: ' + err);
+            e(err);
+        }
     });
 })(this);
 
