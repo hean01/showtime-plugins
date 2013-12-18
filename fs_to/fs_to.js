@@ -474,7 +474,8 @@
     plugin.addURI(PREFIX + ":start", startPage);
 
     plugin.addSearcher("sdf.to", logo, function(page, query) {
-        var fromPage = 1, tryToSearch = true, page.entries = 0;
+        page.entries = 0;
+		var fromPage = 1, tryToSearch = true;
         //1-link, 2-title, 3-image, 4 - description, 5 - type, 6 - type in text, 7 - genre
         var re = /class="image-wrap">[\S\s]*?<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)[\S\s]*?<p class="text">([\S\s]*?)<\/p>[\S\s]*?<span class="section ([^"]+)">([\S\s]*?)<\/span>[\S\s]*?<span class="genre"><span class="caption">Жанр:<\/span><span>([\S\s]*?)<\/span>/g;
         var re2 = /<b>Следующая страница<\/b>/;
