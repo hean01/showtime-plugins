@@ -549,6 +549,7 @@
     plugin.addSearcher("baskino.com", logo,
 
     function(page, query) {
+	    page.entries = 0;
         var fromPage = 1,
             tryToSearch = true;
         // 1-link, 2-title, 3-image, 4-quality, 5-quoted full title, 6-raiting, 7-number of comments, 8-date added, 9-production date

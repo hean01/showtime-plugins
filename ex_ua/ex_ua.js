@@ -347,6 +347,7 @@
 
     function(page, query) {
         try {
+		    page.entries = 0;
             var tryToSearch = true;
             var url = BASE_URL + "/search?s=" + query.replace(/\s/g, '\+');
             //1-link 2-title 3-additional info

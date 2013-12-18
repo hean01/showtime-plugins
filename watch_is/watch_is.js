@@ -351,6 +351,7 @@
     plugin.addSearcher("Watch.is", logo,
 
     function(page, query) {
+	    page.entries = 0;
         var credentials = plugin.getAuthCredentials("Watch.is - Онлайн фильмы", "Login required", false);
         if (credentials) {
             var v = showtime.httpPost(BASE_URL + '/login', {

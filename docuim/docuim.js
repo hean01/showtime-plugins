@@ -370,6 +370,7 @@
     plugin.addSearcher("Docu.im", logo,
 
     function(page, query) {
+	    page.entries = 0;
         var fromPage = 1, tryToSearch = true;
         // 1-poster, 2-likes, 3-views, 4-comments, 5-link, 6-title, 7-altTitle, 8-year, 9-description 
         var re = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/;

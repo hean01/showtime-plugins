@@ -274,6 +274,7 @@
     plugin.addSearcher("uletfilm.net", logo,
 
     function(page, query) {
+	    page.entries = 0;
         var response = showtime.httpGet(BASE_URL + '/?do=search&subaction=search&story=' + unicode2win1251(query));
         var tryToSearch = true;
 

@@ -162,6 +162,7 @@
     plugin.addSearcher("megogo.net", logo,
 
     function(page, query) {
+	        page.entries = 0;
             var offset = 0;
             var counter = 0;
 

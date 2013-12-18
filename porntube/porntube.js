@@ -407,8 +407,9 @@
     plugin.addSearcher("Porntube", logo,
 
     function(page, query) {
+	    page.entries = 0;
         var fromPage = 1,
-            tryToSearch = true;
+        tryToSearch = true;
 
         function loader() {
             if (!tryToSearch) return false;
