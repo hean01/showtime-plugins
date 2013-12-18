@@ -70,11 +70,8 @@
             showtime.trace("response");
             while (match) {
 				showtime.trace(match[2]);
-                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[2]), "video", {
-                    title: match[2],
-                    icon: match[3],
-                    genre: match[7],
-                    description: 'Раздел: ' + match[6] + match[4]
+                page.appendItem(match[1], "video", {
+                    title: match[2]
                 });
                 page.entries++;
                 match = re.exec(response);
