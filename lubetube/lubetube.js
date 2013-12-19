@@ -131,13 +131,13 @@
         var response = showtime.httpGet(url).toString();
         var re = /playlist_flow_player_flv.php\?vid=[0-9]+/;
         var match = re.exec(response);
+		page.loading = false;
         if (match) {
             re = /url="([^"]+)"/;
             response = showtime.entityDecode(showtime.httpGet(BASE_URL + "/" + match[0]).toString());
             match = re.exec(response);
             if (match) return unescape(match[1])
         }
-		page.loading = false;
         return null;
     }
 
