@@ -137,6 +137,7 @@
             match = re.exec(response);
             if (match) return unescape(match[1])
         }
+		page.loading = false;
         return null;
     }
 
