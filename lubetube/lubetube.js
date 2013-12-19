@@ -136,7 +136,7 @@
         if (match) {
             response = showtime.entityDecode(showtime.httpGet(BASE_URL + "/" + match[0]).toString());
             match = response.match(/url="([^"]+)"/);
-            if (match) link = unescape(match[1]) else showtime.error("Can't get link");
+            if (match) link = unescape(match[1]); else showtime.error("Can't get link");
         }
 		page.loading = false;	
         page.type = "video";
