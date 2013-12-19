@@ -127,26 +127,22 @@
         page.paginator = loader;
     }
 
-    function videolink(url) {
-        var response = showtime.httpGet(url).toString();
-        var re = /playlist_flow_player_flv.php\?vid=[0-9]+/;
-        var match = re.exec(response);
-		page.loading = false;
-        if (match) {
-            re = /url="([^"]+)"/;
-            response = showtime.entityDecode(showtime.httpGet(BASE_URL + "/" + match[0]).toString());
-            match = re.exec(response);
-            if (match) return unescape(match[1])
-        }
-        return null;
-    }
 
     // Play videolink
     plugin.addURI(PREFIX + "play:(.*):(.*)", function(page, url, title) {
+		var link = '';
+        var response = showtime.httpGet(unescape(url)).toString();
+        var match = response.match(/playlist_flow_player_flv.php\?vid=[0-9]+/);
+        if (match) {
+            response = showtime.entityDecode(showtime.httpGet(BASE_URL + "/" + match[0]).toString());
+            match = response.match(/url="([^"]+)"/);
+            if (match) link = unescape(match[1]) else showtime.error("Can't get link");
+        }
+		page.loading = false;	
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-	    canonicalUrl: PREFIX + "play:" + url + ":" + title,
+            canonicalUrl: PREFIX + "play:" + url + ":" + title,
             sources: [{
                 url: videolink(unescape(url))
             }]
