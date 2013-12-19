@@ -40,6 +40,7 @@
         function loader() {
             var p = Math.floor(1 + (offset / 50));
             var response = showtime.httpGet(BASE_URL + "/pornstars/?page=" + p).toString();
+			page.loading = false;
             var re = /px;">[\S\s]*?<a href="([^"]+)[\S\s]*?class="main_gallery" src="([^"]+)[\S\s]*?title="Pornstar Name">([^\<]+)[\S\s]*?;">Videos: ([^\s\&]+)[\S\s]*?Views: ([^\<]+)/g;
             var match = re.exec(response);
             while (match) {
@@ -59,7 +60,6 @@
             return offset < page.entries;
         }
         loader();
-        page.loading = false;
         page.paginator = loader;
     }
 
@@ -69,6 +69,7 @@
         function loader() {
             var p = Math.floor(1 + (offset / 50));
             var response = showtime.httpGet(BASE_URL + uri + "page=" + p).toString();
+			page.loading = false;
             var re = /">next<\/a>/;
             if ((offset > 0) && (!re.exec(response))) return false;
             re = /" href="(http:\/\/lubetube.com\/video\/([^"]+))" title="([^"]+)"><img src="([^"]+)[\S\s]*?<span class="length">Length: ([^\<]+)<[\S\s]*?<span class="views">Views: ([^\<]+)<[\S\s]*?<span class="rating" style="width:([^\%]+)\%/g;
@@ -88,7 +89,6 @@
             return true;
         }
         loader();
-        page.loading = false;
         page.paginator = loader;
     }
 
@@ -99,6 +99,7 @@
         function loader() {
             var p = Math.floor(1 + (offset / 50));
             var response = showtime.httpGet(url + "&page=" + p).toString();
+            page.loading = false;
             var re = /<a class="frame" href="(http:\/\/lubetube.com\/video\/([^"]+))" title="([^"]+)"><img src="([^"]+)[\S\s]*?<span class="length">Length: ([^\<]+)<[\S\s]*?<span class="views">Views: ([^\<]+)<[\S\s]*?<span class="rating" style="width:([^\%]+)\%/g;
             var match = re.exec(response);
             while (match) {
@@ -123,7 +124,6 @@
             return offset < page.entries;
         }
         loader();
-        page.loading = false;
         page.paginator = loader;
     }
 
@@ -144,7 +144,7 @@
             title: unescape(title),
             canonicalUrl: PREFIX + "play:" + url + ":" + title,
             sources: [{
-                url: videolink(unescape(url))
+                url: link
             }]
         });
     });
