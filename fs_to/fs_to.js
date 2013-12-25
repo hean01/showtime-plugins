@@ -1,5 +1,5 @@
 /**
- * sdf.to plugin for Showtime
+ * brb.to plugin for Showtime
  *
  *  Copyright (C) 2013 lprot
  *
@@ -19,15 +19,15 @@
 
 (function(plugin) {
 
-    var PREFIX = 'sdf_to';
-    var BASE_URL = 'http://sdf.to';
+    var PREFIX = 'brb_to';
+    var BASE_URL = 'http://brb.to';
 
     var logo = plugin.path + "logo.png";
 
     var sURL = {};
     var sTitle = {};
 
-    var service = plugin.createService("sdf.to", PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService("brb.to", PREFIX + ":start", "video", true, logo);
 
     function setPageHeader(page, title) {
         if (page.metadata) {
@@ -53,7 +53,7 @@
     }
 
     function startPage(page) {
-        setPageHeader(page, 'sdf.to - Рекомендательная видеосеть');
+        setPageHeader(page, 'brb.to - Рекомендательная видеосеть');
         page.loading = false;
         page.appendItem(PREFIX + ':updates', 'directory', {
             title: 'Последние обновления',
@@ -473,7 +473,7 @@
 
     plugin.addURI(PREFIX + ":start", startPage);
 
-    plugin.addSearcher("sdf.to", logo, function(page, query) {
+    plugin.addSearcher("brb.to", logo, function(page, query) {
         page.entries = 0;
 		var fromPage = 1, tryToSearch = true;
         //1-link, 2-title, 3-image, 4 - description, 5 - type, 6 - type in text, 7 - genre
