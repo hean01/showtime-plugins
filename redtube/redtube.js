@@ -1,7 +1,7 @@
 /**
  * Redtube plugin for Showtime
  *
- *  Copyright (C) 2012 lprot
+ *  Copyright (C) 2014 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -275,11 +275,14 @@
         var match = re.exec(response);
         var jsonobj = showtime.JSONDecode(showtime.httpGet("http://api.redtube.com/?data=redtube.Categories.getCategoriesList&output=json").toString());
         page.loading = false;
+	var lastIcon;
         for (var i in jsonobj.categories) {
             page.appendItem(PREFIX + ':search:category=' + escape(jsonobj.categories[i].category), 'video', {
                 title: jsonobj.categories[i].category,
-                icon: match[3]
+                icon: (jsonobj.categories[i].category == 'japanesecensored') ? lastIcon : match[3]
             });
+	    lastIcon = match[3];
+            if (jsonobj.categories[i].category == 'japanesecensored') continue;
             match = re.exec(response);
         }
     });

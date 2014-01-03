@@ -168,7 +168,7 @@
 	var s2 = json.src.match(/\/a\/0\/(.*)/);
         for (var i in json.audio_list) {
 	    if (counter) setPageHeader(page, unescape(json.title));
-            page.appendItem('hls:'+ s1[1] +"/a/" + json.audio_list[i].index + "/" + s2[1], "video", {
+            page.appendItem(s1[1] +"/a/" + json.audio_list[i].index + "/" + s2[1], "video", {
                 title: unescape(json.title) + ' (' + showtime.entityDecode(unescape(json.audio_list[i].lang)) + (json.audio_list[i].lang_orig ? '/' + showtime.entityDecode(unescape(json.audio_list[i].lang_orig)) : '')+')'
             });
 	    counter++;
