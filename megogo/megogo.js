@@ -48,11 +48,33 @@
 
     function startPage(page) {
         setPageHeader(page, 'megogo.net - онлайн-кинотеатр с легальным контентом');
+
+        page.appendItem("", "separator", {
+            title: 'Категории:'
+        });
         var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/categories?&sign=' + showtime.md5digest(sign) + devType));
         for (i in json.category_list) {
             page.appendItem(PREFIX + ':genres:' + json.category_list[i].id + ':' + escape(json.category_list[i].title), 'directory', {
                 title: new showtime.RichText(unescape(json.category_list[i].title) + blueStr(json.category_list[i].total_num)),
                 icon: logo
+            });
+        };
+
+        page.appendItem("", "separator", {
+            title: 'Рекомендуемое:'
+        });
+        var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType));
+        for (var i in json.video_list) {
+            var type = "video";
+            if (json.video_list[i].isSeries) type = "directory";
+            page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + json.video_list[i].title, "video", {
+                  title: showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " / " + showtime.entityDecode(json.video_list[i].title_orig) : ""),
+                  year: +parseInt(json.video_list[i].year),
+                  genre: (json.video_list[i].genre_list[0] ? unescape(json.video_list[i].genre_list[0].title) : ''),
+                  rating: json.video_list[i].rating_imdb * 10,
+                  duration: +parseInt(json.video_list[i].duration),
+                  description: new showtime.RichText(trim(showtime.entityDecode(unescape(json.video_list[i].description)))),
+                  icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
             });
         };
     };
@@ -140,6 +162,18 @@
             showtime.message("Error: This video is not available in your region :(", true, false);
             return;
         }
+
+	var counter = 0;
+	var s1 = json.src.match(/(.*)\/a\/0\//);
+	var s2 = json.src.match(/\/a\/0\/(.*)/);
+        for (var i in json.audio_list) {
+	    if (counter) setPageHeader(page, unescape(json.title));
+            page.appendItem('hls:'+ s1[1] +"/a/" + json.audio_list[i].index + "/" + s2[1], "video", {
+                title: unescape(json.title) + ' (' + showtime.entityDecode(unescape(json.audio_list[i].lang)) + (json.audio_list[i].lang_orig ? '/' + showtime.entityDecode(unescape(json.audio_list[i].lang_orig)) : '')+')'
+            });
+	    counter++;
+        };
+	if (counter) return;
 
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
