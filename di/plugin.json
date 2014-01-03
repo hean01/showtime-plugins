@@ -1,0 +1,14 @@
+{
+	"description": "<p>Digitally Imported - Addictive Electronic Music 24/7<p>For more information, visit <a href=\"http://di.fm\">http://di.fm</a>",
+	"author": "Henrik Andersson",
+	"homepage": "https://github.com/hean01/showtime-plugin-di",
+	"title": "Digitally Imported",
+	"synopsis": "Addictive Electronic Music 24/7",
+	"version": "0.2",
+	"file": "di.js",
+	"showtimeVersion": "3.3.368",
+	"type": "javascript",
+	"id": "di",
+	"icon": "di_square.png",
+	"category": "music"
+}

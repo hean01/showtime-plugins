@@ -1,0 +1,14 @@
+{
+	"description": "<p>icecast directory<p>For more information, visit <a href=\"http://icecast.org\">http://icecast.org</a>",
+	"author": "Henrik Andersson",
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "icecast",
+	"synopsis": "stream directory",
+	"version": "0.2",
+	"file": "icecast.js",
+	"showtimeVersion": "3.3.368",
+	"type": "javascript",
+	"id": "icecast",
+	"icon": "icecast_square.png",
+	"category": "music"
+}
