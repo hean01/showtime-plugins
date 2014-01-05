@@ -63,11 +63,12 @@
         page.appendItem("", "separator", {
             title: 'Рекомендуемое:'
         });
-        var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType));
-	while (json.video_list[0] == 'null') { 
-		showtime.trace("Recommended list is null. Geting again...");
-		json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType));
+	json = showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType);
+	while (json.length < 100) { 
+		showtime.trace("Recommended list is empty. Geting again...");
+		json = showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType);
 	}
+	json = showtime.JSONDecode(json);
         for (var i in json.video_list) {
             var type = "video";
             if (json.video_list[i].isSeries) type = "directory";
