@@ -64,7 +64,8 @@
             title: 'Рекомендуемое:'
         });
 	json = showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType);
-	while (json.length < 100) { 
+	showtime.print("The length of the reply is: " + json.toString().length);
+	while (json.toString().length < 100) { 
 		showtime.trace("Recommended list is empty. Geting again...");
 		json = showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType);
 	}
