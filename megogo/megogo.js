@@ -64,11 +64,16 @@
             title: 'Рекомендуемое:'
         });
         var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType));
+	while (json.video_list[0] == 'null') { 
+		showtime.trace("Recommended list is null. Geting again...");
+		json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType));
+	}
         for (var i in json.video_list) {
             var type = "video";
             if (json.video_list[i].isSeries) type = "directory";
-            page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + json.video_list[i].title, "video", {
-                  title: showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " / " + showtime.entityDecode(json.video_list[i].title_orig) : ""),
+            var title = showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " | " + showtime.entityDecode(json.video_list[i].title_orig) : "");
+            page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + escape(title), "video", {
+                  title: title,
                   year: +parseInt(json.video_list[i].year),
                   genre: (json.video_list[i].genre_list[0] ? unescape(json.video_list[i].genre_list[0].title) : ''),
                   rating: json.video_list[i].rating_imdb * 10,
@@ -103,8 +108,9 @@
             for (var i in json.video_list) {
                 var type = "video";
                 if (json.video_list[i].isSeries) type = "directory";
-                page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + escape(json.video_list[i].title), "video", {
-                    title: showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " / " + showtime.entityDecode(json.video_list[i].title_orig) : ""),
+                var title = showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " | " + showtime.entityDecode(json.video_list[i].title_orig) : "");
+                page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + escape(title), "video", {
+                    title: title,
                     year: +parseInt(json.video_list[i].year),
                     genre: unescape(json.video_list[i].genre_list[0].title),
                     rating: json.video_list[i].rating_imdb * 10,
@@ -135,7 +141,6 @@
                     duration: +parseInt(json.video[0].season_list[i].episode_list[j].duration),
                     icon: unescape(json.video[0].season_list[i].episode_list[j].poster)
                 });
-
             }
         };
     });
@@ -143,14 +148,24 @@
     // Search IMDB ID by title
     function getIMDBid(title) {
         var resp = showtime.httpGet('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
-        var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
-        var imdbid = re.exec(resp);
+        var imdbid = resp.match(/http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/);
         if (imdbid) imdbid = imdbid[1];
         else {
-            re = /http:\/\/<b>imdb<\/b>.com\/title\/(tt\d+).*?\//;
-            imdbid = re.exec(resp);
+            imdbid = resp.match(/http:\/\/<b>imdb<\/b>.com\/title\/(tt\d+).*?\//);
             if (imdbid) imdbid = imdbid[1];
         };
+	if (!imdbid) { // Trying to get imdbid by original name
+            var fTitle = unescape(title).split(" | ");
+            if (fTitle[1]) {
+                  resp = showtime.httpGet('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(fTitle[1])).toString()).toString();
+                  imdbid = resp.match(/http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/);
+                  if (imdbid) imdbid = imdbid[1];
+                  else {
+                     imdbid = resp.match(/http:\/\/<b>imdb<\/b>.com\/title\/(tt\d+).*?\//);
+                     if (imdbid) imdbid = imdbid[1];
+                  };
+            };
+	}
         return imdbid;
     };
 
@@ -166,20 +181,31 @@
 	var counter = 0;
 	var s1 = json.src.match(/(.*)\/a\/0\//);
 	var s2 = json.src.match(/\/a\/0\/(.*)/);
+	var imdbid = 0;
         for (var i in json.audio_list) {
-	    if (counter) setPageHeader(page, unescape(json.title));
-            page.appendItem(s1[1] +"/a/" + json.audio_list[i].index + "/" + s2[1], "video", {
+	    if (!counter) {
+                setPageHeader(page, unescape(json.title));
+                imdbid = getIMDBid(title);
+            }
+            var link = "videoparams:" + showtime.JSONEncode({
+                title: unescape(json.title) + ' (' + showtime.entityDecode(unescape(json.audio_list[i].lang)) + (json.audio_list[i].lang_orig ? '/' + showtime.entityDecode(unescape(json.audio_list[i].lang_orig)) : '')+')',
+                canonicalUrl: PREFIX + ":video:" + id + ":" + title,
+                imdbid: imdbid,
+                sources: [{
+                   url: s1[1] +"/a/" + json.audio_list[i].index + "/" + s2[1]
+                }]	    
+            });
+            page.appendItem(link, "video", {
                 title: unescape(json.title) + ' (' + showtime.entityDecode(unescape(json.audio_list[i].lang)) + (json.audio_list[i].lang_orig ? '/' + showtime.entityDecode(unescape(json.audio_list[i].lang_orig)) : '')+')'
             });
 	    counter++;
         };
 	if (counter) return;
-
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(json.title),
             canonicalUrl: PREFIX + ":video:" + id + ":" + title,
-            imdbid: getIMDBid(json.title),
+            imdbid: getIMDBid(title),
             sources: [{
                 url: json.src
             }]	    
@@ -199,8 +225,9 @@
                 for (var i in json.video_list) {
                     var type = "video";
                     if (json.video_list[i].isSeries) type = "directory";
-                    page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + json.video_list[i].title, "video", {
-                        title: showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " / " + showtime.entityDecode(json.video_list[i].title_orig) : ""),
+                    var title = showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " | " + showtime.entityDecode(json.video_list[i].title_orig) : "");
+                    page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + escape(title), "video", {
+                        title: title,
                         year: +parseInt(json.video_list[i].year),
                         genre: (json.video_list[i].genre_list[0] ? unescape(json.video_list[i].genre_list[0].title) : ''),
                         rating: json.video_list[i].rating_imdb * 10,
