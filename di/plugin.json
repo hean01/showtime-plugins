@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/hean01/showtime-plugin-di",
 	"title": "Digitally Imported",
 	"synopsis": "Addictive Electronic Music 24/7",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"file": "di.js",
 	"showtimeVersion": "4.5.25",
 	"type": "javascript",

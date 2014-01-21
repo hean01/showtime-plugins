@@ -32,18 +32,18 @@
 	page.contents = "items";
 	page.metadata.logo = plugin.path + "di_square.png";
 	page.metadata.title = "Digitally Imported";
-	var doc = showtime.httpGet("http://www.di.fm").toString();
+	var doc = showtime.httpGet("http://www.di.fm").toString().match(/"default":{"channels":([\S\s]*?)"new":{"channels":/)[1];
 
-	// 1-description, 2-key, 3-name, 4-icon
-        var re = /"description"\:"(.*?)"[\S\s]*?"key"\:"(.*?)"[\S\s]*?"name"\:"(.*?)"[\S\s]*?"default":"(.*?){/g;
+	// 1-description, 2-icon, 3-key, 4-name,
+        var re = /"description"\:"(.*?)"[\S\s]*?"default":"(.*?){[\S\s]*?"key"\:"(.*?)"[\S\s]*?"name"\:"(.*?)"/g;
         var match = re.exec(doc);
         while (match) {
-		page.appendItem("icecast:http://listen.di.fm/public3/"+match[2]+".pls", "station", {
-			station: match[3],
-			title: match[3],
+		page.appendItem("icecast:http://listen.di.fm/public3/"+match[3]+".pls", "station", {
+			station: match[4],
+			title: match[4],
 			description: match[1],
-			icon: match[4]+'.jpg?size=150x150',
-			album_art: match[4]+'.jpg?size=150x150',
+			icon: match[2]+'.jpg?size=150x150',
+			album_art: match[2]+'.jpg?size=150x150',
 			album: ""
 		}); 
 		match = re.exec(doc);

@@ -251,7 +251,7 @@
 	    var itemmd = showtime.JSONDecode(item);
 
 	    // add item to showtime page
-	    var item = page.appendItem(itemmd.url, "station", {
+	    var item = page.appendItem("icecast:"+itemmd.url, "station", {
 		title: itemmd.station,
 		station: itemmd.station,
 		description: itemmd.description,
