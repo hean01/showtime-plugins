@@ -43,7 +43,7 @@
 			title: match[3],
 			description: match[1],
 			icon: match[4]+'.jpg?size=150x150',
-			album_art: match[1],
+			album_art: match[4]+'.jpg?size=150x150',
 			album: ""
 		}); 
 		match = re.exec(doc);
