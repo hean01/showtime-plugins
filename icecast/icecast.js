@@ -181,7 +181,7 @@
 	    itemmd.format = trim(str);
 
 	    // add item to showtime page
-	    var item = page.appendItem("shoutcast:" + BASE_URL + itemmd.url, "station", {		
+	    var item = page.appendItem("icecast:" + BASE_URL + itemmd.url, "station", {
 		title: itemmd.current_track,
 		station: itemmd.station,
 		description: itemmd.description,
@@ -190,7 +190,7 @@
 		listeners: itemmd.listeners
 	    }); 
 
-	    item.url = "shoutcast:" + BASE_URL + itemmd.url;
+	    item.url = "icecast:" + BASE_URL + itemmd.url;
 	    item.title = itemmd.title;
 	    item.station = itemmd.station;
 	    item.description = itemmd.description;

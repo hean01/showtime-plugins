@@ -38,7 +38,7 @@
         var re = /"description"\:"(.*?)"[\S\s]*?"key"\:"(.*?)"[\S\s]*?"name"\:"(.*?)"[\S\s]*?"default":"(.*?){/g;
         var match = re.exec(doc);
         while (match) {
-		page.appendItem("shoutcast:http://listen.di.fm/public3/"+match[2]+".pls", "station", {
+		page.appendItem("icecast:http://listen.di.fm/public3/"+match[2]+".pls", "station", {
 			station: match[3],
 			title: match[3],
 			description: match[1],

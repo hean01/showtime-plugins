@@ -89,7 +89,7 @@
 
 
 	    // add item to showtime page
-	    page.appendItem("shoutcast:" + BASE_URL + "/startstream=" + itemmd.key + ".pls", "station", {
+	    page.appendItem("icecast:" + BASE_URL + "/startstream=" + itemmd.key + ".pls", "station", {
 		station: itemmd.station,
 		title: itemmd.title,
 		description: itemmd.description,

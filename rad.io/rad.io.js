@@ -107,7 +107,7 @@
 	    if (station.picture1Name)
 		iconUrl = station.pictureBaseURL + station.picture1Name;
 
-	    var item = page.appendItem("shoutcast:" + bce.streamURL, "station", {
+	    var item = page.appendItem("icecast:" + bce.streamURL, "station", {
 		station: station.name,
 		description: bce.description,
 		icon: iconUrl,
@@ -117,7 +117,7 @@
 		format: bce.streamContentFormat
 	    });
 
-	    item.url = "shoutcast:" + bce.streamURL;
+	    item.url = "icecast:" + bce.streamURL;
 	    item.station = station.name;
 	    item.description = (bce.description?bce.description:"");
 	    item.icon = iconUrl;
