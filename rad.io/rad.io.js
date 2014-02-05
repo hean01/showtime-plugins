@@ -24,11 +24,11 @@
     var STREAMURL_STASH = "streamurl";
 
     var items = {};
-    items['rs'] = { title: "Recommanded stations",
-		    path: "broadcast/editorialreccomendationsembedded",
-		    gets: {'sizeoflists': 40}
-		  };
-    items['mw'] = { title: "Most Wanted",
+    //items['rs'] = { title: "Recommended stations",
+    //                path: "broadcast/editorialreccomendationsembedded",
+    //                gets: {'sizeoflists': 40}
+    //		    };
+    items['mw'] = { title: "Most wanted",
 		    path: "account/getmostwantedbroadcastlists",
 		    gets: {'sizeoflists': 40}
 		  };
@@ -91,8 +91,7 @@
 	}
     }
 
-    function populate_stations(page, data) {
-	for each (station in data) {
+    function populate_stations(page, station) {
 	    var bce = {}
 	    try {
 		bce = plugin.cacheGet(STREAMURL_STASH, station.id);
@@ -104,6 +103,7 @@
 	    } catch(e) {}
 
 	    var iconUrl = null;
+
 	    if (station.picture1Name)
 		iconUrl = station.pictureBaseURL + station.picture1Name;
 
@@ -142,8 +142,23 @@
 	    });
 
 	    item.addOptAction("Add station to favorites", "addFavorite");
+    }
+
+
+    function populateStations(page, data) {
+    	for each (station in data) {
+            populate_stations(page, station);
 	}
     }
+
+    function populateMostWanted(page, data) {
+	for each (category in data) {
+            for each (station in category) {
+                populate_stations(page, station);
+            }
+	}
+    }
+
 
     // Search
     plugin.addURI(PREFIX + "search", function(page) {
@@ -166,7 +181,7 @@
 	    'start': '0',
 	    'rows': '30'
 	});
-	populate_stations(page, result);
+	populateStations(page, result);
 	
 	page.loading = false;
     });
@@ -225,7 +240,7 @@
 	page_menu(page);
 
 	var result = get_data(items[key].path, items[key].gets);
-	populate_stations(page, result);
+	populateMostWanted(page, result);
 
 	page.loading = false;
     });
@@ -234,7 +249,7 @@
 	page.type = "directory";
 	page.contents = "items";
 	page.metadata.logo = plugin.path + "rad.io.png";
-	page.metadata.title = "rad.io - " + "Stations near me";
+	page.metadata.title = "rad.io - " + "Nearest stations";
 	page.metadata.glwview = plugin.path + "views/array.view";
 	page_menu(page);
 
@@ -242,7 +257,8 @@
 	    'category': "_country",
 	    'value': service.country
 	});
-	populate_stations(page, result);
+
+	populateStations(page, result);
 
 	page.loading = false;
     });
@@ -254,36 +270,37 @@
 	page.metadata.logo = plugin.path + "rad.io.png";
 	page.metadata.title = "rad.io";
 
-	page.appendItem(PREFIX + "search", "item", {
-	    title: "Search"
-	});
-
-	page.appendItem(PREFIX + "favorites", "item", {
-	    title: "My Favorites"
-	});
-
-        page.appendPassiveItem("divider");  
-
 	if (service.country != "")
-	    page.appendItem(PREFIX + "nearest", "item", {
-		title: "Stations near me"
+	    page.appendItem(PREFIX + "nearest", "directory", {
+		title: "Nearest stations"
 	    });
-	
+
 	for (var key in items) {
-	    page.appendItem(PREFIX + "list:" + key, "item", {
+	    page.appendItem(PREFIX + "list:" + key, "directory", {
 		title: items[key].title
 	    });
 	}
+
+        page.appendItem("", "separator", {
+        });
+
+	page.appendItem(PREFIX + "favorites", "directory", {
+	    title: "My Favorites"
+	});
+
+	page.appendItem(PREFIX + "search", "directory", {
+	    title: "Search"
+	});
 
 	page.loading = false;
     });
 
     function page_menu(page) {
-        page.options.createInt('childTilesX', 'Number of X Child Tiles', 6, 1, 10, 1, '', function (v) {
+        page.options.createInt('childTilesX', 'Number of tiles by X', 6, 1, 10, 1, '', function (v) {
             page.metadata.childTilesX = v;
         }, true);
 
-        page.options.createInt('childTilesY', 'Number of Y Child Tiles', 3, 1, 4, 1, '', function (v) {
+        page.options.createInt('childTilesY', 'Number of tiles by Y', 2, 1, 4, 1, '', function (v) {
             page.metadata.childTilesY = v;
         }, true);
 
