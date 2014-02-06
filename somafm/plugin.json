@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "soma fm",
 	"synopsis": "Over 20 unique channels of listener-supported, commercial-free, underground/alternative radio broadcasting from San Francisco.",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"file": "somafm.js",
 	"showtimeVersion": "4.5.25",
 	"type": "javascript",
