@@ -351,7 +351,7 @@
             if (m[1].indexOf("file") > -1) {
                 var flv_link = "";
                 if (m[2].match(/a href="([^"]+)/)) flv_link = m[2].match(/a href="([^"]+)/)[1];
-                var name = m[2].match(/span class="[\S\s]*?filename-text".>([\S\s]*?)<\/span>/)[1];
+                var name = m[2].match(/span class="[\S\s]*?filename-text".?>([\S\s]*?)<\/span>/)[1];
                 var size = m[2].match(/span class="[\S\s]*?material-size">([\S\s]*?)<\/span>/)[1];
                 var direct_link = m[2].match(/" href="([^"]+)/)[1];
                 if (getType(direct_link.split('.').pop()) == 'video') {
