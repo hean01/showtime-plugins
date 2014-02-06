@@ -24,23 +24,31 @@
     var PREFIX = "icecast:";
 
     var genres = [
+	"Top40",
 	"80s",
 	"Alternative",
 	"Ambient",
+       	"Anime",
 	"Breaks",
 	"Chillout",
+	"Contemporary",
 	"Dance",
 	"Dubstep",
 	"Drumnbass",
 	"Electronic",
 	"Funk",
 	"Gothic",
-	"Harcore",
+	"Hardcore",
 	"Hardstyle",
 	"Hardtrance",
 	"Hip Hop",
 	"House",
+	"Instrumental",
 	"Jazz",
+	"Jhiphop",
+	"Jpop",
+	"Jrap",
+	"Jrock",
 	"Jungle",
 	"Lounge",
 	"Metal",
@@ -51,10 +59,9 @@
 	"Punk",
 	"Radio",
 	"Rock",
+	"Smooth",
 	"Techno",
-	"Top40",
 	"Trance",
-	"Tribal",
 	"Various"
     ];
 
@@ -336,7 +343,7 @@
             page.metadata.childTilesX = v;
         }, true);
 
-        page.options.createInt('childTilesY', 'Number of Y Child Tiles', 3, 1, 4, 1, '', function (v) {
+        page.options.createInt('childTilesY', 'Number of Y Child Tiles', 2, 1, 4, 1, '', function (v) {
             page.metadata.childTilesY = v;
         }, true);
 
