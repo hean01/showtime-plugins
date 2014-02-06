@@ -311,18 +311,19 @@
 	page.metadata.logo = plugin.path + "di_square.png";
 	page.metadata.title = "icecast directory";
 
-	page.appendItem(PREFIX + "search", "item", {
+	page.appendItem(PREFIX + "search", "directory", {
 	    title: "Search"
 	});
 
-	page.appendItem(PREFIX + "favorites", "item", {
+	page.appendItem(PREFIX + "favorites", "directory", {
 	    title: "My Favorites"
 	});
 
-        page.appendPassiveItem("divider");  
-	
+        page.appendItem("", "separator", {
+        });
+
 	for each (genre in genres) {
-	    page.appendItem(PREFIX + "genre:"+genre, "item", {
+	    page.appendItem(PREFIX + "genre:"+genre, "directory", {
 		title: genre
 	    });
 	}
