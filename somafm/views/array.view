@@ -49,7 +49,7 @@ widget(container_y, {
 					.Xspacing = $view.sizer;
 					.Yspacing = $view.sizer;
 					.childTilesX = $page.model.metadata.childTilesX ?? 6;
-					.childTilesY = $page.model.metadata.childTilesY ?? 3;
+					.childTilesY = $page.model.metadata.childTilesY ?? 2;
 	  
 					cloner($page.model.nodes, displacement, {
 						.focusable = true;

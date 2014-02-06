@@ -111,7 +111,7 @@
             page.metadata.childTilesX = v;
         }, true);
 
-        page.options.createInt('childTilesY', 'Number of Y Child Tiles', 3, 1, 4, 1, '', function (v) {
+        page.options.createInt('childTilesY', 'Number of Y Child Tiles', 2, 1, 4, 1, '', function (v) {
             page.metadata.childTilesY = v;
         }, true);
 
