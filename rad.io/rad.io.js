@@ -98,7 +98,7 @@
 		if (bce == null) {
 		    bce =  get_data("broadcast/getbroadcastembedded",
 				    {'broadcast': station.id});
-		    plugin.cachePut(STREAMURL_STASH, station.id, showtime.JSONEncode(bce), 84600);
+		    plugin.cachePut(STREAMURL_STASH, station.id, bce, 84600);
 		}
 	    } catch(e) {}
 
