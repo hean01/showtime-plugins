@@ -1,7 +1,7 @@
 /**
  * brb.to plugin for Showtime
  *
- *  Copyright (C) 2013 lprot
+ *  Copyright (C) 2014 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -178,10 +178,11 @@
         var p = 0;
 
         function loader() {
-            var response = showtime.httpGet(url + "&page=" + p);
+            var response = showtime.httpGet(url + "&page=" + p).toString();
 
             // Show populars only above the first page
             if (p == 0) {
+            page.metadata.title = response.match(/<title>(.*?)<\/title>/)[1];
                 page.appendItem("", "separator", {
                     title: 'Самое просматриваемое сейчас'
                 });
@@ -348,15 +349,11 @@
         var m = re.exec(response); // parsed list will live here
         while (m) {
             if (m[1].indexOf("file") > -1) {
-                var re2 = /a href="([^"]+)/;
                 var flv_link = "";
-                if (re2.exec(m[2])) flv_link = re2.exec(m[2])[1];
-                re2 = /span class="[\S\s]*?filename-text">([\S\s]*?)<\/span>/;
-                var name = re2.exec(m[2])[1];
-                re2 = /span class="[\S\s]*?material-size">([\S\s]*?)<\/span>/;
-                var size = re2.exec(m[2])[1];
-                re2 = /" href="([^"]+)/;
-                var direct_link = re2.exec(m[2])[1];
+                if (m[2].match(/a href="([^"]+)/)) flv_link = m[2].match(/a href="([^"]+)/)[1];
+                var name = m[2].match(/span class="[\S\s]*?filename-text".>([\S\s]*?)<\/span>/)[1];
+                var size = m[2].match(/span class="[\S\s]*?material-size">([\S\s]*?)<\/span>/)[1];
+                var direct_link = m[2].match(/" href="([^"]+)/)[1];
                 if (getType(direct_link.split('.').pop()) == 'video') {
                     sURL[direct_link] = flv_link;
                     sTitle[direct_link] = name;
