@@ -83,7 +83,7 @@
 	var query = BASE_URL + "/info/" + path + make_args(gets);
 	showtime.trace("url query: " + query);
 	try {
-	    var res = showtime.httpGet(query, {}, {
+	    var res = showtime.httpReq(query, {}, {
 		'User-Agent':'radio.de 1.9.1 rv:37 (iPhone; iPhone OS 5.0; de_DE)'});
 	    return showtime.JSONDecode(res.toString());
 	} catch(e) {
@@ -244,7 +244,8 @@
 	page.loading = false;
     });
 
-    plugin.addURI(PREFIX + "nearest", function(page) {
+    // Nearest
+    plugin.addURI(PREFIX + "getByCategory:(.*):(.*)", function(page, category, value) {
 	page.type = "directory";
 	page.contents = "items";
 	page.metadata.logo = plugin.path + "rad.io.png";
@@ -253,14 +254,28 @@
 	page_menu(page);
 
 	var result = get_data('menu/broadcastsofcategory', {
-	    'category': "_country",
-	    'value': service.country
+	    'category': '_'+category,
+	    'value': value
 	});
-
 	populateStations(page, result);
 
 	page.loading = false;
     });
+
+    // List by category
+    plugin.addURI(PREFIX + "category:(.*)", function(page, category) {
+	page.type = "directory";
+	page.contents = "items";
+
+        var data = get_data("menu/valuesofcategory", {'category':'_'+category});
+        for each (item in data) {
+            page.appendItem(PREFIX + "getByCategory:" + category + ":" + item, "directory", {
+                title: item
+            });
+        };
+        page.loading = false;
+    });
+
 
     // Start page
     plugin.addURI(PREFIX + "start", function(page) {
@@ -269,10 +284,31 @@
 	page.metadata.logo = plugin.path + "rad.io.png";
 	page.metadata.title = "rad.io";
 
-	if (service.country != "")
-	    page.appendItem(PREFIX + "nearest", "directory", {
-		title: "Nearest stations"
-	    });
+        if (!service.country) service.country = "Ukraine";
+
+        page.appendItem(PREFIX + "getByCategory:country:"+service.country, "directory", {
+	    title: "Nearest stations (by settings)"
+	});
+
+        page.appendItem(PREFIX + "category:country", "directory", {
+	    title: "Stations (by country)"
+	});
+
+        page.appendItem(PREFIX + "category:genre", "directory", {
+	    title: "Stations (by genre)"
+	});
+
+        page.appendItem(PREFIX + "category:city", "directory", {
+	    title: "Stations (by city)"
+	});
+
+        page.appendItem(PREFIX + "category:language", "directory", {
+	    title: "Stations (by language)"
+	});
+
+        page.appendItem(PREFIX + "category:topic", "directory", {
+	    title: "Stations (by topic)"
+	});
 
 	for (var key in items) {
 	    page.appendItem(PREFIX + "list:" + key, "directory", {
