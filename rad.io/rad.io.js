@@ -175,9 +175,8 @@
 	page_menu(page);
 
 	page.loading = true;
-
 	var result = get_data('index/searchembeddedbroadcast', {
-	    'q': query,
+	    'q': query.replace(' ', '+'),
 	    'start': '0',
 	    'rows': '30'
 	});
