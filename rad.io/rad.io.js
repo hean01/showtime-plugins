@@ -47,6 +47,10 @@
         store.list = "[]";
     }
 
+    function trim(s) {
+        return s.replace(/^\s+|\s+$/g, '').replace("mms://","http://");
+    }
+
     // populate countries
     var options = [];
     var data = get_data("menu/valuesofcategory", {'category':'_country'});
@@ -107,17 +111,17 @@
 	    if (station.picture1Name)
 		iconUrl = station.pictureBaseURL + station.picture1Name;
 
-	    var item = page.appendItem("icecast:" + bce.streamURL, "station", {
+	    var item = page.appendItem("icecast:" + trim(bce.streamURL), "station", {
 		station: station.name,
 		description: bce.description,
 		icon: iconUrl,
 		album_art: iconUrl,
-		title: station.current_track,
+		title: station.name,
 		bitrate: station.bitrate,
 		format: bce.streamContentFormat
 	    });
 
-	    item.url = "icecast:" + bce.streamURL;
+	    item.url = "icecast:" + trim(bce.streamURL);
 	    item.station = station.name;
 	    item.description = (bce.description?bce.description:"");
 	    item.icon = iconUrl;

@@ -189,7 +189,7 @@
 
 	    // add item to showtime page
 	    var item = page.appendItem("icecast:" + BASE_URL + itemmd.url, "station", {
-		title: itemmd.current_track,
+		title: itemmd.station,
 		station: itemmd.station,
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
