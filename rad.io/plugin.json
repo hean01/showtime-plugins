@@ -3,7 +3,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "rad.io",
 	"synopsis": "The online radio over 7000 radio stations.",
-	"version": "0.2.6",
+	"version": "0.2.7",
 	"file": "rad.io.js",
 	"showtimeVersion": "4.5.28",
 	"type": "javascript",

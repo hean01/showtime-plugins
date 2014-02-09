@@ -110,13 +110,13 @@
 
 	    if (station.picture1Name)
 		iconUrl = station.pictureBaseURL + station.picture1Name;
-
 	    var item = page.appendItem("icecast:" + trim(bce.streamURL), "station", {
 		station: station.name,
 		description: bce.description,
 		icon: iconUrl,
 		album_art: iconUrl,
 		title: station.name,
+                onair: station.currentTrack,
 		bitrate: station.bitrate,
 		format: bce.streamContentFormat
 	    });
