@@ -56,7 +56,8 @@
 	        station: match[4],
 	        title: match[4],
 	        description: match[5],
-	        icon: BASE_URL+match[3],
+	        icon: BASE_URL + match[3],
+                album_art: BASE_URL + match[3],
                 nowplaying: match[6],
 	        listeners: match[2]
 	    });
