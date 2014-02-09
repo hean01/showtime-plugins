@@ -165,7 +165,7 @@ widget(container_y, {
 				});
 
 				widget(label, {
-					  .caption = "'" +$clone.focused.metadata.title + "'";
+					  .caption = "'" +$clone.focused.metadata.nowplaying + "'";
 					  .align = left;
 					  .shadow = true;
 					  .color = 1.0;

@@ -25,80 +25,6 @@
     plugin.createService("soma fm", PREFIX + "start", "audio", true,
 			 plugin.path + "somafm.png");
 
-    function getValue(doc, start, end) {
-	var s = doc.indexOf(start);
-	if (s < 0)
- 	    return null;
-
-	s = s + start.length;
-
-	var e = doc.indexOf(end,s);
-	if (e < 0)
-	    return null;
-
-	return doc.substr(s,e-s);
-    }
-
-    function scrape_page(page, doc) {
-
-	var itemmd = {};
-
-	var str = "<div id=\"stations\">";
-	var s = doc.indexOf(str);
-	if (s < 0)
-	    return;
-	doc = doc.substr(s);
-
-	while(1) {
-	    var str = "<li>";
-	    var s = doc.indexOf(str, 2);
-	    if (s < 0)
-		break;
-	    doc = doc.substr(s);
-
-	    // get key
-	    str = getValue(doc, "<!-- Channel: ", " Listeners");
-	    if (str == null) continue;
-	    itemmd.key = str;
-
-	    // get listeners
-	    str = getValue(doc, "Listeners: ", " -->");
-	    if (str == null) continue;
-	    itemmd.listeners = str;
-
-	    // get icon
-	    str = getValue(doc, "<img src=\"", "\"");
-	    if (str == null) continue;
-	    itemmd.icon = BASE_URL +  str;
-	    
-	    // get title
-	    str = getValue(doc, "<h3>", "</h3>");
-	    if (str == null) continue;
-	    itemmd.station = str;
-	    
-	    // get desc
-	    str = getValue(doc, "<p class=\"descr\">", "</p>");
-	    if (str == null) continue;
-	    itemmd.description = str;
-
-	    // get current track playing
-	    str = getValue(doc, "<span class=\"playing\">", "</span>");
-	    str = getValue(str, "/played\">","</a>");
-	    if (str == null) continue;
-	    itemmd.title = str;
-
-
-	    // add item to showtime page
-	    page.appendItem("icecast:" + BASE_URL + "/startstream=" + itemmd.key + ".pls", "station", {
-		station: itemmd.station,
-		title: itemmd.title,
-		description: itemmd.description,
-		icon: itemmd.icon,
-		listeners: itemmd.listeners
-	    }); 
-	}
-    }
-
     // Start page
     plugin.addURI(PREFIX + "start", function(page) {
 	page.type = "directory";
@@ -119,8 +45,24 @@
             page.metadata.informationBar = v;
         }, true);
 
-	var doc = showtime.httpGet(BASE_URL + "/listen", {}).toString();
-	scrape_page(page, doc);
+        var doc = showtime.httpGet(BASE_URL + "/listen").toString();
+
+        // 1-id, 2-listeners, 3-icon, 4-title, 5-description, 6-now playing
+        var re = /<!-- Channel: (.*) Listeners: (.*) -->[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?alt="([\S\s]*?)"[\S\s]*?<p class="descr">([\S\s]*?)<\/p>[\S\s]*?<span class="playing"><a href="[\S\s]*?">([\S\s]*?)<\/a>/g;
+        var match = re.exec(doc);
+
+        while (match) {
+	    page.appendItem("icecast:" + BASE_URL + "/startstream=" + match[1] + ".pls", "station", {
+	        station: match[4],
+	        title: match[4],
+	        description: match[5],
+	        icon: BASE_URL+match[3],
+                nowplaying: match[6],
+	        listeners: match[2]
+	    });
+            match = re.exec(doc);
+        };
+
 	page.loading = false;
     });
 })(this);
