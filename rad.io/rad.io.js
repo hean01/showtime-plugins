@@ -95,6 +95,21 @@
 	}
     }
 
+
+    var cp1252 = 'ÀÁÂÃÄÅ¨ÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕ×ÖØÙÜÚÛÝÞßàáâãäå¸æçèéêëìíîïðñòóôõ÷öøùüúûýþÿ³º';
+    var cp1251 = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЧЦШЩЬЪЫЭЮЯабвгдеёжзийклмнопрстуфхчцшщьъыэюяіє';
+    function fixMB(s) {
+        var fixed = '';
+        for (var i = 0; i < s.length - 2; i++)
+            if (cp1252.indexOf(s[i]) > - 1 && cp1252.indexOf(s[i+1]) > -1 && cp1252.indexOf(s[i+2]) > -1) {
+	       for (var i = 0; i < s.length; i++)
+	           cp1252.indexOf(s[i]) != -1 ? fixed += cp1251[cp1252.indexOf(s[i])] : fixed += s[i];
+               showtime.print("mojibake fixed "+fixed);
+               return fixed;
+            }
+	return s;
+    };
+
     function populate_stations(page, station) {
 	    var bce = {}
 	    try {
@@ -116,7 +131,7 @@
 		icon: iconUrl,
 		album_art: iconUrl,
 		title: station.name,
-                onair: station.currentTrack,
+                onair: fixMB(station.currentTrack),
 		bitrate: station.bitrate,
 		format: bce.streamContentFormat
 	    });
