@@ -191,6 +191,7 @@
 	    var item = page.appendItem("icecast:" + BASE_URL + itemmd.url, "station", {
 		title: itemmd.station,
 		station: itemmd.station,
+                onair: itemmd.current_track,
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
 		format: itemmd.format,
