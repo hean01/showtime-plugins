@@ -66,9 +66,7 @@
 	        listeners: match[2]
 	    });
             match = re.exec(doc);
-showtime.print("qqqq");
         };
-showtime.print("qqqq2");
 	page.loading = false;
     });
 })(this);
