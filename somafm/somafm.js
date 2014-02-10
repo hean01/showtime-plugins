@@ -25,6 +25,10 @@
     plugin.createService("soma fm", PREFIX + "start", "audio", true,
 			 plugin.path + "somafm.png");
 
+    function trim(s) {
+        return s.replace("<!--","").replace("-->","").replace("</p>","").replace(/^\s+|\s+$/g, '');
+    }
+
     // Start page
     plugin.addURI(PREFIX + "start", function(page) {
 	page.type = "directory";
@@ -48,22 +52,23 @@
         var doc = showtime.httpGet(BASE_URL + "/listen").toString();
 
         // 1-id, 2-listeners, 3-icon, 4-title, 5-description, 6-now playing
-        var re = /<!-- Channel: (.*) Listeners: (.*) -->[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?alt="([\S\s]*?)"[\S\s]*?<p class="descr">([\S\s]*?)<\/p>[\S\s]*?<span class="playing"><a href="[\S\s]*?">([\S\s]*?)<\/a>/g;
+        var re = /<!-- Channel: (.*) Listeners: (.*) -->[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?<h3>([\S\s]*?)<\/h3>[\S\s]*?<p class="descr">([\S\s]*?)<dl>[\S\s]*?<span class="playing"><a href="[\S\s]*?">([\S\s]*?)<\/a>/g;
         var match = re.exec(doc);
 
         while (match) {
 	    page.appendItem("icecast:" + BASE_URL + "/startstream=" + match[1] + ".pls", "station", {
 	        station: match[4],
 	        title: match[4],
-	        description: match[5],
+	        description: trim(match[5]),
 	        icon: BASE_URL + match[3],
                 album_art: BASE_URL + match[3],
                 nowplaying: match[6],
 	        listeners: match[2]
 	    });
             match = re.exec(doc);
+showtime.print("qqqq");
         };
-
+showtime.print("qqqq2");
 	page.loading = false;
     });
 })(this);
