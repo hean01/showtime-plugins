@@ -37,15 +37,15 @@
 	page.metadata.logo = plugin.path + "somafm.png";
 	page.metadata.title = "soma fm";
 
-        page.options.createInt('childTilesX', 'Number of X Child Tiles', 6, 1, 10, 1, '', function (v) {
+        page.options.createInt('childTilesX', 'Tiles by X', 6, 1, 10, 1, '', function(v) {
             page.metadata.childTilesX = v;
         }, true);
 
-        page.options.createInt('childTilesY', 'Number of Y Child Tiles', 2, 1, 4, 1, '', function (v) {
+        page.options.createInt('childTilesY', 'Tiles by Y', 2, 1, 4, 1, '', function(v) {
             page.metadata.childTilesY = v;
         }, true);
 
-        page.options.createBool('informationBar', 'Information Bar', true, function (v) {
+        page.options.createBool('informationBar', 'Information Bar', true, function(v) {
             page.metadata.informationBar = v;
         }, true);
 
