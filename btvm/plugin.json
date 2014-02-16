@@ -1,0 +1,13 @@
+{
+	"description": "<p>BTVM - Bei uns erleben Sie Online Movie Deutsch und Russisch, Online TV Deutsch, Russisch und Englisch.<p>For additional info visit <a href=\"http://btvm.biz\">http://btvm.biz/</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "btvm.biz",
+	"synopsis": "btvm.biz: Bei uns erleben Sie Online Movie Deutsch und Russisch, Online TV Deutsch, Russisch und Englisch.",
+	"version": "0.1", "file": "btvm.js",
+	"showtimeVersion": "4.5.146",
+	"type": "javascript",
+	"id": "btvm.biz",
+	"category": "video",
+	"icon": "logo.png"
+}
