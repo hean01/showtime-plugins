@@ -1,7 +1,7 @@
 /**
  * watch.is plugin for Showtime
  *
- *  Copyright (C) 2013 lprot
+ *  Copyright (C) 2014 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -270,88 +270,83 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var resp = showtime.httpGet('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title)).replace(" (HD)", "")).toString()).toString();
-        var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
-        var imdbid = re.exec(resp);
-        if (imdbid) imdbid = imdbid[1];
-        else {
-            re = /http:\/\/<b>imdb<\/b>.com\/title\/(tt\d+).*?\//;
-            imdbid = re.exec(resp);
-            if (imdbid) imdbid = imdbid[1];
-        }
-	return imdbid;
+        var origTitle = unescape(title).split(' | ');
+        origTitle[1] ? origTitle = origTitle[1] : origTitle = origTitle[0];
+        var resp = showtime.httpGet('http://www.imdb.com/find?q=' + encodeURIComponent(showtime.entityDecode(origTitle.replace(/ (HD)/,''))).toString()).toString();
+        var imdbid = resp.match(/class="findResult[\S\s]*?<a href="\/title\/([\S\s]*?)\/\?/);
+        return imdbid ? imdbid[1] : '';
     };
 
     // Play links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
 	setPageHeader(page, unescape(title));
 	page.loading = true;
-        var v = showtime.httpGet(BASE_URL + '/api/watch/' + unescape(url).match(/[\S\s]*?([\d+]+)/i)[1]).toString();
+        var imdbid = getIMDBid(title);
+
 	function addItem(link, type) {
-		link = "videoparams:" + showtime.JSONEncode({
-			title: showtime.entityDecode(unescape(title)),
-			canonicalUrl: PREFIX + ":video:" + url + ":" + title + ":" + type,
-			imdbid: getIMDBid(title),
-			no_fs_scan: true,
-			sources: [{
-				url: link
-			}]
-		});
-		page.appendItem(link, 'video', {
-			title: new showtime.RichText(type+" "+v.match(/<title>([\S\s]*?)<\/title>/)[1]),
-			icon: v.match(/<poster>([\S\s]*?)<\/poster>/)[1],
-			genre: v.match(/<genre>([\S\s]*?)<\/genre>/)[1],
-			year: parseInt(v.match(/<year>([\S\s]*?)<\/year>/)[1]),
-			duration: parseInt(v.match(/<duration>([\S\s]*?)<\/duration>/)[1]),
-			description: new showtime.RichText(orangeStr("Страна: ")+v.match(/<country>([\S\s]*?)<\/country>/)[1] + 
-				orangeStr(" Режиссер: ")+v.match(/<director>([\S\s]*?)<\/director>/)[1] +
-				orangeStr(" В ролях: ")+v.match(/<cast>([\S\s]*?)<\/cast>/)[1] + "<br>" +
-				orangeStr("Описание: ")+v.match(/<about>([\S\s]*?)<\/about>/)[1])
-		});
-		page.loading = false;
+	    var vparams = "videoparams:" + showtime.JSONEncode({
+		title: showtime.entityDecode(unescape(title)),
+		canonicalUrl: PREFIX + ":video:" + url + ":" + title + ":" + type,
+		imdbid: imdbid,
+		no_fs_scan: true,
+		sources: [{
+		    url: link
+		}]
+	    });
+	    page.appendItem(vparams, 'video', {
+		title: new showtime.RichText(type+" "+v.match(/<title>([\S\s]*?)<\/title>/)[1]),
+		icon: v.match(/<poster>([\S\s]*?)<\/poster>/)[1],
+		genre: v.match(/<genre>([\S\s]*?)<\/genre>/)[1],
+		year: parseInt(v.match(/<year>([\S\s]*?)<\/year>/)[1]),
+		duration: parseInt(v.match(/<duration>([\S\s]*?)<\/duration>/)[1]),
+		description: new showtime.RichText(orangeStr("Страна: ")+v.match(/<country>([\S\s]*?)<\/country>/)[1] +
+		    orangeStr(" Режиссер: ")+v.match(/<director>([\S\s]*?)<\/director>/)[1] +
+		    orangeStr(" В ролях: ")+v.match(/<cast>([\S\s]*?)<\/cast>/)[1] + "<br>" +
+		    orangeStr("Описание: ")+v.match(/<about>([\S\s]*?)<\/about>/)[1])
+	    });
+	    page.loading = false;
 	}
-	if (v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp>/))
-		if (!showtime.probe(v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp>/)[1]).result) 
-			addItem(v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp/)[1], blueStr("HD RTMP"));
-	if (v.match(/<rtmp>([\S\s]*?)<\/rtmp>/))
-		if (!showtime.probe(v.match(/<rtmp>([\S\s]*?)<\/rtmp>/)[1]).result) 
-			addItem(v.match(/<rtmp>([\S\s]*?)<\/rtmp>/)[1], blueStr("SD RTMP"));
-	if (v.match(/<hdvideo>([\S\s]*?)<\/hdvideo>/)) 
-		if (!showtime.probe(v.match(/<hdvideo>([\S\s]*?)<\/hdvideo>/)[1]).result) 
-			addItem(v.match(/<hdvideo>([\S\s]*?)<\/hdvideo>/)[1], blueStr("HD MP4"));
-	if (v.match(/<video>([\S\s]*?)<\/video>/)) 
-		if (!showtime.probe(v.match(/<video>([\S\s]*?)<\/video>/)[1]).result) 
-			addItem(v.match(/<video>([\S\s]*?)<\/video>/)[1], blueStr("SD MP4"));
-	var html = showtime.httpGet(BASE_URL+unescape(url)).toString();
-	addItem(html.match(/file:"([^"]+)/)[1], blueStr("FILE")); 
+        var v = showtime.httpGet(BASE_URL + '/api/watch/' + unescape(url).match(/[\S\s]*?([\d+]+)/i)[1]).toString();
+        var tmp = v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp>/);
+	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], blueStr("HD RTMP"));
+        tmp = v.match(/<rtmp>([\S\s]*?)<\/rtmp>/);
+	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], blueStr("SD RTMP"));
+        tmp = v.match(/<hdvideo>([\S\s]*?)<\/hdvideo>/);
+
+	var html = showtime.httpGet(BASE_URL + unescape(url)).toString();
+        addItem(html.match(/<video src="([\S\s]*?)"/)[1], blueStr("SD HLS"));
 	page.loading = false;
+
+	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], blueStr("HD MP4"));
+        tmp = v.match(/<video>([\S\s]*?)<\/video>/);
+	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], blueStr("SD MP4"));
+	addItem(html.match(/file:"([^"]+)/)[1], blueStr("SD FILE"));
 
 	// 1-icon, 2-nick, 3-age, 4-date/time, 5-comment
 	var re = /<div class="avatar"><a href="[\s\S]*?"><img src="([\s\S]*?)"[\s\S]*?<strong>([\s\S]*?)<\/strong>[\s\S]*?<div class="sex">([\s\S]*?)<\/span>[\s\S]*?<div class="date">([\s\S]*?)<\/div>[\s\S]*?<div class="comment" id="[\s\S]*?">([\s\S]*?)<\/div>/g;
         var match = re.exec(html);
 	var counter = 0;
 	while (match) {
-		if (counter == 0) {
-			page.appendItem("", "separator", {
-				title: 'Коментарии:'
-			});
-			counter++;
-		}
-                page.appendPassiveItem('video', "", {
-			title: new showtime.RichText(orangeStr(match[2])+" "+match[3]+" "+match[4]),
-			description: new showtime.RichText(match[5]),
-			icon: match[1][0] == "/" ?  BASE_URL + match[1] : match[1]
+	    if (counter == 0) {
+		page.appendItem("", "separator", {
+		    title: 'Комментарии:'
 		});
-		match = re.exec(html);
-	}
+	        counter++;
+	    };
+            page.appendPassiveItem('video', "", {
+		title: new showtime.RichText(orangeStr(match[2])+" "+match[3]+" "+match[4]),
+		description: new showtime.RichText(match[5]),
+		icon: match[1][0] == "/" ?  BASE_URL + match[1] : match[1]
+	    });
+	    match = re.exec(html);
+	};
     });
 
     plugin.addURI(PREFIX + ":start", startPage);
 
-    plugin.addSearcher("Watch.is", logo,
+    plugin.addSearcher("Watch.is", logo, function(page, query) {
+        page.entries = 0;
 
-    function(page, query) {
-	    page.entries = 0;
         var credentials = plugin.getAuthCredentials("Watch.is - Онлайн фильмы", "Login required", false);
         if (credentials) {
             var v = showtime.httpPost(BASE_URL + '/login', {
