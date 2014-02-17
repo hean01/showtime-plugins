@@ -40,7 +40,7 @@
             title: 'Movie (Russian)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/DEU/?site=:2', 'directory', {
+        page.appendItem(PREFIX + ':index:/DEU/?site=:', 'directory', {
             title: 'Movie (German)',
             icon: logo
         });
@@ -70,6 +70,7 @@
                 });
                 match = re.exec(response);
             }
+            if (!p) p = 1;
             p++;
             match = response.match(/<div style="text-align: center;"><a href="([\S\s]*?)">/);
             if (match) return true;

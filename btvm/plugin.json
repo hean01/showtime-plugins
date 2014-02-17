@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "btvm.biz",
 	"synopsis": "btvm.biz: Bei uns erleben Sie Online Movie Deutsch und Russisch, Online TV Deutsch, Russisch und Englisch.",
-	"version": "0.1.2", "file": "btvm.js",
+	"version": "0.1.3", "file": "btvm.js",
 	"showtimeVersion": "4.5.146",
 	"type": "javascript",
 	"id": "btvm.biz",
