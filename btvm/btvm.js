@@ -40,23 +40,28 @@
 
     function startPage(page) {
         setPageHeader(page, 'btvm.biz - Bei uns erleben Sie Online Movie Deutsch und Russisch, Online TV Deutsch, Russisch und Englisch.');
-        page.appendItem(PREFIX + ':index:/RUSS/', 'directory', {
+        page.appendItem(PREFIX + ':index:/RUSS/?site=page/:1', 'directory', {
             title: 'Movie (Russian)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/DEU/', 'directory', {
+        page.appendItem(PREFIX + ':index:/DEU/?site=:2', 'directory', {
             title: 'Movie (German)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/XXX/18.php?site=page/:1', 'directory', {
+            title: '+18',
             icon: logo
         });
     };
 
     plugin.addURI(PREFIX + ":start", startPage);
 
-    plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
+    plugin.addURI(PREFIX + ":index:(.*):(.*)", function(page, url, startFrom) {
         var URL = BASE_URL + url;
+        var p = startFrom;
 
         function loader() {
-            var response = showtime.httpReq(URL).toString();
+            var response = showtime.httpReq(URL + p).toString();
             setPageHeader(page, response.match(/<title>([\S\s]*?)<\/title>/)[1]);
             var re = /<center><font size="6">([\s\S]*?)<\/font>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<!--dle_image_end-->([\s\S]*?)<div style="[\s\S]*?<a href="([\s\S]*?)">/g;
             var match = re.exec(response);
@@ -64,15 +69,13 @@
                 page.appendItem(PREFIX + ":indexItem:" + match[4], 'video', {
                     title: fixNumEntities(showtime.entityDecode(match[1])),
                     icon: match[2],
-                    description: new showtime.RichText(match[3])
+                    description: new showtime.RichText(match[3].replace(/<br>/,'').replace(/PLAY/,''))
                 });
                 match = re.exec(response);
             }
+            p++;
             match = response.match(/<div style="text-align: center;"><a href="([\S\s]*?)">/);
-            if (match && match[1] != BASE_URL + url + "?site=" ) {
-               URL = match[1];
-               return true;
-            }
+            if (match) return true;
             return false;
         }
         loader();
@@ -92,7 +95,9 @@
                 var title = match[1].replace(/http:\/\/btvm.biz\/[\S\s]*?\/download.php\?mov=\/[\S\s]*?\//, '');
                 title = title.replace(/http:\/\/btvm.biz\/[\S\s]*?\/download.php\?mov=lib\/[\S\s]*?\//, '');
                 title = title.replace(/.html/, '');
-                page.appendItem(match[1], 'video', {
+                title = title.replace(/<\/b>/, '');
+                title = title.replace(/.rar/, '');
+                page.appendItem(match[1].replace(/<\/b>/,''), 'video', {
                     title: title
                 });
                 added++;
@@ -113,5 +118,4 @@
         };
         page.loading = false;
     });
-
 })(this);
