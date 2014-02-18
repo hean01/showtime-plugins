@@ -16,7 +16,6 @@ widget(container_y, {
 	
 				widget(expander_y, {
 					.filterConstraintX = true;
-
 					.expansion = scurve($view.showFilter, 0.25);
 					.alpha     = scurve($view.showFilter, 0.25);
 	  
@@ -26,7 +25,6 @@ widget(container_y, {
 							.color = [0.3, 0.3, 0.3];
 							PLATE_GFX();
 							widget(container_x, {
-		
 								widget(label, {
 									.caption = "Filter: ";
 								});
@@ -86,9 +84,6 @@ widget(container_y, {
 								     				     "pause", "dataroot://resources/svg/Pause.svg");
     										});
 										});
-
-
-
 									});
 								});
 							});
@@ -124,11 +119,9 @@ widget(container_y, {
 		border: 8;
 		padding: 10;
 		.hidden = !($clone.focused.metadata.station && $page.model.metadata.informationBar == true);
-		
 
 		widget(container_y, {
-
-		widget(container_x, {
+		    widget(container_x, {
 			.spacing = 5;
 			.padding = 5;
 			
@@ -183,8 +176,8 @@ widget(container_y, {
 					  });
 
 			});
-		});
-		widget(dummy, { .height = $ui.size *2; });
+		    });
+		    widget(dummy, { .height = $ui.size *2; });
 		});
 	});
 });
