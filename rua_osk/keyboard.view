@@ -95,7 +95,7 @@ widget(container_y, {
     spacing: 4;
     height: $ui.size * 2;
     space(0.75);
-    KEY_("Пробел", " ");
+    KEY_("Space", " ");
     space(1);
   });
 });
