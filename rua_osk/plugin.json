@@ -1,0 +1,15 @@
+{
+  "type": "views",
+  "id": "osk_numeric",
+  "showtimeVersion": "4.5.302",
+  "version": "1.0",
+  "author": "Andreas Öman, lprot",
+  "title": "RU+UA on screen keyboard",
+  "category": "glwosk",
+  "icon": "keyboard.jpg",
+  "glwviews": [{
+    "class": "osk",
+    "title": "RU+UA",
+    "file": "keyboard.view"
+  }]
+}

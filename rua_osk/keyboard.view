@@ -1,0 +1,101 @@
+#import "skin://osk/common.view"
+
+widget(container_y, {
+
+  spacing: 4;
+
+  widget(container_x, {
+    spacing: 4;
+    height: $ui.size * 2;
+    KEY("ё", "Ё");
+    KEY("’", "'");
+    KEY("1", "!");
+    KEY("2", '"');
+    KEY("3", "№");
+    KEY("4", ";");
+    KEY("5", "%");
+    KEY("6", ":");
+    KEY("7", "?");
+    KEY("8", "*");
+    KEY("9", "(");
+    KEY("0", ")");
+    KEY("-", "_");
+    KEY("=", "+");
+    ACTION("Backspace", targetedEvent("input", Backspace), 2.66);
+  });
+
+  widget(container_x, {
+    spacing: 4;
+    height: $ui.size * 2;
+    space(1.5);
+    KEY("й", "Й", 1, 1);
+    KEY("ц", "Ц");
+    KEY("у", "У");
+    KEY("к", "К");
+    KEY("е", "Е");
+    KEY("н", "Н");
+    KEY("г", "Г");
+    KEY("ш", "Ш");
+    KEY("щ", "Щ");
+    KEY("з", "З");
+    KEY("х", "Х");
+    KEY("ъ", "Ъ");
+    KEY("і", "І");
+    KEY("ї", "Ї");
+    space(1.5);
+  });
+
+  widget(container_x, {
+    spacing: 4;
+    height: $ui.size * 2;
+    space(1);
+    ACTION("Caps Lock", {
+      $ui.osk.caps = !$ui.osk.caps;
+    }, 2.66, $ui.osk.caps);
+    KEY("ф", "Ф");
+    KEY("ы", "Ы");
+    KEY("в", "В");
+    KEY("а", "А");
+    KEY("п", "П");
+    KEY("р", "Р");
+    KEY("о", "О");
+    KEY("л", "Л");
+    KEY("д", "Д");
+    KEY("ж", "Ж");
+    KEY("э", "Э");
+    KEY("є", "Є");
+    KEY("ґ", "Ґ");
+    space(1);
+  });
+
+  widget(container_x, {
+    spacing: 4;
+    height: $ui.size * 2;
+    ACTION("Shift", {
+      $ui.osk.shift = !$ui.osk.shift;
+    }, 1.5, $ui.osk.shift);
+    KEY("я", "Я");
+    KEY("ч", "Ч");
+    KEY("с", "С");
+    KEY("м", "М");
+    KEY("и", "И");
+    KEY("т", "Т");
+    KEY("ь", "Ь");
+    KEY("б", "Б");
+    KEY("ю", "Ю");
+    KEY(".", ",");
+    KEY("-", "_");
+    ACTION("Shift", {
+      $ui.osk.shift = !$ui.osk.shift;
+    }, 1.5, $ui.osk.shift);
+  });
+
+
+  widget(container_x, {
+    spacing: 4;
+    height: $ui.size * 2;
+    space(0.75);
+    KEY_("Пробел", " ");
+    space(1);
+  });
+});
