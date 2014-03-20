@@ -15,7 +15,8 @@ PLUGINS= \
 	icecast.zip \
 	rad.io.zip \
 	somafm.zip \
-        btvm.zip
+        btvm.zip \
+	rua_osk.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
