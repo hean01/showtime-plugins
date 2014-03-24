@@ -257,6 +257,7 @@
             case "m4v":
             case "wmv":
             case "m2ts":
+            case "mts":
                 return "video";
             case "jpg":
             case "jpeg":
@@ -273,6 +274,7 @@
             case "ape":
             case "dts":
             case "ac3":
+            case "wv":
                 return "audio";
             default:
                 return "file";

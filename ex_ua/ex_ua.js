@@ -136,6 +136,7 @@
             case "m4v":
             case "wmv":
             case "m2ts":
+            case "mts":
                 return "video";
             case "jpg":
             case "jpeg":
@@ -152,6 +153,7 @@
             case "ape":
             case "dts":
             case "ac3":
+            case "wv":
                 return "audio";
             default:
                 return "file";
@@ -263,7 +265,6 @@
                             title: showtime.entityDecode(match[2]),
 			    canonicalUrl: match[1]
                         });
-			showtime.print("I'm here!");
                         if (getType(match[2].split('.').pop()) != "video") v = BASE_URL + match[1];
                         page.appendItem(v, getType(match[2].split('.').pop()), {
                             title: showtime.entityDecode(match[2]),
