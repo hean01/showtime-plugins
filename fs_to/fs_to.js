@@ -36,7 +36,7 @@
         }
         page.type = "directory";
         page.contents = "items";
-        page.loading = false;
+        page.loading = true;
     }
 
     // remove multiple, leading or trailing spaces and line feeds
@@ -50,6 +50,16 @@
 
     function blueStr(str) {
         return '<font color="6699CC">' + str + '</font>';
+    }
+
+    const blue = "6699CC", orange = "FFA500";
+
+    function colorStr(str, color) {
+        return '<font color="' + color + '">(' + str + ')</font>';
+    }
+
+    function coloredStr(str, color) {
+        return '<font color="' + color + '">' + str + '</font>';
     }
 
     function startPage(page) {
@@ -155,6 +165,7 @@
 
         function loader() {
             var response = showtime.httpGet(BASE_URL + "/updates.aspx?page=" + p);
+            page.loading = false;
             //1-type 2-link 3-title 4-date 5-time
             var re = /class="m-themed">([^\<]+)[\S\s]*?a href="([^"]+)" class="item-link" title="[^"]+">([^\<]+)[\S\s]*?class="col-date"[\S\s]*?\>([^\<]+)[\S\s]*?class="col-time">([^\<]+)/g;
             var match = re.exec(response);
@@ -179,16 +190,18 @@
 
         function loader() {
             var response = showtime.httpGet(url + "&page=" + p).toString();
+            page.loading = false;
 
             // Show populars only above the first page
             if (p == 0) {
-            page.metadata.title = response.match(/<title>(.*?)<\/title>/)[1];
-                page.appendItem("", "separator", {
-                    title: 'Самое просматриваемое сейчас'
-                });
+                page.metadata.title = response.match(/<title>(.*?)<\/title>/)[1];
 		re = /<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-delimiter">/;
 		var match = re.exec(response);
 		if (match) {
+                       page.appendItem("", "separator", {
+                            title: 'Самое просматриваемое сейчас'
+                       });
+
 			re = /<div class="b-poster-[\S\s]*?<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>/g;
 	                var m = re.exec(match[1]);
         	        while (m) {
@@ -257,7 +270,6 @@
             case "m4v":
             case "wmv":
             case "m2ts":
-            case "mts":
                 return "video";
             case "jpg":
             case "jpeg":
@@ -274,7 +286,6 @@
             case "ape":
             case "dts":
             case "ac3":
-            case "wv":
                 return "audio";
             default:
                 return "file";
@@ -286,21 +297,126 @@
         title = unescape(title);
         setPageHeader(page, title);
         var response = showtime.httpGet(BASE_URL + url).toString();
+
+        // Scrape icon
 	var icon = response.match(/<link rel="image_src" href="([^"]+)"/);
 	if (icon) icon = icon[1];
+
+        // Scrape description
 	var description = response.match(/<p class="item-decription [^"]+">([\S\s]*?)<\/p>/);
-	if (description) description = description[1]; else description = '';
-        var what_else = response.match(/<div class="b-posters">([\S\s]*?)<div class="clear">/);
+	if (description) description = coloredStr("Описание: ", orange) + description[1]; else description = '';
+
+        // Scrape duration
+        var duration = response.match(/itemprop="duration"[\S\s]*?>([\S\s]*?)<\/span>/);
+        if (duration) duration = duration[1];
+
+        // Scrape item info
+        var iteminfo = response.match(/<div class="item-info">([\S\s]*?)<\/div>/);
+        if (iteminfo) {
+           iteminfo = iteminfo.toString();
+           // Scrape years
+           var year = iteminfo.match(/Год:[\S\s]*?<span>([\S\s]*?)<\/span>/);
+           if (year) {
+              year = year[1];
+           } else { // handle as serials
+              year = iteminfo.match(/показа:[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<span>([\S\s]*?)<\/span>/);
+              if (year) year = year[1];
+           };
+
+           // Scrape genres
+           var htmlBlock = iteminfo.match(/itemprop="genre"([\S\s]*?)<\/td>/);
+           // Try to handle as shows
+           if (!htmlBlock) htmlBlock = iteminfo.match(/Жанр:([\S\s]*?)<\/tr>/);
+           if (htmlBlock) {
+              var genres = '';
+              var notFirst = 0;
+              var re = /<span>([\S\s]*?)<\/span>/g;
+              var m = re.exec(htmlBlock[1]);
+              while (m) {
+                    if (!notFirst) genres = genres + m[1]; else genres = genres + ", " + m[1];
+                    notFirst++;
+                    m = re.exec(htmlBlock[1]);
+              };
+           }; // Scrape genres
+
+           // Scrape actors
+           htmlBlock = iteminfo.match(/itemprop="actor"([\S\s]*?)<\/td>/);
+           if (htmlBlock) {
+              var actors = '';
+              var notFirst = 0;
+              var re = /itemprop="name">([\S\s]*?)<\/span>/g;
+              var m = re.exec(htmlBlock[1]);
+              while (m) {
+                    if (!notFirst) actors = actors + m[1]; else actors = actors + ", " + m[1];
+                    notFirst++;
+                    m = re.exec(htmlBlock[1]);
+              };
+              description = coloredStr("В ролях: ", orange) + actors + " " + description;
+           }; // Scrape actors
+
+           // Scrape directors
+           htmlBlock = iteminfo.match(/itemprop="director"([\S\s]*?)<\/td>/);
+           if (htmlBlock) {
+              var directors = '';
+              var notFirst = 0;
+              var re = /itemprop="name">([\S\s]*?)<\/span>/g;
+              var m = re.exec(htmlBlock[1]);
+              while (m) {
+                    if (!notFirst) directors = directors + m[1]; else directors = directors + ", " + m[1];
+                    notFirst++;
+                    m = re.exec(htmlBlock[1]);
+              };
+              description = coloredStr("Режиссер: ", orange) + directors + " " + description;
+           }; // Scrape directors
+
+           // Try to handle as shows
+           htmlBlock = iteminfo.match(/Ведущие:([\S\s]*?)<\/tr>/);
+           if (htmlBlock) {
+              var directors = '';
+              var notFirst = 0;
+              var re = /<span>([\S\s]*?)<\/span>/g;
+              var m = re.exec(htmlBlock[1]);
+              while (m) {
+                    if (!notFirst) directors = directors + m[1]; else directors = directors + ", " + m[1];
+                    notFirst++;
+                    m = re.exec(htmlBlock[1]);
+              };
+              description = coloredStr("Ведущие: ", orange) + directors + " " + description;
+           }; // handle as shows
+
+           // Scrape countries
+           var htmlBlock = iteminfo.match(/class="tag-country-flag"([\S\s]*?)<\/td>/);
+           if (htmlBlock) {
+              var countries = '';
+              var notFirst = 0;
+              var re = /<\/span>([\S\s]*?)<\/span>/g;
+              var m = re.exec(htmlBlock[1]);
+              while (m) {
+                    if (!notFirst) countries = countries + m[1]; else countries = countries + ", " + m[1];
+                    notFirst++;
+                    m = re.exec(htmlBlock[1]);
+              };
+              description = coloredStr("Страна:", orange) + countries + " " + description;
+           }; // Scrape countries
+
+        }; // Scrap item info
+
+        page.loading = false;
         page.appendItem(PREFIX + ":playOnline:" + url + ":" + escape(title), "video", {
             title: new showtime.RichText(title),
+            duration: duration,
             icon: icon,
+            year: +year,
+            genre: genres,
             description: new showtime.RichText(description)
         });
+
+        var what_else = response.match(/<div class="b-posters">([\S\s]*?)<div class="clear">/);
+
         response = showtime.httpGet(BASE_URL + url + '?ajax&blocked=0&folder=0');
         var re = /<ul class="filelist[^"]+[\S\s]*?<\/ul>/;
         response = re.exec(response);
-        var start = 0,
-            end = 0;
+        var start = 0, end = 0;
         if (response) {
             response = response[0].replace(/(class="b-transparent-area")/g, "");
             start = response.indexOf('<li class="', start + 1);
@@ -347,6 +463,7 @@
         title = unescape(title);
         setPageHeader(page, title);
         var response = showtime.httpGet(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
+        page.loading = false;
         var re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
         var m = re.exec(response); // parsed list will live here
         while (m) {
@@ -393,7 +510,9 @@
 
     // Processes "Play online" button 
     plugin.addURI(PREFIX + ":playOnline:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
         var response = showtime.httpGet(BASE_URL + url).toString();
+        page.loading = false;
         var re = /playlist: \[[\S\s]*?url: '([^']+)/;
         url = re.exec(response) // Some clips autoplay
         if (!url) {
@@ -415,12 +534,12 @@
                 url: BASE_URL + url[1]
             }]
         });
-        page.loading = false;
     });
 
     // Play URL
     plugin.addURI(PREFIX + ":play:(.*)", function(page, url) {
         page.type = "video";
+        page.loading = true;
         if (showtime.probe(BASE_URL + url).result == 0) {
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: sTitle[url],
@@ -435,6 +554,7 @@
         var origURL = url;
         if (sURL[url]) url = sURL[url];
         var response = showtime.httpGet(BASE_URL + url).toString();
+        page.loading = false;
         var start = 0,
             end = 0;
         start = response.indexOf('<title>', start + 1);
@@ -467,7 +587,6 @@
                 }]
             });
         } else page.error("Линк не проигрывается :(");
-        page.loading = false;
     });
 
     plugin.addURI(PREFIX + ":start", startPage);
