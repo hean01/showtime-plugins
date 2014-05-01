@@ -58,15 +58,15 @@
 	options.push([country,country]);
     }
 
-    settings.createMultiOpt("country", "Country", options, function(v) {
+    settings.createMultiOpt("country", "Country for the nearest stations", options, function(v) {
 	service.country = v;
     });
 
     // discard favorites
-    settings.createAction("cleanFavorites", "Clean local favorites", 
+    settings.createAction("cleanFavorites", "Clean favorites",
 			  function () {
         store.list = "[]";
-        showtime.trace('Local favorites were clean succesfully');
+        showtime.notify('Favorites has been cleaned successfully', 2);
     });
 
     function make_args(gets) {
@@ -149,20 +149,21 @@
 		    url: this.url,
 		    icon: this.icon,
 		    album_art: this.icon,
-		    station: this.station,
+                    station: this.station,
+                    title: station.name,
 		    description: this.description,
-		    bitrate: this.bitrate
+		    bitrate: this.bitrate,
+                    format: this.format
 		};
 		showtime.trace("item: "+showtime.JSONEncode(entry));
 		var list = eval(store.list);
                 var array = [showtime.JSONEncode(entry)].concat(list);
                 store.list = showtime.JSONEncode(array);
-		showtime.notify("Station was added to your favorites.", 2);
+		showtime.notify("Station has been added to the favorites.", 2);
 	    });
 
-	    item.addOptAction("Add station to favorites", "addFavorite");
+	    item.addOptAction("Add station to the favorites", "addFavorite");
     }
-
 
     function populateStations(page, data) {
     	for each (station in data) {
@@ -204,15 +205,8 @@
 	page.loading = false;
     });
 
-    // Favorites
-    plugin.addURI(PREFIX + "favorites", function(page) {
-	page.type = "directory";
-	page.contents = "items";
-	page.metadata.title = "Favorites";
-	page.metadata.logo = plugin.path + "rad.io.png";
-	page.metadata.glwview = plugin.path + "views/array.view";
-	page_menu(page);
-	
+
+    function fill_fav(page) {
 	var list = eval(store.list);
 	for each (item in list) {
 	    var itemmd = showtime.JSONDecode(item);
@@ -222,6 +216,7 @@
 		station: itemmd.station,
 		icon: itemmd.icon,
 		album_art: itemmd.icon,
+       		title: itemmd.title,
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
 		format: itemmd.format,
@@ -229,7 +224,7 @@
 	    });
 
 	    item.url = itemmd.url;
-	    	    
+
 	    item.onEvent("delFavorite", function(item) {
 		var list = eval(store.list);
 		for each (item in list) {
@@ -237,13 +232,26 @@
 		    if (itemmd.url == this.url) {
 			list.splice(this.url, 1)
 			store.list = showtime.JSONEncode(list);
-			showtime.notify("Station was removed to your favorites.", 2);
+                        page.flush();
+			showtime.notify("Station has been removed from the favorites.", 2);
+                        fill_fav(page);
 		    }
 		}
 	    });
 
-	    item.addOptAction("Remove station to favorites", "delFavorite");   
+	    item.addOptAction("Remove the station from the favorites", "delFavorite");
 	}
+    }
+
+    // Favorites
+    plugin.addURI(PREFIX + "favorites", function(page) {
+	page.type = "directory";
+	page.contents = "items";
+	page.metadata.title = "Favorites";
+	page.metadata.logo = plugin.path + "rad.io.png";
+	page.metadata.glwview = plugin.path + "views/array.view";
+	page_menu(page);
+        fill_fav(page);
 	page.loading = false;
     });
 
@@ -362,5 +370,4 @@
             page.metadata.informationBar = v;
         }, true);
     }
-
 })(this);
