@@ -205,7 +205,7 @@
                 canonicalUrl: PREFIX + ":video:" + id + ":" + title,
                 imdbid: imdbid,
                 sources: [{
-                   url: s1[1] +"/a/" + json.audio_list[i].index + "/" + s2[1]
+                   url: "hls:" + s1[1] +"/a/" + json.audio_list[i].index + "/" + s2[1]
                 }]	    
             });
             page.appendItem(link, "video", {
