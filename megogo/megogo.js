@@ -63,11 +63,15 @@
         page.appendItem("", "separator", {
             title: 'Рекомендуемое:'
         });
+        page.loading = true;
 	json = showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType);
+        page.loading = false;
 	showtime.trace("The length of the reply is: " + json.toString().length);
 	while (json.toString().length < 100) { 
-		showtime.trace("Recommended list is empty. Geting again...");
+		showtime.trace("Recommended list is empty. Getting again...");
+                page.loading = true;
 		json = showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType);
+                page.loading = false;
 	}
 	json = showtime.JSONDecode(json);
         for (var i in json.video_list) {
@@ -89,7 +93,9 @@
     // Shows genres of the category
     plugin.addURI(PREFIX + ":genres:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
+        page.loading = true;
         var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/genres?category=' + id + '&sign=' + showtime.md5digest('category=' + id + sign) + devType));
+        page.loading = false;
         for (var i in json.genre_list) {
             page.appendItem(PREFIX + ':videos:' + id + ':' + json.genre_list[i].id + ':' + escape(json.genre_list[i].title), 'directory', {
                 title: new showtime.RichText(unescape(json.genre_list[i].title) + blueStr(json.genre_list[i].total_num)),
@@ -106,7 +112,9 @@
 
         function loader() {
             var params = 'category=' + category_id + '&genre=' + genre_id + '&limit=20' + '&offset=' + offset;
+            page.loading = true;
             var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/videos?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + sign) + devType));
+            page.loading = false;
             for (var i in json.video_list) {
                 var type = "video";
                 if (json.video_list[i].isSeries) type = "directory";
@@ -135,7 +143,9 @@
         setPageHeader(page, unescape(title));
         var params = 'video=' + id;
         var request = BASE_URL + '/video?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + 'megogosign123');
+        page.loading = true;
         var json = showtime.JSONDecode(showtime.httpGet(request));
+        page.loading = false;
         for (var i in json.video[0].season_list) {
             for (var j in json.video[0].season_list[i].episode_list) {
                 page.appendItem(PREFIX + ':video:' + json.video[0].season_list[i].episode_list[j].id + ':' + json.video[0].season_list[i].episode_list[j].title, "video", {
@@ -173,9 +183,10 @@
 
     // Play megogo links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, id, title) {
+        page.loading = true;
         var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/info?video=' + id + '&sign=' + showtime.md5digest('video=' + id + sign) + devType));
+        page.loading = false;
         if (!json.src) {
-            page.loading = false;
             showtime.message("Error: This video is not available in your region :(", true, false);
             return;
         }
@@ -209,10 +220,9 @@
             canonicalUrl: PREFIX + ":video:" + id + ":" + title,
             imdbid: getIMDBid(title),
             sources: [{
-                url: json.src
+                url: "hls:" + json.src
             }]	    
         });
-        page.loading = false;
     });
 
     plugin.addURI(PREFIX + ":start", startPage);
@@ -223,7 +233,9 @@
             function loader() {
                 var params = 'text=' + query + '&limit=20' + '&offset=' + offset;
                 var request = BASE_URL + '/search?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + sign) + devType;
+                page.loading = true;
                 var json = showtime.JSONDecode(showtime.httpGet(request));
+                page.loading = false;
                 for (var i in json.video_list) {
                     var type = "video";
                     if (json.video_list[i].isSeries) type = "directory";
