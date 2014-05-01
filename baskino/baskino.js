@@ -579,5 +579,3 @@
         page.paginator = loader;
     });
 })(this);
-0
-
