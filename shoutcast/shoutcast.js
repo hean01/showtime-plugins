@@ -46,14 +46,13 @@
     // create plugin service
     plugin.createService("shoutcast", PREFIX + "start", "audio", true, logo);
 
-    // create settins
+    // create settings
     var settings = plugin.createSettings("shoutcast", logo,
 			 "SHOUTcast Radio - Listen to Free Online Radio Stations");
 
-    settings.createAction("cleanFavorites", "Clean My Favorites",
-			  function () {
+    settings.createAction("cleanFavorites", "Clean My Favorites", function() {
         store.list = "[]";
-        showtime.trace('My Favorites were clean succesfully');
+        showtime.notify('My Favorites are succesfully cleaned.', 2);
     });
 
 
@@ -73,7 +72,7 @@
 	for each (item in list) {
 	    var itemmd = showtime.JSONDecode(item);
 
-	    var item = page.appendItem("shoutcast:"+itemmd.url, "station", {
+	    var item = page.appendItem("icecast:"+itemmd.url, "station", {
 		title: itemmd.station,
 		station: itemmd.station,
 		description: itemmd.description,
@@ -98,31 +97,30 @@
 
     // Favorites
     plugin.addURI(PREFIX + "favorites", function(page) {
-	page.type = "directory";
-	page.contents = "items";
-	page.metadata.title = "My Favorites";
-	page.metadata.logo = logo;
-	page.metadata.glwview = plugin.path + "views/array.view";
+        setPageHeader(page, "My Favorites");
 	page_menu(page);
         fill_fav(page);
-	page.loading = false;
+    });
+
+    plugin.addURI(PREFIX + "listStations:(.*):(.*)", function(page, title, action) {
+        setPageHeader(page, 'Shoutcast - ' + unescape(unescape(title)));
+        getStations(page, action);
     });
 
     plugin.addURI(PREFIX + "subcategory:(.*):(.*):(.*)", function(page, title, subcat_list, action) {
         setPageHeader(page, 'Shoutcast - ' + unescape(title));
 
-        // 1-params(?action=sub&cat=Adult Alternative#1), 2-title
+        // 1-params, 2-title
         var re = /<a href="([\S\s]*?)">([\S\s]*?)<\/a>/g;
         var catlist = unescape(subcat_list);
         var match = re.exec(catlist);
         while (match) {
-	    var item = page.appendItem("icecast:"+match[1], "directory", {
+	    var item = page.appendItem(PREFIX + "listStations:"+escape(match[2]) + ":" + escape(match[1]), "directory", {
 		title: unescape(match[2])
 	    });
             match = re.exec(catlist);
         };
-
-        getStations(page, unescape(action.replace('?', '&')));
+        getStations(page, action);
     });
 
     plugin.addURI(PREFIX + "categories", function(page) {
@@ -131,7 +129,7 @@
         var categories = showtime.httpReq(BASE_URL).toString();
         page.loading = false;
 
-        // 1-params(?action=sub&cat=Alternative#1), 2-title, 3-submenu
+        // 1-params, 2-title, 3-submenu
         var re = /class="files"><a href="([\S\s]*?)">([\S\s]*?)<\/a>[\S\s]*?<ul class="sub-menu">([\S\s]*?)<\/ul>/g;
         var match = re.exec(categories);
         while (match) {
@@ -143,21 +141,21 @@
     });
 
     function getStations(page, action) {
-        page.appendItem("", "separator", {
-            title: "Most popular"
-        });
-
 	var tryToSearch = true, fromPage = 1, itemsPerPage = 18;
         // 1-link, 2-title, 3-genre, 4-listeners, 5-bitrate, 6-format
         var re = /<a class="transition" href="([\S\s]*?)">([\S\s]*?)<\/a><\/td>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>/g;
-        var re2 = /class="more transition">Start again<\/a>/;
+        if (action != "&action=none&cat=") {
+            action = unescape(action).match(/\?action=sub\&cat=([\S\s]*?)\#/);
+            action = '&action=sub&cat='+escape(action[1])+'#';
+        }
 
         function loader() {
             if (!tryToSearch) return false;
                 page.loading = true;
+                //?action=search&string=jazz%20forever&_cf_rc=0
                 var response = showtime.httpReq(BASE_URL + '/radiolist.cfm?start=' + fromPage +
-                    action + '&string=&amount=' + itemsPerPage +
-                    '&order=listeners&_cf_containerId=radiolist&_cf_nodebug=true&_cf_nocache=true&_cf_rc=1').toString();
+                    action + '&amount=' + itemsPerPage +
+                    '&order=listeners&_cf_containerId=radiolist&_cf_nodebug=true&_cf_nocache=true').toString();
                 page.loading = false;
 
                 var match = re.exec(response);
@@ -172,7 +170,8 @@
 	              });
                       match = re.exec(response);
                 };
-                if (re2.exec(response)) return tryToSearch = false;
+                if (response.match(/class="more transition">Start again<\/a>/) ||
+                   !response.match(/class="more transition">/)) return tryToSearch = false;
                 fromPage += itemsPerPage;
                 return true;
         }
@@ -188,9 +187,9 @@
 	    title: "Categories"
 	});
 
-	page.appendItem(PREFIX + "favorites", "directory", {
-	    title: "My Favorites"
-	});
+//	page.appendItem(PREFIX + "favorites", "directory", {
+//	    title: "My Favorites"
+//	});
 
         getStations(page, "&action=none&cat=");
     });
