@@ -19,7 +19,7 @@
 
 (function(plugin) {
     var PREFIX = 'paradisehil';
-    var BASE_URL = 'http://paradisehill.tv/';
+    var BASE_URL = 'http://paradisehill.tv';
     var logo = plugin.path + "logo.png";
 
     function setPageHeader(page, title) {
@@ -43,6 +43,9 @@
         service.lang = l;
     });
 
+    function trim(s) {
+        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
+    }
 
     const blue = "6699CC", orange = "FFA500";
 
@@ -57,7 +60,7 @@
     plugin.addURI(PREFIX + ":indexItem:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
-        var response = showtime.httpReq(BASE_URL + url).toString();
+        var response = showtime.httpReq(BASE_URL + "/" + url).toString();
         page.loading = false;
 
         // 1-title, 2-front image, 3-back image, 4-nick, 5-date added, 6-views
@@ -74,6 +77,7 @@
            });
 
            var description = response.match(/<div class="cont">([\s\S]*?)<\/div>/);
+           if (description)
            var links = response.match(/var films= "([\s\S]*?)"/);
            if (links) {
                page.appendItem("", "separator", {
@@ -85,46 +89,65 @@
                   page.appendItem("videoparams:" + showtime.JSONEncode({
                         sources: [{
                             url: films[n],
-                            mimetype: "video/x-msvideo"
+                            mimetype: "video/quicktime"
                         }],
                         title: match[1] + " (" + (service.lang == "en" ? 'part' : 'часть') + (+n+1) + ")"
                     }), 'video', {
                     title: new showtime.RichText(match[1] + colorStr((service.lang == "en" ? 'part' : 'часть') + (+n+1), blue)),
                     icon: match[2],
-                    description: description ? new showtime.RichText(match[1] + "<br>" + description[1]) : ''
+                    description: description ? new showtime.RichText(match[1] + "<br>" + coloredStr(service.lang == "en" ? 'Added: ' : 'Добавлено: ', orange) + match[5] + coloredStr(service.lang == "en" ? ' Views: ' : ' Просмотров: ', orange) + match[6] + " " + trim(description[1])) : ''
                   });
                }
            }
         }
     });
 
-    function scrapeThePage(page, url, response) {
-        var p, re;
-        if (response) {
-           p = 2;
-           // 1-link, 2-icon, 3-title, 4-genre
-           re = /<div class="item_zag">[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">[\s\S]*?<a href="[\s\S]*?">([\s\S]*?)<\/a>/g;
-        } else {
-           p = 1;
-           // 1-link, 2-icon, 3-title
-           re = /<div class="item_zag">[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">/g;
-           page.loading = true;
-           response = showtime.httpReq(url).toString();
-           page.loading = false;
+    plugin.addURI(PREFIX + ":listNew", function(page) {
+        setPageHeader(page, 'New');
+        // 1-link, 2-icon, 3-title, 4-genre
+        var re = /<div class="item_zag">[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">[\s\S]*?<a href="[\s\S]*?">([\s\S]*?)<\/a>/g;
+        var p = 2;
+
+        function loader() {
+            page.loading = true;
+            var response = showtime.httpReq(BASE_URL + (service.lang == "en" ? '/en/' : '/') + "?page=" + p).toString();
+            page.loading = false;
+
+            var match = re.exec(response);
+            while (match) {
+                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[3]), 'video', {
+                    title: new showtime.RichText(match[3] + colorStr(match[4], blue)),
+                    genre: match[4],
+                    description: match[3],
+                    icon: match[2]
+                });
+                match = re.exec(response);
+            }
+            match = response.match(/<span>([\S\s]*?)<\/span><\/li><\/ul>/);
+            if (!match) {
+               p++;
+               return true;
+            };
+            return false;
         }
+        loader();
+        page.paginator = loader;
+    });
+
+    plugin.addURI(PREFIX + ":indexCategory:(.*):(.*)", function(page, url, title) {
+        setPageHeader(page, title);
+        var p = 2;
+        // 1-link, 2-icon, 3-title
+        var re = /<div class="item_zag">[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">/g;
+        page.loading = true;
+        var response = showtime.httpReq(BASE_URL + "/" + url).toString();
+        page.loading = false;
+
         function loader() {
             var match = re.exec(response);
             while (match) {
-                if (match[4]) {
-                   var genre = match[4];
-                   var title = new showtime.RichText(match[3] + colorStr(match[4], blue))
-                } else {
-                   var genre = 0;
-                   var title = new showtime.RichText(match[3]);
-                }
                 page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[3]), 'video', {
-                    title: title,
-                    genre: genre,
+                    title: new showtime.RichText(match[3]),
                     description: match[3],
                     icon: match[2]
                 });
@@ -133,7 +156,7 @@
             match = response.match(/<span>([\S\s]*?)<\/span><\/li><\/ul>/);
             if (!match) {
                page.loading = true;
-               response = showtime.httpReq(url + "?page=" + p).toString();
+               response = showtime.httpReq(BASE_URL + "/" + url + "?page=" + p).toString();
                page.loading =  false;
                p++;
                return true;
@@ -142,15 +165,36 @@
         }
         loader();
         page.paginator = loader;
-    }
-
-    plugin.addURI(PREFIX + ":indexCategory:(.*):(.*)", function(page, url, title) {
-        setPageHeader(page, title);
-        scrapeThePage(page, BASE_URL + url, 0);
     });
 
     function startPage(page) {
         setPageHeader(page, 'paradisehill.tv');
+
+        page.loading = true;
+        var lang = '/';
+        if (service.lang == "en") lang = '/en';
+        var response = showtime.httpReq(BASE_URL + lang).toString();
+        page.loading = false;
+
+        page.appendItem("", "separator", {
+            title: service.lang == "en" ? 'New' : 'Новинки'
+        });
+
+        // 1-link, 2-icon, 3-title, 4-genre
+        re = /<div class="item_zag">[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">[\s\S]*?<a href="[\s\S]*?">([\s\S]*?)<\/a>/g;
+        var match = re.exec(response);
+        while (match) {
+            page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[3]), 'video', {
+                title: new showtime.RichText(match[3] + colorStr(match[4], blue)),
+                genre: match[4],
+                description: match[3],
+                icon: match[2]
+            });
+            match = re.exec(response);
+        }
+        page.appendItem(PREFIX + ":listNew", 'directory', {
+            title: service.lang == "en" ? 'More ►' : 'Больше ►'
+        });
 
         page.appendItem("", "separator", {
             title: service.lang == "en" ? 'Categories' : 'Категории'
@@ -158,12 +202,6 @@
 
         //1-link, 2-title, 3-icon, 4-counter
 	var re = /<div class="item_zag clz">[\s\S]*?<a href="([\s\S]*?)" title="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="item_cat clc"><span><\/span>([\s\S]*?)<\/div>/g;
-        page.loading = true;
-        var lang = '';
-        if (service.lang == "en") lang = 'en';
-        var response = showtime.httpReq(BASE_URL + lang).toString();
-        page.loading = false;
-
         var match = re.exec(response);
         while (match) {
              page.appendItem(PREFIX + ":indexCategory:" + match[1] + ":" + match[2], 'video', {
@@ -172,13 +210,42 @@
              });
              match = re.exec(response);
         }
-
-        page.appendItem("", "separator", {
-            title: service.lang == "en" ? 'New' : 'Новинки'
-        });
-
-        scrapeThePage(page, BASE_URL + lang, response);
     };
 
     plugin.addURI(PREFIX + ":start", startPage);
+
+    plugin.addSearcher("paradisehill.tv", logo, function(page, query) {
+        page.entries = 0;
+        var fromPage = 1, tryToSearch = true;
+        // 1-link, 2-title, 3-icon, 4-genre
+        var re = /<div class="item_zag"><a href="([\s\S]*?)" title="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<a href="[\s\S]*?" title="([\s\S]*?)"/g;
+        var re2 = /<span>([\S\s]*?)<\/span><\/li><\/ul>/;
+
+        function loader() {
+            if (!tryToSearch) return false;
+            var response;
+            if (fromPage == 1)
+               response = showtime.httpReq(BASE_URL + (service.lang == "en" ? '/en/' : '/') + 'search_results.html?search=' + query.replace(/\s/g, '\+'));
+            else
+               response = showtime.httpReq(BASE_URL + (service.lang == "en" ? '/en/' : '/') + 'search_results.html?search=' + query.replace(/\s/g, '%20') + '&page=' + fromPage);
+            var match = re.exec(response);
+            while (match) {
+                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[2]), 'video', {
+                    title: new showtime.RichText(match[2] + colorStr(match[4], blue)),
+                    genre: match[4],
+                    description: match[2],
+                    icon: BASE_URL + match[3]
+                });
+                page.entries++;
+                match = re.exec(response);
+            };
+
+            if (re2.exec(response)) return tryToSearch = false;
+            fromPage++;
+            return true;
+        };
+        loader();
+        page.paginator = loader;
+    });
+
 })(this);
