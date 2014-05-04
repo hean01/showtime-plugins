@@ -63,7 +63,7 @@
     });
 
     // discard favorites
-    settings.createAction("cleanFavorites", "Clean favorites",
+    settings.createAction("cleanFavorites", "Clean My Favorites",
 			  function () {
         store.list = "[]";
         showtime.notify('Favorites has been cleaned successfully', 2);
@@ -159,10 +159,10 @@
 		var list = eval(store.list);
                 var array = [showtime.JSONEncode(entry)].concat(list);
                 store.list = showtime.JSONEncode(array);
-		showtime.notify("Station has been added to the favorites.", 2);
+		showtime.notify(station.name + " has been added to My Favorites.", 2);
 	    });
 
-	    item.addOptAction("Add station to the favorites", "addFavorite");
+	    item.addOptAction("Add '" + station.name + "' to My Favorites", "addFavorite");
     }
 
     function populateStations(page, data) {
@@ -183,7 +183,7 @@
     // Search
     plugin.addURI(PREFIX + "search", function(page) {
 	page.loading = false;
-	var search = showtime.textDialog('Search: ', true, false);
+	var search = showtime.textDialog('Search: ', true, true);
 	if (search.rejected)
 	    return;
 	var query = search.input;
@@ -201,17 +201,20 @@
 	    'rows': '30'
 	});
 	populateStations(page, result);
-	
 	page.loading = false;
     });
 
 
     function fill_fav(page) {
 	var list = eval(store.list);
+
+        if (!list || !list.toString()) {
+           page.error("My Favorites list is empty");
+           return;
+        }
+        var pos = 0;
 	for each (item in list) {
 	    var itemmd = showtime.JSONDecode(item);
-
-	    // add item to showtime page
 	    var item = page.appendItem(itemmd.url, "station", {
 		station: itemmd.station,
 		icon: itemmd.icon,
@@ -222,24 +225,17 @@
 		format: itemmd.format,
 		listeners: itemmd.listeners
 	    });
+	    item.addOptAction("Remove '" + itemmd.station + "' from My Favorites", pos);
 
-	    item.url = itemmd.url;
-
-	    item.onEvent("delFavorite", function(item) {
+	    item.onEvent(pos, function(item) {
 		var list = eval(store.list);
-		for each (item in list) {
-		    var itemmd = showtime.JSONDecode(item);
-		    if (itemmd.url == this.url) {
-			list.splice(this.url, 1)
-			store.list = showtime.JSONEncode(list);
-                        page.flush();
-			showtime.notify("Station has been removed from the favorites.", 2);
-                        fill_fav(page);
-		    }
-		}
+		showtime.notify(showtime.JSONDecode(list[item]).station + " has been removed from My Favorites.", 2);
+	        list.splice(item, 1);
+		store.list = showtime.JSONEncode(list);
+                page.flush();
+                fill_fav(page);
 	    });
-
-	    item.addOptAction("Remove the station from the favorites", "delFavorite");
+            pos++;
 	}
     }
 
@@ -247,7 +243,7 @@
     plugin.addURI(PREFIX + "favorites", function(page) {
 	page.type = "directory";
 	page.contents = "items";
-	page.metadata.title = "Favorites";
+	page.metadata.title = "My Favorites";
 	page.metadata.logo = plugin.path + "rad.io.png";
 	page.metadata.glwview = plugin.path + "views/array.view";
 	page_menu(page);
@@ -293,6 +289,7 @@
     plugin.addURI(PREFIX + "category:(.*)", function(page, category) {
 	page.type = "directory";
 	page.contents = "items";
+        page.metadata.title = "Stations by (" + category + ")";
 
         var data = get_data("menu/valuesofcategory", {'category':'_'+category});
         for each (item in data) {
@@ -310,12 +307,26 @@
 	page.contents = "items";
 	page.metadata.logo = plugin.path + "rad.io.png";
 	page.metadata.title = "rad.io";
+     	page.loading = false;
 
         if (!service.country) service.country = "Ukraine";
 
         page.appendItem(PREFIX + "getByCategory:country:"+service.country, "directory", {
 	    title: "Nearest stations (by settings)"
 	});
+
+	page.appendItem(PREFIX + "favorites", "directory", {
+	    title: "My Favorites"
+	});
+
+	for (var key in items) {
+	    page.appendItem(PREFIX + "list:" + key, "directory", {
+		title: items[key].title
+	    });
+	}
+
+        page.appendItem("", "separator", {
+        });
 
         page.appendItem(PREFIX + "category:country", "directory", {
 	    title: "Stations (by country)"
@@ -337,24 +348,12 @@
 	    title: "Stations (by topic)"
 	});
 
-	for (var key in items) {
-	    page.appendItem(PREFIX + "list:" + key, "directory", {
-		title: items[key].title
-	    });
-	}
-
         page.appendItem("", "separator", {
         });
-
-	page.appendItem(PREFIX + "favorites", "directory", {
-	    title: "My Favorites"
-	});
 
 	page.appendItem(PREFIX + "search", "directory", {
 	    title: "Search"
 	});
-
-	page.loading = false;
     });
 
     function page_menu(page) {
@@ -366,7 +365,7 @@
             page.metadata.childTilesY = v;
         }, true);
 
-        page.options.createBool('informationBar', 'Information Bar', true, function (v) {
+        page.options.createBool('informationBar', 'Show Information Bar', true, function (v) {
             page.metadata.informationBar = v;
         }, true);
     }
