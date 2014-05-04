@@ -34,6 +34,12 @@
         page.contents = "items";
     }
 
+    const blue = "6699CC", orange = "FFA500";
+
+    function colorStr(str, color) {
+        return '<font color="' + color + '"> (' + str + ')</font>';
+    }
+
     // create plugin favorites store
     var store = plugin.createStore('favorites', true)
     if (!store.list) {
@@ -161,7 +167,8 @@
                 var match = re.exec(response);
                 while (match) {
 	              var item = page.appendItem("icecast:"+match[1], "station", {
-		          title: unescape(match[2]),
+		          title: new showtime.RichText(unescape(match[2])+colorStr(match[3], orange)+
+                              colorStr(match[4], orange)+colorStr(match[5], orange)+colorStr(match[6], orange)),
 		          station: unescape(match[2]),
 		          description: match[3],
 		          bitrate: match[5],
