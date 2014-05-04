@@ -83,10 +83,10 @@
     var settings = plugin.createSettings("icecast", plugin.path + "icecast_square.png",
 			 "icecast: radio stream directory");
 
-    settings.createAction("cleanFavorites", "Clean Local Favorites", 
+    settings.createAction("cleanFavorites", "Clean My Favorites",
 			  function () {
         store.list = "[]";
-        showtime.trace('Local Favorites were clean succesfully');
+        showtime.trace('My Favorites were clean succesfully');
     });
 
 
@@ -206,7 +206,7 @@
 	    item.format = itemmd.format;
 
 
-	    item.addOptAction("Add station to favorites", "addFavorite");
+	    item.addOptAction("Add " + itemmd.station + " to My Favorites", "addFavorite");
 	    
 	    item.onEvent("addFavorite", function(item) {
 		var entry = {
@@ -220,7 +220,7 @@
 		var list = eval(store.list);
                 var array = [showtime.JSONEncode(entry)].concat(list);
                 store.list = showtime.JSONEncode(array);
-		showtime.notify("Station was added to your favorites.", 2);		
+		showtime.notify(this.station+ " has been added to My Favorites.", 2);
 	    });
 	}
     }
@@ -228,7 +228,7 @@
     // Search
     plugin.addURI(PREFIX + "search", function(page) {
 	page.loading = false;
-	var search = showtime.textDialog('Search: ', true, false);
+	var search = showtime.textDialog('Search: ', true, true);
 	if (search.rejected)
 	    return;
 	var query = search.input;
@@ -245,20 +245,19 @@
 	page.loading = false;
     });
 
-    // Favorites
-    plugin.addURI(PREFIX + "favorites", function(page) {
-	page.type = "directory";
-	page.contents = "items";
-	page.metadata.title = "Favorites";
-	page.metadata.logo = plugin.path + "icecast_square.png";
-	page.metadata.glwview = plugin.path + "views/array.view";
-	page_menu(page);
 
+    function fill_fav(page) {
 	var list = eval(store.list);
+
+        if (!list || !list.toString()) {
+           page.error("My Favorites list is empty");
+           return;
+        }
+
+        var pos = 0;
 	for each (item in list) {
 	    var itemmd = showtime.JSONDecode(item);
 
-	    // add item to showtime page
 	    var item = page.appendItem("icecast:"+itemmd.url, "station", {
 		title: itemmd.station,
 		station: itemmd.station,
@@ -268,21 +267,29 @@
 		listeners: itemmd.listeners
 	    });
 
-	    item.url = itemmd.url;
-	    item.onEvent("delFavorite", function(item) {
-		var list = eval(store.list);
-		for each (item in list) {
-		    var itemmd = showtime.JSONDecode(item);
-		    if (itemmd.url == this.url) {
-			list.splice(this.url, 1)
-			store.list = showtime.JSONEncode(list);
-			showtime.notify("Station was removed to your favorites.", 2);
-		    }
-		}
-	    });
+            item.addOptAction("Remove '" + itemmd.station + "' from My Favorites", pos);
 
-	    item.addOptAction("Remove station to favorites", "delFavorite");   
+	    item.onEvent(pos, function(item) {
+		var list = eval(store.list);
+		showtime.notify(showtime.JSONDecode(list[item]).station + " has been removed from My Favorites.", 2);
+	        list.splice(item, 1);
+		store.list = showtime.JSONEncode(list);
+                page.flush();
+                fill_fav(page);
+	    });
+            pos++;
 	}
+    }
+
+    // Favorites
+    plugin.addURI(PREFIX + "favorites", function(page) {
+	page.type = "directory";
+	page.contents = "items";
+	page.metadata.title = "My Favorites";
+	page.metadata.logo = plugin.path + "icecast_square.png";
+	page.metadata.glwview = plugin.path + "views/array.view";
+	page_menu(page);
+        fill_fav(page);
 	page.loading = false;
     });
 

@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "icecast",
 	"synopsis": "stream directory",
-	"version": "0.2.5",
+	"version": "0.3",
 	"file": "icecast.js",
 	"showtimeVersion": "4.5.28",
 	"type": "javascript",
