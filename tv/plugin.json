@@ -1,0 +1,14 @@
+{
+	"description": "<p>Online TV channels list<p>For more information, google channels websites.",
+	"author": "lprot",
+	"homepage": "https://github.com/lprot/showtime-plugins",
+	"title": "Online TV",
+	"synopsis": "Online TV channels list",
+	"version": "0.1",
+	"file": "tv.js",
+	"showtimeVersion": "4.5.25",
+	"type": "javascript",
+	"id": "tv",
+	"icon": "logo.jpg",
+	"category": "tv"
+}
