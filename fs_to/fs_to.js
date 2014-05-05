@@ -22,7 +22,7 @@
     var PREFIX = 'brb_to';
     var BASE_URL = 'http://brb.to';
 
-    var logo = plugin.path + "logo.png";
+    var logo = plugin.path + "logo.jpg";
 
     var sURL = {};
     var sTitle = {};
@@ -221,10 +221,10 @@
             }
 
             //1-link, 2-icon, 3-title, 4-description
-	    re = /<a class="b-poster-tile__link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt='([\S\s]*?)'[\S\s]*?<span class="b-poster-tile__title-info">([\S\s]*?)<\/span>/g;
+	    re = /<a class="b-poster-tile__link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt='([\S\s]*?)' width[\S\s]*?<span class="b-poster-tile__title-info">([\S\s]*?)<\/span>/g;
             var match = re.exec(response);
             while (match) {
-                var title = removeSlashes(match[3].replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', ""));
+                var title = removeSlashes(unescape(match[3]).replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', ""));
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
                     title: new showtime.RichText(title),
                     icon: match[2],

@@ -4,10 +4,10 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "FS.TO",
 	"synopsis": "FS.TO: Рекомендательная медиа сеть",
-	"version": "0.9.12", "file": "fs_to.js",
+	"version": "0.9.13", "file": "fs_to.js",
 	"showtimeVersion": "4.1.273",
 	"type": "javascript", 
 	"id": "fs.to",
-	"icon": "logo.png",
+	"icon": "logo.jpg",
 	"category": "video"
 }
