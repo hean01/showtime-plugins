@@ -26,6 +26,21 @@
     plugin.createService(slogan, PREFIX + "start", "tv", true,
 			 plugin.path + logo);
 
+    function addChannel(page, title, url, icon) {
+        var link = "videoparams:" + showtime.JSONEncode({
+                        sources: [{
+                            url: url
+                        }],
+                        title: title,
+                        no_fs_scan: true
+                   });
+
+        page.appendItem(link, "video", {
+            title: title,
+            icon: icon
+        });
+    }
+
     // Start page
     plugin.addURI(PREFIX + "start", function(page) {
 	page.type = "directory";
@@ -35,77 +50,85 @@
 	page.loading = false;
 
         page.appendItem("", "separator", {
-            title: 'Украинские каналы'
+            title: 'Ukraine'
         });
-        page.appendItem("hls:http://212.40.43.10:1935/inters/smil:inter.smil/playlist.m3u8", "video", {
-            title: 'Інтер',
-            icon: 'http://inter.ua/images/logo.png'
-        });
+        addChannel(page, 'Інтер',
+            'hls:http://212.40.43.10:1935/inters/smil:inter.smil/playlist.m3u8',
+            'http://inter.ua/images/logo.png');
 
-        page.appendItem("http://31.43.120.162:8062", "video", {
-            title: '100',
-            icon: 'http://tv100.com.ua/templates/diablofx/images/100_logo.jpg'
-        });
+        addChannel(page, '100',
+            'http://31.43.120.162:8062',
+            'http://tv100.com.ua/templates/diablofx/images/100_logo.jpg');
 
-        page.appendItem("hls:http://31.28.169.242/hls/live112.m3u8", "video", {
-            title: '112',
-            icon: 'http://112.ua/static/img/logo/112_ukr.png'
-        });
-        page.appendItem("rtmp://media.tvi.com.ua/live/_definst_//HLS4", "video", {
-            title: 'ТВі',
-            icon: 'http://tvi.ua/catalog/view/theme/new/image/logo.png'
-        });
+        addChannel(page, '112',
+            'hls:http://31.28.169.242/hls/live112.m3u8',
+            'http://112.ua/static/img/logo/112_ukr.png');
 
-        page.appendItem("http://31.43.120.162:8009", "video", {
-            title: 'Уніан',
-            icon: 'http://images.unian.net/img/unian-logo.png'
-        });
-        page.appendItem("http://31.43.120.162:8013", "video", {
-            title: 'М2',
-            icon: 'http://www.m2.tv/images/design/2009/m2_logo_2009.jpg'
-        });
-        page.appendItem("http://31.43.120.162:8014", "video", {
-            title: '24 News',
-            icon: 'http://24tv.ua/img/24_logo_facebook.jpg'
-        });
-        page.appendItem("http://31.43.120.162:8029", "video", {
-            title: 'Impact',
-            icon: 'http://impacttv.tv/images/stories/logo.png'
-        });
-        page.appendItem("http://31.43.120.162:8042", "video", {
-            title: 'TRK Black Sea',
-            icon: 'http://impacttv.tv/images/stories/logo.png'
-        });
-        page.appendItem("http://31.43.120.162:8047", "video", {
-            title: 'UTR',
-            icon: ''
-        });
-        page.appendItem("http://31.43.120.162:8048", "video", {
-            title: 'Lviv TV',
-            icon: ''
-        });
-        page.appendItem("http://31.43.120.162:8030", "video", {
-            title: 'Трофей',
-            icon: 'http://trofey.net/images/thumbnails/video/images/trofey-player-fill-200x130.png'
-        });
-        page.appendItem("http://31.43.120.162:8035", "video", {
-            title: 'Euronews',
-            icon: ''
-        });
-        page.appendItem("http://31.43.120.162:8118", "video", {
-            title: 'Футбол 1',
-            icon: ''
-        });
-        page.appendItem("hls:http://91.203.194.146:1935/liveedge/atr.stream/playlist.m3u8", "video", {
-            title: 'ATR',
-            icon: ''
-        });
+        addChannel(page, 'ТВі',
+            'rtmp://media.tvi.com.ua/live/_definst_//HLS4',
+            'http://tvi.ua/catalog/view/theme/new/image/logo.png');
+
+        addChannel(page, 'Уніан',
+            'http://31.43.120.162:8009',
+            'http://images.unian.net/img/unian-logo.png');
+
+        addChannel(page, 'М2',
+            'http://31.43.120.162:8013',
+            'http://www.m2.tv/images/design/2009/m2_logo_2009.jpg');
+
+        addChannel(page, '24 News',
+            'http://31.43.120.162:8014',
+            'http://24tv.ua/img/24_logo_facebook.jpg');
+
+        addChannel(page, 'ЧП.INFO',
+            'http://31.43.120.162:8041',
+            'http://www.tele-com.tv/img/icons/chp-info.png');
+
+        addChannel(page, 'Impact TV',
+            'http://31.43.120.162:8029',
+            'http://impacttv.tv/images/stories/logo.png');
+
+        addChannel(page, 'ТК Черное море',
+            'http://31.43.120.162:8042',
+            'http://www.blacksea.net.ua/images/logo2.png');
+
+        addChannel(page, 'УТР',
+            'http://31.43.120.162:8047',
+            'http://utr.tv/ru/templates/UTR/images/logo.png');
+
+        addChannel(page, 'ТРК Львів',
+            'rtmp://gigaz.wi.com.ua/hallDemoHLS/LVIV',
+            'http://www.lodtrk.org.ua/inc/getfile.php?i=20111026133818.gif');
+
+        addChannel(page, 'Львів ТВ',
+            'http://31.43.120.162:8048',
+            'http://www.lviv-tv.com/images/aTV/logo/LTB_FIN_END_6.png');
+
+        addChannel(page, 'Трофей',
+            'http://31.43.120.162:8030',
+            'http://trofey.net/images/thumbnails/video/images/trofey-player-fill-200x130.png');
+
+        addChannel(page, 'Euronews',
+            'http://31.43.120.162:8035',
+            'http://ua.euronews.com/media/logo_222.gif');
+
+        addChannel(page, 'Футбол 1',
+            'http://31.43.120.162:8118',
+            'https://ru.viasat.ua/assets/logos/3513/exclusive_F1-yellow-PL.png');
+
+        addChannel(page, 'Футбол 1',
+            'http://31.43.120.162:8118',
+            'https://ru.viasat.ua/assets/logos/3513/exclusive_F1-yellow-PL.png');
+
+        addChannel(page, 'ATR',
+            'hls:http://91.203.194.146:1935/liveedge/atr.stream/playlist.m3u8',
+            'http://atr.ua/assets/atr-logo-red/logo.png');
 
         page.appendItem("", "separator", {
             title: 'Music'
         });
         page.appendItem("hls:http://109.239.142.62:1935/live/hlsstream/playlist3.m3u8", "video", {
-            title: '1HD (HLS)',
+            title: '1HD (HLS)'                                                          ,
             icon: ''
         });
         page.appendItem("rtmp://109.239.142.62/live/livestream3", "video", {
@@ -123,9 +146,9 @@
         });
 
         page.appendItem("", "separator", {
-            title: 'Российские каналы'
+            title: 'Russia'
         });
-
+        // http://tv.life.ru/index.m3u8
         page.appendItem("hls:http://tv.life.ru/lifetv/720p/index.m3u8", "video", {
             title: 'Life News (720p)',
             icon: 'http://lifenews.ru/assets/logo-0a3a75be3dcc15b6c6afaef4adab52dd.png'
@@ -140,6 +163,34 @@
         });
         page.appendItem("hls:http://rian.cdnvideo.ru/rr/stream20/chunklist.m3u8", "video", {
             title: 'РИА Новости',
+            icon: ''
+        });
+        page.appendItem("rtmp://online-record.ru//pervyj_middle", "video", {
+            title: '1 канал',
+            icon: ''
+        });
+        page.appendItem("hls:http://151.236.123.4/rr2/smil:rtp_r1_rr.smil/playlist.m3u8?auth=vh&cast_id=2961", "video", {
+            title: 'Россия 1',
+            icon: ''
+        });
+        page.appendItem("rtmp://online-record.ru//rossiya2_middle", "video", {
+            title: 'Россия 2',
+            icon: ''
+        });
+        page.appendItem("hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21", "video", {
+            title: 'Россия 24',
+            icon: ''
+        });
+        page.appendItem("hls:http://151.236.123.4/rr2/smil:rtp_rtrp_rr.smil/playlist.m3u8?auth=vh&cast_id=4941", "video", {
+            title: 'Россия РТР',
+            icon: ''
+        });
+        page.appendItem("hls:http://testlivestream.rfn.ru/live/smil:m24.smil/playlist.m3u8?auth=vh&cast_id=1661", "video", {
+            title: 'Москва 24',
+            icon: ''
+        });
+        page.appendItem("hls:http://testlivestream.rfn.ru/live/smil:mayak.smil/playlist.m3u8?auth=vh&cast_id=81", "video", {
+            title: 'Маяк FM',
             icon: ''
         });
         page.appendItem("hls:http://vniitr.cdnvideo.ru/vniitr-live/vniitr.sdp/playlist.m3u8", "video", {
@@ -448,34 +499,6 @@
             title: 'A One',
             icon: ''
         });
-        page.appendItem("rtmp://online-record.ru//pervyj_middle", "video", {
-            title: '1 канал',
-            icon: ''
-        });
-        page.appendItem("hls:http://151.236.123.4/rr2/smil:rtp_r1_rr.smil/playlist.m3u8?auth=vh&cast_id=2961", "video", {
-            title: 'Россия 1',
-            icon: ''
-        });
-        page.appendItem("rtmp://online-record.ru//rossiya2_middle", "video", {
-            title: 'Россия 2',
-            icon: ''
-        });
-        page.appendItem("hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21", "video", {
-            title: 'Россия 24',
-            icon: ''
-        });
-        page.appendItem("hls:http://151.236.123.4/rr2/smil:rtp_rtrp_rr.smil/playlist.m3u8?auth=vh&cast_id=4941", "video", {
-            title: 'Россия РТР',
-            icon: ''
-        });
-        page.appendItem("hls:http://testlivestream.rfn.ru/live/smil:m24.smil/playlist.m3u8?auth=vh&cast_id=1661", "video", {
-            title: 'Москва 24',
-            icon: ''
-        });
-        page.appendItem("hls:http://testlivestream.rfn.ru/live/smil:mayak.smil/playlist.m3u8?auth=vh&cast_id=81", "video", {
-            title: 'Маяк FM',
-            icon: ''
-        });
         page.appendItem("rtmp://europaplus.cdnvideo.ru/europaplus-live//mp4:eptv_main.sdp", "video", {
             title: 'Europa Plus TV (RTMP)',
             icon: 'http://www.europaplustv.com/images/europa_tv.png'
@@ -605,8 +628,6 @@ http://31.43.120.162:8106
 http://31.43.120.162:8035
 # EXTINF: -1, RBC
 http://31.43.120.162:8082
-# EXTINF: -1, ChP.Info
-http://31.43.120.162:8041
 # EXTINF: -1, Carousel
 http://31.43.120.162:8068
 # EXTINF: -1, Children
@@ -667,8 +688,6 @@ http://31.43.120.162:8074
 http://31.43.120.162:8067
 # EXTINF: -1, right TV
 http://31.43.120.162:8058
-# EXTINF: -1, Impact
-http://31.43.120.162:8029
 # EXTINF: -1, Comedy TV
 http://31.43.120.162:8116
 # EXTINF: -1, Fashion TV
