@@ -36,12 +36,12 @@
         }
         page.type = "directory";
         page.contents = "items";
-        page.loading = true;
+        page.loading = false;
     }
 
     // remove multiple, leading or trailing spaces and line feeds
     function trim(s) {
-        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
+        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/g, '');
     }
 
     function removeSlashes(s) {
@@ -69,75 +69,75 @@
             title: 'Последние обновления',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/video/films/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/films/?sort=rating&view=list', 'directory', {
             title: 'Фильмы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/video/serials/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/serials/?sort=rating&view=list', 'directory', {
             title: 'Сериалы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/video/cartoons/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/cartoons/?sort=rating&view=list', 'directory', {
             title: 'Мультфильмы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/video/cartoonserials/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/cartoonserials/?sort=rating&view=list', 'directory', {
             title: 'Мультсериалы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/video/tvshow/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/tvshow/?sort=rating&view=list', 'directory', {
             title: 'Телепередачи',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/video/clips/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/clips/?sort=rating&view=list', 'directory', {
             title: 'Клипы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/video/concerts/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/concerts/?sort=rating&view=list', 'directory', {
             title: 'Концерты',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/audio/albums/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/audio/albums/?sort=rating&view=list', 'directory', {
             title: 'Альбомы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/audio/singles/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/audio/singles/?sort=rating&view=list', 'directory', {
             title: 'Синглы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/audio/collections/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/audio/collections/?sort=rating&view=list', 'directory', {
             title: 'Сборники',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/audio/soundtracks/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/audio/soundtracks/?sort=rating&view=list', 'directory', {
             title: 'Саундтреки',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/games/traditional/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/games/traditional/?sort=rating&view=list', 'directory', {
             title: 'Игры традиционные',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/games/online/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/games/online/?sort=rating&view=list', 'directory', {
             title: 'Игры онлайн',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/games/casual/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/games/casual/?sort=rating&view=list', 'directory', {
             title: 'Игры казуальные',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/texts/fiction/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/texts/fiction/?sort=rating&view=list', 'directory', {
             title: 'Литература художественная',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/texts/other/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/texts/other/?sort=rating&view=list', 'directory', {
             title: 'Литература прикладная',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/texts/journals/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/texts/journals/?sort=rating&view=list', 'directory', {
             title: 'Литература журналы',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/texts/comix/?sort=rating&view=list', 'directory', {
+        page.appendItem(PREFIX + ':index:' + BASE_URL + '/texts/comix/?sort=rating&view=list', 'directory', {
             title: 'Литература комиксы',
             icon: logo
         });
@@ -164,6 +164,7 @@
         var p = 0;
 
         function loader() {
+            page.loading = true;
             var response = showtime.httpGet(BASE_URL + "/updates.aspx?page=" + p);
             page.loading = false;
             //1-type 2-link 3-title 4-date 5-time
@@ -184,61 +185,52 @@
         page.paginator = loader;
     });
 
-    function index(page, url) {
+    // Index page
+    plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
         setPageHeader(page, '');
         var p = 0;
 
         function loader() {
+            page.loading = true;
             var response = showtime.httpGet(url + "&page=" + p).toString();
             page.loading = false;
 
             // Show populars only above the first page
             if (p == 0) {
                 page.metadata.title = response.match(/<title>(.*?)<\/title>/)[1];
-		re = /<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-delimiter">/;
-		var match = re.exec(response);
+		var match = response.match(/<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-clear">/);
 		if (match) {
-                       page.appendItem("", "separator", {
-                            title: 'Самое просматриваемое сейчас'
-                       });
-
-			re = /<div class="b-poster-[\S\s]*?<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="[\S\s]*?">([\S\s]*?)<\/span>/g;
-	                var m = re.exec(match[1]);
-        	        while (m) {
-			    title = trim(m[3]).replace(/(<([^>]+)>)/ig, "");
-        	            page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
-        	                title: new showtime.RichText(title),
-        	                icon: m[2]
-        	            });
-        	            m = re.exec(match[1]);
-        	        }
-	                page.appendItem("", "separator", {
-        	            title: ''
+                    page.appendItem("", "separator", {
+                        title: 'Самое просматриваемое сейчас'
+                    });
+                    // 1-link, 2-logo, 3-title
+		    re = /<div class="b-poster-[\S\s]*?<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="b-poster-[\S\s]*?">([\S\s]*?)<\/span>/g;
+	            var m = re.exec(match[1]);
+        	    while (m) {
+		        var title = trim(m[3]).replace(/(<([^>]+)>)/ig, "");
+        	        page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
+        	            title: new showtime.RichText(title),
+        	            icon: m[2]
         	        });
+        	        m = re.exec(match[1]);
+        	    }
+	            page.appendItem("", "separator", {
+        	        title: ''
+        	    });
 		}
             }
 
-            //1-link 2-img 3-short title 4-date 5-description
-	    re = /class="subject-link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt=\'([\S\s]*?)'\/>([\S\s]*?)class="subject-link m-full">[\S\s]*?\<span>([\S\s]*?)\<\/span>/g;
+            //1-link, 2-icon, 3-title, 4-description
+	    re = /<a class="b-poster-tile__link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt='([\S\s]*?)'[\S\s]*?<span class="b-poster-tile__title-info">([\S\s]*?)<\/span>/g;
             var match = re.exec(response);
-            var re2 = /class="date">\(([^\)]+)/;
-	    if (!match) return p = 1;
-            var match2 = re2.exec(match[4]);
-            var date = "";
-            if (match2) date = '<font color="6699CC"> (' + match2[1] + ')</font>';
             while (match) {
-                var title = removeSlashes(match[5].replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', ""));
+                var title = removeSlashes(match[3].replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', ""));
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
-                    title: new showtime.RichText(title + date),
+                    title: new showtime.RichText(title),
                     icon: match[2],
-                    description: new showtime.RichText(match[5])
+                    description: new showtime.RichText(trim(match[4]))
                 });
                 match = re.exec(response);
-                if (match) {
-                    match2 = re2.exec(match[4]);
-                    date = "";
-                    if (match2) date = '<font color="6699CC"> (' + match2[1] + ')</font>';
-                }
             }
             p++;
             var re = /Показать ещё/;
@@ -247,11 +239,6 @@
         }
         loader();
         page.paginator = loader;
-    }
-
-    // Index page at URL
-    plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
-        index(page, BASE_URL + url);
     });
 
     function getType(type) {
@@ -296,7 +283,9 @@
     plugin.addURI(PREFIX + ":listRoot:(.*):(.*)", function(page, url, title) {
         title = unescape(title);
         setPageHeader(page, title);
+        page.loading = true;
         var response = showtime.httpGet(BASE_URL + url).toString();
+        page.loading = false;
 
         // Scrape icon
 	var icon = response.match(/<link rel="image_src" href="([^"]+)"/);
@@ -413,7 +402,9 @@
 
         var what_else = response.match(/<div class="b-posters">([\S\s]*?)<div class="clear">/);
 
+        page.loading = true;
         response = showtime.httpGet(BASE_URL + url + '?ajax&blocked=0&folder=0');
+        page.loading = false;
         var re = /<ul class="filelist[^"]+[\S\s]*?<\/ul>/;
         response = re.exec(response);
         var start = 0, end = 0;
@@ -462,6 +453,7 @@
     plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
         title = unescape(title);
         setPageHeader(page, title);
+        page.loading = true;
         var response = showtime.httpGet(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
         page.loading = false;
         var re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
@@ -517,7 +509,9 @@
         url = re.exec(response) // Some clips autoplay
         if (!url) {
             re = /<div id="page-item-viewonline"[\S\s]*?<a href="([^"]+)/;
+            page.loading = true;
             response = showtime.httpGet(BASE_URL + re.exec(response)[1]).toString();
+            page.loading = false;
             re = /<a id="[\S\s]*?" href="([\S\s]*?)" title="([\S\s]*?)"/;
             response = re.exec(response);
             if (!response) {
@@ -525,7 +519,9 @@
                 return;
             }
             re = /playlist: \[[\S\s]*?url: '([^']+)/;
+            page.loading = true;
             url = re.exec(showtime.httpGet(BASE_URL + response[1]));
+            page.loading = false;
         }
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
@@ -553,6 +549,7 @@
         }
         var origURL = url;
         if (sURL[url]) url = sURL[url];
+        page.loading = true;
         var response = showtime.httpGet(BASE_URL + url).toString();
         page.loading = false;
         var start = 0,
@@ -572,11 +569,15 @@
             m = re.exec(response);
         } else {
             re = /playlist: \[[\S\s]*?url: '([^']+)/;
+            page.loading = true;
             var m = re.exec(showtime.httpGet(BASE_URL + link));
+            page.loading = false;
         }
         if (!m) { // first file from the first folder
             re = /class="filelist m-current"[\S\s]*?" href="([^"]+)/;
+            page.loading = true;
             m = re.exec(showtime.httpGet(BASE_URL + url + '?ajax&blocked=0&folder=0'));
+            page.loading = false;
         }
         if (m) {
             page.source = "videoparams:" + showtime.JSONEncode({
@@ -602,7 +603,9 @@
             if (!tryToSearch) return false;
 	    var link = BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+') 
             if (fromPage != 1) link = link + "&page=" + fromPage;
+            page.loading = true;
             var response = showtime.httpGet(link);
+            page.loading = false;
             var match = re.exec(response);
             while (match) {
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[2]), "video", {
