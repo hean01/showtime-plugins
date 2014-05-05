@@ -1,7 +1,7 @@
 /*
  *  icecast directory
  *
- *  Copyright (C) 2012 Henrik Andersson
+ *  Copyright (C) 2014 Henrik Andersson, lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,49 +22,28 @@
 
     var BASE_URL = "http://dir.xiph.org";
     var PREFIX = "icecast:";
+    var logo = plugin.path + "icecast_square.png";
+    var slogan = "Streaming directory -- streams & radios";
 
-    var genres = [
-	"Top40",
-	"80s",
-	"Alternative",
-	"Ambient",
-       	"Anime",
-	"Breaks",
-	"Chillout",
-	"Contemporary",
-	"Dance",
-	"Dubstep",
-	"Drumnbass",
-	"Electronic",
-	"Funk",
-	"Gothic",
-	"Hardcore",
-	"Hardstyle",
-	"Hardtrance",
-	"Hip Hop",
-	"House",
-	"Instrumental",
-	"Jazz",
-	"Jhiphop",
-	"Jpop",
-	"Jrap",
-	"Jrock",
-	"Jungle",
-	"Lounge",
-	"Metal",
-	"Minimal",
-	"Mixed",
-	"Pop",
-	"Progressive",
-	"Punk",
-	"Radio",
-	"Rock",
-	"Smooth",
-	"Techno",
-	"Trance",
-	"Various"
-    ];
-
+    function setPageHeader(page, title) {
+        if (page.metadata) {
+	    page.metadata.title = title;
+	    page.metadata.logo = logo;
+	    page.metadata.glwview = plugin.path + "views/array.view";
+            page.options.createInt('childTilesX', 'Number of X Child Tiles', 6, 1, 10, 1, '', function (v) {
+                page.metadata.childTilesX = v;
+            }, true);
+            page.options.createInt('childTilesY', 'Number of Y Child Tiles', 2, 1, 4, 1, '', function (v) {
+                page.metadata.childTilesY = v;
+            }, true);
+            page.options.createBool('informationBar', 'Information Bar', true, function (v) {
+                page.metadata.informationBar = v;
+            }, true);
+        }
+        page.type = "directory";
+	page.contents = "items";
+	page.loading = false;
+    }
 
     // create plugin favorites store
     var store = plugin.createStore('favorites', true)
@@ -76,127 +55,59 @@
     }
 
     // create plugin service
-    plugin.createService("icecast", PREFIX + "start", "audio", true,
-			 plugin.path + "icecast_square.png");
+    plugin.createService("icecast", PREFIX + "start", "audio", true, logo);
 
     // create settins
-    var settings = plugin.createSettings("icecast", plugin.path + "icecast_square.png",
-			 "icecast: radio stream directory");
+    var settings = plugin.createSettings("icecast", logo, slogan);
 
     settings.createAction("cleanFavorites", "Clean My Favorites",
 			  function () {
         store.list = "[]";
-        showtime.trace('My Favorites were clean succesfully');
+        showtime.notify('My Favorites has been cleaned succesfully', 2);
     });
-
 
     function trim(str) {
         return str.replace(/^\s+|\s+$/g,"");
     }
 
-    function fixup_html(doc) {
-	doc = doc.replace(/\&amp;/g,'&');
-	doc = doc.replace(/\&gt;/g,'>');
-	doc = doc.replace(/\&lt;/g,'<');
-	doc = doc.replace(/\&#039;/g,'\'');
-	return doc;
-    }
+    const blue = "6699CC", orange = "FFA500";
 
-    function getValue(doc, start, end) {
-	var s = doc.indexOf(start);
-	if (s < 0)
-	    return null;
-
-	s = s + start.length;
-
-	if (end != null) {
-	    var e = doc.indexOf(end,s);
-	    if (e < 0)
-		return null;
-
-	    return doc.substr(s, e-s);
-	} 
-
-	return doc.substr(s);
+    function colorStr(str, color) {
+        return '<font color="' + color + '"> (' + str + ')</font>';
     }
 
     function scrape_page(page, doc) {
-
 	var itemmd = {};
-	doc = fixup_html(doc);
-	while(1) {
-	    var str = "<tr class=\"row";
-	    var s = doc.indexOf(str, 2);
-	    if (s < 0)
-		break;
-	    doc = doc.substr(s);
 
-	    // get title
-	    str = getValue(doc, "<span class=\"name\">","</span>");
-	    if (str == null) continue;
-	    if (str.indexOf("<a href=") >= 0) {
-		// name is a link
-		str = getValue(str, ">","</a>");
-		if (str == null) continue;
-	    }
-	    itemmd.station = itemmd.title = trim(str);
-
-	    // description [optional]
-	    str =  getValue(doc, "<p class=\"stream-description\">","</p>");
-	    if (str) {
-		itemmd.description = str;
-		showtime.trace("Description: '"+itemmd.description+"'");
-	    }
-
-	    // get listeners
-	    str = getValue(doc, "<span class=\"listeners\">","</span>");
-	    if (str == null) continue;
-	    str = getValue(str, "[","&nbsp;listeners]");
-	    if (str == null) continue;
-	    itemmd.listeners = trim(str);
-
-	    // get current track playing
-	    str = getValue(doc, "<p class=\"stream-onair\">","</p>");
-	    if (str == null) continue;
-	    str = getValue(str, "</strong>", null);
-	    if (str == null) continue;
-	    itemmd.current_track = trim(str);
-	    
-	    // get playlist url
-	    var str = "<a href=\"/listen/";
-	    var s = doc.indexOf(str, 2);
-	    if (s < 0)
-		continue;
-	    doc = doc.substr(s);
-	    str = getValue(doc, "<a href=\"","\"");
-	    if(str == null) continue;
-	    itemmd.url = trim(str);
-
-	    // get format and bitrate
-	    var str = "<p class=\"format\" title=\"";
-	    var s = doc.indexOf(str, 2);
-	    if (s < 0)
-		continue;
-	    doc = doc.substr(s);
-
-	    str = getValue(doc, "title=\"", "\"");
-	    if (str == null) continue;
-	    itemmd.bitrate = trim(str);
-
-	    str = getValue(doc, "streams\">", "<span");
-	    if (str == null) continue;
-	    itemmd.format = trim(str);
+        var re = /<tr class="row([\S\s]*?)<\/tr>/g;
+        var match = re.exec(doc);
+	while(match) {
+            var title = match[1].match(/<span class="name"><a href="[\S\s]*?;">([\S\s]*?)<\/a>/);
+            if (title)
+                itemmd.station = title[1];
+            else
+                itemmd.station = itemmd.title = match[1].match(/<span class="name">([\S\s]*?)<\/span>/)[1];
+	    itemmd.listeners = match[1].match(/<span class="listeners">\[([\S\s]*?)\]<\/span>/)[1];
+            var description = match[1].match(/<p class="stream-description">([\S\s]*?)<\/p>/);
+            if (description) itemmd.description = description[1];
+            var onair = match[1].match(/<p class="stream-onair"><strong>On Air:<\/strong>([\S\s]*?)<\/p>/);
+            if (onair) itemmd.current_track = onair[1];
+            itemmd.url = match[1].match(/<td class="tune-in">[\S\s]*?<a href="([\S\s]*?)"/)[1];
+            itemmd.bitrate = match[1].match(/<p class="format" title="([\S\s]*?)">/)[1];
+            itemmd.format = match[1].match(/<p class="format"[\S\s]*?class="no-link" title="[\S\s]*?">([\S\s]*?)<span/)[1];
 
 	    // add item to showtime page
 	    var item = page.appendItem("icecast:" + BASE_URL + itemmd.url, "station", {
-		title: itemmd.station,
+		title: new showtime.RichText(itemmd.station + colorStr(itemmd.format + " " + itemmd.bitrate, orange)),
 		station: itemmd.station,
                 onair: itemmd.current_track,
 		description: itemmd.description,
 		bitrate: itemmd.bitrate,
 		format: itemmd.format,
 		listeners: itemmd.listeners
-	    }); 
+	    });
+            match = re.exec(doc);
+            page.entries++;
 
 	    item.url = "icecast:" + BASE_URL + itemmd.url;
 	    item.title = itemmd.title;
@@ -205,8 +116,7 @@
 	    item.bitrate = itemmd.bitrate;
 	    item.format = itemmd.format;
 
-
-	    item.addOptAction("Add " + itemmd.station + " to My Favorites", "addFavorite");
+	    item.addOptAction("Add '" + itemmd.station + "' to My Favorites", "addFavorite");
 	    
 	    item.onEvent("addFavorite", function(item) {
 		var entry = {
@@ -220,31 +130,10 @@
 		var list = eval(store.list);
                 var array = [showtime.JSONEncode(entry)].concat(list);
                 store.list = showtime.JSONEncode(array);
-		showtime.notify(this.station+ " has been added to My Favorites.", 2);
+		showtime.notify("'" + this.station+ "' has been added to My Favorites.", 2);
 	    });
 	}
     }
-
-    // Search
-    plugin.addURI(PREFIX + "search", function(page) {
-	page.loading = false;
-	var search = showtime.textDialog('Search: ', true, true);
-	if (search.rejected)
-	    return;
-	var query = search.input;
-	page.type = "directory";
-	page.contents = "items";
-	page.metadata.title = "Search result: " + query;
-	page.metadata.logo = plugin.path + "icecast_square.png";
-	page.metadata.glwview = plugin.path + "views/array.view";
-	page_menu(page);
-
-	page.loading = true;
-	var doc = showtime.httpGet(BASE_URL + "/search?search=" + query, {}).toString();
-	scrape_page(page, doc);
-	page.loading = false;
-    });
-
 
     function fill_fav(page) {
 	var list = eval(store.list);
@@ -271,7 +160,7 @@
 
 	    item.onEvent(pos, function(item) {
 		var list = eval(store.list);
-		showtime.notify(showtime.JSONDecode(list[item]).station + " has been removed from My Favorites.", 2);
+		showtime.notify("'" + showtime.JSONDecode(list[item]).station + "' has been removed from My Favorites.", 2);
 	        list.splice(item, 1);
 		store.list = showtime.JSONEncode(list);
                 page.flush();
@@ -283,81 +172,98 @@
 
     // Favorites
     plugin.addURI(PREFIX + "favorites", function(page) {
-	page.type = "directory";
-	page.contents = "items";
-	page.metadata.title = "My Favorites";
-	page.metadata.logo = plugin.path + "icecast_square.png";
-	page.metadata.glwview = plugin.path + "views/array.view";
-	page_menu(page);
+        setPageHeader(page, "My Favorites");
         fill_fav(page);
-	page.loading = false;
     });
 
-    plugin.addURI(PREFIX + "search:(.*)", function(page, query) {
-	page.type = "directory";
-	page.contents = "items";
-	page.metadata.title = "Search result: " + query;
-	page.metadata.logo = plugin.path + "icecast_square.png";
-	page.metadata.glwview = plugin.path + "views/array.view";
-	page_menu(page);
-	var doc = showtime.httpGet(BASE_URL + "/search?search=" + query, {}).toString();
-	scrape_page(page, BASE_URL + "/search?search=" + doc);
-	page.loading = false;
-    });
-
-
-    // Genre
-    plugin.addURI(PREFIX + "genre:(.*)", function(page, genre) {
-	page.type = "directory";
-	page.contents = "items";
-	page.metadata.logo = plugin.path + "di_square.png";
-	page.metadata.title = "icecast directory - " + genre;
-	page.metadata.glwview = plugin.path + "views/array.view";
-	page_menu(page);
-	var doc = showtime.httpGet(BASE_URL + "/by_genre/" + genre, {}).toString();
+    // Filter
+    plugin.addURI(PREFIX + "filter:(.*):(.*)", function(page, url, title) {
+        setPageHeader(page, slogan + " - " + title);
+        page.loading = true;
+	var doc = showtime.entityDecode(showtime.httpReq(BASE_URL + url));
 	scrape_page(page, doc);
 	page.loading = false;
     });
 
     // Start page
     plugin.addURI(PREFIX + "start", function(page) {
+	page.metadata.logo = logo;
+	page.metadata.title = slogan;
 	page.type = "directory";
 	page.contents = "items";
-	page.metadata.logo = plugin.path + "di_square.png";
-	page.metadata.title = "icecast directory";
+	page.loading = false;
+        page.loading = true;
+        var resp = showtime.entityDecode(showtime.httpReq(BASE_URL));
+        page.loading = false;
 
-	page.appendItem(PREFIX + "search", "directory", {
-	    title: "Search"
-	});
+        // Statistics
+        var match = resp.match(/<div id="sidebar-statistics">[\S\s]*?<ul>([\S\s]*?)<\/ul>/);
+        // 1-stream type, 2-counter
+        var re = /<li>([\S\s]*?)<strong>([\S\s]*?)<\/strong>/g;
+        var stat = '', pos = 0;
+        if (match) {
+            var rec = re.exec(match[1])
+            while (rec) {
+                if (pos) stat += ', ' + rec[1] + rec[2]; else stat += rec[1] + rec[2];
+                pos++;
+                rec = re.exec(match[1]);
+            };
+            page.appendItem("", "separator", {
+                title: stat
+            });
+        }
 
 	page.appendItem(PREFIX + "favorites", "directory", {
 	    title: "My Favorites"
 	});
 
+        // Random selection
         page.appendItem("", "separator", {
+            title: "Random selection"
         });
+        scrape_page(page, resp);
 
-	for each (genre in genres) {
-	    page.appendItem(PREFIX + "genre:"+genre, "directory", {
-		title: genre
-	    });
-	}
+        // Genres
+        match = resp.match(/<div id="search-genre">([\S\s]*?)<\/ul>/);
+        // 1-link, 2-title
+        re = /<span class="context">[\S\s]*?<\/span><a href="([\S\s]*?)"[\S\s]*?title="[\S\s]*?">([\S\s]*?)<\/a>/g;
+        if (match) {
+            page.appendItem("", "separator", {
+                title: "Genres"
+            });
+            var rec = re.exec(match[1])
+            while (rec) {
+	        page.appendItem(PREFIX + "filter:" + rec[1] + ":" + rec[2], "directory", {
+		    title: rec[2]
+	        });
+                rec = re.exec(match[1]);
+            };
+        };
 
-	page.loading = false;
+        // Formats
+        match = resp.match(/<div id="search-format">([\S\s]*?)<\/ul>/);
+        // 1-link, 2-title
+        re = /<li><a href="([\S\s]*?)">([\S\s]*?)<\/a>/g;
+        if (match) {
+            page.appendItem("", "separator", {
+                title: "Formats"
+            });
+            var rec = re.exec(match[1])
+            while (rec) {
+	        page.appendItem(PREFIX + "filter:" + rec[1] + ":" + rec[2], "directory", {
+		    title: rec[2]
+	        });
+                rec = re.exec(match[1]);
+            };
+        };
     });
 
-    function page_menu(page) {
-        page.options.createInt('childTilesX', 'Number of X Child Tiles', 6, 1, 10, 1, '', function (v) {
-            page.metadata.childTilesX = v;
-        }, true);
-
-        page.options.createInt('childTilesY', 'Number of Y Child Tiles', 2, 1, 4, 1, '', function (v) {
-            page.metadata.childTilesY = v;
-        }, true);
-
-        page.options.createBool('informationBar', 'Information Bar', true, function (v) {
-            page.metadata.informationBar = v;
-        }, true);
-    }
-
+    plugin.addSearcher("icecast", logo, function(page, query) {
+        setPageHeader(page, '');
+        page.entries = 0;
+	page.loading = true;
+	var doc = showtime.entityDecode(showtime.httpGet(BASE_URL + "/search?search=" + query.replace(' ', '+')));
+	scrape_page(page, doc);
+	page.loading = false;
+    });
 })(this);
