@@ -16,7 +16,8 @@ PLUGINS= \
 	rad.io.zip \
 	somafm.zip \
         btvm.zip \
-	rua_osk.zip
+	rua_osk.zip \
+        paradisehill.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
