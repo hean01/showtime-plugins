@@ -26,6 +26,47 @@
     plugin.createService(slogan, PREFIX + "start", "tv", true,
 			 plugin.path + logo);
 
+
+    plugin.addURI(PREFIX + "youtube:(.*)", function(page, title) {
+        page.loading = true;
+        // search for the channel
+        var resp = showtime.httpReq("https://www.youtube.com/results?search_query=" + title.replace(/\s/g, '+')).toString();
+        page.loading = false;
+        // looking for user's page
+        var match = resp.match(/<a href="\/user\/([\S\s]*?)"/);
+        var match2 = resp.match(/\/watch\?v=([\S\s]*?)"/);
+        if (match) {
+            page.loading = true;
+            resp = showtime.httpReq("https://www.youtube.com/user/" + match[1]).toString();
+            page.loading = false;
+            // looking for the channel link
+            var match = resp.match(/\/watch\?v=([\S\s]*?)"/);
+            if (match) {
+                page.loading = true;
+                resp = showtime.httpReq("https://www.youtube.com/watch?v=" + match[1]).toString();
+                page.loading = false;
+                // getting the link
+                match = resp.match(/"hlsvp": "([\S\s]*?)"/);
+                if (!match) {
+                    page.loading = true;
+                    resp = showtime.httpReq("https://www.youtube.com/watch?v=" + match2[1]).toString();
+                    page.loading = false;
+                    // getting the link
+                    match = resp.match(/"hlsvp": "([\S\s]*?)"/);
+                }
+                if (match) {
+                    page.type = "video";
+                    page.source = "videoparams:" + showtime.JSONEncode({
+                        title: unescape(title),
+                        sources: [{
+                          url: "hls:" + match[1].replace(/\\\//g, '/')
+                       }]
+                   });
+                }
+            }
+        }
+    });
+
     function addChannel(page, url, title, icon) {
         var link = "videoparams:" + showtime.JSONEncode({
                         sources: [{
@@ -34,6 +75,9 @@
                         title: title,
                         no_fs_scan: true
                    });
+
+        if (url == 'youtube')
+            link = PREFIX + "youtube:" + title;
 
         page.appendItem(link, "video", {
             title: title,
@@ -49,9 +93,11 @@
 	page.metadata.title = slogan;
 	page.loading = false;
 
-        page.appendItem("", "separator", {
-            title: 'Ukraine'
-        });
+        addChannel(page, 'youtube', 'Espreso TV', '');
+        addChannel(page, 'youtube', 'Hromadske.tv', '');
+        addChannel(page, 'youtube', '24 канал', '');
+        addChannel(page, 'youtube', 'UBR', '');
+
         addChannel(page, 'hls:http://212.40.43.10:1935/inters/smil:inter.smil/playlist.m3u8',
             'Інтер',
             'http://inter.ua/images/logo.png');
@@ -143,6 +189,7 @@
         page.appendItem("", "separator", {
             title: 'Russia'
         });
+        addChannel(page, 'youtube', 'RTД', '');
         // http://tv.life.ru/index.m3u8
         addChannel(page, 'hls:http://tv.life.ru/lifetv/720p/index.m3u8',
             'Life News (720p)',
