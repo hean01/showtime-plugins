@@ -20,7 +20,7 @@
 
 (function(plugin) {
     var PREFIX = "tv:";
-    var logo = "logo.jpg";
+    var logo = "logo.png";
     var slogan = "Online TV";
 
     plugin.createService(slogan, PREFIX + "start", "tv", true,
@@ -95,35 +95,37 @@
 
         addChannel(page, 'youtube', 'Espreso TV', '');
         addChannel(page, 'youtube', 'Hromadske.tv', '');
-        addChannel(page, 'youtube', '24 канал', '');
+        addChannel(page, 'youtube', '24 канал (HLS)', '');
+        addChannel(page, 'http://31.43.120.162:8014', '24 канал (MPEG2)', 'http://24tv.ua/img/24_logo_facebook.jpg');
         addChannel(page, 'youtube', 'UBR', '');
         addChannel(page, 'hls:http://212.40.43.10:1935/inters/smil:inter.smil/playlist.m3u8', 'Інтер', 'http://inter.ua/images/logo.png');
+        addChannel(page, 'http://91.192.168.242:8029', 'Інтер+', '');
         addChannel(page, 'http://31.43.120.162:8062', '100', 'http://tv100.com.ua/templates/diablofx/images/100_logo.jpg');
         addChannel(page, 'hls:http://31.28.169.242/hls/live112.m3u8', '112', 'http://112.ua/static/img/logo/112_ukr.png');
         addChannel(page, 'rtmp://media.tvi.com.ua/live/_definst_//HLS4', 'ТВі', 'http://tvi.ua/catalog/view/theme/new/image/logo.png');
         addChannel(page, 'rtmp://194.0.88.78/mytv//ictvz440', 'ICTV', '');
         addChannel(page, 'http://31.43.120.162:8009', 'Уніан', 'http://images.unian.net/img/unian-logo.png');
-        addChannel(page, 'http://31.43.120.162:8014', '24 News', 'http://24tv.ua/img/24_logo_facebook.jpg');
         addChannel(page, 'http://31.43.120.162:8041', 'ЧП.INFO', 'http://www.tele-com.tv/img/icons/chp-info.png');
         addChannel(page, 'http://31.43.120.162:8035', 'Euronews', 'http://ua.euronews.com/media/logo_222.gif');
-        addChannel(page, 'http://31.43.120.162:8052', '1 Авто', '');
         addChannel(page, 'http://31.43.120.162:8058', 'Право TV', '');
-        addChannel(page, 'http://31.43.120.162:8065', 'A-One UA', '');
         addChannel(page, 'http://31.43.120.162:8067', 'Dobro', '');
         addChannel(page, 'http://31.43.120.162:8073', '2x2', '');
-        //addChannel(page, 'http://31.43.120.162:8066', 'Ukrainian Fashion', '');
-        addChannel(page, 'http://31.43.120.162:8013', 'М2', 'http://www.m2.tv/images/design/2009/m2_logo_2009.jpg');
-        addChannel(page, 'http://31.43.120.162:8029', 'Impact TV', 'http://impacttv.tv/images/stories/logo.png');
-        addChannel(page, 'http://31.43.120.162:8042', 'ТК Черное море', 'http://www.blacksea.net.ua/images/logo2.png');
+        addChannel(page, 'http://91.192.168.242:8035', '2x2', '');
         addChannel(page, 'http://31.43.120.162:8047', 'УТР', 'http://utr.tv/ru/templates/UTR/images/logo.png');
         addChannel(page, 'rtmp://gigaz.wi.com.ua/hallDemoHLS/LVIV', 'ТРК Львів', 'http://www.lodtrk.org.ua/inc/getfile.php?i=20111026133818.gif');
         addChannel(page, 'http://31.43.120.162:8048', 'Львів ТВ', 'http://www.lviv-tv.com/images/aTV/logo/LTB_FIN_END_6.png');
+        addChannel(page, 'http://31.43.120.162:8042', 'ТК Черное море', 'http://www.blacksea.net.ua/images/logo2.png');
+        addChannel(page, 'http://31.43.120.162:8029', 'Impact TV', 'http://impacttv.tv/images/stories/logo.png');
         addChannel(page, 'http://31.43.120.162:8030', 'Трофей', 'http://trofey.net/images/thumbnails/video/images/trofey-player-fill-200x130.png');
-        addChannel(page, 'http://31.43.120.162:8118', 'Футбол 1', 'https://ru.viasat.ua/assets/logos/3513/exclusive_F1-yellow-PL.png');
         addChannel(page, 'hls:http://91.203.194.146:1935/liveedge/atr.stream/playlist.m3u8', 'ATR', 'http://atr.ua/assets/atr-logo-red/logo.png');
         addChannel(page, 'rtmp://178.162.205.89/beta//pixel?st=de7a8a352cea90e3b634d5be6b052479', 'Піксель', '');
         addChannel(page, 'rtmp://217.20.164.182:80/live/zik392p.stream', 'ZIK', '');
-        //addChannel(page, 'rtmp://213.174.8.15/live/live2', 'Тиса-1', '');
+        addChannel(page, 'http://31.43.120.162:8060', 'Boutique TV', '');
+        addChannel(page, 'http://31.43.120.162:8063', 'Shopping TV', '');
+        addChannel(page, 'http://31.43.120.162:8118', 'Футбол 1', 'https://ru.viasat.ua/assets/logos/3513/exclusive_F1-yellow-PL.png');
+        addChannel(page, 'http://31.43.120.162:8052', '1 Авто', '');
+        addChannel(page, 'http://31.43.120.162:8066', 'Ukrainian Fashion', '');
+        addChannel(page, 'rtmp://213.174.8.15/live/live2', 'Tisa-1', '');
 
         page.appendItem("", "separator", {
             title: 'Music'
@@ -134,6 +136,15 @@
         addChannel(page, 'hls:http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch2/06/prog_index.m3u8', 'Vevo 2', '');
         addChannel(page, 'rtmp://europaplus.cdnvideo.ru/europaplus-live//mp4:eptv_main.sdp', 'Europa Plus TV (RTMP)', 'http://www.europaplustv.com/images/europa_tv.png');
         addChannel(page, 'hls:http://europaplus.cdnvideo.ru/europaplus-live/mp4:eptv_main.sdp/playlist.m3u8', 'Europa Plus TV (HLS)', 'http://www.europaplustv.com/images/europa_tv.png');
+        addChannel(page, 'http://31.43.120.162:8127', 'Europa Plus TV (MPEG2)', '');
+        addChannel(page, 'http://31.43.120.162:8109', 'Музыка', '');
+        addChannel(page, 'http://31.43.120.162:8129', 'Vh1', '');
+        addChannel(page, 'http://31.43.120.162:8013', 'М2', 'http://www.m2.tv/images/design/2009/m2_logo_2009.jpg');
+        addChannel(page, 'http://31.43.120.162:8065', 'A-One UA', '');
+        addChannel(page, 'http://31.43.120.162:8072', 'A-One Hip-Hop', '');
+        addChannel(page, 'http://91.192.168.242:8065', 'A-One Hip-Hop', '');
+        addChannel(page, 'hls:http://vniitr.cdnvideo.ru/vniitr-live/vniitr.sdp/playlist.m3u8', 'RU TV (HLS)', '');
+        addChannel(page, 'http://91.192.168.242:8025', 'RU TV (MPEG2)', '');
 
         page.appendItem("", "separator", {
             title: 'Russia'
@@ -154,7 +165,6 @@
             '');
         //addChannel(page, 'rtmp://online-record.ru//pervyj_middle', '1 канал', '');
         //addChannel(page, 'rtmp://online-record.ru//rossiya2_middle', 'Россия 2', '');
-        addChannel(page, 'hls:http://vniitr.cdnvideo.ru/vniitr-live/vniitr.sdp/playlist.m3u8', 'RU TV', '');
         addChannel(page, 'hls:http://nano.teleservice.su:8080/hls/nano.m3u8', 'Nano TV', '');
 
         page.appendItem("", "separator", {
@@ -173,24 +183,21 @@
         page.appendItem("", "separator", {
             title: 'НТВ'
         });
-        addChannel(page, 'http://clients.cdnet.tv/h/22/1/1/MEFGMUgvdlFWbE9ERUdyZzd5M29qOGZZQm53dmpoSVlmOXo3WFRESWN5S1ZSWWN5WVNOaUdNTUJhcjJoK3B5cQ', 'Домашний', '');
         addChannel(page, 'http://clients.cdnet.tv/h/17/1/1/MFFIQjkvdlFWbE5Lam9jbkJlNjAzdjEyTVhNWEZhYUdSN3REYXI3cFV0QW1CRzE0bVkwK2dPY0Q0OFg1Y25meg', 'НТВ', '');
         addChannel(page, 'http://clients.cdnet.tv/h/14/1/1/MHdHdGhQdlFWbE96Uk92cHhibzF4TlFzUDhmS0NNZ3IrQ2JENWU2c1h1blc2OE9OUi9JR0tXTDloU3EwQkNCMg', 'Первый канал', '');
+        addChannel(page, 'http://clients.cdnet.tv/h/21/1/1/MkFIdVAvdlFWbE8vOWNwdzBrY3FEUHB5cDRvdTlMNkhIRW5yazJWUUlVUmVIajJzZmRDUkt2YVFnKzdFZGpWNw', 'ТНТ', '');
         addChannel(page, 'http://clients.cdnet.tv/h/4/1/1/MVFIQkZQdlFWbE9YbnFaUzB4elFhMGc1WVJraU9iUUFhYkNCb2lyZlhoL3N3Ymc4QjBJbjdiQlBhbmp5UnJrSQ', 'Россия 2', '');
         addChannel(page, 'http://clients.cdnet.tv/h/18/1/1/MXdGN0FQdlFWbFBRdWMxVHl0K0dBZWVHbTJGQkFzbVJ2elBPRzBaUzNjUUlWbkxaMTNsKzZwd2JJS0lmYU5GWg', 'Россия К', '');
-        addChannel(page, 'http://clients.cdnet.tv/h/21/1/1/MkFIdVAvdlFWbE8vOWNwdzBrY3FEUHB5cDRvdTlMNkhIRW5yazJWUUlVUmVIajJzZmRDUkt2YVFnKzdFZGpWNw', 'ТНТ', '');
+        addChannel(page, 'http://clients.cdnet.tv/h/22/1/1/MEFGMUgvdlFWbE9ERUdyZzd5M29qOGZZQm53dmpoSVlmOXo3WFRESWN5S1ZSWWN5WVNOaUdNTUJhcjJoK3B5cQ', 'Домашний', '');
 
         page.appendItem("", "separator", {
             title: 'Триколор ТВ'
         });
         addChannel(page, 'http://31.43.120.162:8040', 'Kazakh TV', '');
         addChannel(page, 'http://31.43.120.162:8044', 'ВТВ', '');
-        addChannel(page, 'http://31.43.120.162:8060', 'Boutique TV', '');
-        addChannel(page, 'http://31.43.120.162:8063', 'Shopping TV', '');
         addChannel(page, 'http://31.43.120.162:8068', 'Карусель', '');
         addChannel(page, 'http://31.43.120.162:8070', 'HCT', '');
         addChannel(page, 'http://31.43.120.162:8071', '24_DOC', '');
-        addChannel(page, 'http://31.43.120.162:8072', 'A-One RU', '');
         addChannel(page, 'http://31.43.120.162:8074', 'Мать и дитя', '');
         addChannel(page, 'http://31.43.120.162:8076', 'Eurosport 2', '');
         addChannel(page, 'http://31.43.120.162:8077', 'Мир', '');
@@ -223,7 +230,6 @@
         addChannel(page, 'http://31.43.120.162:8106', 'Россия 24', '');
         addChannel(page, 'http://31.43.120.162:8107', 'Россия 2', '');
         addChannel(page, 'http://31.43.120.162:8108', 'Россия К', '');
-        addChannel(page, 'http://31.43.120.162:8109', 'Музыка', '');
         addChannel(page, 'http://31.43.120.162:8110', 'Спорт 1', '');
         addChannel(page, 'http://31.43.120.162:8111', 'Disney канал', '');
         addChannel(page, 'http://31.43.120.162:8112', 'Sony Entertainment TV', '');
@@ -238,9 +244,7 @@
         addChannel(page, 'http://31.43.120.162:8123', 'Телекафе', '');
         addChannel(page, 'http://31.43.120.162:8124', 'Время', '');
         addChannel(page, 'http://31.43.120.162:8126', 'Дом кино', '');
-        addChannel(page, 'http://31.43.120.162:8127', 'Europa Plus TV', '');
         addChannel(page, 'http://31.43.120.162:8128', '5 канал', '');
-        addChannel(page, 'http://31.43.120.162:8129', 'Vh1', '');
         addChannel(page, 'http://31.43.120.162:8130', 'Спорт', '');
 
         addChannel(page, 'http://91.192.168.242:8001', 'Первый канал', '');
@@ -267,17 +271,14 @@
         addChannel(page, 'http://91.192.168.242:8022', 'Рен ТВ', '');
         addChannel(page, 'http://91.192.168.242:8023', 'ТВ3', '');
         addChannel(page, 'http://91.192.168.242:8024', 'ТТС', '');
-        addChannel(page, 'http://91.192.168.242:8025', 'RU TV', '');
         addChannel(page, 'http://91.192.168.242:8026', 'Teen TV', '');
         addChannel(page, 'http://91.192.168.242:8027', 'Охотник и рыболов', '');
         addChannel(page, 'http://91.192.168.242:8028', 'Телепутешествия', '');
-        addChannel(page, 'http://91.192.168.242:8029', 'Интер+', '');
         addChannel(page, 'http://91.192.168.242:8030', 'Спорт Плюс', '');
         addChannel(page, 'http://91.192.168.242:8031', 'Евроспорт 2', '');
         addChannel(page, 'http://91.192.168.242:8032', 'National Geographic', '');
         addChannel(page, 'http://91.192.168.242:8033', 'Моя планета', '');
         addChannel(page, 'http://91.192.168.242:8034', 'Пятница!', '');
-        addChannel(page, 'http://91.192.168.242:8035', '2x2', '');
         addChannel(page, 'http://91.192.168.242:8036', 'РБК', '');
         addChannel(page, 'http://91.192.168.242:8037', 'Cartoon Network', '');
         addChannel(page, 'http://91.192.168.242:8038', 'Детский', '');
@@ -307,14 +308,16 @@
         addChannel(page, 'http://91.192.168.242:8062', 'Домашние животные', '');
         addChannel(page, 'http://91.192.168.242:8063', 'Психология21', '');
         addChannel(page, 'http://91.192.168.242:8064', 'Бойцовский клуб', '');
-        addChannel(page, 'http://91.192.168.242:8065', 'A One', '');
 
-        //page.appendItem("", "separator", { title: 'VGTRK' });
-        // addChannel(page, 'hls:http://151.236.123.4/rr2/smil:rtp_r1_rr.smil/playlist.m3u8?auth=vh&cast_id=2961', 'Россия 1', '');
-        //addChannel(page, 'hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21', 'Россия 24', '');
-        //addChannel(page, 'hls:http://151.236.123.4/rr2/smil:rtp_rtrp_rr.smil/playlist.m3u8?auth=vh&cast_id=4941', 'Россия РТР', '');
-        //addChannel(page, 'hls:http://testlivestream.rfn.ru/live/smil:m24.smil/playlist.m3u8?auth=vh&cast_id=1661', 'Москва 24', '');
-        //addChannel(page, 'hls:http://testlivestream.rfn.ru/live/smil:mayak.smil/playlist.m3u8?auth=vh&cast_id=81', 'Маяк FM', '');
+
+        page.appendItem("", "separator", {
+            title: 'VGTRK'
+        });
+        addChannel(page, 'hls:http://151.236.123.4/rr2/smil:rtp_r1_rr.smil/playlist.m3u8?auth=vh&cast_id=2961', 'Россия 1', '');
+        addChannel(page, 'hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21', 'Россия 24', '');
+        addChannel(page, 'hls:http://151.236.123.4/rr2/smil:rtp_rtrp_rr.smil/playlist.m3u8?auth=vh&cast_id=4941', 'Россия РТР', '');
+        addChannel(page, 'hls:http://testlivestream.rfn.ru/live/smil:m24.smil/playlist.m3u8?auth=vh&cast_id=1661', 'Москва 24', '');
+        addChannel(page, 'hls:http://testlivestream.rfn.ru/live/smil:mayak.smil/playlist.m3u8?auth=vh&cast_id=81', 'Маяк FM', '');
 
         page.appendItem("", "separator", {
             title: 'Deutsch'
