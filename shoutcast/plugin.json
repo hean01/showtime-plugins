@@ -1,0 +1,14 @@
+{
+	"description": "<p>SHOUTcast Radio - Listen to Free Online Radio Stations<p>For more information, visit <a href=\"http://www.shoutcast.com\">http://www.shoutcast.com</a>",
+	"author": "lprot",
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "shoutcast",
+	"synopsis": "SHOUTcast Radio - Listen to Free Online Radio Stations",
+	"version": "0.1",
+	"file": "shoutcast.js",
+	"showtimeVersion": "4.5.28",
+	"type": "javascript",
+	"id": "shoutcast",
+	"icon": "logo.png",
+	"category": "music"
+}
