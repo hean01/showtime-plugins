@@ -125,7 +125,7 @@
         addChannel(page, 'http://31.43.120.162:8118', 'Футбол 1', 'https://ru.viasat.ua/assets/logos/3513/exclusive_F1-yellow-PL.png');
         addChannel(page, 'http://31.43.120.162:8052', '1 Авто', '');
         addChannel(page, 'http://31.43.120.162:8066', 'Ukrainian Fashion', '');
-        addChannel(page, 'rtmp://213.174.8.15/live/live2', 'Tisa-1', '');
+        addChannel(page, 'rtmp://213.174.8.15/live/live2', 'Тиса-1', '');
 
         page.appendItem("", "separator", {
             title: 'Music'
@@ -134,9 +134,11 @@
         addChannel(page, 'rtmp://109.239.142.62/live/livestream3', '1HD (RTMP)', '');
         addChannel(page, 'hls:http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch1/06/prog_index.m3u8', 'Vevo 1', '');
         addChannel(page, 'hls:http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch2/06/prog_index.m3u8', 'Vevo 2', '');
+        addChannel(page, 'hls:http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch3/06/prog_index.m3u8', 'Vevo 3', '');
         addChannel(page, 'rtmp://europaplus.cdnvideo.ru/europaplus-live//mp4:eptv_main.sdp', 'Europa Plus TV (RTMP)', 'http://www.europaplustv.com/images/europa_tv.png');
         addChannel(page, 'hls:http://europaplus.cdnvideo.ru/europaplus-live/mp4:eptv_main.sdp/playlist.m3u8', 'Europa Plus TV (HLS)', 'http://www.europaplustv.com/images/europa_tv.png');
         addChannel(page, 'http://31.43.120.162:8127', 'Europa Plus TV (MPEG2)', '');
+        addChannel(page, 'http://91.192.168.242:8019', 'Europa Plus TV (MPEG2)', '');
         addChannel(page, 'http://31.43.120.162:8109', 'Музыка', '');
         addChannel(page, 'http://31.43.120.162:8129', 'Vh1', '');
         addChannel(page, 'http://31.43.120.162:8013', 'М2', 'http://www.m2.tv/images/design/2009/m2_logo_2009.jpg');
@@ -145,6 +147,18 @@
         addChannel(page, 'http://91.192.168.242:8065', 'A-One Hip-Hop', '');
         addChannel(page, 'hls:http://vniitr.cdnvideo.ru/vniitr-live/vniitr.sdp/playlist.m3u8', 'RU TV (HLS)', '');
         addChannel(page, 'http://91.192.168.242:8025', 'RU TV (MPEG2)', '');
+        addChannel(page, 'rtmp://149.11.34.6/live/partytv.stream', 'Party TV', '');
+        addChannel(page, 'rtmp://rtmp.infomaniak.ch/livecast/rougetv', 'Rouge TV', '');
+        addChannel(page, 'rtmp://wowza1.top-ix.org/quartaretetv1/formusicweb', 'For Music', '');
+        addChannel(page, 'hls:http://194.79.52.79/ockoi/ockoHQ2/hasbahca.m3u8', 'Ocko', '');
+        addChannel(page, 'rtmp://stream.smcloud.net/live/polotv', 'Polo TV', '');
+        addChannel(page, 'http://212.79.96.134:8005', 'Musiq 1 TV', '');
+        addChannel(page, 'http://212.79.96.134:8024', '1 Classic', '');
+        addChannel(page, 'rtmp://stream.smcloud.net/live/eskatv', 'Eska TV', '');
+        addChannel(page, 'rtmp://stream.smcloud.net/live2/eska_party/eska_party_360p', 'Eska Party TV', '');
+        addChannel(page, 'rtmp://stream.smcloud.net/live2/eska_rock/eska_rock_360p', 'Eska Rock TV', '');
+        addChannel(page, 'http://213.81.153.221:8080/nasa', 'Music Box', '');
+        addChannel(page, 'rtmp://cdn-sov-2.musicradio.com:80/LiveVideo/Heart', 'Heartv', '');
 
         page.appendItem("", "separator", {
             title: 'Russia'
@@ -251,7 +265,7 @@
         addChannel(page, 'http://91.192.168.242:8002', 'Россия 1', '');
         addChannel(page, 'http://91.192.168.242:8003', 'HTB', '');
         addChannel(page, 'http://91.192.168.242:8004', 'Россия Культура', '');
-        addChannel(page, 'http://91.192.168.242:8005', 'Россия 2', '');
+        addChannel(page, 'http://91.192.168.242:8005', 'Euronews', '');
         addChannel(page, 'http://91.192.168.242:8006', 'ATH', '');
         addChannel(page, 'http://91.192.168.242:8007', 'OTB', '');
         addChannel(page, 'http://91.192.168.242:8008', 'Карусель', '');
@@ -265,7 +279,6 @@
         addChannel(page, 'http://91.192.168.242:8016', 'Спорт', '');
         addChannel(page, 'http://91.192.168.242:8017', 'Наука 2.0', '');
         addChannel(page, 'http://91.192.168.242:8018', 'Сарафан ТВ', '');
-        addChannel(page, 'http://91.192.168.242:8019', 'Europa Plus TV', '');
         addChannel(page, 'http://91.192.168.242:8020', 'Русский роман', '');
         addChannel(page, 'http://91.192.168.242:8021', 'ТНТ', '');
         addChannel(page, 'http://91.192.168.242:8022', 'Рен ТВ', '');
@@ -281,7 +294,7 @@
         addChannel(page, 'http://91.192.168.242:8034', 'Пятница!', '');
         addChannel(page, 'http://91.192.168.242:8036', 'РБК', '');
         addChannel(page, 'http://91.192.168.242:8037', 'Cartoon Network', '');
-        addChannel(page, 'http://91.192.168.242:8038', 'Детский', '');
+        addChannel(page, 'http://91.192.168.242:8038', 'Мультимания', '');
         addChannel(page, 'http://91.192.168.242:8039', 'Мать и дитя', '');
         addChannel(page, 'http://91.192.168.242:8040', 'Discovery Channel', '');
         addChannel(page, 'http://91.192.168.242:8041', 'Animal Planet', '');
@@ -298,9 +311,9 @@
         addChannel(page, 'http://91.192.168.242:8052', 'Дом кино', '');
         addChannel(page, 'http://91.192.168.242:8053', '24', '');
         addChannel(page, 'http://91.192.168.242:8054', 'Звезда', '');
-        addChannel(page, 'http://91.192.168.242:8055', 'Cartoon Network', '');
+        addChannel(page, 'http://91.192.168.242:8055', 'Детский мир', '');
         addChannel(page, 'http://91.192.168.242:8056', 'Кино ТВ', '');
-        addChannel(page, 'http://91.192.168.242:8057', 'Игровой', '');
+        addChannel(page, 'http://91.192.168.242:8057', 'История', '');
         addChannel(page, 'http://91.192.168.242:8058', 'Ретро', '');
         addChannel(page, 'http://91.192.168.242:8059', 'Драйв', '');
         addChannel(page, 'http://91.192.168.242:8060', 'Охота и рыбалка', '');
