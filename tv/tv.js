@@ -171,14 +171,28 @@
         page.appendItem("", "separator", {
             title: 'English'
         });
-        addChannel(page, 'hls:http://livestation_hls-lh.akamaihd.net/i/bbcworld_en@105465/index_928_av-b.m3u8', 'BBC World News', '');
-        addChannel(page, 'hls:http://dwtvios_europa-i.akamaihd.net/hls/live/200515/dwtveuropa/1/playlist1x.m3u8', 'DW Europe', '');
-        addChannel(page, 'hls:http://vipwowza.yacast.net/f24_hlslive_en/_definst_/mp4:fr24_en_748.stream/playlist.m3u8', 'France 24', '');
-        addChannel(page, 'rtmp://hd1.lsops.net/live/ playpath=cnn_en_584 swfUrl="http://static.ls-cdn.com/player/5.10/livestation-player.swf" swfVfy=true live=true', 'CNN', '');
-        addChannel(page, 'rtmp://hd2.lsops.net/live playpath=aljazeer_en_838 swfUrl="http://static.ls-cdn.com/player/5.10/livestation-player.swf" swfVfy=true live=true', 'AlJazeera', '');
-        addChannel(page, 'http://worldlive-ios.arirang.co.kr/arirang/arirangtvworldios.mp4.m3u8', 'Arirang', '');
-        addChannel(page, 'hls:http://plslive-w.nhk.or.jp/nhkworld/app/live.m3u8', 'NHK World', '');
+        addChannel(page, 'hls:http://rt.ashttp14.visionip.tv/live/rt-global-live-HD/playlist.m3u8', 'Russia Today', 'http://upload.wikimedia.org/wikipedia/commons/a/a0/Russia-today-logo.svg');
+        addChannel(page, 'hls:http://rt.ashttp14.visionip.tv/live/rt-doc-live-HD/playlist.m3u8', 'Russia Today Documentary', 'http://upload.wikimedia.org/wikipedia/commons/a/a0/Russia-today-logo.svg');
+        addChannel(page, 'hls:http://livestation_hls-lh.akamaihd.net/i/bbcworld_en@105465/index_928_av-b.m3u8', 'BBC World News', 'http://upload.wikimedia.org/wikipedia/commons/6/6c/BBC_World_News_red.svg');
+        addChannel(page, 'hls:http://dwtvios_europa-i.akamaihd.net/hls/live/200515/dwtveuropa/1/playlist1x.m3u8', 'DW Europe', 'https://lh5.googleusercontent.com/-9Ir29NdKHLU/AAAAAAAAAAI/AAAAAAAAIiY/TF5J4A4ZdP8/s120-c/photo.jpg');
+        addChannel(page, 'hls:http://vipwowza.yacast.net/f24_hlslive_en/_definst_/mp4:fr24_en_748.stream/playlist.m3u8', 'France 24', 'http://upload.wikimedia.org/wikipedia/en/6/65/FRANCE_24_logo.svg');
+        //addChannel(page, 'rtmp://hd1.lsops.net/live/ playpath=cnn_en_584 swfUrl="http://static.ls-cdn.com/player/5.10/livestation-player.swf" swfVfy=true live=true', 'CNN', 'http://upload.wikimedia.org/wikipedia/commons/8/8b/Cnn.svg');
+        addChannel(page, 'hls:http://livestation_hls-lh.akamaihd.net/i/cnn_en@105455/master.m3u8', 'CNN', 'http://upload.wikimedia.org/wikipedia/commons/8/8b/Cnn.svg');
+        addChannel(page, 'hls:http://livestation_hls-lh.akamaihd.net/i/cnbc_en@106428/master.m3u8', 'CNBC', 'http://upload.wikimedia.org/wikipedia/commons/e/e3/CNBC_logo.svg');
+        //http://live.bltvios.com.edgesuite.net/oza2w6q8gX9WSkRx13bskffWIuyf/BnazlkNDpCIcD-QkfyZCQKlRiiFnVa5I/master.m3u8?geo_country=US
+        addChannel(page, 'hls:http://hd2.lsops.net/live/skynewsi_en_372/playlist.m3u8', 'Sky News', 'http://upload.wikimedia.org/wikipedia/commons/c/c7/Sky_News.svg');
+        addChannel(page, 'hls:http://media23.lsops.net/live/presstv_en_hls.smil/playlist.m3u8', 'Press TV', 'http://upload.wikimedia.org/wikipedia/en/2/23/PressTV.png');
+        //http://aya02.livem3u8.me.totiptv.com/live/ea4c9d2666bc411d8e6777e8a1d2b747.m3u8?pt=1&code=4d4549b2c1f6926f8698e13c0123177a
+        addChannel(page, 'rtmp://hd2.lsops.net/live playpath=aljazeer_en_838 swfUrl="http://static.ls-cdn.com/player/5.10/livestation-player.swf" swfVfy=true live=true', 'AlJazeera', 'http://upload.wikimedia.org/wikipedia/en/7/71/Aljazeera.svg');
+        addChannel(page, 'http://worldlive-ios.arirang.co.kr/arirang/arirangtvworldios.mp4.m3u8', 'Arirang', 'http://upload.wikimedia.org/wikipedia/commons/9/94/Arirang.svg');
+        //addChannel(page, 'hls:http://plslive-w.nhk.or.jp/nhkworld/app/live.m3u8', 'NHK World', '');
+        addChannel(page, 'hls:http://nhkworldlive-lh.akamaihd.net/i/nhkworld_w@145835/master.m3u8', 'NHK World', 'http://upload.wikimedia.org/wikipedia/commons/7/7b/NHK_World.svg');
         addChannel(page, 'hls:http://88.212.11.206:5000/live/22/22.m3u8', 'CCTV News', '');
+
+        page.appendItem("", "separator", {
+            title: 'Danish'
+        });
+        addChannel(page, 'hls:http://lswb-de-08.servers.octoshape.net:1935/live/kanalsport_2000k/hasbahca.m3u8', 'Sports HD DK', '');
 
         page.appendItem("", "separator", {
             title: 'Music'
@@ -306,9 +320,10 @@
         addChannel(page, 'hls:http://tvrain-video.ngenix.net/mobile/TVRain_1m.stream/playlist.m3u8',
             'Дождь (720p)',
             'http://tvrain-st.cdn.ngenix.net/static/css/pub/images/logo-tvrain.png');
-        addChannel(page, 'hls:http://rian.cdnvideo.ru/rr/stream20/chunklist.m3u8',
-            'РИА Новости',
-            '');
+        addChannel(page, 'hls:http://rian.cdnvideo.ru/rr/stream20/chunklist.m3u8', 'РИА Новости', '');
+        addChannel(page, 'hls:http://serv02.vintera.tv:1935/push/hdmedia.stream/playlist.m3u8', 'HD Media', '');
+        addChannel(page, 'hls:http://hdmedia3d.vintera.tv:1935/hdmedia3d/hdmedia3d.stream/playlist.m3u8', 'HD Media 3D', '');
+        addChannel(page, 'hls:http://rostovlife.vintera.tv:1935/mediapark/rostov_tv1.stream/playlist.m3u8', 'Ростов ТВ', '');
         addChannel(page, 'hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21', 'Россия 24', '');
         addChannel(page, 'hls:http://testlivestream.rfn.ru/live/smil:m24.smil/playlist.m3u8?auth=vh&cast_id=1661', 'Москва 24', '');
         addChannel(page, 'hls:http://testlivestream.rfn.ru/live/smil:mayak.smil/playlist.m3u8?auth=vh&cast_id=81', 'Маяк FM', '');
