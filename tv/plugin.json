@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "Online TV",
 	"synopsis": "Online TV channels list",
-	"version": "0.2.6",
+	"version": "0.2.7",
 	"file": "tv.js",
 	"showtimeVersion": "4.5.25",
 	"type": "javascript",

@@ -300,6 +300,7 @@
         addChannel(page, 'Волна', 'rtmp://176.9.127.102/live/myStream_1', '');
         addChannel(page, '1 music', 'rtmp://80.232.172.37/rtplive/vlc.sdp', '');
         addChannel(page, 'BIM TV', 'hls:http://goo.gl/glJV3o', '');
+        addChannel(page, 'Music Box UA', 'rtmp://194.0.88.78/mytv//boxua7?stream=8688', '');
         //addChannel(page, 'Musiq 1 TV', 'http://212.79.96.134:8005', '');
         //addChannel(page, '1 Classic', 'http://212.79.96.134:8024', '');
 
@@ -327,7 +328,7 @@
         addChannel(page, '24 канал (MPEG2)', 'http://31.43.120.162:8014', 'http://24tv.ua/img/24_logo_facebook.jpg');
         addChannel(page, 'UBR', 'youtube', '');
         addChannel(page, 'Перший', 'http://mp4.firstua.com/tv/_definst_/1ua-512k/playlist.m3u8', 'http://inter.ua/images/logo.png');
-        addChannel(page, 'Інтер (RTMP)', 'rtmp://194.0.88.78/mytv//interz60l', 'http://inter.ua/images/logo.png');
+        addChannel(page, 'Інтер (RTMP)', 'rtmp://194.0.88.78/mytv//interz60', 'http://inter.ua/images/logo.png');
         addChannel(page, 'Інтер', 'hls:http://212.40.43.10:1935/inters/smil:inter.smil/playlist.m3u8', 'http://inter.ua/images/logo.png');
         addChannel(page, 'Інтер+', 'http://91.192.168.242:8029', '');
         addChannel(page, '100', 'http://31.43.120.162:8062', 'http://tv100.com.ua/templates/diablofx/images/100_logo.jpg');
@@ -335,16 +336,16 @@
         addChannel(page, '112', 'hls:http://31.28.169.242/hls/live112.m3u8', 'http://112.ua/static/img/logo/112_ukr.png');
         addChannel(page, 'Рада', 'http://85.25.43.30:8194', '');
         addChannel(page, 'ТВі', 'rtmp://media.tvi.com.ua/live/_definst_//HLS4', 'http://tvi.ua/catalog/view/theme/new/image/logo.png');
-        addChannel(page, '5 канал', 'rtmp://194.0.88.78/mytv//5kan54l?stream=8894', '');
-        addChannel(page, 'ICTV', 'rtmp://194.0.88.78/mytv//ictvz440l', '');
-        addChannel(page, 'СТБ', 'rtmp://194.0.88.77/mytv//stbx195', '');
-        addChannel(page, 'Новий канал', 'rtmp://194.0.88.78/mytv//newxt0l', '');
-        addChannel(page, 'MEGA', 'rtmp://194.0.88.78/mytv//megaxzl', '');
-        addChannel(page, 'QTV', 'rtmp://194.0.88.77/mytv//qtvx42o', '');
+        addChannel(page, '5 канал', 'rtmp://194.0.88.78/mytv//5kan54?stream=8894', '');
+        addChannel(page, 'ICTV', 'rtmp://194.0.88.78/mytv//ictvz440', '');
+        addChannel(page, 'СТБ', 'rtmp://194.0.88.77/mytv//stbx19', '');
+        addChannel(page, 'Новий канал', 'rtmp://194.0.88.78/mytv//newxt0', '');
+        addChannel(page, 'MEGA', 'rtmp://194.0.88.78/mytv//megaxz', '');
+        addChannel(page, 'QTV', 'rtmp://194.0.88.77/mytv//qtvx42', '');
         addChannel(page, 'Уніан', 'http://31.43.120.162:8009', 'http://images.unian.net/img/unian-logo.png');
         addChannel(page, 'ЧП.INFO', 'http://31.43.120.162:8041', 'http://www.tele-com.tv/img/icons/chp-info.png');
         addChannel(page, 'Euronews', 'http://31.43.120.162:8035', 'http://ua.euronews.com/media/logo_222.gif');
-        addChannel(page, 'Discovery Channel', 'rtmp://194.0.88.77/mytv//diskchwcl', '');
+        addChannel(page, 'Discovery Channel', 'rtmp://194.0.88.77/mytv//diskchwc', '');
         addChannel(page, 'Право TV', 'http://31.43.120.162:8058', '');
         addChannel(page, 'Dobro', 'http://31.43.120.162:8067', '');
         addChannel(page, '2x2', 'http://31.43.120.162:8073', '');
@@ -390,18 +391,20 @@
         // http://tv.life.ru/index.m3u8
         addChannel(page, 'Life News (720p)', 'hls:http://tv.life.ru/lifetv/720p/index.m3u8', 'http://lifenews.ru/assets/logo-0a3a75be3dcc15b6c6afaef4adab52dd.png');
         addChannel(page, 'Life News (480p)', 'hls:http://tv.life.ru/lifetv/480p/index.m3u8', 'http://lifenews.ru/assets/logo-0a3a75be3dcc15b6c6afaef4adab52dd.png');
-        addChannel(page, 'Euronews', 'http://hls.cn.ru/streaming/euronews/tvrec/playlist.m3u8', '');
+        addChannel(page, 'Euronews', 'hls:http://hls.cn.ru/streaming/euronews/tvrec/playlist.m3u8', '');
         addChannel(page, 'Дождь (720p)', 'hls:http://tvrain-video.ngenix.net/mobile/TVRain_1m.stream/playlist.m3u8', 'http://tvrain-st.cdn.ngenix.net/static/css/pub/images/logo-tvrain.png');
         addChannel(page, 'RTД', 'youtube', '');
-        addChannel(page, 'ТНТ', 'rtmp://194.0.88.78/mytv//tntz11l', '');
+        addChannel(page, 'ТНТ', 'rtmp://194.0.88.78/mytv//tntz11', '');
+        //rtmp://rian.cdnvideo.ru/rr//stream20
         addChannel(page, 'РИА Новости', 'hls:http://rian.cdnvideo.ru:1935/rr/stream20/index.m3u8', '');
         addChannel(page, 'Jewish News One', 'hls:http://serv03.vintera.tv:1935/restream/jno.stream/playlist.m3u8', '');
         addChannel(page, 'Brodilo.TV', 'http://brodilo.tv/channel.php', '');
         addChannel(page, 'HD Media', 'hls:http://serv02.vintera.tv:1935/push/hdmedia.stream/playlist.m3u8', '');
         addChannel(page, 'HD Media 3D', 'hls:http://hdmedia3d.vintera.tv:1935/hdmedia3d/hdmedia3d.stream/playlist.m3u8', '');
         addChannel(page, 'ЕДАI', 'youtube', '');
-        addChannel(page, 'Nickelodeon', 'http://hls.cn.ru/streaming/nickelodeon/tvrec/playlist.m3u8', '');
-        addChannel(page, 'Comedy TV', 'rtmp://194.0.88.78/mytv//comedozl', '');
+        //http://hls.novotelecom.ru/streaming/nickelodeon/tvrec/playlist.m3u8
+        addChannel(page, 'Nickelodeon', 'hls:http://hls.cn.ru/streaming/nickelodeon/tvrec/playlist.m3u8', '');
+        addChannel(page, 'Comedy TV', 'rtmp://194.0.88.78/mytv//comedoz', '');
         addChannel(page, 'Ростов ТВ', 'hls:http://rostovlife.vintera.tv:1935/mediapark/rostov_tv1.stream/playlist.m3u8', '');
         addChannel(page, 'Россия 24', 'hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21', '');
         addChannel(page, 'Москва 24', 'hls:http://testlivestream.rfn.ru/live/smil:m24.smil/playlist.m3u8?auth=vh&cast_id=1661', '');
@@ -420,8 +423,8 @@
         addChannel(page, 'НТВ', 'hls:http://195.46.176.109/hls-live/live_a/_definst_/liveevent/livestream02.m3u8', '');
         //addChannel(page, 'НТВ', 'hls:http://195.189.238.83/streaming/ntv/tvrec/playlist.m3u8', '');
         //addChannel(page, 'BTB', 'http://85.25.43.30:8233', '');
-        addChannel(page, 'Звезда', 'http://webtv.tatar-inform.ru:1935/live/kzntv/playlist.m3u8', '');
-        addChannel(page, 'Рен ТВ', 'http://ren.cdnvideo.ru:1935/rtp/ren2/playlist.m3u8', '');
+        addChannel(page, 'Звезда', 'hls:http://webtv.tatar-inform.ru:1935/live/kzntv/playlist.m3u8', '');
+        addChannel(page, 'Рен ТВ', 'hls:http://ren.cdnvideo.ru:1935/rtp/ren2/playlist.m3u8', '');
         addChannel(page, 'КПРФ', 'rtmp://kprf-live.cdn.ngenix.net/live/mp4:stream_700.mp4', '');
 
         page.appendItem("", "separator", {
