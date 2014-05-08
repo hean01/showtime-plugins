@@ -170,34 +170,34 @@
         page.appendItem("", "separator", {
             title: 'Deutsch'
         });
-        addChannel(page, 'N24', 'hls:http://n24-live.hls.adaptive.level3.net/hls-live/n24-pssimn24live/_definst_/live/stream2.m3u8', 'http://www.norcom.de/sites/default/files/N24.png');
-        addChannel(page, 'ZDF', 'hls:http://88.212.11.206:5000/live/28/28.m3u8', '');
-        addChannel(page, 'NDR HD', 'hls:http://ndr_fs-lh.akamaihd.net/i/ndrfs_nds@119224/master.m3u8', '');
-        addChannel(page, 'WDR HD', 'hls:http://www.metafilegenerator.de/WDR/WDR_FS/m3u8/wdrfernsehen.m3u8', '');
-        addChannel(page, 'RBB', 'hls:http://88.212.11.206:5000/live/13/13.m3u8', '');
-        addChannel(page, 'Okto', 'hls:http://atwse.lbs.atusmedia.cc:1935/oktolive/okto-low.stream/hasbahca.m3u8', '');
+        addChannel(page, 'N24', 'hls:http://n24-live.hls.adaptive.level3.net/hls-live/n24-pssimn24live/_definst_/live/stream2.m3u8', 'http://upload.wikimedia.org/wikipedia/de/thumb/2/20/N24_logo.svg/200px-N24_logo.svg.png');
+        addChannel(page, 'ZDF', 'hls:http://88.212.11.206:5000/live/28/28.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/0/02/ZDF.svg/320px-ZDF.svg.png');
+        addChannel(page, 'NDR HD', 'hls:http://ndr_fs-lh.akamaihd.net/i/ndrfs_nds@119224/master.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/0/08/NDR_Dachmarke.svg/200px-NDR_Dachmarke.svg.png');
+        addChannel(page, 'WDR HD', 'hls:http://www.metafilegenerator.de/WDR/WDR_FS/m3u8/wdrfernsehen.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/WDR_Re-Branding_2012_Logo.svg/200px-WDR_Re-Branding_2012_Logo.svg.png');
+        addChannel(page, 'RBB', 'hls:http://88.212.11.206:5000/live/13/13.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Rundfunk_Berlin-Brandenburg_logo.svg/200px-Rundfunk_Berlin-Brandenburg_logo.svg.png');
+        addChannel(page, 'Okto', 'hls:http://atwse.lbs.atusmedia.cc:1935/oktolive/okto-low.stream/hasbahca.m3u8', 'http://upload.wikimedia.org/wikipedia/de/thumb/7/7b/Okto.svg/200px-Okto.svg.png');
 
         page.appendItem("", "separator", {
             title: 'English'
         });
-        addChannel(page, 'Russia Today', 'hls:http://rt.ashttp14.visionip.tv/live/rt-global-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/a/a0/Russia-today-logo.svg');
-        addChannel(page, 'Russia Today Documentary', 'hls:http://rt.ashttp14.visionip.tv/live/rt-doc-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/a/a0/Russia-today-logo.svg');
-        addChannel(page, 'Euronews', 'hls:http://hd1.lsops.net/live/euronews_en.smil/playlist.m3u8', '');
+        addChannel(page, 'Russia Today', 'hls:http://rt.ashttp14.visionip.tv/live/rt-global-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Russia-today-logo.svg/200px-Russia-today-logo.svg.png');
+        addChannel(page, 'Russia Today Documentary', 'hls:http://rt.ashttp14.visionip.tv/live/rt-doc-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Russia-today-logo.svg/200px-Russia-today-logo.svg.png');
+        addChannel(page, 'Euronews', 'hls:http://hd1.lsops.net/live/euronews_en.smil/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Euronews_logo.svg/200px-Euronews_logo.svg.png');
         addChannel(page, 'BBC World News', 'hls:http://livestation_hls-lh.akamaihd.net/i/bbcworld_en@105465/index_928_av-b.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/6/6c/BBC_World_News_red.svg');
         addChannel(page, 'DW Europe', 'hls:http://dwtvios_europa-i.akamaihd.net/hls/live/200515/dwtveuropa/1/playlist1x.m3u8', 'https://lh5.googleusercontent.com/-9Ir29NdKHLU/AAAAAAAAAAI/AAAAAAAAIiY/TF5J4A4ZdP8/s120-c/photo.jpg');
-        addChannel(page, 'France 24', 'hls:http://vipwowza.yacast.net/f24_hlslive_en/_definst_/mp4:fr24_en_748.stream/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/en/6/65/FRANCE_24_logo.svg');
+        addChannel(page, 'France 24', 'hls:http://vipwowza.yacast.net/f24_hlslive_en/_definst_/mp4:fr24_en_748.stream/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/en/thumb/6/65/FRANCE_24_logo.svg/200px-FRANCE_24_logo.svg.png');
         //addChannel(page, 'CNN', 'rtmp://hd1.lsops.net/live/ playpath=cnn_en_584 swfUrl="http://static.ls-cdn.com/player/5.10/livestation-player.swf" swfVfy=true live=true', 'http://upload.wikimedia.org/wikipedia/commons/8/8b/Cnn.svg');
         addChannel(page, 'CNN', 'hls:http://livestation_hls-lh.akamaihd.net/i/cnn_en@105455/master.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/8/8b/Cnn.svg');
-        addChannel(page, 'CNBC', 'hls:http://livestation_hls-lh.akamaihd.net/i/cnbc_en@106428/master.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/e/e3/CNBC_logo.svg');
-        addChannel(page, 'Bloomberg', 'hls:http://hd4.lsops.net/live/bloomber_en_hls.smil/playlist.m3u8', '');
+        addChannel(page, 'CNBC', 'hls:http://livestation_hls-lh.akamaihd.net/i/cnbc_en@106428/master.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/CNBC_logo.svg/200px-CNBC_logo.svg.png');
+        addChannel(page, 'Bloomberg', 'hls:http://hd4.lsops.net/live/bloomber_en_hls.smil/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Bloomberg_logo.svg/200px-Bloomberg_logo.svg.png');
         //http://live.bltvios.com.edgesuite.net/oza2w6q8gX9WSkRx13bskffWIuyf/BnazlkNDpCIcD-QkfyZCQKlRiiFnVa5I/master.m3u8?geo_country=US
-        addChannel(page, 'Sky News', 'hls:http://hd2.lsops.net/live/skynewsi_en_372/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/c/c7/Sky_News.svg');
+        addChannel(page, 'Sky News', 'hls:http://hd2.lsops.net/live/skynewsi_en_372/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Sky_News.svg/200px-Sky_News.svg.png');
         addChannel(page, 'Press TV', 'hls:http://media23.lsops.net/live/presstv_en_hls.smil/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/en/2/23/PressTV.png');
         //http://aya02.livem3u8.me.totiptv.com/live/ea4c9d2666bc411d8e6777e8a1d2b747.m3u8?pt=1&code=4d4549b2c1f6926f8698e13c0123177a
         addChannel(page, 'AlJazeera', 'rtmp://hd2.lsops.net/live playpath=aljazeer_en_838 swfUrl="http://static.ls-cdn.com/player/5.10/livestation-player.swf" swfVfy=true live=true', 'http://upload.wikimedia.org/wikipedia/en/7/71/Aljazeera.svg');
-        addChannel(page, 'Arirang', 'http://worldlive-ios.arirang.co.kr/arirang/arirangtvworldios.mp4.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/9/94/Arirang.svg');
+        addChannel(page, 'Arirang', 'http://worldlive-ios.arirang.co.kr/arirang/arirangtvworldios.mp4.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Arirang.svg/200px-Arirang.svg.png');
         //addChannel(page, 'NHK World', 'hls:http://plslive-w.nhk.or.jp/nhkworld/app/live.m3u8', '');
-        addChannel(page, 'NHK World', 'hls:http://nhkworldlive-lh.akamaihd.net/i/nhkworld_w@145835/master.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/7/7b/NHK_World.svg');
+        addChannel(page, 'NHK World', 'hls:http://nhkworldlive-lh.akamaihd.net/i/nhkworld_w@145835/master.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/NHK_World.svg/200px-NHK_World.svg.png');
         addChannel(page, 'CCTV News', 'hls:http://88.212.11.206:5000/live/22/22.m3u8', '');
         addChannel(page, 'Redbull TV', 'hls:http://live.iphone.redbull.de.edgesuite.net/webtvHD.m3u8', '');
         addChannel(page, 'Filmbox Basic', 'hls:http://spi-live.ercdn.net/spi/smil:filmboxbasicsd_pl_0.smil/playlist.m3u8', '');
@@ -241,9 +241,13 @@
         addChannel(page, 'Vevo 1', 'hls:http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch1/06/prog_index.m3u8', '');
         addChannel(page, 'Vevo 2', 'hls:http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch2/06/prog_index.m3u8', '');
         addChannel(page, 'Vevo 3', 'hls:http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch3/06/prog_index.m3u8', '');
-        addChannel(page, 'Fix', 'rtmp://video.fixhd.tv/fix/hd.stream', '');
+        addChannel(page, 'Fix', 'rtmp://video.fixhd.tv/fix/hd.stream', 'http://dtvnews.hu/sites/default/files/images/fix_large.w160.jpg');
         //rtmp://rtmp.infomaniak.ch/livecast//ouitv
         addChannel(page, 'OUI TV', 'hls:http://rtmp.infomaniak.ch:1935/livecast/ouitv/playlist.m3u8', '');
+        addChannel(page, 'Planeta TV', 'hls:http://w1.drundoo.com:1935/DrundooDVR/_definst_/smil:405f1996-77f1-47e9-9646-0c6bfa5e18aa.smil/stream.m3u8', '');
+        addChannel(page, 'Balkanika', 'hls:http://74.122.193.194:1935/DrundooDVR/_definst_/smil:776c511d-aee0-4e33-a44e-265e464c0a28.smil/stream.m3u8', '');
+        addChannel(page, 'Fen TV', 'hls:http://74.122.193.194:1935/DrundooDVR/_definst_/smil:90e18283-cdb3-4c13-8c4f-b80897497858.smil/stream.m3u8', '');
+        addChannel(page, 'City TV', 'hls:http://74.122.193.194:1935/DrundooDVR/_definst_/smil:e0820ba7-2c1a-4286-ac1b-f00bb9dcbe61.smil/stream.m3u8', '');
         addChannel(page, 'M', 'rtmp://149.11.34.6/live/lobas.stream', '');
         addChannel(page, 'Clubbing TV', 'rtmp://204.107.26.252:8086/live/691.high.stream', '');
         //addChannel(page, 'Europa Plus TV (RTMP)', 'rtmp://europaplus.cdnvideo.ru/europaplus-live//mp4:eptv_main.sdp', 'http://www.europaplustv.com/images/europa_tv.png');
@@ -666,10 +670,10 @@
                   title: 'XXX'
               });
           }
-          addChannel(page, 'Erox HD', 'hls:http://spi-live.ercdn.net/spi/eroxhd_0_1/playlist.m3u8', '');
-          addChannel(page, 'Eroxxx HD', 'hls:http://spi-live.ercdn.net/spi/eroxxhd_0_1/playlist.m3u8', '');
-          addChannel(page, 'Visit-X', 'rtmp://194.116.150.47/live//visitx.stream1', '');
-          addChannel(page, 'Playboy TV', 'rtmp://111.118.21.77/ptv3/phd499', '');
+          addChannel(page, 'Erox HD', 'hls:http://spi-live.ercdn.net/spi/eroxhd_0_1/playlist.m3u8', 'http://www.lyngsat-logo.com/hires/ee/erox_box_hd.png');
+          addChannel(page, 'Eroxxx HD', 'hls:http://spi-live.ercdn.net/spi/eroxxhd_0_1/playlist.m3u8', 'http://www.lyngsat-logo.com/hires/ee/eroxxx_box_hd.png');
+          addChannel(page, 'Hallo TV', 'hls:http://83.169.58.38:1935/live/HalloTV1/playlist.m3u8', 'http://www.lyngsat-logo.com/logo/tv/hh/hallo_tv_at.jpg');
+          addChannel(page, 'Playboy TV', 'rtmp://111.118.21.77/ptv3/phd499', 'http://www.playboy.tv/assets/Playboy/PlayboyTv/Tour/assets/common/img/main-logo.png');
           addChannel(page, 'Playboy Spice TV HD', 'rtmp://111.118.21.77/ptv3/phd497', '');
           addChannel(page, 'Delight Empire HD', 'rtmp://111.118.21.75/ptv2/phd63', '');
           addChannel(page, 'Girls TV', 'rtmp://111.118.21.76:1935/ptv/phd501', '');
@@ -683,6 +687,8 @@
           addChannel(page, 'Asia ON', 'rtmp://lm02.everyon.tv/ptv2/phd60', '');
           addChannel(page, 'LiveTing TV', 'rtmp://lm02.everyon.tv/ptv2/tv/phd64', '');
           addChannel(page, 'Hot Girl TV', 'rtmp://lm02.everyon.tv/ptv2/tv/phd59', '');
+          addChannel(page, 'Visit-X', 'rtmp://194.116.150.47/live//visitx.stream1', 'https://pbs.twimg.com/profile_images/1625623578/social_logo.jpg');
+          //addChannel(page, 'Visit-X', 'rtmp://194.116.150.47/live//visitx.stream2', 'https://pbs.twimg.com/profile_images/1625623578/social_logo.jpg');
       }
     });
 
