@@ -159,7 +159,7 @@
                 page.source = "videoparams:" + showtime.JSONEncode({
                     title: unescape(title),
                     sources: [{
-                        url: match[1]
+                        url: "hls:" + match[1]
                     }]
                 });
             } else
