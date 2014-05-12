@@ -1,9 +1,10 @@
 {
-	"description": "<p>rad.io<p>The online radio with over 7000 radio stations, internet radio stations and Podcasts live. Simply listen to web radio and streams, and discover favorite stations from rock and pop, to jazz and classical.</p><p>For more information, visit <a href=\"http://www.rad.io\">http://www.rad.io</a>", "author": "Henrik Andersson",
+	"description": "<p>rad.io<p>Listen to Radio, Webradio and Internet Radio online: rad.io - simply listen.</p><p>For more information, visit <a href=\"http://www.rad.io\">http://www.rad.io</a>",
+        "author": "Henrik Andersson, lprot",
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "rad.io",
-	"synopsis": "The online radio over 7000 radio stations.",
-	"version": "0.3.1",
+	"synopsis": "Listen to Radio, Webradio and Internet Radio online: rad.io - simply listen.",
+	"version": "0.3.2",
 	"file": "rad.io.js",
 	"showtimeVersion": "4.5.28",
 	"type": "javascript",

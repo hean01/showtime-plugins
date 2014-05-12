@@ -23,6 +23,7 @@
     var BASE_URL = "http://www.shoutcast.com";
     var PREFIX = "shoutcast:";
     var logo = plugin.path + "logo.png";
+    var slogan = "SHOUTcast Radio - Listen to Free Online Radio Stations";
 
     function setPageHeader(page, title) {
         page.loading = false;
@@ -53,14 +54,12 @@
     plugin.createService("shoutcast", PREFIX + "start", "audio", true, logo);
 
     // create settings
-    var settings = plugin.createSettings("shoutcast", logo,
-			 "SHOUTcast Radio - Listen to Free Online Radio Stations");
+    var settings = plugin.createSettings("shoutcast", logo, slogan);
 
     settings.createAction("cleanFavorites", "Clean My Favorites", function() {
         store.list = "[]";
         showtime.notify('My Favorites are succesfully cleaned.', 2);
     });
-
 
     function trim(str) {
         return str.replace(/^\s+|\s+$/g,"");
@@ -104,7 +103,6 @@
     // Favorites
     plugin.addURI(PREFIX + "favorites", function(page) {
         setPageHeader(page, "My Favorites");
-	page_menu(page);
         fill_fav(page);
     });
 
@@ -150,32 +148,52 @@
 	var tryToSearch = true, fromPage = 1, itemsPerPage = 18;
         // 1-link, 2-title, 3-genre, 4-listeners, 5-bitrate, 6-format
         var re = /<a class="transition" href="([\S\s]*?)">([\S\s]*?)<\/a><\/td>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>/g;
-        if (action != "&action=none&cat=") {
-            action = unescape(action).match(/\?action=sub\&cat=([\S\s]*?)\#/);
-            action = '&action=sub&cat='+escape(action[1])+'#';
-        }
-
+//        if (action != "&action=none&cat=") {
+//            action = unescape(action).match(/\?action=sub\&cat=([\S\s]*?)\#/);
+//            action = '&action=sub&cat='+escape(action[1])+'#';
+//        }
+showtime.print(action);
         function loader() {
             if (!tryToSearch) return false;
                 page.loading = true;
                 //?action=search&string=jazz%20forever&_cf_rc=0
-                var response = showtime.httpReq(BASE_URL + '/radiolist.cfm?start=' + fromPage +
-                    action + '&amount=' + itemsPerPage +
-                    '&order=listeners&_cf_containerId=radiolist&_cf_nodebug=true&_cf_nocache=true').toString();
+                var response = showtime.httpReq(BASE_URL + '/radiolist.cfm' + action + '&start=' + fromPage +
+                    '&amount=' + itemsPerPage +
+                    '&order=listeners&_cf_containerId=radiolist&_cf_nodebug=true&_cf_nocache=true&_cf_rc=1').toString();
                 page.loading = false;
 
                 var match = re.exec(response);
+showtime.print(response);
                 while (match) {
 	              var item = page.appendItem("icecast:"+match[1], "station", {
 		          title: new showtime.RichText(unescape(match[2])+colorStr(match[3], orange)+
-                              colorStr(match[4], orange)+colorStr(match[5], orange)+colorStr(match[6], orange)),
+                              colorStr(match[4], orange)+colorStr(match[6]+' '+match[5], orange)),
 		          station: unescape(match[2]),
 		          description: match[3],
 		          bitrate: match[5],
 		          format: match[6],
 		          listeners: match[4]
 	              });
+showtime.print(response);
+                      var station;
+	              item.onEvent("addFavorite", function(item) {
+		          var entry = {
+                               url: this.url,
+		               title: this.title,
+                               station: this.station,
+		               description: this.description,
+		               bitrate: this.bitrate,
+                               format: this.format,
+                               listeners: this.listeners
+		          };
+		          var list = eval(store.list);
+                          var array = [showtime.JSONEncode(entry)].concat(list);
+                          store.list = showtime.JSONEncode(array);
+		          showtime.notify(list.station + " has been added to My Favorites.", 2);
+	              });
+	              item.addOptAction("Add '" + unescape(match[2]) + "' to My Favorites", "addFavorite");
                       match = re.exec(response);
+                      page.entries++;
                 };
                 if (response.match(/class="more transition">Start again<\/a>/) ||
                    !response.match(/class="more transition">/)) return tryToSearch = false;
@@ -188,16 +206,22 @@
 
     // Start page
     plugin.addURI(PREFIX + "start", function(page) {
-        setPageHeader(page, "SHOUTcast Radio - Listen to Free Online Radio Stations");
+        setPageHeader(page, slogan);
 
      	page.appendItem(PREFIX + "categories", "directory", {
 	    title: "Categories"
 	});
 
-//	page.appendItem(PREFIX + "favorites", "directory", {
-//	    title: "My Favorites"
-//	});
+	page.appendItem(PREFIX + "favorites", "directory", {
+	    title: "My Favorites"
+	});
 
         getStations(page, "&action=none&cat=");
     });
+
+    plugin.addSearcher("Shoutcast", logo, function(page, query) {
+        page.entries = 0;
+        getStations(page, "?action=search&string="+escape(query));
+    });
+
 })(this);

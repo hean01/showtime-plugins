@@ -174,7 +174,7 @@ widget(container_y, {
 				});
 
 					widget(label, {	
-					  .caption = $clone.focused.metadata.listeners + " listeners";
+					  .caption = $clone.focused.metadata.listeners;
 					  .align = left;
 					  .shadow = true;
 					  .color = 1.0;

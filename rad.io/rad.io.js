@@ -1,7 +1,7 @@
 /*
  *  rad.io
  *
- *  Copyright (C) 2012 Henrik Andersson
+ *  Copyright (C) 2014 Henrik Andersson, lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,27 @@
     var BASE_URL = "http://www.rad.io";
     var PREFIX = "rad.io:";
     var STREAMURL_STASH = "streamurl";
+    var logo = plugin.path + "rad.io.png";
+
+    function setPageHeader(page, title) {
+        if (page.metadata) {
+            page.metadata.title = title;
+            page.metadata.logo = logo;
+	    page.metadata.glwview = plugin.path + "views/array.view";
+            page.options.createInt('childTilesX', 'Number of tiles by X', 6, 1, 10, 1, '', function (v) {
+                page.metadata.childTilesX = v;
+            }, true);
+            page.options.createInt('childTilesY', 'Number of tiles by Y', 2, 1, 4, 1, '', function (v) {
+                page.metadata.childTilesY = v;
+            }, true);
+            page.options.createBool('informationBar', 'Show Information Bar', true, function (v) {
+                page.metadata.informationBar = v;
+            }, true);
+        }
+	page.type = "directory";
+	page.contents = "items";
+        page.loading = false;
+    }
 
     var items = {};
     //items['rs'] = { title: "Recommended stations",
@@ -33,10 +54,9 @@
 		    gets: {'sizeoflists': 40}
 		  };
 
-    var service = plugin.createService("rad.io", PREFIX + "start", "audio", true,
-			 plugin.path + "rad.io.png");
+    var service = plugin.createService("rad.io", PREFIX + "start", "audio", true, logo);
 
-    var settings = plugin.createSettings("rad.io", plugin.path + "rad.io.png",
+    var settings = plugin.createSettings("rad.io", logo,
 			 "rad.io: radio stream directory");
 
     var store = plugin.createStore('favorites', true)
@@ -85,7 +105,7 @@
 
     function get_data(path, gets) {
 	var query = BASE_URL + "/info/" + path + make_args(gets);
-	showtime.trace("url query: " + query);
+	//showtime.trace("url query: " + query);
 	try {
 	    var res = showtime.httpReq(query, {}, {
 		'User-Agent':'radio.de 1.9.1 rv:37 (iPhone; iPhone OS 5.0; de_DE)'});
@@ -94,7 +114,6 @@
 	    return {};
 	}
     }
-
 
     var cp1252 = 'ÀÁÂÃÄÅ¨ÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕ×ÖØÙÜÚÛÝÞßàáâãäå¸æçèéêëìíîïðñòóôõ÷öøùüúûýþÿ³²ºª¿¯´¥';
     var cp1251 = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЧЦШЩЬЪЫЭЮЯабвгдеёжзийклмнопрстуфхчцшщьъыэюяіІєЄїЇґҐ';
@@ -124,7 +143,7 @@
 	    var iconUrl = null;
 
 	    if (station.picture1Name)
-		iconUrl = station.pictureBaseURL + station.picture1Name;
+                iconUrl = station.pictureBaseURL + station.picture1Name;
 	    var item = page.appendItem("icecast:" + trim(bce.streamURL), "station", {
 		station: station.name,
 		description: bce.description,
@@ -159,51 +178,10 @@
 		var list = eval(store.list);
                 var array = [showtime.JSONEncode(entry)].concat(list);
                 store.list = showtime.JSONEncode(array);
-		showtime.notify(station.name + " has been added to My Favorites.", 2);
+		showtime.notify("'" + station.name + "' has been added to My Favorites.", 2);
 	    });
-
 	    item.addOptAction("Add '" + station.name + "' to My Favorites", "addFavorite");
     }
-
-    function populateStations(page, data) {
-    	for each (station in data) {
-            populate_stations(page, station);
-	}
-    }
-
-    function populateMostWanted(page, data) {
-	for each (category in data) {
-            for each (station in category) {
-                populate_stations(page, station);
-            }
-	}
-    }
-
-
-    // Search
-    plugin.addURI(PREFIX + "search", function(page) {
-	page.loading = false;
-	var search = showtime.textDialog('Search: ', true, true);
-	if (search.rejected)
-	    return;
-	var query = search.input;
-	page.type = "directory";
-	page.contents = "items";
-	page.metadata.title = "rad.io - search '" + query +"'";
-	page.metadata.logo = plugin.path + "rad.io.png";
-	page.metadata.glwview = plugin.path + "views/array.view";
-	page_menu(page);
-
-	page.loading = true;
-	var result = get_data('index/searchembeddedbroadcast', {
-	    'q': query.replace(' ', '+'),
-	    'start': '0',
-	    'rows': '30'
-	});
-	populateStations(page, result);
-	page.loading = false;
-    });
-
 
     function fill_fav(page) {
 	var list = eval(store.list);
@@ -229,7 +207,7 @@
 
 	    item.onEvent(pos, function(item) {
 		var list = eval(store.list);
-		showtime.notify(showtime.JSONDecode(list[item]).station + " has been removed from My Favorites.", 2);
+		showtime.notify("'" + showtime.JSONDecode(list[item]).station + "' has been removed from My Favorites.", 2);
 	        list.splice(item, 1);
 		store.list = showtime.JSONEncode(list);
                 page.flush();
@@ -241,55 +219,44 @@
 
     // Favorites
     plugin.addURI(PREFIX + "favorites", function(page) {
-	page.type = "directory";
-	page.contents = "items";
-	page.metadata.title = "My Favorites";
-	page.metadata.logo = plugin.path + "rad.io.png";
-	page.metadata.glwview = plugin.path + "views/array.view";
-	page_menu(page);
+        setPageHeader(page, "My Favorites");
         fill_fav(page);
-	page.loading = false;
     });
 
     // Handle hardcoded lists
     plugin.addURI(PREFIX + "list:(.*)", function(page, key) {
-	page.type = "directory";
-	page.contents = "items";
-	page.metadata.logo = plugin.path + "rad.io.png";
-	page.metadata.title = "rad.io - " + items[key].title;
-	page.metadata.glwview = plugin.path + "views/array.view";
+        setPageHeader(page, "rad.io - " + items[key].title);
 
-	page_menu(page);
-
+        // Populate Most Wanted
 	var result = get_data(items[key].path, items[key].gets);
-	populateMostWanted(page, result);
-
-	page.loading = false;
+	for each (category in result) {
+            for each (station in category) {
+                populate_stations(page, station);
+            }
+	}
     });
 
     // Nearest
     plugin.addURI(PREFIX + "getByCategory:(.*):(.*)", function(page, category, value) {
-	page.type = "directory";
-	page.contents = "items";
-	page.metadata.logo = plugin.path + "rad.io.png";
-	page.metadata.title = "rad.io - " + "Nearest stations";
-	page.metadata.glwview = plugin.path + "views/array.view";
-	page_menu(page);
+        setPageHeader(page, "rad.io - " + "Nearest stations");
 
 	var result = get_data('menu/broadcastsofcategory', {
 	    'category': '_'+category,
 	    'value': value
 	});
-	populateStations(page, result);
 
-	page.loading = false;
+    	for each (station in result) {
+            populate_stations(page, station);
+	}
     });
 
     // List by category
     plugin.addURI(PREFIX + "category:(.*)", function(page, category) {
+        page.metadata.title = "Stations by (" + category + ")";
+        page.metadata.logo = logo;
 	page.type = "directory";
 	page.contents = "items";
-        page.metadata.title = "Stations by (" + category + ")";
+        page.loading = false;
 
         var data = get_data("menu/valuesofcategory", {'category':'_'+category});
         for each (item in data) {
@@ -297,7 +264,6 @@
                 title: item
             });
         };
-        page.loading = false;
     });
 
 
@@ -305,19 +271,11 @@
     plugin.addURI(PREFIX + "start", function(page) {
 	page.type = "directory";
 	page.contents = "items";
-	page.metadata.logo = plugin.path + "rad.io.png";
+	page.metadata.logo = logo;
 	page.metadata.title = "rad.io";
      	page.loading = false;
 
         if (!service.country) service.country = "Ukraine";
-
-        page.appendItem(PREFIX + "getByCategory:country:"+service.country, "directory", {
-	    title: "Nearest stations (by settings)"
-	});
-
-	page.appendItem(PREFIX + "favorites", "directory", {
-	    title: "My Favorites"
-	});
 
 	for (var key in items) {
 	    page.appendItem(PREFIX + "list:" + key, "directory", {
@@ -325,48 +283,65 @@
 	    });
 	}
 
+        page.appendItem(PREFIX + "getByCategory:country:" + service.country, "directory", {
+	    title: "Nearest stations (by settings)"
+	});
+
         page.appendItem("", "separator", {
+        });
+
+	page.appendItem(PREFIX + "favorites", "directory", {
+	    title: "My Favorites"
+	});
+
+        page.appendItem("", "separator", {
+            title: "Stations by"
         });
 
         page.appendItem(PREFIX + "category:country", "directory", {
-	    title: "Stations (by country)"
+	    title: "Country"
 	});
 
         page.appendItem(PREFIX + "category:genre", "directory", {
-	    title: "Stations (by genre)"
+	    title: "Genre"
 	});
 
         page.appendItem(PREFIX + "category:city", "directory", {
-	    title: "Stations (by city)"
+	    title: "City"
 	});
 
         page.appendItem(PREFIX + "category:language", "directory", {
-	    title: "Stations (by language)"
+	    title: "Language"
 	});
 
         page.appendItem(PREFIX + "category:topic", "directory", {
-	    title: "Stations (by topic)"
-	});
-
-        page.appendItem("", "separator", {
-        });
-
-	page.appendItem(PREFIX + "search", "directory", {
-	    title: "Search"
+	    title: "Topic"
 	});
     });
 
-    function page_menu(page) {
-        page.options.createInt('childTilesX', 'Number of tiles by X', 6, 1, 10, 1, '', function (v) {
-            page.metadata.childTilesX = v;
-        }, true);
+    plugin.addSearcher("rad.io", logo, function(page, query) {
+        setPageHeader(page, '');
+        var fromPage = 0, tryToSearch = true;
+        page.entries = 0;
 
-        page.options.createInt('childTilesY', 'Number of tiles by Y', 2, 1, 4, 1, '', function (v) {
-            page.metadata.childTilesY = v;
-        }, true);
-
-        page.options.createBool('informationBar', 'Show Information Bar', true, function (v) {
-            page.metadata.informationBar = v;
-        }, true);
-    }
+        function loader() {
+            if (!tryToSearch) return false;
+	    page.loading = true;
+	    var result = get_data('index/searchembeddedbroadcast', {
+	        'q': query.replace(' ', '+'),
+	        'start': fromPage,
+	        'rows': '30'
+            });
+	    page.loading = false;
+    	    for each (station in result) {
+                populate_stations(page, station);
+                page.entries++;
+	    }
+            if (!result) return tryToSearch = false;
+            fromPage+=30;
+            return true;
+        };
+        loader();
+        page.paginator = loader;
+    });
 })(this);
