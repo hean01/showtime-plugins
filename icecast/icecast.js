@@ -262,7 +262,7 @@
         setPageHeader(page, '');
         page.entries = 0;
 	page.loading = true;
-	var doc = showtime.entityDecode(showtime.httpGet(BASE_URL + "/search?search=" + query.replace(' ', '+')));
+	var doc = showtime.entityDecode(showtime.httpReq(BASE_URL + "/search?search=" + query.replace(' ', '+')));
 	scrape_page(page, doc);
 	page.loading = false;
     });

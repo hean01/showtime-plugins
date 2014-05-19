@@ -115,6 +115,23 @@
                  page.error("Sorry, can't get the link :(");
     });
 
+    plugin.addURI(PREFIX + "jampo:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
+        var resp = showtime.httpReq("http://tv.jampo.tv/play/channel/" + url).toString();
+        page.loading = false;
+        var match = resp.match(/<video[\S\s]*?src="([\S\s]*?)"/);
+            if (match) {
+                page.type = "video";
+                page.source = "videoparams:" + showtime.JSONEncode({
+                    title: unescape(title),
+                    sources: [{
+                        url: 'hls:' + match[1]
+                    }]
+                });
+            } else
+                 page.error("Sorry, can't get the link :(");
+    });
+
     function addChannel(page, title, url, icon) {
         var link = "videoparams:" + showtime.JSONEncode({
                         sources: [{
@@ -128,6 +145,9 @@
             link = PREFIX + "youtube:" + title;
 
         if (url.substr(0, 5)  == 'seetv')
+            link = PREFIX + url + ":" + escape(title);
+
+        if (url.substr(0, 5)  == 'jampo')
             link = PREFIX + url + ":" + escape(title);
 
         var item = page.appendItem(link, "video", {
@@ -353,12 +373,12 @@
         addChannel(page, '100', 'http://31.43.120.162:8062', 'http://tv100.com.ua/templates/diablofx/images/100_logo.jpg');
         //rtmp://31.28.169.242/live/live112
         addChannel(page, '112', 'hls:http://31.28.169.242/hls/live112.m3u8', 'http://112.ua/static/img/logo/112_ukr.png');
-        addChannel(page, 'TET', 'hls:http://37.48.71.52/hls/xLfHH4xNUmZB-DqKQEDPsQ/1400529657/tet/index.m3u8', '');
-        addChannel(page, '1+1', 'hls:http://37.48.71.52/hls/x5IOWKZSSbbc9RKaetByFg/1400529781/1plus1/index.m3u8', '');
-        addChannel(page, 'НТН', 'http://37.48.71.52/hls/SkJVoy_6WlXUpUAOR_kmwA/1400530041/ntn/index.m3u8', '');
+        addChannel(page, 'TET', 'jampo:tet', '');
+        addChannel(page, '1+1', 'jampo:1plus1', '');
+        addChannel(page, 'НТН', 'jampo:ntn', '');
         addChannel(page, 'Рада', 'http://85.25.43.30:8194', '');
         //addChannel(page, 'ТВі', 'rtmp://media.tvi.com.ua/live/_definst_//HLS4', 'http://tvi.ua/catalog/view/theme/new/image/logo.png');
-        addChannel(page, 'ТВі', 'hls:http://37.48.71.52/hls/mn76BrK4vQCSjY3gx5IKew/1400529866/tvi/index.m3u8', '');
+        addChannel(page, 'ТВі', 'jampo:tvi', '');
         addChannel(page, '5 канал', 'rtmp://194.0.88.78/mytv//5kan54?stream=8894', '');
         addChannel(page, 'ICTV', 'seetv:ictv', '');
         addChannel(page, 'СТБ', 'seetv:stb', '');
