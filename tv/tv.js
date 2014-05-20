@@ -236,8 +236,8 @@
         page.appendItem("", "separator", {
             title: 'Deutsch'
         });
-        addChannel(page, 'N24', 'hls:http://n24-live.hls.adaptive.level3.net/hls-live/n24-pssimn24live/_definst_/live/stream2.m3u8', 'http://upload.wikimedia.org/wikipedia/de/thumb/2/20/N24_logo.svg/200px-N24_logo.svg.png');
-        addChannel(page, 'ZDF', 'hls:http://88.212.11.206:5000/live/28/28.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/0/02/ZDF.svg/320px-ZDF.svg.png');
+        addChannel(page, 'N24', 'hls:http://n24-live.hls.adaptive.level3.net/hls-live/n24-pssimn24live/_definst_/live/stream2.m3u8', 'http://upload.wikimedia.org/wikipedia/de/2/20/N24_logo.svg');
+        addChannel(page, 'ZDF', 'hls:http://88.212.11.206:5000/live/28/28.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/0/02/ZDF.svg');
         addChannel(page, 'NDR HD', 'hls:http://ndr_fs-lh.akamaihd.net/i/ndrfs_nds@119224/master.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/0/08/NDR_Dachmarke.svg/200px-NDR_Dachmarke.svg.png');
         addChannel(page, 'WDR HD', 'hls:http://www.metafilegenerator.de/WDR/WDR_FS/m3u8/wdrfernsehen.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/WDR_Re-Branding_2012_Logo.svg/200px-WDR_Re-Branding_2012_Logo.svg.png');
         addChannel(page, 'RBB', 'hls:http://88.212.11.206:5000/live/13/13.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Rundfunk_Berlin-Brandenburg_logo.svg/200px-Rundfunk_Berlin-Brandenburg_logo.svg.png');
@@ -261,6 +261,7 @@
         addChannel(page, 'Sky News', 'hls:http://hd2.lsops.net/live/skynewsi_en_372/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Sky_News.svg/200px-Sky_News.svg.png');
         addChannel(page, 'Press TV', 'hls:http://media23.lsops.net/live/presstv_en_hls.smil/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/en/2/23/PressTV.png');
         //http://aya02.livem3u8.me.totiptv.com/live/ea4c9d2666bc411d8e6777e8a1d2b747.m3u8?pt=1&code=4d4549b2c1f6926f8698e13c0123177a
+        addChannel(page, 'Reuters', 'hls:http://37.58.85.156/rlo001/ngrp:rlo001.stream_all/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/ru/a/a0/Reuters_2008_logo.svg');
         addChannel(page, 'AlJazeera', 'rtmp://hd2.lsops.net/live playpath=aljazeer_en_838 swfUrl="http://static.ls-cdn.com/player/5.10/livestation-player.swf" swfVfy=true live=true', 'http://upload.wikimedia.org/wikipedia/en/7/71/Aljazeera.svg');
         addChannel(page, 'Arirang', 'http://worldlive-ios.arirang.co.kr/arirang/arirangtvworldios.mp4.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Arirang.svg/200px-Arirang.svg.png');
         //addChannel(page, 'NHK World', 'hls:http://plslive-w.nhk.or.jp/nhkworld/app/live.m3u8', '');
@@ -418,9 +419,9 @@
         addChannel(page, 'Право TV', 'ts:http://31.43.120.162:8058', '');
         addChannel(page, 'Dobro', 'ts:http://31.43.120.162:8067', '');
         addChannel(page, '2x2', 'ts:http://31.43.120.162:8073', '');
-        addChannel(page, '2x2', 'http://91.192.168.242:8035', '');
-        addChannel(page, 'Enter film', 'http://85.25.43.30:8208', '');
-        addChannel(page, 'Гумор ТВ', 'http://85.25.43.30:8232', '');
+        addChannel(page, '2x2', 'ts:http://91.192.168.242:8035', '');
+        addChannel(page, 'Enter film', 'ts:http://85.25.43.30:8208', '');
+        addChannel(page, 'Гумор ТВ', 'ts:http://85.25.43.30:8232', '');
         addChannel(page, 'УТР', 'ts:http://31.43.120.162:8047', 'http://utr.tv/ru/templates/UTR/images/logo.png');
         addChannel(page, 'ТВ Голд', 'rtmp://77.88.210.226/tvgold.com.ua_live/livestream', 'https://yt3.ggpht.com/-WBTeSleTH8M/AAAAAAAAAAI/AAAAAAAAAAA/3ZWvOO3Pl8I/s100-c-k-no/photo.jpg');
         addChannel(page, 'ТРК Львів', 'rtmp://gigaz.wi.com.ua/hallDemoHLS/LVIV', 'http://www.lodtrk.org.ua/inc/getfile.php?i=20111026133818.gif');
@@ -436,8 +437,8 @@
         addChannel(page, 'Shopping TV', 'ts:http://31.43.120.162:8063', '');
         addChannel(page, 'Футбол 1', 'ts:http://31.43.120.162:8118', 'https://ru.viasat.ua/assets/logos/3513/exclusive_F1-yellow-PL.png');
         addChannel(page, '1 Авто', 'ts:http://31.43.120.162:8052', '');
-        addChannel(page, 'XSport', 'http://85.25.43.30:8247', '');
-        addChannel(page, 'НЛО ТВ', 'http://85.25.43.30:8234', '');
+        addChannel(page, 'XSport', 'ts:http://85.25.43.30:8247', '');
+        addChannel(page, 'НЛО ТВ', 'ts:http://85.25.43.30:8234', '');
         addChannel(page, 'News One', 'rtmp://newsonelivefs.fplive.net:443/newsonelive-live/_definst_/streamukr', '');
         addChannel(page, 'Тиса-1', 'rtmp://213.174.8.15/live/live2', '');
       }
