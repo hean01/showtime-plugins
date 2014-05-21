@@ -412,6 +412,7 @@
         addChannel(page, 'ICTV', 'seetv:ictv', '');
         addChannel(page, 'СТБ', 'seetv:stb', '');
         addChannel(page, 'Новий канал', 'seetv:novy', '');
+        addChannel(page, 'ТРК Україна', 'hls:http://kanalukraina.tv/index.m3u8?token=93f2ada7b6ed50c919bf059efb8252b5bea278c4', '');
         addChannel(page, 'MEGA', 'seetv:mega', '');
         addChannel(page, 'K1', 'jampo:k1', '');
         addChannel(page, 'K2', 'jampo:k2', '');
@@ -492,7 +493,9 @@
         addChannel(page, 'HD Media', 'hls:http://serv02.vintera.tv:1935/push/hdmedia.stream/playlist.m3u8', '');
         addChannel(page, 'HD Media 3D', 'hls:http://hdmedia3d.vintera.tv:1935/hdmedia3d/hdmedia3d.stream/playlist.m3u8', '');
         addChannel(page, 'ЕДАI', 'youtube', '');
+        addChannel(page, 'myZen.tv', 'glaz:myzen-tv', '');
         //http://hls.novotelecom.ru/streaming/nickelodeon/tvrec/playlist.m3u8
+        addChannel(page, 'Nick Jr', 'glaz:nick-jr', '');
         addChannel(page, 'Nickelodeon', 'hls:http://hls.cn.ru/streaming/nickelodeon/tvrec/playlist.m3u8', '');
         addChannel(page, 'Comedy TV', 'seetv:comedy-club', '');
         addChannel(page, 'Ростов ТВ', 'hls:http://rostovlife.vintera.tv:1935/mediapark/rostov_tv1.stream/playlist.m3u8', '');
@@ -514,7 +517,7 @@
         addChannel(page, 'Звезда', 'hls:http://webtv.tatar-inform.ru:1935/live/kzntv/playlist.m3u8', '');
         addChannel(page, 'Рен ТВ', 'hls:http://ren.cdnvideo.ru:1935/rtp/ren2/playlist.m3u8', '');
         addChannel(page, 'КПРФ', 'rtmp://kprf-live.cdn.ngenix.net/live/mp4:stream_700.mp4', '');
-        addChannel(page, 'БСТ', 'hls:http://btv-net.mediacdn.ru/TVB/bst/track_1/playlist.m3u8', '');
+        addChannel(page, 'БСТ', 'hls:http://btv-net.mediacdn.ru/TVB4/bst/track_1/playlist.m3u8', '');
 
         page.appendItem("", "separator", {
             title: 'Planet Online'
