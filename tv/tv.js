@@ -314,9 +314,9 @@
             });
         }
         //addChannel(page, 'PIK.TV', 'rtmp://fms.pik-tv.com/live/piktv2pik2tv.flv', '');
-        addChannel(page, 'Dance  TV', 'hls:http://91.82.85.16:1935/relay15/nettv_channel_1/playlist.m3u8', '');
-        addChannel(page, 'King TV', 'hls:http://91.82.85.16:1935/relay15/nettv03_channel_1/playlist.m3u8', '');
-        addChannel(page, '1HD', 'hls:http://109.239.142.62:1935/live/hlsstream/playlist3.m3u8', '');
+        addChannel(page, 'Dance  TV', 'hls:http://91.82.85.16:1935/relay15/nettv_channel_1/playlist.m3u8', 'http://www.dancetv.hu/index_htm_files/9.png');
+        addChannel(page, 'King TV', 'hls:http://91.82.85.16:1935/relay15/nettv03_channel_1/playlist.m3u8', 'http://www.dancetv.hu/index_htm_files/141.png');
+        addChannel(page, '1HD', 'hls:http://109.239.142.62:1935/live/hlsstream/playlist3.m3u8', 'http://cs614626.vk.me/v614626983/4712/Ae-m7Qoz364.jpg');
         //addChannel(page, '1HD (RTMP)', 'rtmp://109.239.142.62/live/livestream3', '');
         addChannel(page, 'PIK TV', 'hls:http://fms.pik-tv.com:1935/live/piktv3pik3tv/playlist.m3u8', '');
         addChannel(page, '360 Tune Box', 'hls:http://spi-live.ercdn.net/spi/360tuneboxhd_0_1/playlist.m3u8', '');
@@ -514,6 +514,8 @@
         addChannel(page, 'HD Media 3D', 'hls:http://hdmedia3d.vintera.tv:1935/hdmedia3d/hdmedia3d.stream/playlist.m3u8', '');
         addChannel(page, 'ЕДАI', 'youtube', '');
         addChannel(page, 'myZen.tv', 'glaz:myzen-tv', '');
+        //rtmp://109.239.142.90/live/mcstream_1080p
+        addChannel(page, 'ЛДПР live', 'hls:http://109.239.142.90:1935/live/mcstream_1080p/playlist.m3u8', 'http://ldpr.tv/img/header/logo.png');
         //http://hls.novotelecom.ru/streaming/nickelodeon/tvrec/playlist.m3u8
         addChannel(page, 'Nick Jr', 'glaz:nick-jr', '');
         addChannel(page, 'Nickelodeon', 'hls:http://hls.cn.ru/streaming/nickelodeon/tvrec/playlist.m3u8', '');
