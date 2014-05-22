@@ -1,7 +1,7 @@
 /**
  * Porntube plugin for Showtime
  *
- *  Copyright (C) 2013 lprot
+ *  Copyright (C) 2014 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,12 +37,10 @@
     }
 
     var service = plugin.createService("Porntube", PREFIX + ":start", "video", true, logo);
-    var Order = "",
-        Quality = "",
-        Age = "";
+    var Order = "", Quality = "", Age = "";
 
     function trim(s) {
-        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
+        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/, '');
     }
 
     function getRating(str) {
@@ -70,12 +68,8 @@
             icon: logo
         });
 
-        var re;
-
-        function addSectionAndScrape(name) {
-            page.appendItem("", "separator", {
-                title: name
-            });
+        var re, v;
+        function scrape() {
             var bw = re.exec(v)[1];
             // 1-link, 2-img, 3-title, 4-HDflag, 5-views, 6-duration, 7-rating, 8-was added, 9-time units
             re = /<a href="([\S\s]*?)"[\S\s]*?<img src="([\S\s]*?)" alt="([\S\s]*?)"[\S\s]*?<a href="[\S\s]*?">([\S\s]*?)<span>([\S\s]*?) views <\/span>([\S\s]*?)<\/a>[\S\s]*?<strong>([\S\s]*?)like this<\/strong>[\S\s]*?<span>([\S\s]*?)<\/span>([\S\s]*?)<\/a>/g;
@@ -94,7 +88,7 @@
                     title: new showtime.RichText((match[4] ? blueStr("HD ") : "") + match[3]),
                     duration: trim(match[6]),
                     rating: getRating(match[7]),
-                    description: new showtime.RichText("Views: " + blueStr(match[5]) + "\nAdded:" + blueStr(match[8]) + match[9]),
+                    description: new showtime.RichText("Views: " + blueStr(trim(match[5])) + "\nAdded: " + blueStr(trim(match[8])) + ' ' + trim(match[9])),
                     icon: icon
                 });
                 match = re.exec(bw);
@@ -102,28 +96,50 @@
             }
         }
 
-        var v = showtime.httpGet(BASE_URL);
+        var fromPage = 1, tryToSearch = true;
+        function loader() {
+            if (!tryToSearch) return false;
+            if (fromPage == 1) { // Being watched now
+                page.loading = true;
+                v = showtime.httpReq(BASE_URL);
+                page.loading = false;
 
-        // Being watched now
-        re = /<div class="most-viewed-home" id="ajax-holder">([\S\s]*?)<div class="relax">/;
-        addSectionAndScrape("Being watched now:");
-
-        // Recent videos
-        re = /<!-- Recent videos([\S\s]*?)<!-- Recent videos end -->/;
-        addSectionAndScrape("Recent videos:");
+                page.appendItem("", "separator", {
+                    title: "Being watched now:"
+                });
+                re = /<div class="most-viewed-home" id="ajax-holder">([\S\s]*?)<div class="relax">/;
+                scrape();
+                page.appendItem("", "separator", {
+                    title: "Recent videos:"
+                });
+                re = /<!-- Recent videos([\S\s]*?)<!-- Recent videos end -->/;
+                scrape();
+            } else {
+                re = /<!-- Videos listing page([\S\s]*?)<!-- Videos listing page ends -->/;
+                page.loading = true;
+                v = showtime.httpReq(BASE_URL + '/videos?p=' + fromPage);
+                page.loading = false;
+                scrape();
+            }
+            var re2 = /navNext">Next/;
+            if (!re2.exec(v)) return tryToSearch = false;
+            fromPage++;
+            return true;
+        }
+        loader();
+        page.paginator = loader;
     };
 
     plugin.addURI(PREFIX + ":videos:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, 'Porntube - ' + unescape(title));
-        var fromPage = 1,
-            tryToSearch = true;
-        var Order = "age",
-            Quality = "all",
-            Age = "alltime";
+        var fromPage = 1, tryToSearch = true;
+        var Order = "age", Quality = "all", Age = "alltime";
 
         function loader() {
             if (!tryToSearch) return false;
-            var v = showtime.httpGet(BASE_URL + unescape(url) + '?p=' + fromPage + '&order=' + Order + '&quality=' + Quality + '&age=' + Age);
+            page.loading = true;
+            var v = showtime.httpReq(BASE_URL + unescape(url) + '?p=' + fromPage + '&order=' + Order + '&quality=' + Quality + '&age=' + Age);
+            page.loading = false;
             var re = /<div class="overlay"([\S\s]*?)<div class="relax"/;
             var bw = re.exec(v)[1];
             // 1-link, 2-img, 3-title, 4-HDflag, 5-views, 6-duration, 7-rating, 8-was added, 9-time units
@@ -143,7 +159,7 @@
                     title: new showtime.RichText((match[4] ? blueStr("HD ") : "") + match[3]),
                     duration: trim(match[6]),
                     rating: getRating(match[7]),
-                    description: new showtime.RichText("Views: " + blueStr(match[5]) + "\nAdded:" + blueStr(match[8]) + match[9]),
+                    description: new showtime.RichText("Views: " + blueStr(trim(match[5])) + "\nAdded: " + blueStr(trim(match[8])) + ' ' + trim(match[9])),
                     icon: icon
                 });
                 page.entries++;
@@ -156,11 +172,11 @@
             return true;
         };
         page.options.createMultiOpt("order", "Sort by", [
-            ['age', 'Date Added', true],
-            ['rating', 'Top Rated'],
+            ['age', 'Date', true],
+            ['duration', 'Duration'],
+            ['popularity', 'Popularity'],
             ['numviews', 'Most Viewed'],
-            ['popularity', 'Most popular'],
-            ['duration', 'Duration']
+            ['rating', 'Rating']
         ], function(res) {
             Order = res;
         });
@@ -183,7 +199,7 @@
                 return true
             };
             page.flush();
-            fromPage = 1, tryToSearch = false;
+            fromPage = 1, tryToSearch = true;
             loader();
             page.paginator = loader;
         });
@@ -193,7 +209,9 @@
 
     plugin.addURI(PREFIX + ":categories", function(page) {
         setPageHeader(page, 'Porntube - Categories');
-        var v = showtime.httpGet(BASE_URL + "/categories");
+        page.loading = true;
+        var v = showtime.httpReq(BASE_URL + "/categories");
+        page.loading = false;
         // 1-link, 2-img, 3-title, 4-total
         var re = /<div class="video-thumb category-thumb[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?alt="([\S\s]*?)"[\S\s]*?<h3>[\S\s]*?<a href="[\S\s]*?">([\S\s]*?) videos/g;
         var match = re.exec(v);
@@ -216,7 +234,9 @@
 
         function loader() {
             if (!tryToSearch) return false;
-            var v = showtime.httpGet(BASE_URL + '/channels?p=' + fromPage + '&letter=' + Letter + '&order=' + Order + '&age=' + Age);
+            page.loading = true;
+            var v = showtime.httpReq(BASE_URL + '/channels?p=' + fromPage + '&letter=' + Letter + '&order=' + Order + '&age=' + Age);
+            page.loading = false;
             // 1-link, 2-img, 3-title, 4-views, 5-rating, 6-videos
             var re = /<div class="video-thumb site-thumb[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?alt="([\S\s]*?)"[\S\s]*?<a href="[\S\s]*?<span>([\S\s]*?) views <\/span>[\S\s]*?<strong>([\S\s]*?)<\/strong>([\S\s]*?) videos/g;
             var match = re.exec(v);
@@ -235,33 +255,12 @@
             return true;
         };
         page.options.createMultiOpt("letter", "Filter by letter", [
-            ['all', 'ALL', true],
-            ['A', 'A'],
-            ['B', 'B'],
-            ['C', 'C'],
-            ['D', 'D'],
-            ['E', 'E'],
-            ['F', 'F'],
-            ['G', 'G'],
-            ['H', 'H'],
-            ['I', 'I'],
-            ['J', 'J'],
-            ['K', 'K'],
-            ['L', 'L'],
-            ['M', 'M'],
-            ['N', 'N'],
-            ['O', 'O'],
-            ['P', 'P'],
-            ['Q', 'Q'],
-            ['R', 'R'],
-            ['S', 'S'],
-            ['T', 'T'],
-            ['U', 'U'],
-            ['V', 'V'],
-            ['W', 'W'],
-            ['X', 'X'],
-            ['Y', 'Y'],
-            ['Z', 'Z']
+            ['all', 'ALL', true], ['A', 'A'], ['B', 'B'], ['C', 'C'],
+            ['D', 'D'], ['E', 'E'], ['F', 'F'], ['G', 'G'], ['H', 'H'],
+            ['I', 'I'], ['J', 'J'], ['K', 'K'], ['L', 'L'], ['M', 'M'],
+            ['N', 'N'], ['O', 'O'], ['P', 'P'], ['Q', 'Q'], ['R', 'R'],
+            ['S', 'S'], ['T', 'T'], ['U', 'U'], ['V', 'V'], ['W', 'W'],
+            ['X', 'X'], ['Y', 'Y'], ['Z', 'Z']
         ], function(res) {
             Letter = res;
         });
@@ -306,7 +305,9 @@
 
         function loader() {
             if (!tryToSearch) return false;
-            var v = showtime.httpGet(BASE_URL + '/pornstars?p=' + fromPage + '&letter=' + Letter + '&order=' + Order);
+            page.loading = true;
+            var v = showtime.httpReq(BASE_URL + '/pornstars?p=' + fromPage + '&letter=' + Letter + '&order=' + Order);
+            page.loading = false;
             // 1-link, 2-title, 3-img, 4-views, 5-rank, 6-videos
             var re = /<div class="video-thumb pornstar-thumb[\S\s]*?<a href="([\S\s]*?)" title="([\S\s]*?)">[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?<a href="[\S\s]*?<span>([\S\s]*?) profile views <\/span>[\S\s]*?<strong>([\S\s]*?)<\/strong>([\S\s]*?) videos/g;
             var match = re.exec(v);
@@ -325,42 +326,21 @@
         };
 
         page.options.createMultiOpt("letter", "Filter by letter", [
-            ['all', 'ALL', true],
-            ['A', 'A'],
-            ['B', 'B'],
-            ['C', 'C'],
-            ['D', 'D'],
-            ['E', 'E'],
-            ['F', 'F'],
-            ['G', 'G'],
-            ['H', 'H'],
-            ['I', 'I'],
-            ['J', 'J'],
-            ['K', 'K'],
-            ['L', 'L'],
-            ['M', 'M'],
-            ['N', 'N'],
-            ['O', 'O'],
-            ['P', 'P'],
-            ['Q', 'Q'],
-            ['R', 'R'],
-            ['S', 'S'],
-            ['T', 'T'],
-            ['U', 'U'],
-            ['V', 'V'],
-            ['W', 'W'],
-            ['X', 'X'],
-            ['Y', 'Y'],
-            ['Z', 'Z']
+            ['all', 'ALL', true], ['A', 'A'], ['B', 'B'], ['C', 'C'],
+            ['D', 'D'], ['E', 'E'], ['F', 'F'], ['G', 'G'], ['H', 'H'],
+            ['I', 'I'], ['J', 'J'], ['K', 'K'], ['L', 'L'], ['M', 'M'],
+            ['N', 'N'], ['O', 'O'], ['P', 'P'], ['Q', 'Q'], ['R', 'R'],
+            ['S', 'S'], ['T', 'T'], ['U', 'U'], ['V', 'V'], ['W', 'W'],
+            ['X', 'X'], ['Y', 'Y'], ['Z', 'Z']
         ], function(res) {
             Letter = res;
         });
         page.options.createMultiOpt("order", "Sort by", [
             ['popularity', 'Most popular', true],
-            ['views', 'Most viewed'],
+            ['views', 'Views'],
             ['videos', 'Most videos'],
-            ['name', 'Alphabetically'],
-            ['date', 'Latest added']
+            ['name', 'Name'],
+            ['date', 'Date']
         ], function(res) {
             Order = res;
         });
@@ -379,17 +359,21 @@
 
     // Play links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
-        var v = showtime.httpGet(BASE_URL + unescape(url));
+        page.loading = true;
+        var v = showtime.httpReq(BASE_URL + unescape(url));
+        page.loading = false;
         var re = /embedPlayer\(([\d^]+)[\S\s]*?\[([\S\s]*?)\]/;
         var match = re.exec(v);
 	var res = match[2].split(",");
 	var maxRes = '0';
 	for (var i in res) if (parseInt(maxRes) < parseInt(res[i])) maxRes = res[i];
+        page.loading = true;
 	var v = showtime.httpReq('http://tkn.porntube.com/'+match[1]+'/desktop/'+maxRes, {
 		'method' : 'POST',
 		'headers': { 'Host': 'tkn.porntube.com', 'Origin': BASE_URL,
 			'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36' }
 		}).toString();
+        page.loading = false;
 	match = v.match(/"token":"([\S\s]*?)"}/);
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
@@ -404,16 +388,15 @@
 
     plugin.addURI(PREFIX + ":start", startPage);
 
-    plugin.addSearcher("Porntube", logo,
-
-    function(page, query) {
-	    page.entries = 0;
-        var fromPage = 1,
-        tryToSearch = true;
+    plugin.addSearcher("Porntube", logo, function(page, query) {
+        page.entries = 0;
+        var fromPage = 1, tryToSearch = true;
 
         function loader() {
             if (!tryToSearch) return false;
-            var response = showtime.httpGet(BASE_URL + '/search?q=' + query.replace(/\s/g, '\+') + "&p=" + fromPage);
+            page.loading = true;
+            var response = showtime.httpReq(BASE_URL + '/search?q=' + query.replace(/\s/g, '\+') + "&p=" + fromPage);
+            page.loading = false;
             var re = /<div class="overlay"([\S\s]*?)<div class="relax"/;
             var response2 = re.exec(response)[1];
             // 1-link, 2-img, 3-title, 4-HDflag, 5-views, 6-duration, 7-rating, 8-was added, 9-time units
@@ -433,7 +416,7 @@
                     title: new showtime.RichText((match[4] ? blueStr("HD ") : "") + match[3]),
                     duration: trim(match[6]),
                     rating: getRating(match[7]),
-                    description: new showtime.RichText("Views: " + blueStr(match[5]) + "\nAdded:" + blueStr(match[8]) + match[9]),
+                    description: new showtime.RichText("Views: " + blueStr(trim(match[5])) + "\nAdded: " + blueStr(trim(match[8])) + ' ' + trim(match[9])),
                     icon: icon
                 });
                 page.entries++;
