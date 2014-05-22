@@ -149,6 +149,23 @@
                  page.error("Sorry, can't get the link :(");
     });
 
+    plugin.addURI(PREFIX + "trk:(.*)", function(page, title) {
+        page.loading = true;
+        var resp = showtime.httpReq("http://kanalukraina.tv/online/").toString();
+        page.loading = false;
+        var match = resp.match(/"trku"[\S\s]*?\[[\S\s]*?"([\S\s]*?)"/);
+            if (match) {
+                page.type = "video";
+                page.source = "videoparams:" + showtime.JSONEncode({
+                    title: unescape(title),
+                    sources: [{
+                        url: match[1]
+                    }]
+                });
+            } else
+                 page.error("Sorry, can't get the link :(");
+    });
+
     function addChannel(page, title, url, icon) {
         var mimetype = '';
         if (url.substr(0, 3) == 'ts:') {
@@ -175,6 +192,9 @@
 
         if (url.substr(0, 4)  == 'glaz')
             link = PREFIX + url + ":" + escape(title);
+
+        if (url.substr(0, 3)  == 'trk')
+            link = PREFIX + "trk:" + escape(title);
 
         var item = page.appendItem(link, "video", {
             title: title,
@@ -412,7 +432,7 @@
         addChannel(page, 'ICTV', 'seetv:ictv', '');
         addChannel(page, 'СТБ', 'seetv:stb', '');
         addChannel(page, 'Новий канал', 'seetv:novy', '');
-        addChannel(page, 'ТРК Україна', 'hls:http://kanalukraina.tv/index.m3u8?token=93f2ada7b6ed50c919bf059efb8252b5bea278c4', '');
+        addChannel(page, 'ТРК Україна', 'trk', '');
         addChannel(page, 'MEGA', 'seetv:mega', '');
         addChannel(page, 'K1', 'jampo:k1', '');
         addChannel(page, 'K2', 'jampo:k2', '');
