@@ -266,10 +266,11 @@
         page.appendItem("", "separator", {
             title: 'English'
         });
-        addChannel(page, 'JN1', 'hls:http://jn1-live.hls.adaptive.level3.net/apple/jn1/stream001/ENGhi.m3u8', '');
+        //rtsp://media2.lsops.net/live/euronews_ru_high.sdp
+        addChannel(page, 'Euronews', 'hls:http://hd1.lsops.net/live/euronews_en.smil/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Euronews_logo.svg/200px-Euronews_logo.svg.png');
+        addChannel(page, 'UN1', 'hls:http://jn1-live.hls.adaptive.level3.net/apple/jn1/stream001/ENGhi.m3u8', '');
         addChannel(page, 'Russia Today', 'hls:http://rt.ashttp14.visionip.tv/live/rt-global-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Russia-today-logo.svg/200px-Russia-today-logo.svg.png');
         addChannel(page, 'Russia Today Documentary', 'hls:http://rt.ashttp14.visionip.tv/live/rt-doc-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Russia-today-logo.svg/200px-Russia-today-logo.svg.png');
-        addChannel(page, 'Euronews', 'hls:http://hd1.lsops.net/live/euronews_en.smil/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Euronews_logo.svg/200px-Euronews_logo.svg.png');
         addChannel(page, 'BBC World News', 'hls:http://livestation_hls-lh.akamaihd.net/i/bbcworld_en@105465/index_928_av-b.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/6/6c/BBC_World_News_red.svg');
         addChannel(page, 'DW Europe', 'hls:http://dwtvios_europa-i.akamaihd.net/hls/live/200515/dwtveuropa/1/playlist1x.m3u8', 'https://lh5.googleusercontent.com/-9Ir29NdKHLU/AAAAAAAAAAI/AAAAAAAAIiY/TF5J4A4ZdP8/s120-c/photo.jpg');
         addChannel(page, 'France 24', 'hls:http://vipwowza.yacast.net/f24_hlslive_en/_definst_/mp4:fr24_en_748.stream/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/en/thumb/6/65/FRANCE_24_logo.svg/200px-FRANCE_24_logo.svg.png');
@@ -343,6 +344,12 @@
         addChannel(page, 'OTV', 'jampo:otv', '');
         addChannel(page, 'MTV', 'glaz:mtv-russia', '');
         addChannel(page, 'MTV Live HD', 'hls:http://202.75.23.37:8800/live/ch50/01.m3u8', '');
+        addChannel(page, 'Streetclip.TV', 'rtmp://stream.streetclip.tv:1935/live/high-stream', '');
+        addChannel(page, 'Cat Music', 'rtmp://91.82.85.71:1935/relay8/fstv_channel_1', '');
+        addChannel(page, 'Getback.im', 'rtmp://stream.getback.im:1935/live/getback', '');
+        addChannel(page, 'RTL 105.2', 'hls:http://origin-rtl-radio-stream.4mecloud.it/live-video/radiovisione/ngrp:radiovisione/chunklist-b1164000.m3u8', '');
+        addChannel(page, '538TV', 'hls:http://82.201.53.52:80/livestream/tv538/playlist.m3u8', '');
+        addChannel(page, 'Slam TV', 'hls:http://82.201.53.52:80/livestream/slamtv/playlist.m3u8', '');
         addChannel(page, 'A-One UA', 'ts:http://31.43.120.162:8065', '');
         addChannel(page, 'A-One Hip-Hop', 'ts:http://31.43.120.162:8072', '');
         addChannel(page, 'A-One Hip-Hop', 'ts:http://91.192.168.242:8065', '');
@@ -359,25 +366,19 @@
         addChannel(page, 'Ocko', 'hls:http://194.79.52.79/ockoi/ockoHQ1/hasbahca.m3u8', '');
         addChannel(page, 'Ocko Gold', 'hls:http://194.79.52.79:1935/goldi/goldHQ1/playlist.m3u8', '');
         addChannel(page, 'Ocko Express', 'hls:http://194.79.52.79:1935/expresi/expresHQ1/playlist.m3u8', '');
+        addChannel(page, 'Stars TV', 'hls:http://starstv-live.e91-jw.insyscd.net/starstv.isml/QualityLevels(960000)/manifest(format=m3u8-aapl).m3u8', '');
+        addChannel(page, 'Eska Best Music TV', 'hls:http://stream.smcloud.net:1935/live2/best/best_360p/playlist.m3u8', '');
         //rtmp://stream.smcloud.net/live2/eskatv/eskatv_360p
         addChannel(page, 'Eska TV', 'hls:http://stream.smcloud.net:1935/live2/eskatv/eskatv_360p/playlist.m3u8', '');
         addChannel(page, 'Eska Rock TV', 'hls:http://stream.smcloud.net:1935/live2/eska_rock/eska_rock_360p/playlist.m3u8', '');
         addChannel(page, 'Eska Party TV', 'hls:http://stream.smcloud.net:1935/live2/eska_party/eska_party_360p/playlist.m3u8', '');
         addChannel(page, 'Eska Wawa TV', 'hls:http://stream.smcloud.net:1935/live2/wawa/wawa_360p/playlist.m3u8', '');
-        addChannel(page, 'Eska Best Music TV', 'hls:http://stream.smcloud.net:1935/live2/best/best_360p/playlist.m3u8', '');
         addChannel(page, 'Eska Vox TV', 'hls:http://stream.smcloud.net:1935/live2/vox/vox_360p/playlist.m3u8', '');
         addChannel(page, 'Eska Polo TV', 'hls:http://stream.smcloud.net:1935/live/polotv/playlist.m3u8', '');
         addChannel(page, 'Heart TV', 'hls:http://cdn-sov-2.musicradio.com:80/LiveVideo/Heart/playlist.m3u8', '');
         addChannel(page, 'Capital TV', 'hls:http://cdn-sov-2.musicradio.com:80/LiveVideo/Capital/playlist.m3u8', '');
-        addChannel(page, '538TV', 'hls:http://82.201.53.52:80/livestream/tv538/playlist.m3u8', '');
-        addChannel(page, 'Slam TV', 'hls:http://82.201.53.52:80/livestream/slamtv/playlist.m3u8', '');
-        addChannel(page, 'Stars TV', 'hls:http://starstv-live.e91-jw.insyscd.net/starstv.isml/QualityLevels(960000)/manifest(format=m3u8-aapl).m3u8', '');
-        addChannel(page, 'Cat Music', 'rtmp://91.82.85.71:1935/relay8/fstv_channel_1', '');
         addChannel(page, 'JuCe TV', 'hls:http://hls.cn.ru/streaming/juce/tvrec/playlist.m3u8', '');
-        addChannel(page, 'RTL 105.2', 'hls:http://origin-rtl-radio-stream.4mecloud.it/live-video/radiovisione/ngrp:radiovisione/chunklist-b1164000.m3u8', '');
-        addChannel(page, 'Streetclip.TV', 'rtmp://stream.streetclip.tv:1935/live/high-stream', '');
         addChannel(page, 'Vitamine', 'rtmp://rtmp.infomaniak.ch/livecast/vitatv', '');
-        addChannel(page, 'Getback.im', 'rtmp://stream.getback.im:1935/live/getback', '');
         addChannel(page, 'Rusong TV', 'hls:http://rusong.cdnvideo.ru:443/rtp/rusong2/chunklist.m3u8', '');
         addChannel(page, 'Russian Musicbox', 'hls:http://musicbox.cdnvideo.ru/musicbox-live/musicbox.sdp/playlist.m3u8', '');
         addChannel(page, 'Шансон ТВ', 'hls:http://chanson.cdnvideo.ru:1935/chanson-live/shansontv.sdp/playlist.m3u8', '');
@@ -409,6 +410,8 @@
             });
         }
         addChannel(page, 'Euronews', 'ts:http://31.43.120.162:8035', 'http://ua.euronews.com/media/logo_222.gif');
+        addChannel(page, 'JN1', 'hls:http://jn1-live.hls.adaptive.level3.net/apple/jn1/stream001/UKRhi.m3u8', '');
+        addChannel(page, 'UN1', 'hls:http://serv03.vintera.tv:1935/restream/jno.stream/playlist.m3u8', '');
         addChannel(page, 'Espreso TV', 'youtube', '');
         addChannel(page, 'Hromadske.tv', 'youtube', '');
         addChannel(page, '5 канал', 'youtube', '');
@@ -502,8 +505,8 @@
         addChannel(page, 'Life News (720p)', 'hls:http://tv.life.ru/lifetv/720p/index.m3u8', 'http://lifenews.ru/assets/logo-0a3a75be3dcc15b6c6afaef4adab52dd.png');
         addChannel(page, 'Life News (480p)', 'hls:http://tv.life.ru/lifetv/480p/index.m3u8', 'http://lifenews.ru/assets/logo-0a3a75be3dcc15b6c6afaef4adab52dd.png');
         addChannel(page, 'Россия 24', 'hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21', '');
+        //hls:http://hd1.lsops.net/live/euronews_ru.smil/playlist.m3u8
         addChannel(page, 'Euronews', 'hls:http://hls.cn.ru/streaming/euronews/tvrec/playlist.m3u8', '');
-        addChannel(page, 'JN1', 'hls:http://serv03.vintera.tv:1935/restream/jno.stream/playlist.m3u8', '');
         addChannel(page, 'Дождь', 'hls:http://tvrain-video.ngenix.net/mobile/TVRain_1m.stream/playlist.m3u8', 'http://tvrain-st.cdn.ngenix.net/static/css/pub/images/logo-tvrain.png');
         addChannel(page, 'RTД', 'youtube', '');
         addChannel(page, 'ТНТ', 'seetv:tnt', '');
