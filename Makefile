@@ -19,7 +19,8 @@ PLUGINS= \
 	rua_osk.zip \
         paradisehill.zip \
 	shoutcast.zip \
-	tv.zip
+	tv.zip \
+	tree_tv.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
