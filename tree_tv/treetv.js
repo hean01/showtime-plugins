@@ -51,86 +51,47 @@
         return '<font color="' + color + '">' + str + '</font>';
     }
 
-    plugin.addURI(PREFIX + ":indexItem:(.*):(.*)", function(page, url, title) {
+    var doc;
+
+    plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, id, quality, title) {
         setPageHeader(page, unescape(title));
-        page.loading = true;
-        var response = showtime.httpReq(BASE_URL + "/" + url).toString();
-        page.loading = false;
-
-        // 1-title, 2-front image, 3-back image, 4-nick, 5-date added, 6-views
-        var match = response.match(/<div class="filmp">[\s\S]*?<h1>([\s\S]*?)<\/h1>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="nick"><span><\/span><a>([\s\S]*?)<\/a><\/div>[\s\S]*?<div class="date"><span><\/span>([\s\S]*?)<\/div>[\s\S]*?<div class="views"><span><\/span>([\s\S]*?)<\/div>/);
-        if (match) {
-           page.appendItem(match[2], 'image', {
-               title: service.lang == "en" ? 'Poster' : 'Обложка',
-               icon: match[2]
+        // 1-filename, 2-date, 3-link, 4-filesize
+        var regex = 'class="accordion_content_item q' + quality + '"' +
+            '[\\s\\S]*?data-folder="' + id + '"[\\s\\S]*?' +
+            'class="file_title watch_link">([\\s\\S]*?)</a>[\\s\\S]*?' +
+            '<div class="date_file">([\\s\\S]*?)</div>[\\s\\S]*?' +
+            'data-href="[\\s\\S]*?href="([\\s\\S]*?)"[\\s\\S]*?'+
+            '<span class="file_size">([\\s\\S]*?)</span>';
+        var re = new RegExp(regex, "g");
+        var match = re.exec(doc);
+        while (match) {
+           page.appendItem(match[3], 'video', {
+               title: new showtime.RichText(trim(match[1]) + (trim(match[4]) ? colorStr(trim(match[4]), blue): '')),
+               description: match[2]
            });
-
-           page.appendItem(match[3], 'image', {
-               title: service.lang == "en" ? 'Thumbnails' : 'Миниатюры изображения',
-               icon: match[3]
-           });
-
-           var description = response.match(/<div class="cont">([\s\S]*?)<\/div>/);
-           if (description)
-           var links = response.match(/var films= "([\s\S]*?)"/);
-           if (links) {
-               page.appendItem("", "separator", {
-                  title: service.lang == "en" ? 'Video' : 'Видео'
-               });
-
-               var films = links[1].split("|||");
-               for (n in films) {
-                  page.appendItem("videoparams:" + showtime.JSONEncode({
-                        sources: [{
-                            url: films[n],
-                            mimetype: "video/quicktime"
-                        }],
-                        title: match[1] + " (" + (service.lang == "en" ? 'part' : 'часть') + (+n+1) + ")"
-                    }), 'video', {
-                    title: new showtime.RichText(match[1] + colorStr((service.lang == "en" ? 'part' : 'часть') + (+n+1), blue)),
-                    icon: match[2],
-                    description: description ? new showtime.RichText(match[1] + "<br>" + coloredStr(service.lang == "en" ? 'Added: ' : 'Добавлено: ', orange) + match[5] + coloredStr(service.lang == "en" ? ' Views: ' : ' Просмотров: ', orange) + match[6] + " " + trim(description[1])) : ''
-                  });
-               }
-           }
+           match = re.exec(doc);
         }
     });
 
-    plugin.addURI(PREFIX + ":listNew", function(page) {
-        setPageHeader(page, 'New');
-        // 1-link, 2-icon, 3-title, 4-genre
-        var re = /<div class="item_zag">[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">[\s\S]*?<a href="[\s\S]*?">([\s\S]*?)<\/a>/g;
-        var p = 2;
-
-        function loader() {
-            page.loading = true;
-            var response = showtime.httpReq(BASE_URL + (service.lang == "en" ? '/en/' : '/') + "?page=" + p).toString();
-            page.loading = false;
-
-            var match = re.exec(response);
-            while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[3]), 'video', {
-                    title: new showtime.RichText(match[3] + colorStr(match[4], blue)),
-                    genre: match[4],
-                    description: match[3],
-                    icon: match[2]
-                });
-                match = re.exec(response);
-            }
-            match = response.match(/<span>([\S\s]*?)<\/span><\/li><\/ul>/);
-            if (!match) {
-               p++;
-               return true;
-            };
-            return false;
+    plugin.addURI(PREFIX + ":showScreenshots:(.*):(.*)", function(page, screenshots, title) {
+        setPageHeader(page, unescape(title));
+        var re = /href="([\s\S]*?)">/g;
+        screenshots = unescape(screenshots);
+        var match = re.exec(screenshots);
+        var c = 1;
+        while (match) {
+            page.appendItem(BASE_URL + escape(match[1]), 'image', {
+                title: 'Screenshot' + c,
+                icon: BASE_URL + match[1]
+            });
+            c++;
+            match = re.exec(screenshots);
         }
-        loader();
-        page.paginator = loader;
     });
 
     plugin.addURI(PREFIX + ":indexItem:(.*)", function(page, url) {
         page.loading = true;
-        var doc = showtime.httpReq(BASE_URL + url).toString();
+        doc = showtime.httpReq(BASE_URL + url).toString();
         page.loading = false;
 
         setPageHeader(page, doc.match(/<title>([\s\S]*?)<\/title>/)[1]);
@@ -166,7 +127,7 @@
                 }
             }
             var info = match[16].match(/<div class="new_series">([\s\S]*?)<\/div>/);
-            page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[3]), 'video', {
+            page.appendItem(PREFIX + ":showScreenshots:" + escape(match[5]) + ':' + escape(match[1]), 'video', {
                 title: new showtime.RichText(match[1]),
                 icon: BASE_URL + match[2],
                 genre: genre,
@@ -185,75 +146,37 @@
             });
             match = re.exec(doc);
         }
-        // 1-title, 2-resolution's list
-        re = /<div class="accordion_head folder_name"[\s\S]*?title="([\s\S]*?)"([\s\S]*?)<\/select>/g;
+        // 1-folder id, 2-title, 3-resolution's list
+        re = /<div class="accordion_head folder_name" data-folder="([\s\S]*?)">[\s\S]*?title="([\s\S]*?)"([\s\S]*?)<\/select>/g;
         match = re.exec(doc);
         while (match) {
             re2 = /<option value=[\s\S]*?>([\s\S]*?)<\/option>/g;
-            match2 = re2.exec(match[2]);
+            match2 = re2.exec(match[3]);
             while (match2) {
-                page.appendItem(PREFIX + ":listFolder:" + match[1] + ":" + escape(match[3]), 'directory', {
-                    title:
+                page.appendItem(PREFIX + ":listFolder:" + match[1] + ':' + match2[1] + ':' + escape(match[2]), 'directory', {
+                    title: '(' + match2[1] + ') ' + match[2]
                 });
+                match2 = re2.exec(match[3]);
+            }
             match = re.exec(doc);
-
+        }
     });
 
-    function startPage(page) {
-        setPageHeader(page, slogan);
-
-        page.loading = true;
-        var doc = showtime.httpReq(BASE_URL).toString();
-        page.loading = false;
-
-        // Building menu
-        var htmlBlock = doc.match(/<div class="top_menu"([\s\S]*?)<\/div>/);
-        if (htmlBlock) {
-            // 1 - nameforhref, 2 - title
-            var re = /<a href="([\s\S]*?)">([\s\S]*?)</g;
-            var match = re.exec(htmlBlock[1]);
-            while (match) {
-                page.appendItem(PREFIX + ":submenu:" + match[1], 'directory', {
-                   title: match[2]
-                });
-                match = re.exec(htmlBlock[1]);
-            }
-        }
-
-        // Building top 20
-        htmlBlock = doc.match(/<div class="popular_content">([\s\S]*?)<\/div>/);
-        if (htmlBlock) {
-            page.appendItem("", "separator", {
-                title: 'Топ-20'
-            });
-            //1 - link, 2 - title, 3-icon
-            re = /<a href="([\s\S]*?)" title="([\s\S]*?)">[\s\S]*?src="([\s\S]*?)">/g;
-            match = re.exec(htmlBlock[1]);
-            while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + match[1], 'video', {
-                   title: match[2],
-                   icon: BASE_URL + match[3]
-                });
-                match = re.exec(htmlBlock[1]);
-            }
-        }
-
-        // Building list
-        page.appendItem("", "separator");
-
+    function scrape(page, url, title) {
+        setPageHeader(page, unescape(title));
         page.entries = 0;
         var fromPage = 1, tryToSearch = true;
         //1-link, 2-title, 3-icon, 4-added, 5-views, 6-rating, 7-quality, 8-genre,
         //9-year, 10-country, 11-director, 12-actors, 13-translation, 14-duration,
         //15-description, 16-info
-        re = /<div class="item open">[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?<img alt="([\s\S]*?)"[\s\S]*?src="([\s\S]*?)"[\s\S]*?<span class="[\s\S]*?">([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="rating">([\s\S]*?)<\/div>[\s\S]*?<span class="quality[\s\S]*?">([\s\S]*?)<\/span>[\s\S]*?Жанр<\/span>([\s\S]*?)<\/span>[\s\S]*?rel="year1" href="#">([\s\S]*?)<\/a>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="description">([\s\S]*?)<\/div>([\s\S]*?)<div class="add_to">/g;
+        var re = /<div class="item open">[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?<img alt="([\s\S]*?)"[\s\S]*?src="([\s\S]*?)"[\s\S]*?<span class="[\s\S]*?">([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="rating">([\s\S]*?)<\/div>[\s\S]*?<span class="quality[\s\S]*?">([\s\S]*?)<\/span>[\s\S]*?Жанр<\/span>([\s\S]*?)<\/span>[\s\S]*?rel="year1" href="#">([\s\S]*?)<\/a>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="description">([\s\S]*?)<\/div>([\s\S]*?)<div class="add_to">/g;
 
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var doc = showtime.httpReq(BASE_URL + '/default/index/list?sortType=new&type=list&page='+fromPage).toString();
+            var doc = showtime.httpReq(BASE_URL + '/default/index/list'+ url +'sortType=new&type=list&page='+fromPage).toString();
             page.loading = false;
-            match = re.exec(doc);
+            var match = re.exec(doc);
             while (match) {
                 var re2 = /href="#">([\s\S]*?)<\/a>/g;
                 var genre = '';
@@ -291,37 +214,91 @@
         }
         loader();
         page.paginator = loader;
+    }
+
+    plugin.addURI(PREFIX + ":submenu:(.*):(.*)", function(page, url, title) {
+        scrape(page, url + '&', title);
+    });
+
+    function startPage(page) {
+        setPageHeader(page, slogan);
+
+        page.loading = true;
+        var doc = showtime.httpReq(BASE_URL).toString();
+        page.loading = false;
+
+        // Building menu
+        var htmlBlock = doc.match(/<div class="top_menu"([\s\S]*?)<\/div>/);
+        if (htmlBlock) {
+            // 1 - nameforhref, 2 - title
+            var re = /<a href="([\s\S]*?)">([\s\S]*?)</g;
+            var match = re.exec(htmlBlock[1]);
+            while (match) {
+                page.appendItem(PREFIX + ":submenu:" + match[1]+ ':' + escape(match[2]), 'directory', {
+                   title: match[2]
+                });
+                match = re.exec(htmlBlock[1]);
+            }
+        }
+
+        // Building top 20
+        htmlBlock = doc.match(/<div class="popular_content">([\s\S]*?)<\/div>/);
+        if (htmlBlock) {
+            page.appendItem("", "separator", {
+                title: 'Топ-20'
+            });
+            //1 - link, 2 - title, 3-icon
+            re = /<a href="([\s\S]*?)" title="([\s\S]*?)">[\s\S]*?src="([\s\S]*?)">/g;
+            match = re.exec(htmlBlock[1]);
+            while (match) {
+                page.appendItem(PREFIX + ":indexItem:" + match[1], 'video', {
+                   title: match[2],
+                   icon: BASE_URL + match[3]
+                });
+                match = re.exec(htmlBlock[1]);
+            }
+        }
+
+        // Building list
+        page.appendItem("", "separator");
+        scrape(page, '?', escape(slogan));
     };
 
     plugin.addURI(PREFIX + ":start", startPage);
 
     plugin.addSearcher("Tree.tv", logo, function(page, query) {
+        setPageHeader(page, slogan);
         page.entries = 0;
         var fromPage = 1, tryToSearch = true;
-        // 1-link, 2-title, 3-icon, 4-genre
-        var re = /<div class="item_zag"><a href="([\s\S]*?)" title="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<a href="[\s\S]*?" title="([\s\S]*?)"/g;
-        var re2 = /<span>([\S\s]*?)<\/span><\/li><\/ul>/;
 
+        //1-info, 2-year, 3-genre, 4-link, 5-title, 6-icon, 7-added, 8-views,
+        //9-rating, 10-quality
+        var re = /<div class="item">([\s\S]*?)<div class="smoll_year">([\s\S]*?)<\/div>[\s\S]*?<div class="smoll_janr">([\s\S]*?)<\/div>[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?<img alt="([\s\S]*?)"[\s\S]*?src="([\s\S]*?)"[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="rating([\s\S]*?)<\/div>[\s\S]*?<span class="quality[\s\S]*?">([\s\S]*?)<\/span>/g;
         function loader() {
             if (!tryToSearch) return false;
-            var response;
-            if (fromPage == 1)
-               response = showtime.httpReq(BASE_URL + (service.lang == "en" ? '/en/' : '/') + 'search_results.html?search=' + query.replace(/\s/g, '\+'));
-            else
-               response = showtime.httpReq(BASE_URL + (service.lang == "en" ? '/en/' : '/') + 'search_results.html?search=' + query.replace(/\s/g, '%20') + '&page=' + fromPage);
-            var match = re.exec(response);
+            page.loading = true;
+            var doc = showtime.httpReq(BASE_URL + '/search/index/index/usersearch/' + query+'/page/'+fromPage).toString();
+            page.loading = false;
+            var match = re.exec(doc);
             while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[2]), 'video', {
-                    title: new showtime.RichText(match[2] + colorStr(match[4], blue)),
-                    genre: match[4],
-                    description: match[2],
-                    icon: BASE_URL + match[3]
+              if (match[5] != '${name}') {
+                var rating = match[9].match(/<span class="green">/g);
+                var info = match[1].match(/<div class="item_name_text">([\s\S]*?)<\/div>/);
+                page.appendItem(PREFIX + ":indexItem:" + match[4] + ":" + escape(match[5]), 'video', {
+                    title: new showtime.RichText(coloredStr(match[10], blue) + ' ' + match[5]),
+                    icon: BASE_URL + match[6],
+                    rating:  rating ? rating.length * 10 : 0,
+                    genre: trim(match[3]),
+                    year: +trim(match[2]),
+                    description: new showtime.RichText(coloredStr("Добавлен: ", orange) +
+                        trim(match[7]) + coloredStr(" Просмотров: ", orange) + match[8] +
+                        (info ? coloredStr("<br>Инфо: ", orange) + trim(info[1]) : ''))
                 });
                 page.entries++;
-                match = re.exec(response);
+              }
+              match = re.exec(doc);
             };
-
-            if (re2.exec(response)) return tryToSearch = false;
+            if (!doc.match(/class="next"/)) return tryToSearch = false;
             fromPage++;
             return true;
         };
