@@ -26,7 +26,7 @@
     function setPageHeader(page, title) {
         page.loading = false;
         if (page.metadata) {
-            page.metadata.title = title;
+            page.metadata.title = showtime.entityDecode(title);
             page.metadata.logo = logo;
         }
         page.type = "directory";
@@ -178,7 +178,7 @@
     });
 
     plugin.addURI(PREFIX + ":processJSON:(.*):(.*)", function(page, url, title) {
-        setPageHeader(page, title);
+        setPageHeader(page, unescape(title));
         var json = showtime.JSONDecode(showtime.httpReq(unescape(url)).toString());
         for (var n in json) {
             page.appendItem(PREFIX + ":indexItem:/film?id=" + json[n].page_id +
@@ -206,19 +206,44 @@
         // 1-title, 2-icon, 3-views, 4-comments, 5-screenshots, 6-quality,
         // 7-genre, 8-year, 9-country, 10-director, 11-soundtrack, 12-duration,
         // 13-actors, 14-description, 15-added by, 16-info, 17-rating
-        var re = /<div class="content_open">[\s\S]*?<img alt="([\s\S]*?)"[\s\S]*?src="([\s\S]*?)"[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="screens">([\s\S]*?)<div class="item_right">[\s\S]*?<div class="quality_film"([\s\S]*?)<\/div>[\s\S]*?<div class="section_item list_janr">([\s\S]*?)<\/div>[\s\S]*?href="#">([\s\S]*?)<\/a>[\s\S]*?<span class="item">([\s\S]*?)<\/span>[\s\S]*?<div class="span_content">([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="ava_actors"([\s\S]*?)<div class="section_item">[\s\S]*?<div class="description">([\s\S]*?)<\/div>[\s\S]*?<span>([\s\S]*?)<\/span>([\s\S]*?)<div class="rait_other">[\s\S]*?<span class="green">([\s\S]*?)<\/span>/g;
+        var re = /<div class="content_open">[\s\S]*?<img alt="([\s\S]*?)"[\s\S]*?src="([\s\S]*?)"[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="screens">([\s\S]*?)<div class="item_right">[\s\S]*?<div class="quality_film"([\s\S]*?)<\/div>[\s\S]*?<div class="section_item list_janr">([\s\S]*?)<\/div>[\s\S]*?href="#">([\s\S]*?)<\/a>[\s\S]*?<span class="item">([\s\S]*?)<\/span>[\s\S]*?<div class="span_content">([\s\S]*?)<\/div>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="ava_actors"([\s\S]*?)<div class="section_item">[\s\S]*?<div class="description">([\s\S]*?)<\/div>[\s\S]*?<span>([\s\S]*?)<\/span>([\s\S]*?)<div class="rait_other">[\s\S]*?<span class="green">([\s\S]*?)<\/span>/g;
         var match = re.exec(doc);
         while (match) {
             // scraping genres list
             var re2 = /href="#">([\s\S]*?)<\/a>/g;
-            var genre = '';
+            var genre = '', first = 0;
             if (match[7]) {
                 var match2 = re2.exec(match[7]);
                 while (match2) {
-                    genre += match2[1];
+                    if (!first) {
+                        genre += trim(match2[1]);
+                        first++;
+                    } else
+                        genre += ', ' + trim(match2[1]);
                     match2 = re2.exec(match[7]);
                 }
             }
+            // scraping directors
+            var directorList;
+            if (match[10]) {
+                directorList = match[10];
+                var directors = '', first = 0;
+                re2 = /<span class="regiser_item">([\s\S]*?)<\/span>/g;
+                match2 = re2.exec(match[10]);
+                if (!match2) {
+                    re2 = /<span title="" alt="" >([\s\S]*?)<\/span>/g;
+                    match2 = re2.exec(match[10]);
+                }
+                while (match2) {
+                    if (!first) {
+                        directors += trim(match2[1]);
+                        first++;
+                    } else
+                        directors += ', ' + trim(match2[1]);
+                    match2 = re2.exec(match[10]);
+                }
+            }
+
             // scraping actors list
             var actorList;
             if (match[13]) {
@@ -247,7 +272,7 @@
                     trim(match[3]) + coloredStr(" Коментариев: ", orange) + match[4] +
                     coloredStr(" Добавил: ", orange) + match[15] +
                     coloredStr("<br>Страна: ", orange) + match[9] +
-                    coloredStr("<br>Режиссер: ", orange) + trim(match[10]) +
+                    coloredStr("<br>Режиссер: ", orange) + directors +
                     coloredStr("<br>Актеры: ", orange) + actors +
                     coloredStr("<br>Перевод: ", orange) + match[11] +
                     (info ? coloredStr("<br>Инфо: ", orange) + trim(info[1]) : '') +
@@ -294,37 +319,60 @@
             });
         }
 
+        // show directors
+        if (directorList) {
+            first = 0;
+            re2 = /<span class="register_ava"[\s\S]*?data-reg-id="([\s\S]*?)"[\s\S]*?data-img="([\s\S]*?)">[\s\S]*?<span class="regiser_item">([\s\S]*?)<\/span>/g;
+            match = re2.exec(directorList);
+            while (match) {
+                if (!first) {
+                    page.appendItem("", "separator", {
+                        title: 'Режиссеры'
+                    });
+                    first++;
+                }
+                page.appendItem(PREFIX + ":processJSON:" + escape(BASE_URL + '/film/index/find?reg_id='+match[1]+'&type=reg')+':'+escape('Фильмы с режиссером '+match[3]), 'video', {
+                    title: trim(match[3]),
+                    icon: BASE_URL + escape(match[2])
+                });
+                match = re2.exec(directorList);
+            }
+        }
+
         // show actors
         if (actorList) {
             page.appendItem("", "separator", {
                 title: 'Актеры'
             });
-
             re2 = /<div class="actors_img">[\s\S]*?rel="([\s\S]*?)"><img alt="([\s\S]*?)" src="([\s\S]*?)"/g;
             match = re2.exec(actorList);
             while (match) {
-                // 1-id, 2-name, 3-icon
-                page.appendItem(PREFIX + ":processJSON:" + escape(BASE_URL + '/film/index/find?actor_id='+match[1])+':Фильмы с участием '+match[2], 'video', {
+                page.appendItem(PREFIX + ":processJSON:" + escape(BASE_URL + '/film/index/find?actor_id='+match[1])+':'+escape('Фильмы с '+match[2]), 'video', {
                     title: trim(match[2]),
                     icon: BASE_URL + escape(match[3])
                 });
                 match = re2.exec(actorList);
             }
         }
-        var comments = doc.match(/<div class="comments_wrap"([\s\S]*?)<script type="text/);
+
+        // show comments
+        var comments = doc.match(/<div class="comment big">([\s\S]*?)<script type="text/);
         if (comments) {
             page.appendItem("", "separator", {
                 title: 'Комментарии'
             });
-            // 1-icon, 2-nick, 3-likes up, 4-likes down, 5-text
-            re2 = /<div class="left">[\s\S]*?src="([\s\S]*?)" alt="([\s\S]*?)"[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="right_text">([\s\S]*?)<\/div>/g;
+            // 1-icon, 2-nick, 3-date, 4-likes up, 5-likes down, 6-text, 7-time
+            re2 = /<div class="left">[\s\S]*?src="([\s\S]*?)" alt="([\s\S]*?)"[\s\S]*?_date">([\s\S]*?)<[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="right_text">([\s\S]*?)<\/div>[\s\S]*?<div class="answer">([\s\S]*?)<\/div>/g;
             match = re2.exec(comments[1]);
             while (match) {
-                // 1-id, 2-name, 3-icon
+                if (trim(match[3]))
+                    var date = match[3]
+                else
+                    var date = match[7].match(/<span class="time">([\s\S]*?)<\/span>/)[1];
                 page.appendPassiveItem('video', '', {
-                    title: new showtime.RichText(trim(match[2]) + ' (' + coloredStr(match[3], green) + ' / ' + coloredStr(match[4], red) + ')'),
+                    title: new showtime.RichText(trim(match[2]) + ' (' + coloredStr(match[4], green) + ' / ' + coloredStr(match[5], red) + ') ' + trim(date)),
                     icon: BASE_URL + escape(match[1]),
-                    description: new showtime.RichText(match[5])
+                    description: new showtime.RichText(match[6])
                 });
                 match = re2.exec(comments[1]);
             }
