@@ -55,9 +55,10 @@
 
     plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, id, quality, title) {
         setPageHeader(page, unescape(title));
-        // 1-filename, 2-date, 3-link, 4-filesize
+        var first = 0, links, fileLink;
+        // 1-film_id, 2- filename, 3-date, 4-link, 5-filesize
         var regex = 'class="accordion_content_item q' + quality + '"' +
-            '[\\s\\S]*?data-folder="' + id + '"[\\s\\S]*?' +
+            '[\\s\\S]*?data-folder="' + id + '"([\\s\\S]*?)' +
             'class="file_title watch_link">([\\s\\S]*?)</a>[\\s\\S]*?' +
             '<div class="date_file">([\\s\\S]*?)</div>[\\s\\S]*?' +
             'data-href="[\\s\\S]*?href="([\\s\\S]*?)"[\\s\\S]*?'+
@@ -65,9 +66,21 @@
         var re = new RegExp(regex, "g");
         var match = re.exec(doc);
         while (match) {
-           page.appendItem(match[3], 'video', {
-               title: new showtime.RichText(trim(match[1]) + (trim(match[4]) ? colorStr(trim(match[4]), blue): '')),
-               description: match[2]
+           fileLink = match[4];
+           if (fileLink == 'javascript:void(0)') {
+               if (first == 0) {
+                   page.loading = true;
+                   var film_id = match[1].match(/film_id=([\s\S]*?)&/)[1];
+                   links = showtime.httpReq(BASE_URL + '/check/index/list?film=' + film_id + '&folder='+ id + '&q=' + quality).toString();
+                   page.loading = false;
+                   first++;
+               }
+               var re2 = new RegExp(match[2]+'[\\s\\S]*?class="downloads_link">([\\s\\S]*?)</a>');
+               fileLink = re2.exec(links)[1];
+           }
+           page.appendItem(fileLink, 'video', {
+               title: new showtime.RichText(trim(match[2]) + (trim(match[5]) ? colorStr(trim(match[5]), blue): '')),
+               description: match[3]
            });
            match = re.exec(doc);
         }
