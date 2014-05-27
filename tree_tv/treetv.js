@@ -123,12 +123,60 @@
         }
     });
 
+    function scrapeSmall(page, url, title) {
+        setPageHeader(page, title);
+        page.entries = 0;
+        var fromPage = 1, tryToSearch = true;
+
+        //1-info, 2-year, 3-genre, 4-link, 5-title, 6-icon, 7-added, 8-views,
+        //9-rating, 10-quality
+        var re = /<div class="item">([\s\S]*?)<div class="smoll_year">([\s\S]*?)<\/div>[\s\S]*?<div class="smoll_janr">([\s\S]*?)<\/div>[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?<img alt="([\s\S]*?)"[\s\S]*?src="([\s\S]*?)"[\s\S]*?<span[\s\S]*?>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="rating([\s\S]*?)<\/div>[\s\S]*?<span class="quality[\s\S]*?">([\s\S]*?)<\/span>/g;
+        function loader() {
+            if (!tryToSearch) return false;
+            page.loading = true;
+            var doc;
+            if (unescape(title) == slogan)
+                doc = showtime.httpReq(unescape(url)+fromPage).toString();
+            else
+                doc = showtime.httpReq(unescape(url)).toString();
+            page.loading = false;
+            var match = re.exec(doc);
+            while (match) {
+              if (match[5] != '${name}') {
+                var rating = match[9].match(/<span class="green">/g);
+                var info = match[1].match(/<div class="item_name_text">([\s\S]*?)<\/div>/);
+                page.appendItem(PREFIX + ":indexItem:" + match[4] + ":" + escape(match[5]), 'video', {
+                    title: new showtime.RichText(coloredStr(match[10], blue) + ' ' + trim(match[5])),
+                    icon: BASE_URL + match[6],
+                    rating:  rating ? rating.length * 10 : 0,
+                    genre: trim(match[3]),
+                    year: +trim(match[2]),
+                    description: new showtime.RichText(coloredStr("Добавлен: ", orange) +
+                        trim(match[7]) + coloredStr(" Просмотров: ", orange) + match[8] +
+                        (info ? coloredStr("<br>Инфо: ", orange) + trim(info[1]) : ''))
+                });
+                page.entries++;
+              }
+              match = re.exec(doc);
+            };
+            if (!doc.match(/class="next"/)) return tryToSearch = false;
+            fromPage++;
+            return true;
+        };
+        loader();
+        page.paginator = loader;
+    }
+
+    plugin.addURI(PREFIX + ":scrapeSmall:(.*):(.*)", function(page, url, title) {
+        scrapeSmall(page, url, unescape(title));
+    });
+
     plugin.addURI(PREFIX + ":indexItem:(.*)", function(page, url) {
         page.loading = true;
         doc = showtime.httpReq(BASE_URL + url).toString();
         page.loading = false;
-
-        setPageHeader(page, doc.match(/<title>([\s\S]*?)<\/title>/)[1]);
+        var title = doc.match(/<title>([\s\S]*?)<\/title>/)[1];
+        setPageHeader(page, title);
 
         // 1-title, 2-icon, 3-views, 4-comments, 5-screenshots, 6-quality,
         // 7-genre, 8-year, 9-country, 10-director, 11-soundtrack, 12-duration,
@@ -193,6 +241,19 @@
                 match2 = re2.exec(match[3]);
             }
             match = re.exec(doc);
+        }
+        var filmTabs = doc.match(/<div class="film_tabs">([\s\S]*?)<\/div>/);
+        if (filmTabs) {
+            page.appendItem("", "separator");
+            var another = filmTabs[1].match(/data-tabs="another" data-film_id="([\s\S]*?)"/);
+            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/another?id=' + another[1])+':Другие части - '+escape(title), 'directory', {
+                title: 'Другие части'
+            });
+
+            var poxog = filmTabs[1].match(/data-tabs="poxog" data-film_id="([\s\S]*?)" data-janr_id="([\s\S]*?)" data-page_type="([\s\S]*?)" data-first_country_id="([\s\S]*?)">/);
+            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/poxog?id=' + poxog[1] + '&janr_id=' + escape(poxog[2]) + '&page_type=' + poxog[3] + '&first_country_id=' + poxog[4])+':Похожие фильмы - '+title, 'directory', {
+                title: 'Похожие фильмы'
+            });
         }
     });
 
@@ -301,42 +362,6 @@
     plugin.addURI(PREFIX + ":start", startPage);
 
     plugin.addSearcher("Tree.tv", logo, function(page, query) {
-        setPageHeader(page, slogan);
-        page.entries = 0;
-        var fromPage = 1, tryToSearch = true;
-
-        //1-info, 2-year, 3-genre, 4-link, 5-title, 6-icon, 7-added, 8-views,
-        //9-rating, 10-quality
-        var re = /<div class="item">([\s\S]*?)<div class="smoll_year">([\s\S]*?)<\/div>[\s\S]*?<div class="smoll_janr">([\s\S]*?)<\/div>[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?<img alt="([\s\S]*?)"[\s\S]*?src="([\s\S]*?)"[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="rating([\s\S]*?)<\/div>[\s\S]*?<span class="quality[\s\S]*?">([\s\S]*?)<\/span>/g;
-        function loader() {
-            if (!tryToSearch) return false;
-            page.loading = true;
-            var doc = showtime.httpReq(BASE_URL + '/search/index/index/usersearch/' + query+'/page/'+fromPage).toString();
-            page.loading = false;
-            var match = re.exec(doc);
-            while (match) {
-              if (match[5] != '${name}') {
-                var rating = match[9].match(/<span class="green">/g);
-                var info = match[1].match(/<div class="item_name_text">([\s\S]*?)<\/div>/);
-                page.appendItem(PREFIX + ":indexItem:" + match[4] + ":" + escape(match[5]), 'video', {
-                    title: new showtime.RichText(coloredStr(match[10], blue) + ' ' + match[5]),
-                    icon: BASE_URL + match[6],
-                    rating:  rating ? rating.length * 10 : 0,
-                    genre: trim(match[3]),
-                    year: +trim(match[2]),
-                    description: new showtime.RichText(coloredStr("Добавлен: ", orange) +
-                        trim(match[7]) + coloredStr(" Просмотров: ", orange) + match[8] +
-                        (info ? coloredStr("<br>Инфо: ", orange) + trim(info[1]) : ''))
-                });
-                page.entries++;
-              }
-              match = re.exec(doc);
-            };
-            if (!doc.match(/class="next"/)) return tryToSearch = false;
-            fromPage++;
-            return true;
-        };
-        loader();
-        page.paginator = loader;
+        scrapeSmall(page, escape(BASE_URL + '/search/index/index/usersearch/' + query+'/page/'), slogan);
     });
 })(this);
