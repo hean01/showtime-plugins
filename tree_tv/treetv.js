@@ -69,19 +69,18 @@
     plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, id, quality, title) {
         setPageHeader(page, unescape(title));
         var first = 0, links, fileLink;
-        // 1-film_id, 2-filename, 3-date, 4-link, 5-filesize
+        // 1-film_id, 2-filename, 3-date, 4-flags, 5-link, 6-filesize
         var regex = 'class="accordion_content_item q' + quality + '"' +
             '[\\s\\S]*?data-folder="' + id + '"([\\s\\S]*?)' +
             'class="file_title watch_link">([\\s\\S]*?)</a>[\\s\\S]*?' +
             '<div class="date_file">([\\s\\S]*?)</div>[\\s\\S]*?' +
-            'data-href="[\\s\\S]*?href="([\\s\\S]*?)"[\\s\\S]*?'+
+            'data-href="([\\s\\S]*?)href="([\\s\\S]*?)"[\\s\\S]*?'+
             '<span class="file_size">([\\s\\S]*?)</span>';
         var re = new RegExp(regex, "g");
         var match = re.exec(doc);
         while (match) {
-           fileLink = match[4];
-           showtime.print(fileLink);
-//           if (fileLink.indexOf('временно')) {
+           fileLink = match[5];
+           if (match[4].indexOf('Функция временно недоступна') != -1) {
                if (first == 0) {
                    var film_id = match[1].match(/film_id=([\s\S]*?)&/)[1];
                    page.loading = true;
@@ -91,9 +90,9 @@
                }
                var regex = new RegExp(trim(match[2])+'[\\s\\S]*?class="downloads_link">([\\s\\S]*?)</a>');
                fileLink = links.match(regex)[1];
-//           }
+           }
            page.appendItem(videoparams(fileLink, escape(trim(match[2]))), 'video', {
-               title: new showtime.RichText(trim(match[2]) + (trim(match[5]) ? colorStr(trim(match[5]), blue): '')),
+               title: new showtime.RichText(trim(match[2]) + (trim(match[6]) ? colorStr(trim(match[6]), blue): '')),
                description: match[3]
            });
            match = re.exec(doc);
