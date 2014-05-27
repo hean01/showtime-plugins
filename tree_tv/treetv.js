@@ -51,12 +51,25 @@
         return '<font color="' + color + '">' + str + '</font>';
     }
 
+    function videoparams(url, title) {
+        var videoparams = {
+            title: unescape(title),
+            sources: [{
+               url: url,
+               mimetype: 'video/quicktime'
+            }],
+            canonicalUrl: PREFIX + ':' + unescape(title),
+            no_fs_scan: true
+        };
+        return "videoparams:" + showtime.JSONEncode(videoparams);
+    }
+
     var doc;
 
     plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, id, quality, title) {
         setPageHeader(page, unescape(title));
         var first = 0, links, fileLink;
-        // 1-film_id, 2- filename, 3-date, 4-link, 5-filesize
+        // 1-film_id, 2-filename, 3-date, 4-link, 5-filesize
         var regex = 'class="accordion_content_item q' + quality + '"' +
             '[\\s\\S]*?data-folder="' + id + '"([\\s\\S]*?)' +
             'class="file_title watch_link">([\\s\\S]*?)</a>[\\s\\S]*?' +
@@ -67,18 +80,19 @@
         var match = re.exec(doc);
         while (match) {
            fileLink = match[4];
-           if (fileLink == 'javascript:void(0)') {
+           showtime.print(fileLink);
+//           if (fileLink.indexOf('временно')) {
                if (first == 0) {
-                   page.loading = true;
                    var film_id = match[1].match(/film_id=([\s\S]*?)&/)[1];
+                   page.loading = true;
                    links = showtime.httpReq(BASE_URL + '/check/index/list?film=' + film_id + '&folder='+ id + '&q=' + quality).toString();
                    page.loading = false;
                    first++;
                }
-               var re2 = new RegExp(match[2]+'[\\s\\S]*?class="downloads_link">([\\s\\S]*?)</a>');
-               fileLink = re2.exec(links)[1];
-           }
-           page.appendItem(fileLink, 'video', {
+               var regex = new RegExp(trim(match[2])+'[\\s\\S]*?class="downloads_link">([\\s\\S]*?)</a>');
+               fileLink = links.match(regex)[1];
+//           }
+           page.appendItem(videoparams(fileLink, escape(trim(match[2]))), 'video', {
                title: new showtime.RichText(trim(match[2]) + (trim(match[5]) ? colorStr(trim(match[5]), blue): '')),
                description: match[3]
            });
@@ -88,6 +102,14 @@
 
     plugin.addURI(PREFIX + ":showScreenshots:(.*):(.*)", function(page, screenshots, title) {
         setPageHeader(page, unescape(title));
+
+        var trailer = doc.match(/<div class="buttons film">([\s\S]*?)class="trailer/);
+        if (trailer) {
+            page.appendItem(videoparams(trailer[1].match(/rel="([\s\S]*?)"/)[1], title), 'video', {
+                title: 'Trailer'
+            });
+        }
+
         var re = /href="([\s\S]*?)">/g;
         screenshots = unescape(screenshots);
         var match = re.exec(screenshots);
@@ -141,7 +163,7 @@
             }
             var info = match[16].match(/<div class="new_series">([\s\S]*?)<\/div>/);
             page.appendItem(PREFIX + ":showScreenshots:" + escape(match[5]) + ':' + escape(match[1]), 'video', {
-                title: new showtime.RichText(match[1]),
+                title: new showtime.RichText(trim(match[1])),
                 icon: BASE_URL + match[2],
                 genre: genre,
                 year: +match[8],
@@ -203,7 +225,7 @@
                 var rating = match[6].match(/<span class="green">/g);
                 var info = match[16].match(/<div class="item_inform_text fl_left">([\s\S]*?)<\/div>/);
                 page.appendItem(PREFIX + ":indexItem:" + match[1], 'video', {
-                    title: new showtime.RichText(coloredStr(match[7], blue) + ' ' + match[2]),
+                    title: new showtime.RichText(coloredStr(match[7], blue) + ' ' + trim(match[2])),
                     icon: BASE_URL + match[3],
                     rating:  rating ? rating.length * 10 : 0,
                     genre: genre,
@@ -248,7 +270,7 @@
             var match = re.exec(htmlBlock[1]);
             while (match) {
                 page.appendItem(PREFIX + ":submenu:" + match[1]+ ':' + escape(match[2]), 'directory', {
-                   title: match[2]
+                   title: trim(match[2])
                 });
                 match = re.exec(htmlBlock[1]);
             }
@@ -265,7 +287,7 @@
             match = re.exec(htmlBlock[1]);
             while (match) {
                 page.appendItem(PREFIX + ":indexItem:" + match[1], 'video', {
-                   title: match[2],
+                   title: trim(match[2]),
                    icon: BASE_URL + match[3]
                 });
                 match = re.exec(htmlBlock[1]);
