@@ -42,7 +42,7 @@
         return '';
     }
 
-    const blue = "6699CC", orange = "FFA500";
+    const blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
     function colorStr(str, color) {
         return '<font color="' + color + '"> (' + str + ')</font>';
@@ -309,6 +309,24 @@
                     icon: BASE_URL + escape(match[3])
                 });
                 match = re2.exec(actorList);
+            }
+        }
+        var comments = doc.match(/<div class="comments_wrap"([\s\S]*?)<script type="text/);
+        if (comments) {
+            page.appendItem("", "separator", {
+                title: 'Комментарии'
+            });
+            // 1-icon, 2-nick, 3-likes up, 4-likes down, 5-text
+            re2 = /<div class="left">[\s\S]*?src="([\s\S]*?)" alt="([\s\S]*?)"[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="right_text">([\s\S]*?)<\/div>/g;
+            match = re2.exec(comments[1]);
+            while (match) {
+                // 1-id, 2-name, 3-icon
+                page.appendPassiveItem('video', '', {
+                    title: new showtime.RichText(trim(match[2]) + ' (' + coloredStr(match[3], green) + ' / ' + coloredStr(match[4], red) + ')'),
+                    icon: BASE_URL + escape(match[1]),
+                    description: new showtime.RichText(match[5])
+                });
+                match = re2.exec(comments[1]);
             }
         }
     });
