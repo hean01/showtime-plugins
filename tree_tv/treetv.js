@@ -1,5 +1,5 @@
 /**
- * tree.tv plugin for Showtime
+ * Tree.tv plugin for Showtime
  *
  *  Copyright (C) 2014 lprot
  *
@@ -38,7 +38,8 @@
     var settings = plugin.createSettings("Tree.tv", logo, slogan);
 
     function trim(s) {
-        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/g,'');
+        if (s) return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/g,'');
+        return '';
     }
 
     const blue = "6699CC", orange = "FFA500";
@@ -136,7 +137,7 @@
             page.loading = true;
             var doc;
             if (unescape(title) == slogan)
-                doc = showtime.httpReq(unescape(url)+fromPage).toString();
+                doc = showtime.httpReq(unescape(url) + fromPage).toString();
             else
                 doc = showtime.httpReq(unescape(url)).toString();
             page.loading = false;
@@ -165,10 +166,34 @@
         };
         loader();
         page.paginator = loader;
+        if (page.entries == 0) {
+            page.appendPassiveItem('video', '', {
+                title: "По заданному запросу ничего не найдено"
+            });
+        }
     }
 
     plugin.addURI(PREFIX + ":scrapeSmall:(.*):(.*)", function(page, url, title) {
         scrapeSmall(page, url, unescape(title));
+    });
+
+    plugin.addURI(PREFIX + ":processJSON:(.*):(.*)", function(page, url, title) {
+        setPageHeader(page, title);
+        var json = showtime.JSONDecode(showtime.httpReq(unescape(url)).toString());
+        for (var n in json) {
+            page.appendItem(PREFIX + ":indexItem:/film?id=" + json[n].page_id +
+                    "&nameforhref="+json[n].nameforhref +
+                    "&name=" + json[n].name_for_url, 'video', {
+                title: new showtime.RichText(coloredStr(json[n].quality, blue) + ' ' + unescape(json[n].name)),
+                icon: BASE_URL + json[n].src,
+                rating:  json[n].rait * 10,
+                genre: unescape(json[n].janr),
+                year: +json[n].year,
+                description: new showtime.RichText(coloredStr("Добавлен: ", orange) +
+                    json[n].date_create + coloredStr(" Просмотров: ", orange) + json[n].count_prosmotr +
+                    (json[n].inform ? coloredStr("<br>Инфо: ", orange) + trim(json[n].inform) : ''))
+            });
+        }
     });
 
     plugin.addURI(PREFIX + ":indexItem:(.*)", function(page, url) {
@@ -195,9 +220,11 @@
                 }
             }
             // scraping actors list
-            re2 = /<div class="actors_content">([\s\S]*?)<\/div>/g;
-            var actors = '', first = 0;
+            var actorList;
             if (match[13]) {
+                actorList = match[13];
+                var actors = '', first = 0;
+                re2 = /<div class="actors_content">([\s\S]*?)<\/div>/g;
                 match2 = re2.exec(match[13]);
                 while (match2) {
                     if (!first) {
@@ -228,6 +255,17 @@
             });
             match = re.exec(doc);
         }
+
+        // show schedule
+        var grafik = doc.match(/<div class="accordion_content_item grafiks_content">([\s\S]*?)<\/div>/);
+        if (grafik) {
+            page.appendPassiveItem('video', '', {
+                title: 'График выхода серий',
+                description: new showtime.RichText(trim(grafik[1]).replace(/<br \/>/g, '<br>').replace(/<div>/g, '<br>').replace(/&nbsp;/g, ''))
+            });
+            page.appendItem("", "separator");
+        }
+
         // 1-folder id, 2-title, 3-resolution's list
         re = /<div class="accordion_head folder_name" data-folder="([\s\S]*?)">[\s\S]*?title="([\s\S]*?)"([\s\S]*?)<\/select>/g;
         match = re.exec(doc);
@@ -246,14 +284,32 @@
         if (filmTabs) {
             page.appendItem("", "separator");
             var another = filmTabs[1].match(/data-tabs="another" data-film_id="([\s\S]*?)"/);
-            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/another?id=' + another[1])+':Другие части - '+escape(title), 'directory', {
+            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/another?id=' + another[1])+':'+escape('Другие части - '+title), 'directory', {
                 title: 'Другие части'
             });
 
             var poxog = filmTabs[1].match(/data-tabs="poxog" data-film_id="([\s\S]*?)" data-janr_id="([\s\S]*?)" data-page_type="([\s\S]*?)" data-first_country_id="([\s\S]*?)">/);
-            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/poxog?id=' + poxog[1] + '&janr_id=' + escape(poxog[2]) + '&page_type=' + poxog[3] + '&first_country_id=' + poxog[4])+':Похожие фильмы - '+title, 'directory', {
+            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/poxog?id=' + poxog[1] + '&janr_id=' + escape(poxog[2]) + '&page_type=' + poxog[3] + '&first_country_id=' + poxog[4])+':'+escape('Похожие фильмы - ' + title), 'directory', {
                 title: 'Похожие фильмы'
             });
+        }
+
+        // show actors
+        if (actorList) {
+            page.appendItem("", "separator", {
+                title: 'Актеры'
+            });
+
+            re2 = /<div class="actors_img">[\s\S]*?rel="([\s\S]*?)"><img alt="([\s\S]*?)" src="([\s\S]*?)"/g;
+            match = re2.exec(actorList);
+            while (match) {
+                // 1-id, 2-name, 3-icon
+                page.appendItem(PREFIX + ":processJSON:" + escape(BASE_URL + '/film/index/find?actor_id='+match[1])+':Фильмы с участием '+match[2], 'video', {
+                    title: trim(match[2]),
+                    icon: BASE_URL + escape(match[3])
+                });
+                match = re2.exec(actorList);
+            }
         }
     });
 
