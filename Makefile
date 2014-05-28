@@ -20,7 +20,8 @@ PLUGINS= \
         paradisehill.zip \
 	shoutcast.zip \
 	tv.zip \
-	tree_tv.zip
+	tree_tv.zip \
+	kordonivkakino.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
