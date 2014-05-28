@@ -147,7 +147,7 @@
                 var rating = match[9].match(/<span class="green">/g);
                 var info = match[1].match(/<div class="item_name_text">([\s\S]*?)<\/div>/);
                 page.appendItem(PREFIX + ":indexItem:" + match[4] + ":" + escape(match[5]), 'video', {
-                    title: new showtime.RichText(coloredStr(match[10], blue) + ' ' + trim(match[5])),
+                    title: new showtime.RichText((match[10] ? coloredStr(match[10], blue) + ' ' : '') + trim(match[5])),
                     icon: BASE_URL + escape(match[6]),
                     rating:  rating ? rating.length * 10 : 0,
                     genre: trim(match[3]),
@@ -184,7 +184,7 @@
             page.appendItem(PREFIX + ":indexItem:/film?id=" + json[n].page_id +
                     "&nameforhref="+json[n].nameforhref +
                     "&name=" + json[n].name_for_url, 'video', {
-                title: new showtime.RichText(coloredStr(json[n].quality, blue) + ' ' + unescape(json[n].name)),
+                title: new showtime.RichText((json[n].quality ? coloredStr(json[n].quality, blue) + ' ' : '') + unescape(json[n].name)),
                 icon: BASE_URL + escape(json[n].src),
                 rating:  json[n].rait * 10,
                 genre: unescape(json[n].janr),
@@ -407,7 +407,7 @@
                 var rating = match[6].match(/<span class="green">/g);
                 var info = match[16].match(/<div class="item_inform_text fl_left">([\s\S]*?)<\/div>/);
                 page.appendItem(PREFIX + ":indexItem:" + match[1], 'video', {
-                    title: new showtime.RichText(coloredStr(match[7], blue) + ' ' + trim(match[2])),
+                    title: new showtime.RichText((match[7] ? coloredStr(match[7], blue) + ' ' : '') + trim(match[2])),
                     icon: BASE_URL + escape(match[3]),
                     rating:  rating ? rating.length * 10 : 0,
                     genre: genre,

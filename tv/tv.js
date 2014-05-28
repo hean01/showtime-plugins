@@ -50,7 +50,7 @@
 
 
     plugin.addURI(PREFIX + "youtube:(.*)", function(page, title) {
-        var resp, match, match2;
+        var resp, match, match2, match3;
 
         // get videolink by id
         function playVideo(page, id) {
@@ -75,27 +75,41 @@
                     }]
                 });
             } else
-                 page.error("Sorry, can't get the link :(");
+                 page.error("Sorry, can't get channel's link :(");
         }
 
-        page.loading = true;
         // search for the channel
+        page.loading = true;
         resp = showtime.httpReq("https://www.youtube.com/results?search_query=" + title.replace(/\s/g, '+')).toString();
         page.loading = false;
         // looking for user's page
         match = resp.match(/<a href="\/user\/([\S\s]*?)"/);
         match2 = resp.match(/\/watch\?v=([\S\s]*?)"/); // scraping direct link
-        if (match) {
+        match3 = resp.match(/<a href="\/channel\/([\S\s]*?)"/);
+        if (match) { // try to get the link via user's page
             page.loading = true;
             resp = showtime.httpReq("https://www.youtube.com/user/" + match[1]).toString();
             page.loading = false;
-            // looking for the channel link
             var match = resp.match(/\/watch\?v=([\S\s]*?)"/);
-            if (match)
+            if (match) {
+                //showtime.print("Got link via user's page");
                 playVideo(page, match);
-        } else
-            if (match2)
-                playVideo(page, match2);
+            }
+        } else {
+            if (match3) { // try to get the link via channel's page
+                page.loading = true;
+                resp = showtime.httpReq("https://www.youtube.com/channel/" + match3[1]).toString();
+                page.loading = false;
+                var match = resp.match(/\/watch\?v=([\S\s]*?)"/);
+                if (match) {
+                   //showtime.print("Got the link via channel's page");
+                   playVideo(page, match);
+                }
+            } else {
+                if (match2) // try to play direct link
+                    playVideo(page, match2);
+              }
+        }
     });
 
     plugin.addURI(PREFIX + "seetv:(.*):(.*)", function(page, url, title) {
@@ -455,51 +469,50 @@
         }
         //rtmp://fr-par-10-stream-relay.hexaglobe.net/rtpeuronewslive/ua_video750_rtp.sdp swfUrl=http://www.euronews.com/media/player_live_1_14.swf swfVfy=true live=true
         addChannel(page, 'Euronews', 'ts:http://31.43.120.162:8035', 'http://ua.euronews.com/media/logo_222.gif');
-        addChannel(page, 'UN1', 'hls:http://serv03.vintera.tv:1935/restream/jno.stream/playlist.m3u8', '');
-        addChannel(page, 'Espreso TV', 'youtube', '');
-        addChannel(page, 'Hromadske.tv', 'youtube', '');
-        addChannel(page, '5 канал', 'youtube', '');
-        addChannel(page, '5 канал', 'jampo:5tv', '');
-        addChannel(page, '24 канал', 'youtube', '');
+        addChannel(page, 'UN1', 'hls:http://serv03.vintera.tv:1935/restream/jno.stream/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/ru/3/3e/Jewish_News_One_Logo.jpg');
+        addChannel(page, 'Espreso TV', 'youtube', 'https://yt3.ggpht.com/-bVnYWgZunWc/AAAAAAAAAAI/AAAAAAAAAAA/lscLbX2rp2A/s88-c-k-no/photo.jpg');
+        addChannel(page, 'Hromadske.tv', 'youtube', 'https://yt3.ggpht.com/-p31Ot-UmPks/AAAAAAAAAAI/AAAAAAAAAAA/4bKlgSnfyOs/s88-c-k-no/photo.jpg');
+        addChannel(page, '5 канал', 'youtube', 'http://upload.wikimedia.org/wikipedia/commons/3/3e/5logo.jpg');
+        addChannel(page, '5 канал', 'jampo:5tv', 'http://upload.wikimedia.org/wikipedia/commons/3/3e/5logo.jpg');
+        addChannel(page, '24 канал', 'youtube', 'http://24tv.ua/img/24_logo_facebook.jpg');
         addChannel(page, '24 канал', 'ts:http://31.43.120.162:8014', 'http://24tv.ua/img/24_logo_facebook.jpg');
         addChannel(page, 'Уніан', 'ts:http://31.43.120.162:8009', 'http://images.unian.net/img/unian-logo.png');
-        addChannel(page, 'UBR', 'youtube', '');
-        addChannel(page, 'Перший', 'hls:http://mp4.firstua.com/tv/_definst_/1ua-512k/playlist.m3u8', 'http://inter.ua/images/logo.png');
+        addChannel(page, 'UBR', 'youtube', 'https://yt3.ggpht.com/-7jc3b3Xttfg/AAAAAAAAAAI/AAAAAAAAAAA/MXEE_WKxzLM/s88-c-k-no/photo.jpg');
+        addChannel(page, 'Перший', 'hls:http://mp4.firstua.com/tv/_definst_/1ua-512k/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/6/69/%D0%9F%D0%B5%D1%80%D0%B2%D1%8B%D0%B9_%D0%BD%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9_%D1%82%D0%B5%D0%BB%D0%B5%D0%BA%D0%B0%D0%BD%D0%B0%D0%BB_%28%D0%A3%D0%BA%D1%80%D0%B0%D0%B8%D0%BD%D0%B0%29.png');
         addChannel(page, 'Інтер', 'seetv:inter', 'http://inter.ua/images/logo.png');
         addChannel(page, 'Інтер', 'hls:http://212.40.43.10:1935/inters/smil:inter.smil/playlist.m3u8', 'http://inter.ua/images/logo.png');
-        addChannel(page, 'Інтер+', 'ts:http://91.192.168.242:8029', '');
+        addChannel(page, 'Інтер+', 'ts:http://91.192.168.242:8029', 'http://interplus.ua/images/logo_uk.png');
         addChannel(page, '100', 'ts:http://31.43.120.162:8062', 'http://tv100.com.ua/templates/diablofx/images/100_logo.jpg');
         //rtmp://31.28.169.242/live/live112
         addChannel(page, '112', 'hls:http://31.28.169.242/hls/live112.m3u8', 'http://112.ua/static/img/logo/112_ukr.png');
         addChannel(page, 'ЧП.INFO', 'ts:http://31.43.120.162:8041', 'http://www.tele-com.tv/img/icons/chp-info.png');
-        addChannel(page, 'TET', 'jampo:tet', '');
-        addChannel(page, '1+1', 'jampo:1plus1', '');
-        addChannel(page, 'НТН', 'jampo:ntn', '');
-        addChannel(page, 'Рада', 'ts:http://85.25.43.30:8194', '');
+        addChannel(page, 'TET', 'jampo:tet', 'http://upload.wikimedia.org/wikipedia/ru/7/72/%D0%9B%D0%BE%D0%B3%D0%BE%D1%82%D0%B8%D0%BF_%D1%82%D0%B5%D0%BB%D0%B5%D0%BA%D0%BE%D0%BC%D0%BF%D0%B0%D0%BD%D0%B8%D0%B8_%D0%A2%D0%95%D0%A2.jpg');
+        addChannel(page, '1+1', 'jampo:1plus1', 'http://upload.wikimedia.org/wikipedia/commons/thumb/0/07/1_plus_1_logo.svg/200px-1_plus_1_logo.svg.png');
+        addChannel(page, '2+2', 'seetv:2plus2', 'http://2plus2.ua/img/header/logo.png');
+        addChannel(page, 'НТН', 'jampo:ntn', 'http://upload.wikimedia.org/wikipedia/ru/6/61/Telekanal_ntn.png');
+        addChannel(page, 'Рада', 'ts:http://85.25.43.30:8194', 'http://upload.wikimedia.org/wikipedia/ru/a/ae/Logotype_rada.jpg');
         //addChannel(page, 'ТВі', 'rtmp://media.tvi.com.ua/live/_definst_//HLS4', 'http://tvi.ua/catalog/view/theme/new/image/logo.png');
-        addChannel(page, 'ТВі', 'jampo:tvi', '');
-        addChannel(page, 'ICTV', 'seetv:ictv', '');
-        addChannel(page, 'СТБ', 'seetv:stb', '');
-        addChannel(page, 'Новий канал', 'seetv:novy', '');
-        addChannel(page, 'ТРК Україна', 'trk', '');
-        addChannel(page, 'MEGA', 'seetv:mega', '');
-        addChannel(page, 'K1', 'jampo:k1', '');
-        addChannel(page, 'K2', 'jampo:k2', '');
-        addChannel(page, 'QTV', 'seetv:qtv', '');
-        addChannel(page, 'Discovery Channel', 'seetv:discovery-channel', '');
-        addChannel(page, 'Право TV', 'ts:http://31.43.120.162:8058', '');
-        addChannel(page, 'Dobro', 'ts:http://31.43.120.162:8067', '');
-        addChannel(page, 'Первый автомобильный', 'ts:http://31.43.120.162:8052', '');
-        addChannel(page, 'Первый автомобильный', 'youtube', '');
-        addChannel(page, 'XSport', 'ts:http://85.25.43.30:8247', '');
-        addChannel(page, 'НЛО ТВ', 'ts:http://85.25.43.30:8234', '');
+        addChannel(page, 'ТВі', 'jampo:tvi', 'http://upload.wikimedia.org/wikipedia/uk/b/b0/TVI_logo.png');
+        addChannel(page, 'ICTV', 'seetv:ictv', 'http://upload.wikimedia.org/wikipedia/uk/4/44/Telekanal_ictv.png');
+        addChannel(page, 'СТБ', 'seetv:stb', 'http://upload.wikimedia.org/wikipedia/ru/2/2a/Telekanal_stb.png');
+        addChannel(page, 'Новий канал', 'seetv:novy', 'http://ru.novy.tv/images/layouts/front/logo.png');
+        addChannel(page, 'Украина', 'trk', 'http://upload.wikimedia.org/wikipedia/commons/c/cc/Ua_white.jpg');
+        addChannel(page, 'MEGA', 'seetv:mega', 'http://upload.wikimedia.org/wikipedia/uk/7/77/Logo_Mega.png');
+        addChannel(page, 'K1', 'jampo:k1', 'http://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Logo_k1.png/244px-Logo_k1.png');
+        addChannel(page, 'K2', 'jampo:k2', 'http://upload.wikimedia.org/wikipedia/ru/7/7e/Telekanal_k2.png');
+        addChannel(page, 'QTV', 'seetv:qtv', 'http://qtv.ua/images/default/logo.png');
+        addChannel(page, 'Discovery Channel', 'seetv:discovery-channel', 'http://upload.wikimedia.org/wikipedia/ru/thumb/4/46/Discovery_Channel_International.svg/200px-Discovery_Channel_International.svg.png');
+        addChannel(page, 'Право TV', 'ts:http://31.43.120.162:8058', 'http://www.pravotv.ua/img/logo.png');
+        addChannel(page, 'Dobro', 'ts:http://31.43.120.162:8067', 'http://www.dobro-tv.com/images/logo.png');
+        addChannel(page, 'Первый автомобильный', 'ts:http://31.43.120.162:8052', 'http://upload.wikimedia.org/wikipedia/ru/8/80/1auto_TV.jpg');
+        addChannel(page, 'Первый автомобильный', 'youtube', 'http://upload.wikimedia.org/wikipedia/ru/8/80/1auto_TV.jpg');
+        addChannel(page, 'НЛО ТВ', 'ts:http://85.25.43.30:8234', 'http://upload.wikimedia.org/wikipedia/uk/6/67/LogoNLOTV.jpg');
+        addChannel(page, 'XSport', 'ts:http://85.25.43.30:8247', 'http://xsport.ua/bitrix/templates/xsport/images/logo.png');
         //addChannel(page, 'Гумор ТВ', 'ts:http://85.25.43.30:8232', '');
         //addChannel(page, 'Гумор ТВ', 'rtmp://212.26.132.86/live/gumor_babai', '');
-        addChannel(page, 'Гумор ТВ', 'hls:http://212.26.132.86/hls/gumor_babai.m3u8', '');
+        addChannel(page, 'Гумор ТВ', 'hls:http://212.26.132.86/hls/gumor_babai.m3u8', 'http://upload.wikimedia.org/wikipedia/uk/b/b1/Humor_logo.jpg');
         addChannel(page, 'Футбол 1', 'ts:http://31.43.120.162:8118', 'https://ru.viasat.ua/assets/logos/3513/exclusive_F1-yellow-PL.png');
-        addChannel(page, '2x2', 'ts:http://31.43.120.162:8073', '');
-        //addChannel(page, '2x2', 'ts:http://91.192.168.242:8035', '');
-        //addChannel(page, '2x2', 'hls:http://178.49.132.73/streaming/2x2tv/tvrec/playlist.m3u8', '');
+        addChannel(page, 'Вікка', 'ts:http://193.254.196.179:8080', 'http://vikka.ua/img/logo.png');
         addChannel(page, 'Enter film', 'ts:http://85.25.43.30:8208', '');
         //addChannel(page, 'ZIK', 'rtmp://217.20.164.182:80/live/zik392p.stream', '');
         addChannel(page, 'ZIK', 'glaz:zik', '');
@@ -514,7 +527,8 @@
         addChannel(page, 'Boutique TV', 'ts:http://31.43.120.162:8060', '');
         addChannel(page, 'Shopping TV', 'ts:http://31.43.120.162:8063', '');
         addChannel(page, 'News One', 'rtmp://newsonelivefs.fplive.net:443/newsonelive-live/_definst_/streamukr', '');
-        addChannel(page, 'Тиса-1', 'rtmp://213.174.8.15/live/live2', '');
+        addChannel(page, 'Тиса-1', 'rtmp://213.174.8.15/live/live2', 'http://tysa1.tv/templates/jdwebsite/images/style1/logo.jpg');
+        addChannel(page, 'БТБ', 'rtmp://94.45.140.4/live/livestream', 'http://btbtv.com.ua/images/logo.png');
       }
 
       if (category == "Polish" || category == "All") {
@@ -586,6 +600,9 @@
         addChannel(page, 'ТВ3', 'ts:http://91.192.168.242:8023', '');
         addChannel(page, 'ТВ3', 'hls:http://hls.cn.ru/streaming/tv3/tvrec/playlist.m3u8', '');
         //addChannel(page, 'ТВ3', 'hls:http://178.49.132.73/streaming/tv3/tvrec/playlist.m3u8', '');
+        addChannel(page, '2x2', 'ts:http://31.43.120.162:8073', '');
+        //addChannel(page, '2x2', 'ts:http://91.192.168.242:8035', '');
+        //addChannel(page, '2x2', 'hls:http://178.49.132.73/streaming/2x2tv/tvrec/playlist.m3u8', '');
         addChannel(page, 'Comedy TV', 'ts:http://31.43.120.162:8116', '');
         addChannel(page, 'Юмор Box', 'hls:http://musicbox.cdnvideo.ru:1935/musicbox-live/humorbox.sdp/playlist.m3u8', '');
         addChannel(page, 'Ростов ТВ', 'hls:http://rostovlife.vintera.tv:1935/mediapark/rostov_tv1.stream/playlist.m3u8', '');
