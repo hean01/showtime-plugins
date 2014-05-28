@@ -199,6 +199,11 @@
         var re = /dle_video_begin:([\s\S]*?)-->/g;
         var link = re.exec(doc);
         if (!link) {
+           re = /\[media=([\s\S]*?)\]/g;
+           link = re.exec(doc);
+           type = 1;
+        }
+        if (!link) {
            re = /video_load\('([\s\S]*?)'/g;
            link = re.exec(doc);
            type = 2;
@@ -208,6 +213,12 @@
             link = re.exec(doc);
             type = 3;
         }
+        if (!link) {
+            var re = /<!--dle_leech_begin--><a href="([\S\s]*?)"/g;
+            link = re.exec(doc);
+            type = 4;
+        }
+
         var params;
         while (link) {
             switch (type) {
@@ -219,6 +230,9 @@
                 break
                 case 3: // vk.com
                     params = PREFIX + ':vk:' + link[1] + ':' + title + ':' + n
+                break
+                case 4: // vimple.ru
+                    params = PREFIX + ':vimple:' + link[1] + ':' + title + ':' + n
                 break
                 default:
             }

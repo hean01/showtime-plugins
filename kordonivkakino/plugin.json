@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "kordonivkakino.net",
 	"synopsis": "kordonivkakino.net: Porno films online | You can watch video completely free of charge",
-	"version": "0.2", "file": "kordonivkakino.js",
+	"version": "0.2.1", "file": "kordonivkakino.js",
 	"showtimeVersion": "4.5.146",
 	"type": "javascript",
 	"id": "kordonivkakino.net",
