@@ -269,7 +269,7 @@
                 rating: match[17] * 10,
                 duration: match[12],
                 description: new showtime.RichText(coloredStr("Просмотров: ", orange) +
-                    trim(match[3]) + coloredStr(" Коментариев: ", orange) + match[4] +
+                    trim(match[3]) + coloredStr(" Комментариев: ", orange) + match[4] +
                     coloredStr(" Добавил: ", orange) + match[15] +
                     coloredStr("<br>Страна: ", orange) + match[9] +
                     coloredStr("<br>Режиссер: ", orange) + directors +
@@ -437,6 +437,37 @@
         scrape(page, url + '&', title);
     });
 
+    plugin.addURI(PREFIX + ":comments", function(page) {
+        setPageHeader(page, 'Комментарии');
+
+        var fromPage = 1, tryToSearch = true;
+        //1-link, 2-title, 3-comment, 4-author
+        var re = /class="right_comment_item_name">[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>[\s\S]*?class="right_comment_item_text">([\s\S]*?)<\/p>[\s\S]*?<\/span>([\s\S]*?)<\/a>/g;
+
+        function loader() {
+            if (!tryToSearch) return false;
+            var items = 0;
+            page.loading = true;
+            var doc = showtime.httpReq(BASE_URL+ '/default/index/getcomment?page='+fromPage).toString();
+            page.loading = false;
+            var match = re.exec(doc);
+            while (match) {
+                page.appendItem(PREFIX + ":indexItem:" + match[1], 'video', {
+                    title: new showtime.RichText(trim(match[2])),
+                    description: new showtime.RichText(coloredStr("Комментарий: ", orange) +
+                        trim(match[3]) + coloredStr(" Автор: ", orange) + trim(match[4]))
+                });
+                items++;
+                match = re.exec(doc);
+            }
+            if (!items) return tryToSearch = false;
+            fromPage++;
+            return true;
+        }
+        loader();
+        page.paginator = loader;
+    });
+
     function startPage(page) {
         setPageHeader(page, slogan);
 
@@ -457,6 +488,11 @@
                 match = re.exec(htmlBlock[1]);
             }
         }
+
+        // Comments reader
+        page.appendItem(PREFIX + ':comments', "directory", {
+            title: 'Комментарии'
+        });
 
         // Building top 20
         htmlBlock = doc.match(/<div class="popular_content">([\s\S]*?)<\/div>/);
