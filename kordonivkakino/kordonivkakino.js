@@ -68,8 +68,12 @@
             s = s.replace(':', '');
             dBlock = dBlock.replace('Director/', '');
             dBlock = dBlock.replace('Starring/', '');
+            dBlock = dBlock.replace('/ Starring', '');
+            dBlock = dBlock.replace('/Stars', '');
+            dBlock = dBlock.replace('/ Description', '');
             dBlock = dBlock.replace('Story/', '');
             dBlock = dBlock.replace('Category/', '');
+            dBlock = dBlock.replace('/ Category', '');
             dBlock = dBlock.replace('Runtime/', '');
             dBlock = dBlock.replace('Original Title/', '');
             dBlock = dBlock.replace('Street Date/', '');
@@ -79,7 +83,9 @@
             dBlock = dBlock.replace('/ Director', '');
             dBlock = dBlock.replace('/ Genre', '');
             dBlock = dBlock.replace('/ Studio', '');
+            dBlock = dBlock.replace('/Studio', '');
             dBlock = dBlock.replace('выхода / Year', '');
+            dBlock = dBlock.replace('/ Release Date', '');
             //showtime.print(showtime.entityDecode(s));
         } else s = '';
        return trim(showtime.entityDecode(s));
@@ -165,7 +171,10 @@
         var duration = getAndClean('Продолжительность').replace(/\s/g,'');
         if (!duration) duration = getAndClean('Длительность').replace(/\s/g,'');
         var genre = getAndClean('Жанр');
+        if (!genre) genre = getAndClean('Категория');
         var year = getAndClean('Год');
+        if (!year) year = getAndClean('Дата выхода');
+        if (!+year) year = year.substr(year.length - 4, 4);
         var name = getAndClean('Название');
         var orig_name = getAndClean('Оригинальное название');
         var director = getAndClean('Режиссер');
@@ -178,7 +187,12 @@
         if (!description) description = getAndClean('О фильме');
         var country = getAndClean('Страна');
         var translation = getAndClean('Перевод');
-        description = showtime.entityDecode(trim(description + ' ' + trim(dBlock.replace(/\|\|\|/g, ''))));
+        description = new showtime.RichText((country ? coloredStr('Страна: ', orange) + country + ' ' : '') +
+            (maker ? coloredStr('Студия: ', orange) + maker + ' ' : '') +
+            (translation ? coloredStr('Перевод: ', orange) + translation + ' ' : '') +
+            (director ? coloredStr('Режиссер: ', orange) + director + ' ' : '') +
+            (actors ? coloredStr('Актеры: ', orange) + actors + ' ' : '') +
+            coloredStr('Описание: ', orange) + showtime.entityDecode(trim(description + ' ' + trim(dBlock.replace(/\|\|\|/g, '')))));
         //showtime.print(dBlock);
 
         var n = 1, type = 1;
@@ -197,7 +211,7 @@
         var params;
         while (link) {
             switch (type) {
-                case 1: // k
+                case 1: // kordonivkakino
                     params = videoparams(link[1], title, n)
                 break
                 case 2: // filmodom.net
@@ -219,6 +233,25 @@
             n++;
             link = re.exec(doc);
         }
+
+        //related
+        htmlBlock = doc.match(/<div class="rel-news-block-content">([\s\S]*?)<\/ul>/);
+        if (htmlBlock) {
+            page.appendItem("", "separator", {
+                title: 'Похожие'
+            });
+            //1-link, 2-icon, 3-title
+            re = /<div class="wallpappers-news-image">[\s\S]*?<a href="([\s\S]*?)"><img src="([\s\S]*?)" alt="([\s\S]*?)">/g;
+            var match = re.exec(htmlBlock[1]);
+            while (match) {
+                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(trim(showtime.entityDecode(match[3]))), 'video', {
+                    title: trim(showtime.entityDecode(match[3])),
+                    icon: BASE_URL + match[2],
+                    description: new showtime.RichText(coloredStr('Название: ', orange) + trim(match[3]))
+                });
+                match = re.exec(htmlBlock[1]);
+            }
+        }
     });
 
     var doc;
@@ -232,8 +265,8 @@
             var re = /<div class="main-news">[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="main-news-views">([\s\S]*?)<\/div>[\s\S]*?<li class="current-rating"[\s\S]*?">([\s\S]*?)<\/li>/g;
             var match = re.exec(doc);
             while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[2]), 'video', {
-                    title: match[2],
+                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(showtime.entityDecode(match[2])), 'video', {
+                    title: showtime.entityDecode(match[2]),
                     description: new showtime.RichText(coloredStr('Название: ', orange) + match[2] +
                     coloredStr('<br>Просмотров: ', orange) + match[4]),
                     rating: +match[5],
@@ -278,6 +311,27 @@
             });
             match = re.exec(htmlBlock[1]);
         }
+
+        //most popular
+        page.appendItem("", "separator", {
+            title: 'Популярное'
+        });
+
+        //1-icon, 2-title, 3-link
+        re = /<div class="article-news">[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">[\s\S]*?<a href="([\s\S]*?)">/g;
+        match = re.exec(doc);
+        while (match) {
+            page.appendItem(PREFIX + ":indexItem:" + match[3] + ":" + escape(trim(showtime.entityDecode(match[2]))), 'video', {
+                title: trim(showtime.entityDecode(match[2])),
+                icon: match[1],
+                description: new showtime.RichText(coloredStr('Название: ', orange) + trim(match[2]))
+            });
+            match = re.exec(doc);
+        }
+
+        page.appendItem("", "separator", {
+            title: 'Новинки'
+        });
         scraper(page, BASE_URL + '/upload/');
     };
 
