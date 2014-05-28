@@ -131,6 +131,25 @@
         page.loading = false;
     });
 
+    plugin.addURI(PREFIX + ":fd:(.*):(.*):(.*)", function(page, url, title, n) {
+        page.loading = true;
+        var response = showtime.httpReq('http://s1video.filmodom.net/vk_video/video.php?action=get&url='+escape(url)+'&callback=?').toString();
+        page.loading = false;
+        if (response) {
+            page.type = "video";
+            page.source = "videoparams:" + showtime.JSONEncode({
+                title: unescape(title),
+                sources: [{
+                    url: response.match(/download_url":"([\S\s]*?)"/)[1].replace(/\\/g,''),
+                    mimetype: 'video/quicktime'
+                }],
+                canonicalUrl: PREFIX + ':' + title + ':' + n,
+                no_fs_scan: true
+            });
+        } else page.error('Видео не доступно. / This video is not available, sorry :(');
+        page.loading = false;
+    });
+
     plugin.addURI(PREFIX + ":indexItem:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
@@ -205,9 +224,10 @@
     var doc;
 
     function scraper(page, url) {
-        var p = 2;
+        var tryToSearch = true;
 
         function loader() {
+            if (!tryToSearch) return false;
             //1-link, 2-title, 3-icon, 4-views, 5-rating
             var re = /<div class="main-news">[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="main-news-views">([\s\S]*?)<\/div>[\s\S]*?<li class="current-rating"[\s\S]*?">([\s\S]*?)<\/li>/g;
             var match = re.exec(doc);
@@ -221,15 +241,14 @@
                 });
                 match = re.exec(doc);
             }
-            match = doc.match(/<span>следующая&gt;<\/span>/);
-            if (!match) {
+            match = doc.match(/<i class="next-nav"><a href="([\s\S]*?)">/);
+            if (match) {
                page.loading = true;
-               doc = showtime.httpReq(url + 'page/' + p).toString();
+               doc = showtime.httpReq(match[1]).toString();
                page.loading =  false;
-               p++;
                return true;
             };
-            return false;
+            return tryToSearch = false;
         }
         loader();
         page.paginator = loader;
