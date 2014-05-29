@@ -104,8 +104,8 @@
         setPageHeader(page, unescape(title));
 
         var trailer = doc.match(/<div class="buttons film">([\s\S]*?)class="trailer/);
-        if (trailer) {
-            page.appendItem(videoparams(trailer[1].match(/rel="([\s\S]*?)"/)[1], title), 'video', {
+        if (trailer) { // .replace(/\s/g,'%20')
+            page.appendItem(escape(trailer[1].match(/rel="([\s\S]*?)"/)[1]).replace('%3A',':'), 'video', {
                 title: 'Trailer'
             });
         }
@@ -117,7 +117,7 @@
         while (match) {
             page.appendItem(BASE_URL + escape(match[1]), 'image', {
                 title: 'Screenshot' + c,
-                icon: BASE_URL + match[1]
+                icon: BASE_URL + escape(match[1])
             });
             c++;
             match = re.exec(screenshots);
@@ -148,7 +148,7 @@
                 var info = match[1].match(/<div class="item_name_text">([\s\S]*?)<\/div>/);
                 page.appendItem(PREFIX + ":indexItem:" + match[4] + ":" + escape(match[5]), 'video', {
                     title: new showtime.RichText(coloredStr(match[10], blue) + ' ' + trim(match[5])),
-                    icon: BASE_URL + match[6],
+                    icon: BASE_URL + escape(match[6]),
                     rating:  rating ? rating.length * 10 : 0,
                     genre: trim(match[3]),
                     year: +trim(match[2]),
@@ -185,7 +185,7 @@
                     "&nameforhref="+json[n].nameforhref +
                     "&name=" + json[n].name_for_url, 'video', {
                 title: new showtime.RichText(coloredStr(json[n].quality, blue) + ' ' + unescape(json[n].name)),
-                icon: BASE_URL + json[n].src,
+                icon: BASE_URL + escape(json[n].src),
                 rating:  json[n].rait * 10,
                 genre: unescape(json[n].janr),
                 year: +json[n].year,
@@ -263,7 +263,7 @@
             var info = match[16].match(/<div class="new_series">([\s\S]*?)<\/div>/);
             page.appendItem(PREFIX + ":showScreenshots:" + escape(match[5]) + ':' + escape(match[1]), 'video', {
                 title: new showtime.RichText(trim(match[1])),
-                icon: BASE_URL + match[2],
+                icon: BASE_URL + escape(match[2]),
                 genre: genre,
                 year: +match[8],
                 rating: match[17] * 10,
@@ -408,7 +408,7 @@
                 var info = match[16].match(/<div class="item_inform_text fl_left">([\s\S]*?)<\/div>/);
                 page.appendItem(PREFIX + ":indexItem:" + match[1], 'video', {
                     title: new showtime.RichText(coloredStr(match[7], blue) + ' ' + trim(match[2])),
-                    icon: BASE_URL + match[3],
+                    icon: BASE_URL + escape(match[3]),
                     rating:  rating ? rating.length * 10 : 0,
                     genre: genre,
                     year: +match[9],
@@ -470,7 +470,7 @@
             while (match) {
                 page.appendItem(PREFIX + ":indexItem:" + match[1], 'video', {
                    title: trim(match[2]),
-                   icon: BASE_URL + match[3]
+                   icon: BASE_URL + escape(match[3])
                 });
                 match = re.exec(htmlBlock[1]);
             }
