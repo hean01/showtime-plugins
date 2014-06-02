@@ -48,19 +48,6 @@
         return '<font color="' + color + '">' + str + '</font>';
     }
 
-    function videoparams(url, title, n) {
-        var videoparams = {
-            title: unescape(title),
-            sources: [{
-               url: url,
-               mimetype: 'video/quicktime'
-            }],
-            canonicalUrl: PREFIX + ':' + unescape(title) + ':'+n,
-            no_fs_scan: true
-        };
-        return "videoparams:" + showtime.JSONEncode(videoparams);
-    }
-
     var dBlock;
 
     function getAndClean(what) {
@@ -98,8 +85,20 @@
        return trim(showtime.entityDecode(s));
     }
 
-    //Play vk* links
-    plugin.addURI(PREFIX + ":vk:(.*):(.*)", function(page, url, title) {
+    function videoparams(url, title, n) {
+        var videoparams = {
+            title: unescape(title),
+            sources: [{
+               url: url,
+               mimetype: 'video/quicktime'
+            }],
+            canonicalUrl: PREFIX + ':' + unescape(title) + ':'+n,
+            no_fs_scan: true
+        };
+        return "videoparams:" + showtime.JSONEncode(videoparams);
+    }
+
+    plugin.addURI(PREFIX + ":vk:(.*):(.*):(.*)", function(page, url, title, n) {
         page.loading = true;
         var response = showtime.httpReq(unescape(url));
         page.loading = false;
@@ -122,8 +121,11 @@
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: unescape(title),
                 sources: [{
-                    url: link[1]
-                }]
+                    url: link[1],
+                    mimetype: 'video/quicktime'
+                }],
+                canonicalUrl: PREFIX + ':' + title + ':' + n,
+                no_fs_scan: true
             });
         } else page.error('Видео не доступно. / This video is not available, sorry :(');
         page.loading = false;
@@ -160,19 +162,34 @@
         description = showtime.entityDecode(trim(description + ' ' + trim(dBlock.replace(/\|\|\|/g, ''))));
         //showtime.print(dBlock);
 
-        var n = 1;
+        var n = 1, type = 1;
         var re = /dle_video_begin:([\s\S]*?)-->/g;
         var link = re.exec(doc);
         if (!link) {
            re = /video_load\('([\s\S]*?)'/g;
            link = re.exec(doc);
+           type = 2;
         }
         if (!link) {
             var re = /<iframe src="([\S\s]*?)"/g;
             link = re.exec(doc);
+            type = 3;
         }
+        var params;
         while (link) {
-            page.appendItem(videoparams(link[1], title, n), 'video', {
+            switch (type) {
+                case 1: // k
+                    params = videoparams(link[1], title, n)
+                break
+                case 2: // filmodom.net
+                    params = PREFIX + ':fd:' + link[1] + ':' + title + ':' + n
+                break
+                case 3: // vk.com
+                    params = PREFIX + ':vk:' + link[1] + ':' + title + ':' + n
+                break
+                default:
+            }
+            page.appendItem(params, 'video', {
                 title: unescape(title),
                 icon: htmlBlock[1],
                 duration: duration,
