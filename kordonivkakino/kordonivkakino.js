@@ -32,7 +32,7 @@
         page.contents = "items";
     }
 
-    var service = plugin.createService("kordonivkakino", PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(PREFIX, PREFIX + ":start", "video", true, logo);
 
     function trim(s) {
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
@@ -170,22 +170,35 @@
         var language = getAndClean('Язык');
         var duration = getAndClean('Продолжительность').replace(/\s/g,'');
         if (!duration) duration = getAndClean('Длительность').replace(/\s/g,'');
+        if (!duration) duration = getAndClean('Duration').replace(/\s/g,'');
         var genre = getAndClean('Жанр');
         if (!genre) genre = getAndClean('Категория');
+        if (!genre) genre = getAndClean('Genre');
         var year = getAndClean('Год');
         if (!year) year = getAndClean('Дата выхода');
+        if (!year) year = getAndClean('Дата релиза');
+        if (!year) year = getAndClean('Year');
         if (!+year) year = year.substr(year.length - 4, 4);
         var name = getAndClean('Название');
+        if (!name) name = getAndClean('Русское название');
         var orig_name = getAndClean('Оригинальное название');
+        if (!orig_name) orig_name = getAndClean('Original Name');
         var director = getAndClean('Режиссер');
+        if (!director) director = getAndClean('Director');
         var actors = getAndClean('В ролях');
+        if (!actors) actors = getAndClean('В Ролях');
         if (!actors) actors = getAndClean('Актёры');
+        if (!actors) actors = getAndClean('Актеры');
+        if (!actors) actors = getAndClean('Исполнители');
+        if (!actors) actors = getAndClean('Starring');
         var maker = getAndClean('Cтудия');
         if (!maker) maker = getAndClean('Студия');
         if (!maker) maker = getAndClean('Выпущено');
+        if (!maker) maker = getAndClean('Studio');
         var description = getAndClean('Описание');
         if (!description) description = getAndClean('О фильме');
         var country = getAndClean('Страна');
+        if (!country) country = getAndClean('Country');
         var translation = getAndClean('Перевод');
         description = new showtime.RichText((country ? coloredStr('Страна: ', orange) + country + ' ' : '') +
             (maker ? coloredStr('Студия: ', orange) + maker + ' ' : '') +
@@ -270,11 +283,13 @@
 
     var doc;
 
-    function scraper(page, url) {
+    function scraper(page) {
         var tryToSearch = true;
+        page.entries = 0;
 
         function loader() {
             if (!tryToSearch) return false;
+
             //1-link, 2-title, 3-icon, 4-views, 5-rating
             var re = /<div class="main-news">[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="main-news-views">([\s\S]*?)<\/div>[\s\S]*?<li class="current-rating"[\s\S]*?">([\s\S]*?)<\/li>/g;
             var match = re.exec(doc);
@@ -287,6 +302,7 @@
                     icon: match[3].indexOf('http') ? BASE_URL + match[3] : match[3]
                 });
                 match = re.exec(doc);
+                page.entries++;
             }
             match = doc.match(/<i class="next-nav"><a href="([\s\S]*?)">/);
             if (match) {
@@ -306,7 +322,7 @@
         page.loading = true;
         doc = showtime.httpReq(url).toString();
         page.loading = false;
-        scraper(page, url);
+        scraper(page);
     });
 
     function startPage(page) {
@@ -346,8 +362,44 @@
         page.appendItem("", "separator", {
             title: 'Новинки'
         });
-        scraper(page, BASE_URL + '/upload/');
+        scraper(page);
     };
 
     plugin.addURI(PREFIX + ":start", startPage);
+
+    plugin.addSearcher("kordonivkakino.net", logo, function(page, query) {
+        setPageHeader(page, "kordonivkakino.net");
+        var doc = showtime.httpReq(BASE_URL + '/upload/index.php?do=search&subaction=search&search_start=1&story=' + query.replace(/\s/g,'+')).toString();
+        var tryToSearch = true, p = 2;
+        page.entries = 0;
+
+        function loader() {
+            if (!tryToSearch) return false;
+            //1-link, 2-title, 3-icon, 4-views
+            var re = /<div class="main-news">[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="main-news-views">([\s\S]*?)<\/div>/g;
+            var match = re.exec(doc);
+            while (match) {
+                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(showtime.entityDecode(match[2])), 'video', {
+                    title: showtime.entityDecode(match[2]),
+                    description: new showtime.RichText(coloredStr('Название: ', orange) + match[2] +
+                    coloredStr('<br>Просмотров: ', orange) + match[4]),
+                    icon: match[3].indexOf('http') ? BASE_URL + match[3] : match[3]
+                });
+                match = re.exec(doc);
+                page.entries++;
+            }
+            match = doc.match(/<span>следующая&gt;<\/span>/);
+            if (!match) {
+               page.loading = true;
+               doc = showtime.httpReq(BASE_URL + '/upload/index.php?do=search&subaction=search&search_start=' + p + '&story=' + query.replace(/\s/g,'+')).toString();
+               p++;
+               page.loading =  false;
+               return true;
+            };
+            return tryToSearch = false;
+        }
+        loader();
+        page.paginator = loader;
+    });
+
 })(this);
