@@ -35,7 +35,7 @@
 	var doc = showtime.httpGet("http://www.di.fm").toString().match(/\.Channels([\S\s]*?)<\/script>/)[1];
 
 	// 1-description, 2-key, 3-name, 4-icon,
-        var re = /"description"\:"(.*?)"[\S\s]*?"key"\:"(.*?)"[\S\s]*?"name"\:"(.*?)"[\S\s]*?"default":"(.*?){[\S\s]*?/g;
+        var re = /"description"\:"(.*?)"[\S\s]*?"key"\:"(.*?)"[\S\s]*?"name"\:"(.*?)"[\S\s]*?"default":"(.*?)\{[\S\s]*?/g;
         var match = re.exec(doc);
         while (match) {
 		page.appendItem("icecast:http://listen.di.fm/public3/"+match[2]+".pls", "station", {

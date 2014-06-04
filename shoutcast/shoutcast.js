@@ -33,7 +33,7 @@
         page.contents = "items";
     }
 
-    const blue = "6699CC", orange = "FFA500";
+    var blue = "6699CC", orange = "FFA500";
 
     function colorStr(str, color) {
         return '<font color="' + color + '"> (' + str + ')</font>';
@@ -72,7 +72,7 @@
         }
 
         var pos = 0;
-	for each (item in list) {
+	for (item in list) {
 	    var itemmd = showtime.JSONDecode(item);
 
 	    var item = page.appendItem(itemmd.url, "station", {

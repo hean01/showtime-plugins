@@ -42,7 +42,7 @@
         return '';
     }
 
-    const blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
+    var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
     function colorStr(str, color) {
         return '<font color="' + color + '"> (' + str + ')</font>';
@@ -184,7 +184,7 @@
             page.appendItem(PREFIX + ":indexItem:/film?id=" + json[n].page_id +
                     "&nameforhref="+json[n].nameforhref +
                     "&name=" + json[n].name_for_url, 'video', {
-                title: new showtime.RichText((json[n].quality ? coloredStr(json[n].quality, blue) + ' ' : '') + unescape(json[n].name)),
+                title: new showtime.RichText((json[n].quality ? coloredStr(json[n].quality, blue) + ' ' : '') + trim(unescape(json[n].name))),
                 icon: BASE_URL + escape(json[n].src),
                 rating:  json[n].rait * 10,
                 genre: unescape(json[n].janr),
@@ -468,7 +468,7 @@
         page.paginator = loader;
     });
 
-    function startPage(page) {
+    plugin.addURI(PREFIX + ":start", function(page) {
         setPageHeader(page, slogan);
 
         page.loading = true;
@@ -491,7 +491,7 @@
 
         // Comments reader
         page.appendItem(PREFIX + ':comments', "directory", {
-            title: 'Комментарии'
+            title: 'Последние отзывы'
         });
 
         // Building top 20
@@ -515,9 +515,7 @@
         // Building list
         page.appendItem("", "separator");
         scrape(page, '?', escape(slogan));
-    };
-
-    plugin.addURI(PREFIX + ":start", startPage);
+    });
 
     plugin.addSearcher("Tree.tv", logo, function(page, query) {
         scrapeSmall(page, escape(BASE_URL + '/search/index/index/usersearch/' + query+'/page/'), slogan);
