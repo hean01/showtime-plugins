@@ -117,7 +117,7 @@
 
     // Appends the item and lists it's root folder
     plugin.addURI(PREFIX + ":listRoot:(.*):(.*)", function(page, url, title) {
-        title = unescape(title).replace(/(<([^>]+)>)/ig).replace('undefined','');
+        title = unescape(title).replace(/(<([^>]+)>)/ig).replace(/undefined/g,'');
         setPageHeader(page, title);
         page.loading = true;
         var response = showtime.httpGet(BASE_URL + url).toString();
@@ -239,6 +239,7 @@
         var what_else = response.match(/<div class="b-posters">([\S\s]*?)<div class="clear">/);
         var commented = response.match(/<div class="b-item-material-comments__content">([\S\s]*?)<div class="b-item-material-comments__footer">/);
 
+        // list files/folders
         page.loading = true;
         response = showtime.httpReq(BASE_URL + url + '?ajax&blocked=0&folder=0');
         page.loading = false;
@@ -268,6 +269,44 @@
             end = response.indexOf('</li>', start + 1);
             m = re.exec(response.substring(start, end));
         }
+
+
+        if (iteminfo) {
+            // Show directors
+            htmlBlock = iteminfo.match(/itemprop="director"([\S\s]*?)<\/td>/);
+            if (htmlBlock) {
+                page.appendItem("", "separator", {
+                    title: 'Режиссеры'
+                });
+                //1-link, 2-title
+                var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
+                var m = re.exec(htmlBlock[1]);
+                while (m) {
+                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы режиссера '+m[2]) + '::&sort=year', "video", {
+                        title: m[2]
+                    });
+                    m = re.exec(htmlBlock[1]);
+                };
+            };
+            // Show actors
+            htmlBlock = iteminfo.match(/itemprop="actor"([\S\s]*?)<\/td>/);
+            if (htmlBlock) {
+                page.appendItem("", "separator", {
+                    title: 'Актеры'
+                });
+                //1-link, 2-title
+                var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
+                var m = re.exec(htmlBlock[1]);
+                while (m) {
+                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы с участием '+m[2]) + '::&sort=year', "video", {
+                        title: m[2]
+                    });
+                    m = re.exec(htmlBlock[1]);
+                };
+            };
+        };
+
+        // Show related
         if (what_else) {
             what_else = what_else[1];
             page.appendItem("", "separator", {
@@ -285,6 +324,8 @@
                 m = re.exec(what_else);
             }
         }
+
+        // Show comments
         if (commented) {
             commented = commented[1];
 
@@ -446,18 +487,20 @@
     });
 
     // Index page
-    plugin.addURI(PREFIX + ":index:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(PREFIX + ":index:(.*):(.*):(.*):(.*)", function(page, url, title, populars, param) {
         setPageHeader(page, unescape(title));
-        var doc = showtime.httpReq(url + '?view=detailed').toString();
-        var match = doc.match(/<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-clear">/);
-        if (match) {
-            showPopulars(page, match[1], 'Самое просматриваемое сейчас');
-	    page.appendItem("", "separator", {
-                title: ''
-            });
+        var doc = showtime.httpReq(url + '?view=detailed'+param).toString();
+        if (populars) {
+            var match = doc.match(/<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-clear">/);
+            if (match) {
+                showPopulars(page, match[1], 'Самое просматриваемое сейчас');
+	        page.appendItem("", "separator", {
+                    title: ''
+                });
+            }
         }
 
-        response = doc.match(/<div class="b-section-list([\S\s]*?)<a class="b-endless-scroll/)[1];
+        response = doc.match(/<div class="b-section-list([\S\s]*?)<script type="text\/javascript">/)[1];
         indexer(page);
 
         var pos = 90;
@@ -551,6 +594,45 @@
         }
     }
 
+    function processScroller(page, url) {
+        url = unescape(url);
+        page.loading = true;
+        var doc = showtime.httpReq(BASE_URL + url).toString();
+        page.loading = false;
+        var match = doc.match(/<div class="b-nowviewed">([\S\s]*?)<div class="b-clear">/);
+        if (match)
+            showPopulars(page, match[1], 'Самое просматриваемое сейчас');
+        else { // try like series
+            var match = doc.match(/<div id="adsProxy-zone-section-glowadswide">([\S\s]*?)<div class="b-clear">/);
+            if (match)
+                 showPopulars(page, match[1], 'Популярно сейчас');
+        }
+
+        response = doc.match(/<div class="b-section-list([\S\s]*?)<script type="text\/javascript">/);
+        if (response) {
+            page.appendItem("", "separator", {
+                title: 'Популярные материалы'
+            });
+            response = response[1];
+            indexer(page);
+
+            var pos = 90;
+            function loader() {
+                page.loading = true;
+                var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + url +'?scrollload=1&view=detailed&start='+pos+'&length=18'));
+                page.loading = false;
+                for (i in json.content) {
+                    response = showtime.entityDecode(json.content[i]);
+                    indexer(page);
+                }
+                pos += 90;
+                return !json.is_last
+            }
+            loader();
+            page.paginator = loader;
+        }
+    }
+
     // lists submenu
     plugin.addURI(PREFIX + ":submenu:(.*):(.*):(.*)", function(page, url, title, menu) {
         setPageHeader(page, unescape(title));
@@ -559,41 +641,12 @@
         var re = /<a class="b-header__menu-subsections-item" href="([\S\s]*?)">[\S\s]*?<span class="b-header__menu-subsections-item-title m-header__menu-subsections-item-title_type_[\S\s]*?">([\S\s]*?)<\/span>/g;
         var match = re.exec(menu);
         while (match) {
-            page.appendItem(PREFIX + ":index:" + BASE_URL + match[1] + ':' + trim(match[2]), 'directory', {
+            page.appendItem(PREFIX + ":index:" + BASE_URL + match[1] + ':' + trim(match[2]) + ':yes:', 'directory', {
                 title: trim(match[2])
             });
             match = re.exec(menu);
         }
-
-        page.loading = true;
-        var doc = showtime.httpReq(BASE_URL + url).toString();
-        page.loading = false;
-
-        match = doc.match(/<div class="b-nowviewed">([\S\s]*?)<div class="b-clear">/);
-        if (match)
-            showPopulars(page, match[1], 'Самое просматриваемое сейчас');
-
-        page.appendItem("", "separator", {
-            title: 'Популярные материалы'
-        });
-
-        response = doc.match(/<div class="b-section-list([\S\s]*?)<a class="b-endless-scroll/)[1];
-        indexer(page);
-
-        var pos = 90;
-        function loader() {
-            page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + url +'?scrollload=1&view=detailed&start='+pos+'&length=18'));
-            page.loading = false;
-            for (i in json.content) {
-                response = showtime.entityDecode(json.content[i]);
-                indexer(page);
-            }
-            pos += 90;
-            return !json.is_last
-        }
-        loader();
-        page.paginator = loader;
+        processScroller(page, url);
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
