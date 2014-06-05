@@ -104,82 +104,6 @@
         page.paginator = loader;
     });
 
-    // Index page
-    plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
-        setPageHeader(page, '');
-        var p = 0;
-
-        function loader() {
-            page.loading = true;
-            var response = showtime.httpReq(url + "&page=" + p).toString();
-            page.loading = false;
-
-            // Show populars only above the first page
-            if (p == 0) {
-                page.metadata.title = response.match(/<title>(.*?)<\/title>/)[1];
-		var match = response.match(/<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-clear">/);
-		if (match) {
-                    page.appendItem("", "separator", {
-                        title: 'Самое просматриваемое сейчас'
-                    });
-                    // 1-link, 2-logo, 3-title
-		    re = /<div class="b-poster-[\S\s]*?<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="b-poster-[\S\s]*?">([\S\s]*?)<\/span>/g;
-	            var m = re.exec(match[1]);
-        	    while (m) {
-		        var title = trim(m[3]).replace(/(<([^>]+)>)/ig, "");
-        	        page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
-        	            title: new showtime.RichText(title),
-        	            icon: m[2]
-        	        });
-        	        m = re.exec(match[1]);
-        	    }
-	            page.appendItem("", "separator", {
-        	        title: ''
-        	    });
-		}
-            }
-
-            //for short form: 1-link, 2-icon, 3-title, 4-description
-	    //re = /<a class="b-poster-tile__link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt='([\S\s]*?)' width[\S\s]*?<span class="b-poster-tile__title-info">([\S\s]*?)<\/span>/g;
-            // detailed: 1-link, 2-icon, 3-title, 4-qualities(for films),
-            // 5-votes+, 6-votes-, 7-year/country, 8-genre/actors, 9-description
-            re = /<a class="b-poster-detail__link" href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)" alt='([\S\s]*?)' width=([\S\s]*?)<span class="b-poster-detail__vote-positive">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__vote-negative">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__description">([\S\s]*?)<\/span>/g;
-            var match = re.exec(response);
-            while (match) {
-                // parsing quality list
-                var quality = '';
-                var re2 = /<span class="quality m-([\S\s]*?)">/m;
-                var match2 = re2.exec(match[4]);
-                if (match2)
-                    quality = match2[1].toUpperCase();
-                var genre = '', actors = '';
-                if (quality) {
-                    quality = coloredStr(quality, blue) + ' ';
-                    actors = coloredStr('Актеры: ', orange) + match[8] + ' ';
-                } else {
-                    genre = match[8];
-                }
-
-                var title = removeSlashes(unescape(match[3]).replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', ""));
-                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
-                    title: new showtime.RichText(quality + match[3]),
-                    icon: match[2],
-                    genre: genre,
-                    year: +match[7].substr(0,4),
-                    description: new showtime.RichText(actors + coloredStr("Производство: ", orange) + ' ' +
-                        trim(match[7].split('●')[1]) + ' ' + (match[9] ? coloredStr("<br>Описание: ", orange) + trim(match[9]) : ''))
-                });
-                match = re.exec(response);
-            }
-            p++;
-            var re = /Показать ещё/;
-            if (re.exec(response)) return true;
-            return false;
-        }
-        loader();
-        page.paginator = loader;
-    });
-
     function getType(type) {
         type = type.toLowerCase();
         switch (type) {
@@ -529,6 +453,81 @@
         } else page.error("Линк не проигрывается :(");
     });
 
+    // Index page
+    plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
+        setPageHeader(page, '');
+        var p = 0;
+
+        function loader() {
+            page.loading = true;
+            var response = showtime.httpReq(url + "&page=" + p).toString();
+            page.loading = false;
+
+            // Show populars only above the first page
+            if (p == 0) {
+                page.metadata.title = response.match(/<title>(.*?)<\/title>/)[1];
+		var match = response.match(/<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-clear">/);
+		if (match) {
+                    page.appendItem("", "separator", {
+                        title: 'Самое просматриваемое сейчас'
+                    });
+                    // 1-link, 2-logo, 3-title
+		    re = /<div class="b-poster-[\S\s]*?<a href="([^"]+)[\S\s]*?url\('([^']+)[\S\s]*?<span class="b-poster-[\S\s]*?">([\S\s]*?)<\/span>/g;
+	            var m = re.exec(match[1]);
+        	    while (m) {
+		        var title = trim(m[3]).replace(/(<([^>]+)>)/ig, "");
+        	        page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
+        	            title: new showtime.RichText(title),
+        	            icon: m[2].replace('/9/', '/2/')
+        	        });
+        	        m = re.exec(match[1]);
+        	    }
+	            page.appendItem("", "separator", {
+        	        title: ''
+        	    });
+		}
+            }
+
+            //for short form: 1-link, 2-icon, 3-title, 4-description
+	    //re = /<a class="b-poster-tile__link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt='([\S\s]*?)' width[\S\s]*?<span class="b-poster-tile__title-info">([\S\s]*?)<\/span>/g;
+            // detailed: 1-link, 2-icon, 3-title, 4-qualities(for films),
+            // 5-votes+, 6-votes-, 7-year/country, 8-genre/actors, 9-description
+            re = /<a class="b-poster-detail__link" href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)" alt='([\S\s]*?)' width=([\S\s]*?)<span class="b-poster-detail__vote-positive">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__vote-negative">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__description">([\S\s]*?)<\/span>/g;
+            var match = re.exec(response);
+            while (match) {
+                // parsing quality list
+                var quality = '';
+                var re2 = /<span class="quality m-([\S\s]*?)">/m;
+                var match2 = re2.exec(match[4]);
+                if (match2)
+                    quality = match2[1].toUpperCase();
+                var genre = '', actors = '';
+                if (quality) {
+                    quality = coloredStr(quality, blue) + ' ';
+                    actors = coloredStr('Актеры: ', orange) + match[8] + ' ';
+                } else {
+                    genre = match[8];
+                }
+                var title = removeSlashes(unescape(match[3]).replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', ""));
+                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
+                    title: new showtime.RichText(quality + match[3]),
+                    icon: match[2].replace('/6/', '/2/'),
+                    genre: genre,
+                    year: +match[7].substr(0,4),
+                    description: new showtime.RichText(actors + coloredStr("Производство: ", orange) + ' ' +
+                        trim(match[7].split('●')[1]) + ' ' + (match[9] ? coloredStr("<br>Описание: ", orange) + trim(match[9]) : ''))
+                });
+                match = re.exec(response);
+            }
+            p++;
+            var re = /Показать ещё/;
+            if (re.exec(response)) return true;
+            return false;
+        }
+        loader();
+        page.paginator = loader;
+    });
+
     plugin.addURI(PREFIX + ":submenu:(.*):(.*):(.*)", function(page, url, title, menu) {
         setPageHeader(page, unescape(title));
         menu = unescape(menu);
@@ -541,6 +540,7 @@
             });
             match = re.exec(menu);
         }
+
     });
 
     var comments;
@@ -556,8 +556,8 @@
         while (match) {
             page.appendItem(PREFIX + ":listRoot:" + match[1]+ ':' + escape(trim(match[2])), 'video', {
                 title: trim(match[2]),
-                icon: match[3],
-                year: +match[5],
+                icon: match[3].replace('/9/', '/2/'),
+                year: +(trim(match[5].replace(/\D+/, '')).substr(0,4)),
                 genre: new showtime.RichText(match[4] + ' ' + colorStr(trim(match[7].replace(/<[^>]*>/g, '')), orange)),
                 description: new showtime.RichText(colorStr(trim(match[11]), match[10] == "negative" ? red : green) +
                     coloredStr(match[13], orange) + ': ' + match[12] + ' '+
@@ -566,6 +566,9 @@
             });
             match = re.exec(comments);
         }
+
+
+
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
@@ -612,13 +615,14 @@
         function scrape() {
             var match = re.exec(doc);
             while (match) {
+                var description = trim(match[7].replace(/<[^>]*>/g, '').replace('.......',''))
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[4])), "video", {
                     title: new showtime.RichText(match[4]),
                     icon: match[2].replace('/9/','/2/'),
                     genre: new showtime.RichText(match[3] + ' ' + (trim(match[5].replace(/<[^>]*>/g, '')) ? colorStr(trim(match[5]), orange) : '')),
                     description: new showtime.RichText((trim(match[6]) ? coloredStr('Произведено: ',orange) + trim(match[6]) + ' ' : '') +
                        coloredStr('Добавил: ',orange) + match[8] + ' ' + colorStr(match[9], blue) +
-                       coloredStr(' Описание: ',orange) + trim(match[7].replace(/<[^>]*>/g, '').replace('.......','')))
+                       (description ? coloredStr(' Описание: ',orange) + description : ''))
                 });
                 match = re.exec(doc);
             }
