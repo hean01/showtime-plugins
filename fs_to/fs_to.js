@@ -251,7 +251,7 @@
               description = coloredStr("Страна:", orange) + countries + " " + description;
            }; // Scrape countries
 
-        }; // Scrap item info
+        }; // Scrape item info
 
         page.loading = false;
         page.appendItem(PREFIX + ":playOnline:" + url + ":" + escape(title), "video", {
@@ -264,9 +264,10 @@
         });
 
         var what_else = response.match(/<div class="b-posters">([\S\s]*?)<div class="clear">/);
+        var commented = response.match(/<div class="b-item-material-comments__content">([\S\s]*?)<div class="b-item-material-comments__footer">/);
 
         page.loading = true;
-        response = showtime.httpGet(BASE_URL + url + '?ajax&blocked=0&folder=0');
+        response = showtime.httpReq(BASE_URL + url + '?ajax&blocked=0&folder=0');
         page.loading = false;
         var re = /<ul class="filelist[^"]+[\S\s]*?<\/ul>/;
         response = re.exec(response);
@@ -309,6 +310,24 @@
                     icon: m[2]
                 });
                 m = re.exec(what_else);
+            }
+        }
+        if (commented) {
+            commented = commented[1];
+
+            page.appendItem("", "separator", {
+                title: commented.match(/<p class="b-item-material-comments__count">([\S\s]*?)<\/p>/)[1].replace('<span itemprop="reviewCount">', '').replace('</span>', '')
+            });
+            // 1-icon, 2-nick, 3-datetime, 4-positive, 5-negative, 6-description
+            re = /url\('([\S\s]*?)'\);[\S\s]*?<span itemprop="reviewer">([\S\s]*?)<\/span>[\S\s]*?datetime="[\S\s]*?">([\S\s]*?)<\/time>[\S\s]*?<span class="b-item-material-comments__item-answer-value">([\S\s]*?)<\/span>[\S\s]*?<span class="b-item-material-comments__item-answer-value">([\S\s]*?)<\/span>[\S\s]*?itemprop="description">([\S\s]*?)<\/div>/g;
+            var match = re.exec(commented);
+            while (match) {
+                page.appendPassiveItem('video', '', {
+                    title: new showtime.RichText(trim(match[2]) + ' (' + coloredStr(match[4], green) + ' / ' + coloredStr(match[5], red) + ') ' + trim(match[3])),
+                    icon: match[1].replace('/3/', '/1/'),
+                    description: new showtime.RichText(match[6])
+                });
+                match = re.exec(commented);
             }
         }
     });
@@ -456,27 +475,30 @@
     // Index page
     plugin.addURI(PREFIX + ":index:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
-        var p = 0;
+        var doc = showtime.httpReq(url + '?view=detailed').toString();
+        var match = doc.match(/<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-clear">/);
+        if (match) {
+            showPopulars(page, match[1], 'Самое просматриваемое сейчас');
+	    page.appendItem("", "separator", {
+                title: ''
+            });
+        }
+
+        response = doc.match(/<div class="b-section-list([\S\s]*?)<a class="b-endless-scroll/)[1];
+        indexer(page);
+
+        var pos = 90;
 
         function loader() {
             page.loading = true;
-            var response = showtime.httpReq(url + "&page=" + p).toString();
+            var json = showtime.JSONDecode(showtime.httpReq(url +'?scrollload=1&view=detailed&start='+pos+'&length=18'));
             page.loading = false;
-
-            // Show populars
-	    var match = response.match(/<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-clear">/);
-	    if (match) {
-                showPopulars(page, match[1], 'Самое просматриваемое сейчас');
-	        page.appendItem("", "separator", {
-        	    title: ''
-        	});
-	    }
-
-            indexer(page);
-            p++;
-            var re = /Показать ещё/;
-            if (re.exec(response)) return true;
-            return false;
+            for (i in json.content) {
+                response = showtime.entityDecode(json.content[i]);
+                indexer(page);
+            }
+            pos+=90;
+            return !json.is_last
         }
         loader();
         page.paginator = loader;
@@ -516,7 +538,7 @@
                 icon: match[3].replace('/9/', '/2/'),
                 year: +(trim(match[5].replace(/\D+/, '')).substr(0,4)),
                 genre: new showtime.RichText(match[4] + ' ' + colorStr(trim(match[7].replace(/<[^>]*>/g, '')), orange)),
-                description: new showtime.RichText(colorStr(trim(match[11]), match[10] == "negative" ? red : green) +
+                description: new showtime.RichText(colorStr(trim(match[11]), match[10] == "negative" ? red : green) + ' '+
                     coloredStr(match[13], orange) + ': ' + match[12] + ' '+
                     '<br>' + colorStr(trim(match[15]), match[14] == "negative" ? red : green) + ' '+
                     coloredStr(match[17], orange) + ': ' + match[16])
@@ -527,34 +549,34 @@
 
     var response;
     function indexer(page) {
-            // 1-link, 2-icon, 3-title, 4-qualities(for films),
-            // 5-votes+, 6-votes-, 7-year/country, 8-genre/actors, 9-description
-            var re = /<a class="b-poster-detail__link" href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)" alt='([\S\s]*?)' width=([\S\s]*?)<span class="b-poster-detail__vote-positive">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__vote-negative">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__description">([\S\s]*?)<\/span>/g;
-            var match = re.exec(response);
-            while (match) {
-                // parsing quality list
-                var quality = '';
-                var re2 = /<span class="quality m-([\S\s]*?)">/m;
-                var match2 = re2.exec(match[4]);
-                if (match2)
-                    quality = match2[1].toUpperCase();
-                var genre = '', actors = '';
-                if (quality) {
-                    quality = coloredStr(quality, blue) + ' ';
-                    actors = coloredStr('Актеры: ', orange) + match[8] + ' ';
-                } else {
-                    genre = match[8];
-                }
-                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
-                    title: new showtime.RichText(quality + match[3]),
-                    icon: match[2].replace('/6/', '/2/'),
-                    genre: genre,
-                    year: +match[7].substr(0,4),
-                    description: new showtime.RichText(actors + coloredStr("Производство: ", orange) + ' ' +
-                        trim(match[7].split('●')[1]) + ' ' + (match[9] ? coloredStr("<br>Описание: ", orange) + trim(match[9]) : ''))
-                });
-                match = re.exec(response);
+        // 1-link, 2-icon, 3-title, 4-qualities(for films),
+        // 5-votes+, 6-votes-, 7-year/country, 8-genre/actors, 9-description
+        var re = /<a class="b-poster-detail__link" href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)" alt='([\S\s]*?)' width=([\S\s]*?)<span class="b-poster-detail__vote-positive">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__vote-negative">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__description">([\S\s]*?)<\/span>/g;
+        var match = re.exec(response);
+        while (match) {
+            // parsing quality list
+            var quality = '';
+            var re2 = /<span class="quality m-([\S\s]*?)">/m;
+            var match2 = re2.exec(match[4]);
+            if (match2)
+                quality = match2[1].toUpperCase();
+            var genre = '', actors = '';
+            if (quality) {
+                quality = coloredStr(quality, blue) + ' ';
+                actors = coloredStr('Актеры: ', orange) + match[8] + ' ';
+            } else {
+                genre = match[8];
             }
+            page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
+                title: new showtime.RichText(quality + match[3]),
+                icon: match[2].replace('/6/', '/2/'),
+                genre: genre,
+                year: +match[7].substr(0,4),
+                description: new showtime.RichText(actors + coloredStr("Производство: ", orange) + ' ' +
+                    trim(match[7].split('●')[1]) + ' ' + (match[9] ? coloredStr("<br>Описание: ", orange) + trim(match[9]) : ''))
+            });
+            match = re.exec(response);
+        }
     }
 
     // lists submenu
@@ -565,7 +587,7 @@
         var re = /<a class="b-header__menu-subsections-item" href="([\S\s]*?)">[\S\s]*?<span class="b-header__menu-subsections-item-title m-header__menu-subsections-item-title_type_[\S\s]*?">([\S\s]*?)<\/span>/g;
         var match = re.exec(menu);
         while (match) {
-            page.appendItem(PREFIX + ":index:" + BASE_URL + match[1] + '?sort=rating&view=detailed' + ':' + title, 'directory', {
+            page.appendItem(PREFIX + ":index:" + BASE_URL + match[1] + ':' + title, 'directory', {
                 title: trim(match[2])
             });
             match = re.exec(menu);
