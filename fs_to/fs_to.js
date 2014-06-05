@@ -307,7 +307,7 @@
                 title = m[3].replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', "");
                 page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
                     title: new showtime.RichText(title),
-                    icon: m[2]
+                    icon: m[2].replace('/9/', '/2/')
                 });
                 m = re.exec(what_else);
             }
@@ -587,7 +587,7 @@
         var re = /<a class="b-header__menu-subsections-item" href="([\S\s]*?)">[\S\s]*?<span class="b-header__menu-subsections-item-title m-header__menu-subsections-item-title_type_[\S\s]*?">([\S\s]*?)<\/span>/g;
         var match = re.exec(menu);
         while (match) {
-            page.appendItem(PREFIX + ":index:" + BASE_URL + match[1] + ':' + title, 'directory', {
+            page.appendItem(PREFIX + ":index:" + BASE_URL + match[1] + ':' + trim(match[2]), 'directory', {
                 title: trim(match[2])
             });
             match = re.exec(menu);
