@@ -77,33 +77,6 @@
         }
     }
 
-    // Shows what's new page
-    plugin.addURI(PREFIX + ":updates", function(page) {
-        setPageHeader(page, 'Последние обновления');
-        var p = 0;
-
-        function loader() {
-            page.loading = true;
-            var response = showtime.httpGet(BASE_URL + "/updates.aspx?page=" + p);
-            page.loading = false;
-            //1-type 2-link 3-title 4-date 5-time
-            var re = /class="m-themed">([^\<]+)[\S\s]*?a href="([^"]+)" class="item-link" title="[^"]+">([^\<]+)[\S\s]*?class="col-date"[\S\s]*?\>([^\<]+)[\S\s]*?class="col-time">([^\<]+)/g;
-            var match = re.exec(response);
-            while (match) {
-                page.appendItem(PREFIX + ":listRoot:" + escape(match[2]) + ":" + escape(match[3]), "directory", {
-                    title: new showtime.RichText(match[3] + '<font color=' + getFontColor(match[1]) + '> (' + match[1] + ')</font> ' + match[4] + ' ' + match[5])
-                });
-                match = re.exec(response);
-            }
-            p++;
-            re = /<b>Следующая страница<\/b>/;
-            if (re.exec(response)) return true;
-            return false;
-        }
-        loader();
-        page.paginator = loader;
-    });
-
     function getType(type) {
         type = type.toLowerCase();
         switch (type) {
@@ -144,7 +117,7 @@
 
     // Appends the item and lists it's root folder
     plugin.addURI(PREFIX + ":listRoot:(.*):(.*)", function(page, url, title) {
-        title = unescape(title);
+        title = unescape(title).replace(/(<([^>]+)>)/ig).replace('undefined','');
         setPageHeader(page, title);
         page.loading = true;
         var response = showtime.httpGet(BASE_URL + url).toString();
@@ -316,7 +289,7 @@
             commented = commented[1];
 
             page.appendItem("", "separator", {
-                title: commented.match(/<p class="b-item-material-comments__count">([\S\s]*?)<\/p>/)[1].replace('<span itemprop="reviewCount">', '').replace('</span>', '')
+                title: commented.match(/<p class="b-item-material-comments__count">([\S\s]*?)<\/p>/)[1].replace('<span itemprop="reviewCount">', '').replace('</span>', '').replace('  ', ' ')
             });
             // 1-icon, 2-nick, 3-datetime, 4-positive, 5-negative, 6-description
             re = /url\('([\S\s]*?)'\);[\S\s]*?<span itemprop="reviewer">([\S\s]*?)<\/span>[\S\s]*?datetime="[\S\s]*?">([\S\s]*?)<\/time>[\S\s]*?<span class="b-item-material-comments__item-answer-value">([\S\s]*?)<\/span>[\S\s]*?<span class="b-item-material-comments__item-answer-value">([\S\s]*?)<\/span>[\S\s]*?itemprop="description">([\S\s]*?)<\/div>/g;
@@ -488,7 +461,6 @@
         indexer(page);
 
         var pos = 90;
-
         function loader() {
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(url +'?scrollload=1&view=detailed&start='+pos+'&length=18'));
@@ -511,7 +483,7 @@
         });
 
         // 1-link, 2-logo, 3-title
-        var re = /<div class="b-poster-[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?url\('([\S\s]*?)'\)[\S\s]*?<span class="m-poster-new__full_title">([\S\s]*?)<\/span>/g;
+        var re = /<div class="b-poster-[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?url\('([\S\s]*?)'\)[\S\s]*?<span class=".-poster-[\S\s]*?title">([\S\s]*?)<\/span>/g;
         var m = re.exec(match);
         while (m) {
             page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(trim(m[3])), "video", {
@@ -609,7 +581,6 @@
         indexer(page);
 
         var pos = 90;
-
         function loader() {
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + url +'?scrollload=1&view=detailed&start='+pos+'&length=18'));
@@ -618,7 +589,7 @@
                 response = showtime.entityDecode(json.content[i]);
                 indexer(page);
             }
-            pos+=90;
+            pos += 90;
             return !json.is_last
         }
         loader();
@@ -642,6 +613,7 @@
             match = re.exec(doc);
         }
 
+        // Scraping commentable
         comments = doc.match(/<div class="b-main__top-commentable-inner">([\S\s]*?)<div class="b-clear">/);
         if (comments) {
             comments = comments[1];
@@ -650,20 +622,20 @@
             });
         }
 
+        // Show most popular
         match = doc.match(/<div class="b-main__posters([\S\s]*?)<div class="b-clear">/);
         if (match)
             showPopulars(page, match[1], 'Самые популярные материалы');
 
-        // Scraping news
+        // Front page scraper
         page.appendItem("", "separator", {
             title: 'Новое на сайте'
         });
-
         doc = doc.match(/<div class="b-main__new-title">([\S\s]*?)<a class="b-endless-scroll/)[1];
+
         //1-link, 2-icon, 3-type, 4-title, 5-genre, 6-produced, 7-description,
         //8-author, 9-time
         var re = /<a href="([\S\s]*?)"[\S\s]*?url\('([\S\s]*?)'\);[\S\s]*?<span class="b-main__new-item-subsection">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__new-item-title m-main__new-item-title_theme_[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<\/span>([\S\s]*?)<\/span>([\S\s]*?)<span class="b-main__new-item-add-info-auth">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__new-item-add-info-time">([\S\s]*?)<\/span>/g;
-        var pos = 0;
 
         function scrape() {
             var match = re.exec(doc);
@@ -680,21 +652,18 @@
                 match = re.exec(doc);
             }
         }
+        scrape();
 
-        var json;
+        var pos = 100;
         function loader() {
-            if (!pos) {
-               scrape();
-            } else {
-                for (i in json.content) {
-                    doc = showtime.entityDecode(json.content[i]);
-                    scrape();
-                }
-            }
-            pos+=100;
             page.loading = true;
-            json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/main?scrollload=1&start='+pos+'&length=20'));
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL+'/main?scrollload=1&start=100&length=20'));
             page.loading = false;
+            for (i in json.content) {
+                doc = showtime.entityDecode(json.content[i]);
+                scrape();
+            }
+            pos += 100;
             return !json.is_last
         }
         loader();
@@ -703,29 +672,33 @@
 
     plugin.addSearcher("brb.to", logo, function(page, query) {
         page.entries = 0;
-	var fromPage = 1, tryToSearch = true;
+	var fromPage = 0, tryToSearch = true;
+
         //1-link, 2-title, 3-image, 4 - description, 5 - type, 6 - type in text, 7 - genre
-        var re = /class="image-wrap">[\S\s]*?<a href="([^"]+)" title="([^"]+)"><img src="([^"]+)[\S\s]*?<p class="text">([\S\s]*?)<\/p>[\S\s]*?<span class="section ([^"]+)">([\S\s]*?)<\/span>[\S\s]*?<span class="genre"><span class="caption">Жанр:<\/span><span>([\S\s]*?)<\/span>/g;
+        var re = /class="image-wrap">[\S\s]*?<a href="([\S\s]*?)" title="([\S\s]*?)"><img src="([\S\s]*?)"[\S\s]*?<p class="text">([\S\s]*?)<\/p>[\S\s]*?<span class="section ([^"]+)">([\S\s]*?)<\/span>([\S\s]*?)<\/td>/g;
 
         function loader() {
             if (!tryToSearch) return false;
-	    var link = BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+') 
-            if (fromPage != 1) link = link + "&page=" + fromPage;
             page.loading = true;
-            var response = showtime.httpGet(link).toString();
+            var response = showtime.httpGet(BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+') + (fromPage ? "&page=" + fromPage : '')).toString();
             page.loading = false;
             var match = re.exec(response);
             while (match) {
+                var genre = match[7].match(/<span class="genre"><span class="caption">Жанр:<\/span><span>([\S\s]*?)<\/span>/m);
+                if (genre) genre = genre[1];
+                var rate = match[7].match(/<span class="rate ([\S\s]*?)"[\S\s]*?">([\S\s]*?)<\/span>/m);
+                if (rate)
+                    (rate[1] == 'positive' ? rate = colorStr(rate[2], green)+' ' : rate = colorStr(rate[2], red)+' ');
+                else rate = '';
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[2]), "video", {
                     title: new showtime.RichText(match[2]),
                     icon: match[3].replace('/5/', '/2/'),
-                    genre: new showtime.RichText(match[6] + ' ' + colorStr(match[7], orange)),
-                    description: new showtime.RichText(coloredStr('Описание: ', orange) + match[4])
+                    genre: new showtime.RichText(match[6] + ' ' + (genre ? colorStr(genre, orange) : '')),
+                    description: new showtime.RichText(rate + coloredStr('Описание: ', orange) + match[4])
                 });
                 page.entries++;
                 match = re.exec(response);
             };
-
             if (!response.match(/<b>Следующая страница<\/b>/)) return tryToSearch = false;
             fromPage++;
             return true;
