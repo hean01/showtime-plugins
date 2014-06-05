@@ -21,7 +21,7 @@
 
     var PREFIX = 'brb_to';
     var BASE_URL = 'http://brb.to';
-
+    var slogan = 'brb.to - Рекомендательная видеосеть';
     var logo = plugin.path + "logo.jpg";
 
     var sURL = {};
@@ -52,7 +52,7 @@
         return '<font color="6699CC">' + str + '</font>';
     }
 
-    const blue = "6699CC", orange = "FFA500";
+    var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
     function colorStr(str, color) {
         return '<font color="' + color + '">(' + str + ')</font>';
@@ -61,87 +61,6 @@
     function coloredStr(str, color) {
         return '<font color="' + color + '">' + str + '</font>';
     }
-
-    function startPage(page) {
-        setPageHeader(page, 'brb.to - Рекомендательная видеосеть');
-        page.loading = false;
-        page.appendItem(PREFIX + ':updates', 'directory', {
-            title: 'Последние обновления',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/films/?sort=rating&view=list', 'directory', {
-            title: 'Фильмы',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/serials/?sort=rating&view=list', 'directory', {
-            title: 'Сериалы',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/cartoons/?sort=rating&view=list', 'directory', {
-            title: 'Мультфильмы',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/cartoonserials/?sort=rating&view=list', 'directory', {
-            title: 'Мультсериалы',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/tvshow/?sort=rating&view=list', 'directory', {
-            title: 'Телепередачи',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/clips/?sort=rating&view=list', 'directory', {
-            title: 'Клипы',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/video/concerts/?sort=rating&view=list', 'directory', {
-            title: 'Концерты',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/audio/albums/?sort=rating&view=list', 'directory', {
-            title: 'Альбомы',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/audio/singles/?sort=rating&view=list', 'directory', {
-            title: 'Синглы',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/audio/collections/?sort=rating&view=list', 'directory', {
-            title: 'Сборники',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/audio/soundtracks/?sort=rating&view=list', 'directory', {
-            title: 'Саундтреки',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/games/traditional/?sort=rating&view=list', 'directory', {
-            title: 'Игры традиционные',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/games/online/?sort=rating&view=list', 'directory', {
-            title: 'Игры онлайн',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/games/casual/?sort=rating&view=list', 'directory', {
-            title: 'Игры казуальные',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/texts/fiction/?sort=rating&view=list', 'directory', {
-            title: 'Литература художественная',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/texts/other/?sort=rating&view=list', 'directory', {
-            title: 'Литература прикладная',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/texts/journals/?sort=rating&view=list', 'directory', {
-            title: 'Литература журналы',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:' + BASE_URL + '/texts/comix/?sort=rating&view=list', 'directory', {
-            title: 'Литература комиксы',
-            icon: logo
-        });
-    };
 
     function getFontColor(type) {
         switch (type) {
@@ -192,7 +111,7 @@
 
         function loader() {
             page.loading = true;
-            var response = showtime.httpGet(url + "&page=" + p).toString();
+            var response = showtime.httpReq(url + "&page=" + p).toString();
             page.loading = false;
 
             // Show populars only above the first page
@@ -220,15 +139,35 @@
 		}
             }
 
-            //1-link, 2-icon, 3-title, 4-description
-	    re = /<a class="b-poster-tile__link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt='([\S\s]*?)' width[\S\s]*?<span class="b-poster-tile__title-info">([\S\s]*?)<\/span>/g;
+            //for short form: 1-link, 2-icon, 3-title, 4-description
+	    //re = /<a class="b-poster-tile__link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt='([\S\s]*?)' width[\S\s]*?<span class="b-poster-tile__title-info">([\S\s]*?)<\/span>/g;
+            // detailed: 1-link, 2-icon, 3-title, 4-qualities(for films),
+            // 5-votes+, 6-votes-, 7-year/country, 8-genre/actors, 9-description
+            re = /<a class="b-poster-detail__link" href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)" alt='([\S\s]*?)'([\S\s]*?)<span class="b-poster-detail__vote-positive">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__vote-negative">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__description">([\S\s]*?)<\/span>/g;
             var match = re.exec(response);
             while (match) {
+                // parsing quality list
+                var quality = '';
+                var re2 = /<span class="quality m-([\S\s]*?)">/m;
+                var match2 = re2.exec(match[4]);
+                if (match2)
+                    quality = match2[1].toUpperCase();
+                var genre = '', actors = '';
+                if (quality) {
+                    quality = coloredStr(quality, blue) + ' ';
+                    actors = coloredStr('Актеры: ', orange) + match[8] + ' ';
+                } else {
+                    genre = match[8];
+                }
+
                 var title = removeSlashes(unescape(match[3]).replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', ""));
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
-                    title: new showtime.RichText(title),
+                    title: new showtime.RichText(quality + match[3]),
                     icon: match[2],
-                    description: new showtime.RichText(trim(match[4]))
+                    genre: genre,
+                    year: +match[7].substr(0,4),
+                    description: new showtime.RichText(actors + coloredStr("Производство: ", orange) + ' ' +
+                        trim(match[7].split('●')[1]) + ' ' + (match[9] ? coloredStr("<br>Описание: ", orange) + trim(match[9]) : ''))
                 });
                 match = re.exec(response);
             }
@@ -590,7 +529,122 @@
         } else page.error("Линк не проигрывается :(");
     });
 
-    plugin.addURI(PREFIX + ":start", startPage);
+    plugin.addURI(PREFIX + ":submenu:(.*):(.*):(.*)", function(page, url, title, menu) {
+        setPageHeader(page, unescape(title));
+        menu = unescape(menu);
+        //1-url, 2-title
+        var re = /<a class="b-header__menu-subsections-item" href="([\S\s]*?)">[\S\s]*?<span class="b-header__menu-subsections-item-title m-header__menu-subsections-item-title_type_[\S\s]*?">([\S\s]*?)<\/span>/g;
+        var match = re.exec(menu);
+        while (match) {
+            page.appendItem(PREFIX + ":index:" + BASE_URL + match[1] + '?sort=rating&view=detailed', 'directory', {
+                title: trim(match[2])
+            });
+            match = re.exec(menu);
+        }
+    });
+
+    var comments;
+
+    plugin.addURI(PREFIX + ":comments", function(page) {
+        setPageHeader(page, 'Обcуждаемые материалы');
+        //1-link, 2-title, 3-icon, 4-type, 5-year, 6-country, 7-genres list,
+        //8-directors, 9-actors,
+        //10-positive/negative, 11-rating, 12-text, 13-nick,
+        //14-positive/negative, 15-rating, 16-text, 17-nick
+        var re = /<a href="([\S\s]*?)"[\S\s]*?<span class="b-main__top-commentable-item-title-value">([\S\s]*?)<\/span>[\S\s]*?url\(([\S\s]*?)\);[\S\s]*?<span class="b-main__top-commentable-item-subsection">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-year-country">([\S\s]*?)<span class="b-main__new-item-attributes-delimiter"><\/span>([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-genre">([\S\s]*?)<span class="b-main__top-commentable-item-director">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-cast">([\S\s]*?)<\/span>[\S\s]*?class="b-main__top-commentable-item-comment m-main__top-commentable-item-comment_bg_([\S\s]*?)">[\S\s]*?<span class="b-main__top-commentable-item-comment-content-rating">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-text">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-name m-main__top-commentable-item-comment-content-name_">([\S\s]*?)<\/span>[\S\s]*?class="b-main__top-commentable-item-comment m-main__top-commentable-item-comment_bg_([\S\s]*?)">[\S\s]*?<span class="b-main__top-commentable-item-comment-content-rating">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-text">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-name m-main__top-commentable-item-comment-content-name_">([\S\s]*?)<\/span>/g;
+        var match = re.exec(comments);
+        while (match) {
+            page.appendItem(PREFIX + ":listRoot:" + match[1]+ ':' + escape(trim(match[2])), 'video', {
+                title: trim(match[2]),
+                icon: match[3],
+                year: +match[5],
+                genre: new showtime.RichText(match[4] + ' ' + colorStr(trim(match[7].replace(/<[^>]*>/g, '')), orange)),
+                description: new showtime.RichText(colorStr(trim(match[11]), match[10] == "negative" ? red : green) +
+                    coloredStr(match[13], orange) + ': ' + match[12] + ' '+
+                    '<br>' + colorStr(trim(match[15]), match[14] == "negative" ? red : green) + ' '+
+                    coloredStr(match[17], orange) + ': ' + match[16])
+            });
+            match = re.exec(comments);
+        }
+    });
+
+    plugin.addURI(PREFIX + ":start", function(page) {
+        setPageHeader(page, slogan);
+        page.loading = true;
+        var doc = showtime.httpReq(BASE_URL).toString();
+        page.loading = false;
+
+        // Building menu
+        //1-link, 2-title, 3-submenus
+        var re = /<div class="b-header__menu-section[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?">([\S\s]*?)<\/a>([\S\s]*?)<div class="b-clear">/g;
+        var match = re.exec(doc);
+        while (match) {
+            page.appendItem(PREFIX + ":submenu:" + match[1]+ ':' + escape(trim(match[2])) + ':' + escape(match[3]), 'directory', {
+                title: trim(match[2])
+            });
+            match = re.exec(doc);
+        }
+
+        comments = doc.match(/<div class="b-main__top-commentable-inner">([\S\s]*?)<div class="b-clear">/);
+        if (comments) {
+            comments = comments[1];
+            page.appendItem(PREFIX + ':comments', "directory", {
+                title: 'Обcуждаемые материалы'
+            });
+        }
+
+        //page.appendItem(PREFIX + ':updates', 'directory', {
+        //    title: 'Последние обновления',
+        //    icon: logo
+        //});
+
+        // Scraping news
+        page.appendItem("", "separator", {
+            title: 'Новое на сайте'
+        });
+
+        //1-link, 2-icon, 3-type, 4-title, 5-genre, 6-produced, 7-description,
+        //8-author, 9-time
+        var re = /<a href="([\S\s]*?)"[\S\s]*?url\('([\S\s]*?)'\);[\S\s]*?<span class="b-main__new-item-subsection">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__new-item-title m-main__new-item-title_theme_[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<\/span>([\S\s]*?)<\/span>([\S\s]*?)<span class="b-main__new-item-add-info-auth">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__new-item-add-info-time">([\S\s]*?)<\/span>/g;
+        var pos = 0;
+        doc = doc.match(/<div class="b-main__new-title">([\S\s]*?)<a class="b-endless-scroll/)[1];
+
+        function scrape() {
+            var match = re.exec(doc);
+            while (match) {
+                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[4]), "video", {
+                    title: new showtime.RichText(match[4]),
+                    icon: match[2],
+                    genre: new showtime.RichText(match[3] + ' ' + colorStr(trim(match[5]), orange)),
+                    description: new showtime.RichText(coloredStr('Произведено: ',orange) + trim(match[6]) + ' ' +
+                       coloredStr('Добавил: ',orange) + match[8] + ' ' + colorStr(match[9], blue) +
+                       coloredStr(' Описание: ',orange) + trim(match[7].replace(/<[^>]*>/g, '').replace('.......','')))
+                });
+                match = re.exec(doc);
+            }
+        }
+
+        var json;
+
+        function loader() {
+            if (!pos) {
+               scrape();
+            } else {
+                for (i in json.content) {
+                    doc = showtime.entityDecode(json.content[i]);
+                    scrape();
+                }
+            }
+            pos+=100;
+            page.loading = true;
+            json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/main?scrollload=1&start='+pos+'&length=20'));
+            page.loading = false;
+            return !json.is_last
+        }
+        loader();
+        page.paginator = loader;
+    });
+
 
     plugin.addSearcher("brb.to", logo, function(page, query) {
         page.entries = 0;
