@@ -582,8 +582,8 @@
             } else {
                 genre = match[8];
             }
-            page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
-                title: new showtime.RichText(quality + match[3]),
+            page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3].replace(/\\\'/g, "'").replace(/\\\"/g, '"')), "video", {
+                title: new showtime.RichText(quality + match[3].replace(/\\\'/g, "'").replace(/\\\"/g, '"')),
                 icon: match[2].replace('/6/', '/2/'),
                 genre: genre,
                 year: +match[7].substr(0,4),
