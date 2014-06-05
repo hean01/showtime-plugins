@@ -143,7 +143,7 @@
 	    //re = /<a class="b-poster-tile__link" href="([^"]+)[\S\s]*?<img src="([^"]+)[\S\s]*?alt='([\S\s]*?)' width[\S\s]*?<span class="b-poster-tile__title-info">([\S\s]*?)<\/span>/g;
             // detailed: 1-link, 2-icon, 3-title, 4-qualities(for films),
             // 5-votes+, 6-votes-, 7-year/country, 8-genre/actors, 9-description
-            re = /<a class="b-poster-detail__link" href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)" alt='([\S\s]*?)'([\S\s]*?)<span class="b-poster-detail__vote-positive">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__vote-negative">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__description">([\S\s]*?)<\/span>/g;
+            re = /<a class="b-poster-detail__link" href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)" alt='([\S\s]*?)' width=([\S\s]*?)<span class="b-poster-detail__vote-positive">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__vote-negative">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__description">([\S\s]*?)<\/span>/g;
             var match = re.exec(response);
             while (match) {
                 // parsing quality list
@@ -612,11 +612,11 @@
         function scrape() {
             var match = re.exec(doc);
             while (match) {
-                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[4]), "video", {
+                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[4])), "video", {
                     title: new showtime.RichText(match[4]),
-                    icon: match[2],
-                    genre: new showtime.RichText(match[3] + ' ' + colorStr(trim(match[5]), orange)),
-                    description: new showtime.RichText(coloredStr('Произведено: ',orange) + trim(match[6]) + ' ' +
+                    icon: match[2].replace('/9/','/2/'),
+                    genre: new showtime.RichText(match[3] + ' ' + (trim(match[5].replace(/<[^>]*>/g, '')) ? colorStr(trim(match[5]), orange) : '')),
+                    description: new showtime.RichText((trim(match[6]) ? coloredStr('Произведено: ',orange) + trim(match[6]) + ' ' : '') +
                        coloredStr('Добавил: ',orange) + match[8] + ' ' + colorStr(match[9], blue) +
                        coloredStr(' Описание: ',orange) + trim(match[7].replace(/<[^>]*>/g, '').replace('.......','')))
                 });
@@ -664,9 +664,9 @@
             while (match) {
                 page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[2]), "video", {
                     title: new showtime.RichText(match[2]),
-                    icon: match[3],
-                    genre: match[7],
-                    description: new showtime.RichText('Раздел: ' + blueStr(match[6]) + '\n' + match[4])
+                    icon: match[3].replace('/5/', '/2/'),
+                    genre: new showtime.RichText(match[6] + ' ' + colorStr(match[7], orange)),
+                    description: new showtime.RichText(coloredStr('Описание: ', orange) + match[4])
                 });
                 page.entries++;
                 match = re.exec(response);
