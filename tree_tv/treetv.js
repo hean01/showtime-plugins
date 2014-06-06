@@ -438,7 +438,7 @@
     });
 
     plugin.addURI(PREFIX + ":comments", function(page) {
-        setPageHeader(page, 'Комментарии');
+        setPageHeader(page, 'Последние отзывы');
 
         var fromPage = 1, tryToSearch = true;
         //1-link, 2-title, 3-comment, 4-author
@@ -468,6 +468,25 @@
         page.paginator = loader;
     });
 
+    plugin.addURI(PREFIX + ":trailers", function(page) {
+        setPageHeader(page, 'Скоро в кино');
+        var doc = showtime.httpReq(BASE_URL+ '/default/index/trailers', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).toString();
+        //1 - link, 2 - title, 3-icon
+        var re = /<a href="([\s\S]*?)" title="([\s\S]*?)">[\s\S]*?src="([\s\S]*?)">/g;
+        var match = re.exec(doc);
+        while (match) {
+            page.appendItem(PREFIX + ":indexItem:" + match[1], 'video', {
+               title: trim(match[2]),
+               icon: BASE_URL + escape(match[3])
+            });
+            match = re.exec(doc);
+        }
+    });
+
     plugin.addURI(PREFIX + ":start", function(page) {
         setPageHeader(page, slogan);
 
@@ -488,6 +507,11 @@
                 match = re.exec(htmlBlock[1]);
             }
         }
+
+        // Coming soon
+        page.appendItem(PREFIX + ':trailers', "directory", {
+            title: 'Скоро в кино'
+        });
 
         // Comments reader
         page.appendItem(PREFIX + ':comments', "directory", {
