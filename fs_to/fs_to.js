@@ -41,7 +41,8 @@
 
     // remove multiple, leading or trailing spaces and line feeds
     function trim(s) {
-        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/g, '');
+        if (s) return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/g,'');
+        return '';
     }
 
     function removeSlashes(s) {
@@ -114,6 +115,22 @@
                 return "file";
         }
     }
+
+    // Appends the item and lists it's root folder
+    plugin.addURI(PREFIX + ":screens:(.*):(.*)", function(page, screens, title) {
+        setPageHeader(page, unescape(title));
+        screens = unescape(screens);
+        var re = /url\(([\S\s]*?)\)/g;
+        var m = re.exec(screens);
+        var i = 0;
+        while (m) {
+            i++;
+            page.appendItem(m[1].replace('/3/','/2/'), "image", {
+                title: 'Скриншот' + i
+            });
+            m = re.exec(screens);
+        };
+    });
 
     // Appends the item and lists it's root folder
     plugin.addURI(PREFIX + ":listRoot:(.*):(.*)", function(page, url, title) {
@@ -210,21 +227,26 @@
            }; // handle as shows
 
            // Scrape countries
-           var htmlBlock = iteminfo.match(/class="tag-country-flag"([\S\s]*?)<\/td>/);
+           htmlBlock = iteminfo.match(/class="tag-country-flag"([\S\s]*?)<\/td>/);
            if (htmlBlock) {
-              var countries = '';
-              var notFirst = 0;
-              var re = /<\/span>([\S\s]*?)<\/span>/g;
-              var m = re.exec(htmlBlock[1]);
-              while (m) {
-                    if (!notFirst) countries = countries + m[1]; else countries = countries + ", " + m[1];
-                    notFirst++;
-                    m = re.exec(htmlBlock[1]);
-              };
-              description = coloredStr("Страна:", orange) + countries + " " + description;
+               var countries = '';
+               var notFirst = 0;
+               var re = /<\/span>([\S\s]*?)<\/span>/g;
+               var m = re.exec(htmlBlock[1]);
+               while (m) {
+                     if (!notFirst) countries = countries + m[1]; else countries = countries + ", " + m[1];
+                     notFirst++;
+                     m = re.exec(htmlBlock[1]);
+               };
+               description = coloredStr("Страна:", orange) + countries + " " + description;
            }; // Scrape countries
-
         }; // Scrape item info
+
+        // Scrape votes
+        htmlBlock = response.match(/<div class="b-tab-item__vote-value m-tab-item__vote-value_type_yes">([\S\s]*?)<\/div>[\S\s]*?<div class="b-tab-item__vote-value m-tab-item__vote-value_type_no">([\S\s]*?)<\/div>/);
+        if (htmlBlock) {
+            description = '(' + coloredStr(htmlBlock[1], green) + '/' + coloredStr(htmlBlock[2], red) + ') ' + description;
+        } // Scrape votes
 
         page.loading = false;
         page.appendItem(PREFIX + ":playOnline:" + url + ":" + escape(title), "video", {
@@ -235,6 +257,24 @@
             genre: genres,
             description: new showtime.RichText(description)
         });
+
+        // Scrape trailer
+        htmlBlock = response.match(/window\.location\.hostname \+ '([\S\s]*?)'/);
+        if (htmlBlock) {
+            page.appendItem(BASE_URL + htmlBlock[1], "video", {
+                title: 'Трейлер'
+            });
+        } // Scrape trailer
+
+        // Scrape screenshots
+        htmlBlock = response.match(/<div class="b-tab-item__screens">([\S\s]*?)<\/div>/);
+        if (htmlBlock) {
+            if (trim(htmlBlock[1])) {
+                page.appendItem(PREFIX + ':screens:' + escape(htmlBlock[1])+':'+escape(title), "directory", {
+                    title: 'Скриншоты'
+                });
+            }
+        } // Scrape screenshots
 
         var what_else = response.match(/<div class="b-posters">([\S\s]*?)<div class="clear">/);
         var commented = response.match(/<div class="b-item-material-comments__content">([\S\s]*?)<div class="b-item-material-comments__footer">/);
@@ -275,12 +315,18 @@
             // Show year
             var year = iteminfo.match(/Год:[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/);
             if (year) {
+                page.appendItem("", "separator", {
+                    title: 'Год'
+                });
                 page.appendItem(PREFIX + ":index:" + BASE_URL + year[1] + ":" + escape(year[2]) + '::&sort=rating', "directory", {
                     title: year[2]
                 });
             } else { // handle as serials
                 year = iteminfo.match(/показа:[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<span>([\S\s]*?)<\/span>/);
                 if (year) {
+                    page.appendItem("", "separator", {
+                        title: 'Год'
+                    });
                     page.appendItem(PREFIX + ":index:" + BASE_URL + year[1] + ":" + escape(year[2]) + '::&sort=rating', "directory", {
                         title: 'Год: ' + year[2]
                     });
@@ -298,7 +344,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы '+m[2]) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Отбор по жанру: '+m[2]) + '::&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -314,7 +360,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<\/span>([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы '+trim(showtime.entityDecode(m[2]))) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Отбор по стране: '+trim(showtime.entityDecode(m[2]))) + '::&sort=year', "directory", {
                         title: trim(showtime.entityDecode(m[2]))
                     });
                     m = re.exec(htmlBlock[1]);
@@ -331,7 +377,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы режиссера '+m[2]) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Отбор по режиссеру: '+m[2]) + '::&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -347,7 +393,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы с участием '+m[2]) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Отбор по актеру: '+m[2]) + '::&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -638,7 +684,7 @@
                 icon: match[2].replace('/6/', '/2/'),
                 genre: genre,
                 year: +match[7].substr(0,4),
-                description: new showtime.RichText(actors + coloredStr("Производство: ", orange) + ' ' +
+                description: new showtime.RichText('('+coloredStr(match[5], green)+'/'+coloredStr(match[5], red) + ') ' + actors + coloredStr("Производство: ", orange) + ' ' +
                     trim(match[7].split('●')[1]) + ' ' + (match[9] ? coloredStr("<br>Описание: ", orange) + trim(match[9]) : ''))
             });
             match = re.exec(response);
