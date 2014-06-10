@@ -171,14 +171,15 @@
         var duration = getAndClean('Продолжительность').replace(/\s/g,'');
         if (!duration) duration = getAndClean('Длительность').replace(/\s/g,'');
         if (!duration) duration = getAndClean('Duration').replace(/\s/g,'');
-        var genre = getAndClean('Жанр');
+        var genre = getAndClean('Жанр фильма');
+        if (!genre) genre = getAndClean('Жанр');
         if (!genre) genre = getAndClean('Категория');
         if (!genre) genre = getAndClean('Genre');
         var year = getAndClean('Год');
         if (!year) year = getAndClean('Дата выхода');
         if (!year) year = getAndClean('Дата релиза');
         if (!year) year = getAndClean('Year');
-        if (!+year) year = year.substr(year.length - 4, 4);
+        if (year) year = +year.match(/\d+/);
         var name = getAndClean('Название');
         if (!name) name = getAndClean('Русское название');
         var orig_name = getAndClean('Оригинальное название');
@@ -191,10 +192,12 @@
         if (!actors) actors = getAndClean('Актеры');
         if (!actors) actors = getAndClean('Исполнители');
         if (!actors) actors = getAndClean('Starring');
+        if (!actors) actors = getAndClean('Актёрский состав');
         var maker = getAndClean('Cтудия');
         if (!maker) maker = getAndClean('Студия');
         if (!maker) maker = getAndClean('Выпущено');
         if (!maker) maker = getAndClean('Studio');
+        var produced = getAndClean('Выпущено');
         var description = getAndClean('Описание');
         if (!description) description = getAndClean('О фильме');
         var country = getAndClean('Страна');
@@ -254,14 +257,64 @@
                 icon: htmlBlock[1],
                 duration: duration,
                 genre: genre,
-                year: +year,
+                year: year,
                 description: description
             });
             n++;
             link = re.exec(doc);
         }
 
-        //related
+        //year
+        if (year) {
+            page.appendItem("", "separator", {
+                title: 'Год'
+            });
+            page.appendItem(PREFIX + ":indexFolder:" + BASE_URL + '/upload/xfsearch/'+year + ":" + year, 'directory', {
+                title: year
+            });
+        }
+
+        //studio
+        if (maker) {
+            page.appendItem("", "separator", {
+                title: 'Студия'
+            });
+            var splitted = maker.split(',');
+            for (i in splitted) {
+                page.appendItem(PREFIX + ":indexFolder:" + BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+') + ":" + trim(splitted[i]), 'directory', {
+                    title: trim(splitted[i])
+                });
+            }
+        }
+
+        //director
+        if (director) {
+            page.appendItem("", "separator", {
+                title: 'Режиссеры'
+            });
+            var splitted = director.split(',');
+            for (i in splitted) {
+                page.appendItem(PREFIX + ":indexFolder:" + BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+') + ":" + trim(splitted[i]), 'directory', {
+                    title: trim(splitted[i])
+                });
+            }
+        }
+
+        //actors
+        if (actors) {
+            page.appendItem("", "separator", {
+                title: 'В ролях'
+            });
+            var splitted = actors.split(',');
+            if (actors.indexOf(' - ') > 0) splitted = actors.split(' - ');
+            for (i in splitted) {
+                page.appendItem(PREFIX + ":indexFolder:" + BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+') + ":" + trim(showtime.entityDecode(splitted[i])), 'directory', {
+                    title: trim(showtime.entityDecode(splitted[i]))
+                });
+            }
+        }
+
+        //similar
         htmlBlock = doc.match(/<div class="rel-news-block-content">([\s\S]*?)<\/ul>/);
         if (htmlBlock) {
             page.appendItem("", "separator", {
@@ -279,6 +332,20 @@
                 match = re.exec(htmlBlock[1]);
             }
         }
+
+        //genres
+        if (genre) {
+            page.appendItem("", "separator", {
+                title: 'Жанр'
+            });
+            var splitted = genre.split(',');
+            for (i in splitted) {
+                page.appendItem(PREFIX + ":indexFolder:" + BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+') + ":" + trim(splitted[i]), 'directory', {
+                    title: trim(splitted[i])
+                });
+            }
+        }
+
     });
 
     var doc;
