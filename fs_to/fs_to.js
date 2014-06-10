@@ -120,7 +120,7 @@
         title = unescape(title).replace(/(<([^>]+)>)/ig).replace(/undefined/g,'');
         setPageHeader(page, title);
         page.loading = true;
-        var response = showtime.httpGet(BASE_URL + url).toString();
+        var response = showtime.httpReq(BASE_URL + url).toString();
         page.loading = false;
 
         // Scrape icon
@@ -251,7 +251,7 @@
             start = response.indexOf('<li class="', start + 1);
             end = response.indexOf('</li>', start + 1);
             // 1 - type, 2 - folder_id, 3 - name, 4 - size, 5 - details, 6 - date
-            re = /<li class="([^"]+)[\S\s]*?rel="{parent_id: ([^}]+)}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
+            re = /<li class="([^"]+)[\S\s]*?rel="\{parent_id: ([^}]+)\}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
             var m = re.exec(response.substring(start, end));
         }
         while (m && (start > 0)) {
@@ -272,6 +272,55 @@
 
 
         if (iteminfo) {
+            // Show year
+            var year = iteminfo.match(/Год:[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/);
+            if (year) {
+                page.appendItem(PREFIX + ":index:" + BASE_URL + year[1] + ":" + escape(year[2]) + '::&sort=rating', "directory", {
+                    title: year[2]
+                });
+            } else { // handle as serials
+                year = iteminfo.match(/показа:[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<span>([\S\s]*?)<\/span>/);
+                if (year) {
+                    page.appendItem(PREFIX + ":index:" + BASE_URL + year[1] + ":" + escape(year[2]) + '::&sort=rating', "directory", {
+                        title: 'Год: ' + year[2]
+                    });
+                }
+            };
+
+            // Scrape genres
+            htmlBlock = iteminfo.match(/itemprop="genre"([\S\s]*?)<\/td>/);
+            // Try to handle as shows
+            if (!htmlBlock) htmlBlock = iteminfo.match(/Жанр:([\S\s]*?)<\/tr>/);
+            if (htmlBlock) {
+                page.appendItem("", "separator", {
+                    title: 'Жанр'
+                });
+                var re = /<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/g;
+                var m = re.exec(htmlBlock[1]);
+                while (m) {
+                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы '+m[2]) + '::&sort=year', "directory", {
+                        title: m[2]
+                    });
+                    m = re.exec(htmlBlock[1]);
+                };
+            }; // Scrape genres
+
+            // Scrape countries
+            var htmlBlock = iteminfo.match(/Страна:([\S\s]*?)<\/tr>/);
+            if (htmlBlock) {
+                page.appendItem("", "separator", {
+                    title: 'Страна'
+                });
+                var re = /<a href="([\S\s]*?)"[\S\s]*?<\/span>([\S\s]*?)<\/span>/g;
+                var m = re.exec(htmlBlock[1]);
+                while (m) {
+                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы '+trim(showtime.entityDecode(m[2]))) + '::&sort=year', "directory", {
+                        title: trim(showtime.entityDecode(m[2]))
+                    });
+                    m = re.exec(htmlBlock[1]);
+                };
+           }; // Scrape countries
+
             // Show directors
             htmlBlock = iteminfo.match(/itemprop="director"([\S\s]*?)<\/td>/);
             if (htmlBlock) {
@@ -282,7 +331,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы режиссера '+m[2]) + '::&sort=year', "video", {
+                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы режиссера '+m[2]) + '::&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -298,7 +347,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы с участием '+m[2]) + '::&sort=year', "video", {
+                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Фильмы с участием '+m[2]) + '::&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -350,7 +399,7 @@
         title = unescape(title);
         setPageHeader(page, title);
         page.loading = true;
-        var response = showtime.httpGet(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
+        var response = showtime.httpReq(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
         page.loading = false;
         var re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
         var m = re.exec(response); // parsed list will live here
@@ -383,7 +432,7 @@
                             title: new showtime.RichText(n[3] + '<font color="6699CC"> (' + n[4] + ')</font>')
                         });
                     } else {
-                        var re2 = /rel="{parent_id: ([^}]+)}">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
+                        var re2 = /rel="\{parent_id: ([^}]+)\}">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
                         var n = re2.exec(m[2]);
                         n[2] = trim(n[2]);
                         page.appendItem(PREFIX + ":listFolder:" + escape(url) + ":" + n[1].replace("'", "") + ":" + escape(title), "directory", {
@@ -399,14 +448,14 @@
     // Processes "Play online" button 
     plugin.addURI(PREFIX + ":playOnline:(.*):(.*)", function(page, url, title) {
         page.loading = true;
-        var response = showtime.httpGet(BASE_URL + url).toString();
+        var response = showtime.httpReq(BASE_URL + url).toString();
         page.loading = false;
         var re = /playlist: \[[\S\s]*?url: '([^']+)/;
         url = re.exec(response) // Some clips autoplay
         if (!url) {
             re = /<div id="page-item-viewonline"[\S\s]*?<a href="([^"]+)/;
             page.loading = true;
-            response = showtime.httpGet(BASE_URL + re.exec(response)[1]).toString();
+            response = showtime.httpReq(BASE_URL + re.exec(response)[1]).toString();
             page.loading = false;
             re = /<a id="[\S\s]*?" href="([\S\s]*?)" title="([\S\s]*?)"/;
             response = re.exec(response);
@@ -416,7 +465,7 @@
             }
             re = /playlist: \[[\S\s]*?url: '([^']+)/;
             page.loading = true;
-            url = re.exec(showtime.httpGet(BASE_URL + response[1]));
+            url = re.exec(showtime.httpReq(BASE_URL + response[1]));
             page.loading = false;
         }
         page.type = "video";
@@ -446,7 +495,7 @@
         var origURL = url;
         if (sURL[url]) url = sURL[url];
         page.loading = true;
-        var response = showtime.httpGet(BASE_URL + url).toString();
+        var response = showtime.httpReq(BASE_URL + url).toString();
         page.loading = false;
         var start = 0,
             end = 0;
@@ -466,13 +515,13 @@
         } else {
             re = /playlist: \[[\S\s]*?url: '([^']+)/;
             page.loading = true;
-            var m = re.exec(showtime.httpGet(BASE_URL + link));
+            var m = re.exec(showtime.httpReq(BASE_URL + link));
             page.loading = false;
         }
         if (!m) { // first file from the first folder
             re = /class="filelist m-current"[\S\s]*?" href="([^"]+)/;
             page.loading = true;
-            m = re.exec(showtime.httpGet(BASE_URL + url + '?ajax&blocked=0&folder=0'));
+            m = re.exec(showtime.httpReq(BASE_URL + url + '?ajax&blocked=0&folder=0'));
             page.loading = false;
         }
         if (m) {
@@ -489,7 +538,9 @@
     // Index page
     plugin.addURI(PREFIX + ":index:(.*):(.*):(.*):(.*)", function(page, url, title, populars, param) {
         setPageHeader(page, unescape(title));
+        page.loading = true;
         var doc = showtime.httpReq(url + '?view=detailed'+param).toString();
+        page.loading = false;
         if (populars) {
             var match = doc.match(/<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-clear">/);
             if (match) {
@@ -733,7 +784,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var response = showtime.httpGet(BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+') + (fromPage ? "&page=" + fromPage : '')).toString();
+            var response = showtime.httpReq(BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+') + (fromPage ? "&page=" + fromPage : '')).toString();
             page.loading = false;
             var match = re.exec(response);
             while (match) {
