@@ -120,12 +120,12 @@
     plugin.addURI(PREFIX + ":screens:(.*):(.*)", function(page, screens, title) {
         setPageHeader(page, unescape(title));
         screens = unescape(screens);
-        var re = /url\(([\S\s]*?)\)/g;
+        var re = /rel="([\S\s]*?)"/g;
         var m = re.exec(screens);
         var i = 0;
         while (m) {
             i++;
-            page.appendItem(m[1].replace('/3/','/2/'), "image", {
+            page.appendItem(m[1], "image", {
                 title: 'Скриншот' + i
             });
             m = re.exec(screens);
@@ -181,67 +181,11 @@
               };
            }; // Scrape genres
 
-           // Scrape actors
-           htmlBlock = iteminfo.match(/itemprop="actor"([\S\s]*?)<\/td>/);
-           if (htmlBlock) {
-              var actors = '';
-              var notFirst = 0;
-              var re = /itemprop="name">([\S\s]*?)<\/span>/g;
-              var m = re.exec(htmlBlock[1]);
-              while (m) {
-                    if (!notFirst) actors = actors + m[1]; else actors = actors + ", " + m[1];
-                    notFirst++;
-                    m = re.exec(htmlBlock[1]);
-              };
-              description = coloredStr("В ролях: ", orange) + actors + " " + description;
-           }; // Scrape actors
-
-           // Scrape directors
-           htmlBlock = iteminfo.match(/itemprop="director"([\S\s]*?)<\/td>/);
-           if (htmlBlock) {
-              var directors = '';
-              var notFirst = 0;
-              var re = /itemprop="name">([\S\s]*?)<\/span>/g;
-              var m = re.exec(htmlBlock[1]);
-              while (m) {
-                    if (!notFirst) directors = directors + m[1]; else directors = directors + ", " + m[1];
-                    notFirst++;
-                    m = re.exec(htmlBlock[1]);
-              };
-              description = coloredStr("Режиссер: ", orange) + directors + " " + description;
-           }; // Scrape directors
-
-           // Try to handle as shows
-           htmlBlock = iteminfo.match(/Ведущие:([\S\s]*?)<\/tr>/);
-           if (htmlBlock) {
-              var directors = '';
-              var notFirst = 0;
-              var re = /<span>([\S\s]*?)<\/span>/g;
-              var m = re.exec(htmlBlock[1]);
-              while (m) {
-                    if (!notFirst) directors = directors + m[1]; else directors = directors + ", " + m[1];
-                    notFirst++;
-                    m = re.exec(htmlBlock[1]);
-              };
-              description = coloredStr("Ведущие: ", orange) + directors + " " + description;
-           }; // handle as shows
-
-           // Scrape countries
-           htmlBlock = iteminfo.match(/class="tag-country-flag"([\S\s]*?)<\/td>/);
-           if (htmlBlock) {
-               var countries = '';
-               var notFirst = 0;
-               var re = /<\/span>([\S\s]*?)<\/span>/g;
-               var m = re.exec(htmlBlock[1]);
-               while (m) {
-                     if (!notFirst) countries = countries + m[1]; else countries = countries + ", " + m[1];
-                     notFirst++;
-                     m = re.exec(htmlBlock[1]);
-               };
-               description = coloredStr("Страна:", orange) + countries + " " + description;
-           }; // Scrape countries
-        }; // Scrape item info
-
+           // Try to get status
+           htmlBlock = iteminfo.match(/Статус:[\S\s]*?<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>/);
+           if (htmlBlock)
+              description = coloredStr("Статус: ", orange) + trim(htmlBlock[1]) + " " + description;
+        };
         // Scrape votes
         htmlBlock = response.match(/<div class="b-tab-item__vote-value m-tab-item__vote-value_type_yes">([\S\s]*?)<\/div>[\S\s]*?<div class="b-tab-item__vote-value m-tab-item__vote-value_type_no">([\S\s]*?)<\/div>/);
         if (htmlBlock) {
@@ -262,12 +206,13 @@
         htmlBlock = response.match(/window\.location\.hostname \+ '([\S\s]*?)'/);
         if (htmlBlock) {
             page.appendItem(BASE_URL + htmlBlock[1], "video", {
-                title: 'Трейлер'
+                title: 'Трейлер',
+                icon: icon
             });
         } // Scrape trailer
 
         // Scrape screenshots
-        htmlBlock = response.match(/<div class="b-tab-item__screens">([\S\s]*?)<\/div>/);
+        htmlBlock = response.match(/<div class="items">([\S\s]*?)<\/div>/);
         if (htmlBlock) {
             if (trim(htmlBlock[1])) {
                 page.appendItem(PREFIX + ':screens:' + escape(htmlBlock[1])+':'+escape(title), "directory", {
@@ -328,7 +273,7 @@
                         title: 'Год'
                     });
                     page.appendItem(PREFIX + ":index:" + BASE_URL + year[1] + ":" + escape(year[2]) + '::&sort=rating', "directory", {
-                        title: 'Год: ' + year[2]
+                        title: year[2]
                     });
                 }
             };
@@ -398,7 +343,25 @@
                     });
                     m = re.exec(htmlBlock[1]);
                 };
-            };
+            } else { // Try to handle as shows
+                htmlBlock = iteminfo.match(/Ведущие:([\S\s]*?)<\/tr>/);
+                if (htmlBlock) {
+                    page.appendItem("", "separator", {
+                        title: 'Ведущие'
+                    });
+                    //1-link, 2-title
+                    var re = /<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/g;
+                    var m = re.exec(htmlBlock[1]);
+                    while (m) {
+                        page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Отбор по ведущему: '+m[2]) + '::&sort=year', "directory", {
+                            title: m[2]
+                        });
+                        m = re.exec(htmlBlock[1]);
+                    };
+                }
+               }; // handle as shows
+
+
         };
 
         // Show related
