@@ -569,7 +569,7 @@
 
         response = doc.match(/<div class="b-section-list([\S\s]*?)<script type="text\/javascript">/)[1];
         indexer(page);
-
+        return;
         var pos = 90;
         function loader() {
             page.loading = true;
@@ -682,7 +682,7 @@
             });
             response = response[1];
             indexer(page);
-
+            return;
             var pos = 90;
             function loader() {
                 page.loading = true;
@@ -751,7 +751,7 @@
         page.appendItem("", "separator", {
             title: 'Новое на сайте'
         });
-        doc = doc.match(/<div class="b-main__new-title">([\S\s]*?)<a class="b-endless-scroll/)[1];
+        doc = doc.match(/<div class="b-main__new-title">([\S\s]*?)<\!-- \/#content-->/)[1];
 
         //1-link, 2-icon, 3-type, 4-title, 5-genre, 6-produced, 7-description,
         //8-author, 9-time
@@ -773,7 +773,7 @@
             }
         }
         scrape();
-
+        return;
         var pos = 100;
         function loader() {
             page.loading = true;
