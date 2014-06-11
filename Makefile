@@ -21,7 +21,8 @@ PLUGINS= \
 	shoutcast.zip \
 	tv.zip \
 	tree_tv.zip \
-	kordonivkakino.zip
+	kordonivkakino.zip \
+        ingfilm.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
