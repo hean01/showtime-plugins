@@ -269,48 +269,85 @@
             page.appendItem("", "separator", {
                 title: 'Год'
             });
-            page.appendItem(PREFIX + ":indexFolder:" + BASE_URL + '/upload/xfsearch/'+year + ":" + year, 'directory', {
+            page.appendItem(PREFIX + ":indexFolder:" + escape(BASE_URL + '/upload/xfsearch/'+year) + ":" + escape(year), 'directory', {
                 title: year
             });
         }
 
+        //genres
+        if (genre) {
+            var banner = 1, splitted = genre.split(',');
+            for (i in splitted) {
+                var link = BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+');
+                if (showtime.probe(link).result == 0) {
+                    if (banner) {
+                        page.appendItem("", "separator", {
+                            title: 'Жанр'
+                        });
+                        banner = 0;
+                    }
+                    page.appendItem(PREFIX + ":indexFolder:" + escape(link) + ":" + escape(trim(splitted[i])), 'directory', {
+                       title: trim(splitted[i])
+                    });
+                }
+            }
+        }
+
         //studio
         if (maker) {
-            page.appendItem("", "separator", {
-                title: 'Студия'
-            });
-            var splitted = maker.split(',');
+            var banner = 1, splitted = maker.split(',');
             for (i in splitted) {
-                page.appendItem(PREFIX + ":indexFolder:" + BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+') + ":" + trim(splitted[i]), 'directory', {
-                    title: trim(splitted[i])
-                });
+                var link = BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+');
+                if (showtime.probe(link).result == 0) {
+                    if (banner) {
+                        page.appendItem("", "separator", {
+                           title: 'Студия'
+                        });
+                        banner = 0;
+                    }
+                    page.appendItem(PREFIX + ":indexFolder:" + escape(link) + ":" + escape(trim(splitted[i])), 'directory', {
+                       title: trim(splitted[i])
+                    });
+                }
             }
         }
 
         //director
         if (director) {
-            page.appendItem("", "separator", {
-                title: 'Режиссеры'
-            });
-            var splitted = director.split(',');
+            var banner = 1, splitted = director.split(',');
             for (i in splitted) {
-                page.appendItem(PREFIX + ":indexFolder:" + BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+') + ":" + trim(splitted[i]), 'directory', {
-                    title: trim(splitted[i])
-                });
+                var link = BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+');
+                if (showtime.probe(link).result == 0) {
+                    if (banner) {
+                        page.appendItem("", "separator", {
+                            title: 'Режиссеры'
+                        });
+                        banner = 0;
+                    }
+                    page.appendItem(PREFIX + ":indexFolder:" + escape(link) + ":" + escape(trim(splitted[i])), 'directory', {
+                        title: trim(splitted[i])
+                    });
+                }
             }
         }
 
         //actors
         if (actors) {
-            page.appendItem("", "separator", {
-                title: 'В ролях'
-            });
-            var splitted = actors.split(',');
+            var banner = 1, splitted = actors.split(',');
             if (actors.indexOf(' - ') > 0) splitted = actors.split(' - ');
             for (i in splitted) {
-                page.appendItem(PREFIX + ":indexFolder:" + BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+') + ":" + trim(showtime.entityDecode(splitted[i])), 'directory', {
-                    title: trim(showtime.entityDecode(splitted[i]))
-                });
+                var link = BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+');
+                if (showtime.probe(link).result == 0) {
+                    if (banner) {
+                        page.appendItem("", "separator", {
+                            title: 'В ролях'
+                        });
+                        banner = 0;
+                    }
+                    page.appendItem(PREFIX + ":indexFolder:" + escape(link) + ":" + escape(trim(showtime.entityDecode(splitted[i]))), 'directory', {
+                        title: trim(showtime.entityDecode(splitted[i]))
+                    });
+                }
             }
         }
 
@@ -332,20 +369,6 @@
                 match = re.exec(htmlBlock[1]);
             }
         }
-
-        //genres
-        if (genre) {
-            page.appendItem("", "separator", {
-                title: 'Жанр'
-            });
-            var splitted = genre.split(',');
-            for (i in splitted) {
-                page.appendItem(PREFIX + ":indexFolder:" + BASE_URL + '/upload/xfsearch/'+trim(splitted[i]).replace(/\s/g,'+') + ":" + trim(splitted[i]), 'directory', {
-                    title: trim(splitted[i])
-                });
-            }
-        }
-
     });
 
     var doc;
@@ -385,7 +408,7 @@
     }
 
     plugin.addURI(PREFIX + ":indexFolder:(.*):(.*)", function(page, url, title) {
-        setPageHeader(page, unescape(title));
+        setPageHeader(page, unescape(unescape(title)));
         page.loading = true;
         doc = showtime.httpReq(unescape(url)).toString();
         page.loading = false;
