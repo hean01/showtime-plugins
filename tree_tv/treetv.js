@@ -136,7 +136,7 @@
             if (!tryToSearch) return false;
             page.loading = true;
             var doc;
-            if (paginator)
+            if (paginator == '1')
                 doc = showtime.httpReq(unescape(url) + fromPage).toString();
             else
                 doc = showtime.httpReq(unescape(url)).toString();
@@ -311,12 +311,12 @@
         if (filmTabs) {
             page.appendItem("", "separator");
             var another = filmTabs[1].match(/data-tabs="another" data-film_id="([\s\S]*?)"/);
-            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/another?id=' + another[1])+':'+escape('Другие части - '+title)+':', 'directory', {
+            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/another?id=' + another[1])+':'+escape('Другие части - '+title)+':0', 'directory', {
                 title: 'Другие части'
             });
 
             var poxog = filmTabs[1].match(/data-tabs="poxog" data-film_id="([\s\S]*?)" data-janr_id="([\s\S]*?)" data-page_type="([\s\S]*?)" data-first_country_id="([\s\S]*?)">/);
-            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/poxog?id=' + poxog[1] + '&janr_id=' + escape(poxog[2]) + '&page_type=' + poxog[3] + '&first_country_id=' + poxog[4])+':'+escape('Похожие фильмы - ' + title)+':', 'directory', {
+            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/poxog?id=' + poxog[1] + '&janr_id=' + escape(poxog[2]) + '&page_type=' + poxog[3] + '&first_country_id=' + poxog[4])+':'+escape('Похожие фильмы - ' + title)+':0', 'directory', {
                 title: 'Похожие фильмы'
             });
         }
