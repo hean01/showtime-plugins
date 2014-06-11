@@ -192,6 +192,13 @@
             description = '(' + coloredStr(htmlBlock[1], green) + '/' + coloredStr(htmlBlock[2], red) + ') ' + description;
         } // Scrape votes
 
+        // scrape original title
+        htmlBlock = response.match(/itemprop="alternativeHeadline">([\S\s]*?)<\/div>/);
+        if (htmlBlock) {
+            title += ' | ' + htmlBlock[1];
+            page.metadata.title += ' | ' + htmlBlock[1];
+        }
+
         page.loading = false;
         page.appendItem(PREFIX + ":playOnline:" + url + ":" + escape(title), "video", {
             title: new showtime.RichText(title),

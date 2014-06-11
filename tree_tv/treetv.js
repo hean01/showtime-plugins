@@ -106,7 +106,7 @@
         var trailer = doc.match(/<div class="buttons film">([\s\S]*?)class="trailer/);
         if (trailer) { // .replace(/\s/g,'%20')
             page.appendItem(escape(trailer[1].match(/rel="([\s\S]*?)"/)[1]).replace('%3A',':'), 'video', {
-                title: 'Trailer'
+                title: 'Трейлер'
             });
         }
 
@@ -116,7 +116,7 @@
         var c = 1;
         while (match) {
             page.appendItem(BASE_URL + escape(match[1]), 'image', {
-                title: 'Screenshot' + c,
+                title: 'Скриншот' + c,
                 icon: BASE_URL + escape(match[1])
             });
             c++;
@@ -124,19 +124,19 @@
         }
     });
 
-    function scrapeSmall(page, url, title) {
+    function scrapeSmall(page, url, title, paginator) {
         setPageHeader(page, title);
         page.entries = 0;
         var fromPage = 1, tryToSearch = true;
 
         //1-info, 2-year, 3-genre, 4-link, 5-title, 6-icon, 7-added, 8-views,
         //9-rating, 10-quality
-        var re = /<div class="item">([\s\S]*?)<div class="smoll_year">([\s\S]*?)<\/div>[\s\S]*?<div class="smoll_janr">([\s\S]*?)<\/div>[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?<img alt="([\s\S]*?)"[\s\S]*?src="([\s\S]*?)"[\s\S]*?<span[\s\S]*?>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="rating([\s\S]*?)<\/div>[\s\S]*?<span class="quality[\s\S]*?">([\s\S]*?)<\/span>/g;
+        var re = /<div class="item">([\s\S]*?)<div class="smoll_year">([\s\S]*?)<\/div>[\s\S]*?<div class="smoll_janr">([\s\S]*?)<\/div>[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?<img alt="([\s\S]*?)" [\s\S]*?src="([\s\S]*?)"[\s\S]*?<span[\s\S]*?>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="rating([\s\S]*?)<\/div>[\s\S]*?<span class="quality[\s\S]*?">([\s\S]*?)<\/span>/g;
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
             var doc;
-            if (unescape(title) == slogan)
+            if (paginator)
                 doc = showtime.httpReq(unescape(url) + fromPage).toString();
             else
                 doc = showtime.httpReq(unescape(url)).toString();
@@ -173,8 +173,8 @@
         }
     }
 
-    plugin.addURI(PREFIX + ":scrapeSmall:(.*):(.*)", function(page, url, title) {
-        scrapeSmall(page, url, unescape(title));
+    plugin.addURI(PREFIX + ":scrapeSmall:(.*):(.*):(.*)", function(page, url, title, paginator) {
+        scrapeSmall(page, url, unescape(title), paginator);
     });
 
     plugin.addURI(PREFIX + ":processJSON:(.*):(.*)", function(page, url, title) {
@@ -206,12 +206,12 @@
         // 1-title, 2-icon, 3-views, 4-comments, 5-screenshots, 6-quality,
         // 7-genre, 8-year, 9-country, 10-director, 11-soundtrack, 12-duration,
         // 13-actors, 14-description, 15-added by, 16-info, 17-rating
-        var re = /<div class="content_open">[\s\S]*?<img alt="([\s\S]*?)"[\s\S]*?src="([\s\S]*?)"[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="screens">([\s\S]*?)<div class="item_right">[\s\S]*?<div class="quality_film"([\s\S]*?)<\/div>[\s\S]*?<div class="section_item list_janr">([\s\S]*?)<\/div>[\s\S]*?href="#">([\s\S]*?)<\/a>[\s\S]*?<span class="item">([\s\S]*?)<\/span>[\s\S]*?<div class="span_content">([\s\S]*?)<\/div>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="ava_actors"([\s\S]*?)<div class="section_item">[\s\S]*?<div class="description">([\s\S]*?)<\/div>[\s\S]*?<span>([\s\S]*?)<\/span>([\s\S]*?)<div class="rait_other">[\s\S]*?<span class="green">([\s\S]*?)<\/span>/g;
+        var re = /<div class="content_open">[\s\S]*?<img alt="([\s\S]*?)" [\s\S]*?src="([\s\S]*?)"[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="screens">([\s\S]*?)<div class="item_right">[\s\S]*?<div class="quality_film"([\s\S]*?)<\/div>[\s\S]*?<div class="section_item list_janr">([\s\S]*?)<\/div>[\s\S]*?href="#">([\s\S]*?)<\/a>[\s\S]*?<span class="item">([\s\S]*?)<\/span>[\s\S]*?<div class="span_content">([\s\S]*?)<\/div>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="ava_actors"([\s\S]*?)<div class="section_item">[\s\S]*?<div class="description">([\s\S]*?)<\/div>[\s\S]*?<span>([\s\S]*?)<\/span>([\s\S]*?)<div class="rait_other">[\s\S]*?<span class="green">([\s\S]*?)<\/span>/g;
         var match = re.exec(doc);
         while (match) {
             // scraping genres list
             var re2 = /href="#">([\s\S]*?)<\/a>/g;
-            var genre = '', first = 0;
+            var genre = '', first = 0, genres = match[7], year = match[8];
             if (match[7]) {
                 var match2 = re2.exec(match[7]);
                 while (match2) {
@@ -273,7 +273,7 @@
                     coloredStr(" Добавил: ", orange) + match[15] +
                     coloredStr("<br>Страна: ", orange) + match[9] +
                     coloredStr("<br>Режиссер: ", orange) + directors +
-                    coloredStr("<br>Актеры: ", orange) + actors +
+                    //coloredStr("<br>Актеры: ", orange) + actors +
                     coloredStr("<br>Перевод: ", orange) + match[11] +
                     (info ? coloredStr("<br>Инфо: ", orange) + trim(info[1]) : '') +
                     coloredStr("<br>Описание: ", orange) + trim(match[14]))
@@ -305,18 +305,45 @@
             }
             match = re.exec(doc);
         }
+
+        // show related & similar
         var filmTabs = doc.match(/<div class="film_tabs">([\s\S]*?)<\/div>/);
         if (filmTabs) {
             page.appendItem("", "separator");
             var another = filmTabs[1].match(/data-tabs="another" data-film_id="([\s\S]*?)"/);
-            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/another?id=' + another[1])+':'+escape('Другие части - '+title), 'directory', {
+            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/another?id=' + another[1])+':'+escape('Другие части - '+title)+':', 'directory', {
                 title: 'Другие части'
             });
 
             var poxog = filmTabs[1].match(/data-tabs="poxog" data-film_id="([\s\S]*?)" data-janr_id="([\s\S]*?)" data-page_type="([\s\S]*?)" data-first_country_id="([\s\S]*?)">/);
-            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/poxog?id=' + poxog[1] + '&janr_id=' + escape(poxog[2]) + '&page_type=' + poxog[3] + '&first_country_id=' + poxog[4])+':'+escape('Похожие фильмы - ' + title), 'directory', {
+            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/film/index/poxog?id=' + poxog[1] + '&janr_id=' + escape(poxog[2]) + '&page_type=' + poxog[3] + '&first_country_id=' + poxog[4])+':'+escape('Похожие фильмы - ' + title)+':', 'directory', {
                 title: 'Похожие фильмы'
             });
+        }
+
+        if (year) {
+            page.appendItem("", "separator", {
+                title: 'Год'
+            });
+            page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/search/index/index/year1/'+year+'/year2/'+year+'/page/')+':'+escape('Отбор по году ' + year)+':1', 'directory', {
+                title: year
+            });
+        }
+
+        // show genres
+        if (genres) {
+            page.appendItem("", "separator", {
+                title: 'Жанр'
+            });
+            //1-value, 2-param name, 3-razdel, 4-name
+            re2 = /<a class="fast_search" rev="([\s\S]*?)" rel="([\s\S]*?)" data-href="([\s\S]*?)" href="#">([\s\S]*?)<\/a>/g;
+            match = re2.exec(genres);
+            while (match) {
+                page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/search/index/index/janrs/'+match[1]+'/janr_first/'+match[1]+'/razdel/'+match[3]+'/page/')+':'+escape('Отбор по жанру '+trim(match[4]))+':1', 'directory', {
+                    title: trim(match[4])
+                });
+                match = re2.exec(genres);
+            }
         }
 
         // show directors
@@ -386,7 +413,7 @@
         //1-link, 2-title, 3-icon, 4-added, 5-views, 6-rating, 7-quality, 8-genre,
         //9-year, 10-country, 11-director, 12-actors, 13-translation, 14-duration,
         //15-description, 16-info
-        var re = /<div class="item open">[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?<img alt="([\s\S]*?)"[\s\S]*?src="([\s\S]*?)"[\s\S]*?<span class="[\s\S]*?">([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="rating">([\s\S]*?)<\/div>[\s\S]*?<span class="quality[\s\S]*?">([\s\S]*?)<\/span>[\s\S]*?Жанр<\/span>([\s\S]*?)<\/span>[\s\S]*?rel="year1" href="#">([\s\S]*?)<\/a>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="description">([\s\S]*?)<\/div>([\s\S]*?)<div class="add_to">/g;
+        var re = /<div class="item open">[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?<img alt="([\s\S]*?)" [\s\S]*?src="([\s\S]*?)"[\s\S]*?<span class="[\s\S]*?">([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="rating">([\s\S]*?)<\/div>[\s\S]*?<span class="quality[\s\S]*?">([\s\S]*?)<\/span>[\s\S]*?Жанр<\/span>([\s\S]*?)<\/span>[\s\S]*?rel="year1" href="#">([\s\S]*?)<\/a>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span class="section_item_list">([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="description">([\s\S]*?)<\/div>([\s\S]*?)<div class="add_to">/g;
 
         function loader() {
             if (!tryToSearch) return false;
@@ -542,6 +569,6 @@
     });
 
     plugin.addSearcher("Tree.tv", logo, function(page, query) {
-        scrapeSmall(page, escape(BASE_URL + '/search/index/index/usersearch/' + query+'/page/'), slogan);
+        scrapeSmall(page, escape(BASE_URL + '/search/index/index/usersearch/' + query+'/page/'), slogan, 1);
     });
 })(this);
