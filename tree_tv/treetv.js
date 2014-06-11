@@ -420,9 +420,7 @@
             page.loading = true;
             var doc = showtime.httpReq(BASE_URL + '/default/index/list'+ url +'sortType=new&type=list&page='+fromPage).toString();
             page.loading = false;
-            var htmlBlock  = doc.match(/<div class="main_content_open"([\s\S]*?)<div class="give_more"/)[1];
-
-            var match = re.exec(htmlBlock);
+            var match = re.exec(doc);
             while (match) {
                 var re2 = /href="#">([\s\S]*?)<\/a>/g;
                 var genre = '';
@@ -452,7 +450,7 @@
                         coloredStr("<br>Описание: ", orange) + trim(match[15]))
                 });
                 page.entries++;
-                match = re.exec(htmlBlock);
+                match = re.exec(doc);
             }
             if (!doc.match(/<a href="#">Показать ещё<\/a>/)) return tryToSearch = false;
             fromPage++;

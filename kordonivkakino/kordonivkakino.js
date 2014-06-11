@@ -159,7 +159,7 @@
     plugin.addURI(PREFIX + ":indexItem:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
-        var doc = showtime.httpReq(url).toString().replace(/\n/g, '|||').replace(/<br \/>/g, '|||');
+        var doc = showtime.httpReq(unescape(url)).toString().replace(/\n/g, '|||').replace(/<br \/>/g, '|||');
         page.loading = false;
 
         //1-icon, 2-description
@@ -324,7 +324,7 @@
             re = /<div class="wallpappers-news-image">[\s\S]*?<a href="([\s\S]*?)"><img src="([\s\S]*?)" alt="([\s\S]*?)">/g;
             var match = re.exec(htmlBlock[1]);
             while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(trim(showtime.entityDecode(match[3]))), 'video', {
+                page.appendItem(PREFIX + ":indexItem:" + escape(match[1]) + ":" + escape(trim(showtime.entityDecode(match[3]))), 'video', {
                     title: trim(showtime.entityDecode(match[3])),
                     icon: BASE_URL + match[2],
                     description: new showtime.RichText(coloredStr('Название: ', orange) + trim(match[3]))
@@ -361,7 +361,7 @@
             var re = /<div class="main-news">[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="main-news-views">([\s\S]*?)<\/div>[\s\S]*?<li class="current-rating"[\s\S]*?">([\s\S]*?)<\/li>/g;
             var match = re.exec(doc);
             while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(showtime.entityDecode(match[2])), 'video', {
+                page.appendItem(PREFIX + ":indexItem:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[2])), 'video', {
                     title: showtime.entityDecode(match[2]),
                     description: new showtime.RichText(coloredStr('Название: ', orange) + match[2] +
                     coloredStr('<br>Просмотров: ', orange) + match[4]),
@@ -387,12 +387,12 @@
     plugin.addURI(PREFIX + ":indexFolder:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
-        doc = showtime.httpReq(url).toString();
+        doc = showtime.httpReq(unescape(url)).toString();
         page.loading = false;
         scraper(page);
     });
 
-    function startPage(page) {
+    plugin.addURI(PREFIX + ":start", function(page) {
         page.loading = true;
         doc = showtime.httpReq(BASE_URL).toString();
         page.loading = false;
@@ -403,7 +403,7 @@
         var re = /<a href="([\s\S]*?)" class="menu-link">([\s\S]*?)<\/a>/g;
         var match = re.exec(htmlBlock[1]);
         while (match) {
-            page.appendItem(PREFIX + ":indexFolder:" + match[1] + ":" + escape(trim(match[2])), 'directory', {
+            page.appendItem(PREFIX + ":indexFolder:" + escape(match[1]) + ":" + escape(trim(match[2])), 'directory', {
                 title: trim(match[2])
             });
             match = re.exec(htmlBlock[1]);
@@ -418,7 +418,7 @@
         re = /<div class="article-news">[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">[\s\S]*?<a href="([\s\S]*?)">/g;
         match = re.exec(doc);
         while (match) {
-            page.appendItem(PREFIX + ":indexItem:" + match[3] + ":" + escape(trim(showtime.entityDecode(match[2]))), 'video', {
+            page.appendItem(PREFIX + ":indexItem:" + escape(match[3]) + ":" + escape(trim(showtime.entityDecode(match[2]))), 'video', {
                 title: trim(showtime.entityDecode(match[2])),
                 icon: match[1],
                 description: new showtime.RichText(coloredStr('Название: ', orange) + trim(match[2]))
@@ -430,9 +430,7 @@
             title: 'Новинки'
         });
         scraper(page);
-    };
-
-    plugin.addURI(PREFIX + ":start", startPage);
+    });
 
     plugin.addSearcher("kordonivkakino.net", logo, function(page, query) {
         setPageHeader(page, "kordonivkakino.net");
@@ -446,7 +444,7 @@
             var re = /<div class="main-news">[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="main-news-views">([\s\S]*?)<\/div>/g;
             var match = re.exec(doc);
             while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(showtime.entityDecode(match[2])), 'video', {
+                page.appendItem(PREFIX + ":indexItem:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[2])), 'video', {
                     title: showtime.entityDecode(match[2]),
                     description: new showtime.RichText(coloredStr('Название: ', orange) + match[2] +
                     coloredStr('<br>Просмотров: ', orange) + match[4]),
