@@ -1,7 +1,7 @@
 /*
  *  Digitally Imported
  *
- *  Copyright (C) 2012 Henrik Andersson
+ *  Copyright (C) 2014 Henrik Andersson, lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,35 +19,35 @@
 
 
 (function(plugin) {
-    var BASE_URL = "http://www.di.fm";
-    var PREFIX = "di:";
+    var BASE_URL = 'http://www.di.fm';
+    var PREFIX = 'di:';
+    var logo = plugin.path + 'di_square.png';
 
-    plugin.createService("Digitally Imported", PREFIX + "start", "audio", true,
-			 plugin.path + "di_square.png");
+    plugin.createService('Digitally Imported', PREFIX + 'start', 'audio', true, logo);
 
     // Start page
-    plugin.addURI(PREFIX + "start", function(page) {
-	page.type = "directory";
-	page.metadata.glwview = plugin.path + "views/array.view";
-	page.contents = "items";
-	page.metadata.logo = plugin.path + "di_square.png";
-	page.metadata.title = "Digitally Imported";
-	var doc = showtime.httpGet("http://www.di.fm").toString().match(/\.Channels([\S\s]*?)<\/script>/)[1];
-
-	// 1-description, 2-key, 3-name, 4-icon,
-        var re = /"description"\:"(.*?)"[\S\s]*?"key"\:"(.*?)"[\S\s]*?"name"\:"(.*?)"[\S\s]*?"default":"(.*?)\{[\S\s]*?/g;
+    plugin.addURI(PREFIX + 'start', function(page) {
+	page.type = 'directory';
+	page.metadata.glwview = plugin.path + 'views/array.view';
+	page.contents = 'items';
+	page.metadata.logo = logo;
+	page.metadata.title = 'Digitally Imported';
+        page.loading = true;
+	var doc = showtime.httpReq(BASE_URL).toString().match(/\.Channels([\S\s]*?)<\/script>/)[1];
+        page.loading = false;
+	// 1-description, 2-key, 3-title, 4-icon
+        var re = /"description_short":"(.*?)"[\S\s]*?"key":"(.*?)"[\S\s]*?"name":"(.*?)"[\S\s]*?"default":"(.*?)\{/g;
         var match = re.exec(doc);
         while (match) {
-		page.appendItem("icecast:http://listen.di.fm/public3/"+match[2]+".pls", "station", {
-			station: match[3],
-			title: match[3],
-			description: match[1],
-			icon: match[4]+'.jpg?size=150x150',
-			album_art: match[4]+'.jpg?size=150x150',
-			album: ""
-		}); 
-		match = re.exec(doc);
+	    page.appendItem('icecast:http://listen.di.fm/public3/'+match[2]+'.pls', 'station', {
+		station: match[3],
+		title: match[3],
+		description: match[1],
+		icon: match[4]+'.jpg?size=150x150',
+		album_art: match[4]+'.jpg?size=150x150',
+		album: ''
+	    });
+	    match = re.exec(doc);
 	};
-	page.loading = false;
     });
 })(this);

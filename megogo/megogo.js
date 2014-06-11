@@ -46,50 +46,6 @@
 
     var service = plugin.createService("megogo.net", PREFIX + ":start", "video", true, logo);
 
-    function startPage(page) {
-        setPageHeader(page, 'megogo.net - онлайн-кинотеатр с легальным контентом');
-
-        page.appendItem("", "separator", {
-            title: 'Категории:'
-        });
-        var json = showtime.JSONDecode(showtime.httpGet(BASE_URL + '/categories?&sign=' + showtime.md5digest(sign) + devType));
-        for (i in json.category_list) {
-            page.appendItem(PREFIX + ':genres:' + json.category_list[i].id + ':' + escape(json.category_list[i].title), 'directory', {
-                title: new showtime.RichText(unescape(json.category_list[i].title) + blueStr(json.category_list[i].total_num)),
-                icon: logo
-            });
-        };
-
-        page.appendItem("", "separator", {
-            title: 'Рекомендуемое:'
-        });
-        page.loading = true;
-	json = showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType);
-        page.loading = false;
-	showtime.trace("The length of the reply is: " + json.toString().length);
-	while (json.toString().length < 100) { 
-		showtime.trace("Recommended list is empty. Getting again...");
-                page.loading = true;
-		json = showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType);
-                page.loading = false;
-	}
-	json = showtime.JSONDecode(json);
-        for (var i in json.video_list) {
-            var type = "video";
-            if (json.video_list[i].isSeries) type = "directory";
-            var title = showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " | " + showtime.entityDecode(json.video_list[i].title_orig) : "");
-            page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + escape(title), "video", {
-                  title: title,
-                  year: +parseInt(json.video_list[i].year),
-                  genre: (json.video_list[i].genre_list[0] ? unescape(json.video_list[i].genre_list[0].title) : ''),
-                  rating: json.video_list[i].rating_imdb * 10,
-                  duration: +parseInt(json.video_list[i].duration),
-                  description: new showtime.RichText(trim(showtime.entityDecode(unescape(json.video_list[i].description)))),
-                  icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
-            });
-        };
-    };
-
     // Shows genres of the category
     plugin.addURI(PREFIX + ":genres:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
@@ -225,7 +181,50 @@
         });
     });
 
-    plugin.addURI(PREFIX + ":start", startPage);
+    plugin.addURI(PREFIX + ":start", function(page) {
+        setPageHeader(page, 'megogo.net - онлайн-кинотеатр с легальным контентом');
+        page.appendItem("", "separator", {
+            title: 'Категории:'
+        });
+        page.loading = true;                                        /login?login=user@mail.com&pwd=testuser&sign=<sign>
+        var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/categories?&sign=' + showtime.md5digest(sign) + devType));
+        page.loading = false;
+        for (i in json.category_list) {
+            page.appendItem(PREFIX + ':genres:' + json.category_list[i].id + ':' + escape(json.category_list[i].title), 'directory', {
+                title: new showtime.RichText(unescape(json.category_list[i].title) + blueStr(json.category_list[i].total_num)),
+                icon: logo
+            });
+        };
+
+        page.appendItem("", "separator", {
+            title: 'Рекомендуемое:'
+        });
+        page.loading = true;
+	json = showtime.httpReq(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType);
+        page.loading = false;
+	showtime.trace("The length of the reply is: " + json.toString().length);
+	while (json.toString().length < 100) {
+		showtime.trace("Recommended list is empty. Getting again...");
+                page.loading = true;
+		json = showtime.httpGet(BASE_URL + '/recommend?&sign=' + showtime.md5digest(sign) + devType);
+                page.loading = false;
+	}
+	json = showtime.JSONDecode(json);
+        for (var i in json.video_list) {
+            var type = "video";
+            if (json.video_list[i].isSeries) type = "directory";
+            var title = showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " | " + showtime.entityDecode(json.video_list[i].title_orig) : "");
+            page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + escape(title), "video", {
+                  title: title,
+                  year: +parseInt(json.video_list[i].year),
+                  genre: (json.video_list[i].genre_list[0] ? unescape(json.video_list[i].genre_list[0].title) : ''),
+                  rating: json.video_list[i].rating_imdb * 10,
+                  duration: +parseInt(json.video_list[i].duration),
+                  description: new showtime.RichText(trim(showtime.entityDecode(unescape(json.video_list[i].description)))),
+                  icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
+            });
+        };
+    });
 
     plugin.addSearcher("megogo.net", logo, function(page, query) {
 	    page.entries = 0;
