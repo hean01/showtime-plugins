@@ -22,7 +22,8 @@ PLUGINS= \
 	tv.zip \
 	tree_tv.zip \
 	kordonivkakino.zip \
-        ingfilm.zip
+        ingfilm.zip \
+        oll_tv.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

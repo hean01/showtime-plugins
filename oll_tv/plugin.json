@@ -1,0 +1,13 @@
+{
+	"description": "<p>oll.tv — все видео здесь. Смотри с комфортом и в хорошем качестве.<p>Для дополнительной информации, посетите <a href=\"http://oll.tv\">http://oll.tv</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "oll.tv",
+	"synopsis": "oll.tv — все видео здесь. Смотри с комфортом и в хорошем качестве.",
+	"version": "0.1", "file": "oll_tv.js",
+	"showtimeVersion": "4.1.397",
+	"type": "javascript", 
+	"id": "oll.tv",
+	"icon": "logo.png",
+	"category": "video"
+}
