@@ -258,16 +258,16 @@
                     icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
                 });
             };
+            page.options.createAction('login', 'Войти в megogo.net', function() {
+                credentials = plugin.getAuthCredentials(slogan, 'Введите email и пароль', true);
+                page.flush();
+                renderHomePage();
+            });
         };
 
         setPageHeader(page, slogan);
         credentials = plugin.getAuthCredentials(slogan, '', false);
         renderHomePage();
-        page.options.createAction('login', 'Войти в megogo.net', function() {
-            credentials = plugin.getAuthCredentials(slogan, 'Введите email и пароль', true);
-            page.flush();
-            renderHomePage();
-        });
     });
 
     plugin.addSearcher("megogo.net", logo, function(page, query) {
