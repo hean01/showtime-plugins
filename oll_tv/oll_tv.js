@@ -184,6 +184,11 @@
                        rating: unescape(json.rating)*10
                    });
               }
+              if (json.trailers) {
+                  page.appendItem(PREFIX + ':play:' + json.trailers[0].id + ':' + json.trailers[0].title, 'video', {
+                      title: 'Трейлер'
+                  });
+              }
         } else if (json.series) {
               for (var j in json.series) {
                   page.appendItem(PREFIX + ':play:' + json.series[j].series_id + ':' + json.series[j].series_title, 'video', {
@@ -198,6 +203,11 @@
                       rating: unescape(json.rating)*10
                   });
               }
+              if (json.trailers) {
+                  page.appendItem(PREFIX + ':play:' + json.trailers[0].id + ':' + json.trailers[0].title, 'video', {
+                      title: 'Трейлер'
+                  });
+              }
         } else {
              page.appendItem(PREFIX + ':play:' + json.id + ':' + json.title, 'video', {
                  title: new showtime.RichText((json.hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape(json.title)),
@@ -210,6 +220,11 @@
                  genre: unescape(json.genre),
                  rating: unescape(json.rating)*10
              });
+             if (json.trailers) {
+                 page.appendItem(PREFIX + ':play:' + json.trailers[0].id + ':' + json.trailers[0].title, 'video', {
+                     title: 'Трейлер'
+                 });
+             }
         }
 
         if (json.actors) {
