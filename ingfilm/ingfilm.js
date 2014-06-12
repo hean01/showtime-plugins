@@ -96,7 +96,8 @@
                 }));
                 link = 'hls:' + link['manifest_m3u8']
                 break;
-            case 'http://vk','https://v':
+            case 'http://vk':
+            case 'https://v':
                 var html = showtime.httpReq(unescape(url));
                 var re = /url720=(.*?)&/;
                 var link = re.exec(html);
@@ -106,11 +107,11 @@
                 }
                 if (!link) {
                     re = /url360=(.*?)&/;
-                    link = re.exec(response);
+                    link = re.exec(html);
                 }
                 if (!link) {
                     re = /url240=(.*?)&/;
-                    link = re.exec(response);
+                    link = re.exec(html);
                 }
                 if (!link) {
                     page.error('Видео не доступно. / This video is not available, sorry :(');
@@ -124,6 +125,7 @@
         page.loading = false;
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
+            canonicalUrl: PREFIX + ':play:' + url + ':' + title,
             imdbid: getIMDBid(title),
             sources: [{
                 url: link
@@ -302,7 +304,7 @@
                 page.appendItem(PREFIX + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText(match[3]),
                     icon: match[2],
-                    description: trim(match[4])
+                    description: showtime.entityDecode(trim(match[4]))
                 });
                 match = re.exec(htmlBlock[1]);
             }
