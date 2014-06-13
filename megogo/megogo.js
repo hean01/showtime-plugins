@@ -258,7 +258,7 @@
                     icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
                 });
             };
-            page.options.createAction('login', 'Войти в megogo.net', function() {
+            page.options.createAction('megogo_login', 'Войти в megogo.net', function() {
                 credentials = plugin.getAuthCredentials(slogan, 'Введите email и пароль', true);
                 page.flush();
                 renderHomePage();
