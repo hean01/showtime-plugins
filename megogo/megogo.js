@@ -74,11 +74,10 @@
 
     // Shows videos of the genre
     plugin.addURI(PREFIX + ":videos:(.*):(.*):(.*)", function(page, category_id, genre_id, title) {
-        var offset = 0;
-        var counter = 0;
         setPageHeader(page, unescape(title));
-
+        var offset = 0, counter = 0, tryToSearch = true;
         function loader() {
+            if (!tryToSearch) return false;
             var params = 'category=' + category_id + '&genre=' + genre_id + '&limit=20' + '&offset=' + offset;
             if (session) params += '&' + session;
             page.loading = true;
@@ -95,17 +94,18 @@
                     description: new showtime.RichText('(' + coloredStr(json.video_list[i].like, green) + ' / ' + coloredStr(json.video_list[i].dislike, red) + ') ' +
                         coloredStr('Страна: ', orange) + unescape(json.video_list[i].country) +
                         (json.video_list[i].budget ? coloredStr(' Бюджет: ', orange) + unescape(json.video_list[i].budget) : '')+
-                        coloredStr('<br>Слоган: ', orange) + unescape(json.video_list[i].slogan) +
+                        (json.video_list[i].slogan ? coloredStr('<br>Слоган: ', orange) + unescape(json.video_list[i].slogan) : '') +
                         coloredStr('<br>Описание: ', orange) + trim(showtime.entityDecode(unescape(json.video_list[i].description.replace(/&#151;/g, '—'))))),
                     icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
                 });
                 counter++;
             };
+            if (counte == +json.total_num) return tryToSearch = false;
             offset += 20;
-            if (json.total_num <= counter) return false;
             return true;
         };
         loader();
+        page.loading = false;
         page.paginator = loader;
     });
 
@@ -153,7 +153,7 @@
         if (json.video.season_list[0]) {
             for (var i in json.video.season_list) {
                 page.appendItem(PREFIX + ':season:' + json.video.season_list[i].id + ':' + escape(json.video.title + ' - ' + json.video.season_list[i].title + (json.video.season_list[i].title_orig ? ' | ' + json.video.season_list[i].title_orig : '')), "video", {
-                    title: json.video.season_list[i].title + (json.video.season_list[i].title_orig ? ' | ' + json.video.season_list[i].title_orig : ''),
+                    title: json.video.season_list[i].title + (json.video.season_list[i].title_orig ? ' | ' + json.video.season_list[i].title_orig : '') + ' (' + json.video.season_list[i].total_num + ' серий)',
                     year: +parseInt(json.video.year),
                     genre: genres,
                     icon: unescape(json.video.image.small),
@@ -227,11 +227,12 @@
         }
 
         // Comments
+        var counter = 0;
         first = true;
         for (var i in json.video.comments_list) {
             if (first) {
                 page.appendItem("", "separator", {
-                    title: 'Комментарии:'
+                    title: 'Комментарии (' + json.video.comments_num + ')'
                 });
                 first = false;
             }
@@ -240,10 +241,51 @@
                 icon: unescape(json.video.comments_list[i].user_avatar),
                 description: unescape(json.video.comments_list[i].text)
             });
+            counter++;
         }
+
+        if (counter < +json.video.comments_num) {
+            var offset = counter, tryToSearch = true;
+            function loader() {
+                if (!tryToSearch) return false;
+                var params = 'video_id=' + id + '&offset=' + offset + '&limit=20';
+                if (session) params += '&' + session;
+                page.loading = true;
+showtime.print(BASE_URL + '/api/v3/comments?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1);
+                var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/v3/comments?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
+                page.loading = false;
+                for (var i in json.comments) {
+                    page.appendPassiveItem('video', '', {
+                        title: new showtime.RichText(json.comments[i].user_name + ' (' +
+                           json.comments[i].date.replace(/T/, ' ').replace(/\+00:00/, '') + ')' +
+                           (json.comments[i].sub_comments_count ? ' ' + coloredStr(json.comments[i].sub_comments_count + ' комментарий(ев)', orange) : '')),
+                        icon: unescape(json.comments[i].user_avatar),
+                        description: unescape(json.comments[i].text)
+                    });
+                    for (var j in json.comments[i].sub_comments) {
+                        page.appendPassiveItem('video', '', {
+                            title: new showtime.RichText(json.comments[i].sub_comments[j].user_name + ' (' +
+                               json.comments[i].sub_comments[j].date.replace(/T/, ' ').replace(/\+00:00/, '') + ')' +
+                               (json.comments[i].sub_comments[j].sub_comments_count ? ' ' + coloredStr(json.comments[i].sub_comments[j].sub_comments_count + ' комментарий(ев)', orange) : '')),
+                            icon: unescape(json.comments[i].sub_comments[j].user_avatar),
+                            description: unescape(json.comments[i].sub_comments[j].text)
+                        });
+                    }
+                    counter++;
+                    if (counter == +json.total_num) break;
+                };
+                if (counter == +json.total_num) return tryToSearch = false;
+                offset += 20;
+                return true;
+            }
+            loader();
+            page.loading = false;
+            page.paginator = loader;
+        }
+        page.loading = false;
     });
 
-    // Shows seasons of the video
+    // Shows episodes of the season
     plugin.addURI(PREFIX + ":season:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
         var params = 'id=' + id;
@@ -333,19 +375,21 @@
         });
     });
 
+
     // Shows videos of the collection
     plugin.addURI(PREFIX + ":collection:(.*):(.*)", function(page, id, title) {
-        var offset = 0;
-        var counter = 0;
         setPageHeader(page, unescape(title));
-
+        var offset = 0, counter = 0, tryToSearch = true;
         function loader() {
+            if (!tryToSearch) return false;
             var params = 'id=' + id + '&offset=' + offset + '&limit=20';
             if (session) params += '&' + session;
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/v3/videos/collection?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
             page.loading = false;
             for (var i in json.video_list) {
+                counter++;
+                if (!json.video_list[i].isAvailable) continue;
                 var genres = '', first = true;
                 for (var j in config.categories) { // traversing categories
                     if (config.categories[j].id == json.video_list[i].category[0]) {
@@ -373,10 +417,9 @@
                         coloredStr('Комментариев: ', orange) + unescape(json.video_list[i].comments_num) +
                         coloredStr('<br>Страна: ', orange) + unescape(json.video_list[i].country))
                 });
-                counter++;
             };
+            if (counter == +json.total_num) return tryToSearch = false;
             offset += 20;
-            if (json.total_num <= counter) return false;
             return true;
         };
         loader();
@@ -495,7 +538,7 @@
                 description: new showtime.RichText('(' + coloredStr(json.video_list[i].like, green) + ' / ' + coloredStr(json.video_list[i].dislike, red) + ') ' +
                     coloredStr('Страна: ', orange) + unescape(json.video_list[i].country) +
                     (json.video_list[i].budget ? coloredStr(' Бюджет: ', orange) + unescape(json.video_list[i].budget) : '')+
-                    coloredStr('<br>Слоган: ', orange) + unescape(json.video_list[i].slogan) +
+                    (json.video_list[i].slogan ? coloredStr('<br>Слоган: ', orange) + unescape(json.video_list[i].slogan) : '') +
                     coloredStr('<br>Описание: ', orange) + trim(showtime.entityDecode(unescape(json.video_list[i].description.replace(/&#151;/g, '—'))))),
                 icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
             });
@@ -568,8 +611,9 @@
             page.loading = false;
         }
         page.entries = 0;
-        var offset = 0, counter = 0;
+        var offset = 0, counter = 0, tryToSearch = true;
         function loader() {
+            if (!tryToSearch) return false;
             var params = 'text=' + query + '&limit=20' + '&offset=' + offset;
             if (session) params += '&' + session;
             var request = BASE_URL + '/p/search?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1;
@@ -586,16 +630,16 @@
                     duration: +parseInt(json.video_list[i].duration),
                     description: new showtime.RichText('(' + coloredStr(json.video_list[i].like, green) + ' / ' + coloredStr(json.video_list[i].dislike, red) + ') ' +
                         coloredStr('Страна: ', orange) + unescape(json.video_list[i].country) +
-                       (json.video_list[i].budget ? coloredStr(' Бюджет: ', orange) + unescape(json.video_list[i].budget) : '')+
-                       coloredStr('<br>Слоган: ', orange) + unescape(json.video_list[i].slogan) +
-                       coloredStr('<br>Описание: ', orange) + trim(showtime.entityDecode(unescape(json.video_list[i].description.replace(/&#151;/g, '—'))))),
+                        (json.video_list[i].budget ? coloredStr(' Бюджет: ', orange) + unescape(json.video_list[i].budget) : '')+
+                        (json.video_list[i].slogan ? coloredStr('<br>Слоган: ', orange) + unescape(json.video_list[i].slogan) : '') +
+                        coloredStr('<br>Описание: ', orange) + trim(showtime.entityDecode(unescape(json.video_list[i].description.replace(/&#151;/g, '—'))))),
                     icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
                 });
                 page.entries++;
                 counter++;
             };
+            if (counter == +json.total_num) return tryToSearch = false;
             offset += 20;
-            if (json.total_num <= counter) return false;
             return true;
         };
         loader();
