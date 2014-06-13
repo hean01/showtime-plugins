@@ -197,78 +197,82 @@
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        var credentials;
-
-        function renderHomePage() {
-            page.loading = true;
-            session = '';
-            if (credentials && credentials.username && credentials.password) {
-                var params = 'login=' + credentials.username + '&pwd=' + credentials.password;
-                var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/p/login?'+ params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
-                if (json && json.result == 'ok') {
-                    page.appendPassiveItem('file', '', {
-                        title: new showtime.RichText(coloredStr(credentials.username, orange))
-                    });
-                    session = 'session=' + json.session;
-                }
-            }
-            if (!credentials || !json || json.result != 'ok') {
-               page.appendPassiveItem('file', '', {
-                   title: new showtime.RichText(coloredStr('Авторизация не проведена', orange))
-               });
-            }
-
-            page.appendItem("", "separator", {
-                title: 'Категории:'
-            });
-            json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/p/categories?' + session + '&sign=' + showtime.md5digest(session + k2) + k1));
-            page.loading = false;
-            for (i in json.category_list) {
-                page.appendItem(PREFIX + ':genres:' + json.category_list[i].id + ':' + escape(json.category_list[i].title), 'directory', {
-                    title: new showtime.RichText(unescape(json.category_list[i].title) + blueStr(json.category_list[i].total_num)),
-                    icon: logo
+        setPageHeader(page, slogan);
+        page.loading = true;
+        session = '';
+        var credentials = plugin.getAuthCredentials(slogan, '', false);
+        if (credentials && credentials.username && credentials.password) {
+            var params = 'login=' + credentials.username + '&pwd=' + credentials.password;
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/p/login?'+ params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
+            if (json && json.result == 'ok') {
+                page.appendPassiveItem('file', '', {
+                    title: new showtime.RichText(coloredStr(credentials.username, orange))
                 });
-            };
-
-            page.appendItem("", "separator", {
-                title: 'Рекомендуемое:'
-            });
-            page.loading = true;
-            json = showtime.httpReq(BASE_URL + '/p/recommend?' + session + '&sign=' + showtime.md5digest(session + k2) + k1);
-            page.loading = false;
-            showtime.trace("The length of the reply is: " + json.toString().length);
-            while (json.toString().length < 100) {
-	        showtime.trace("Recommended list is empty. Getting again...");
-                page.loading = true;
-		json = showtime.httpReq(BASE_URL + '/p/recommend?' + session + '&sign=' + showtime.md5digest(session + k2) + k1);
-                page.loading = false;
+                session = 'session=' + json.session;
             }
-	    json = showtime.JSONDecode(json);
-            for (var i in json.video_list) {
-                var type = "video";
-                if (json.video_list[i].isSeries) type = "directory";
-                var title = showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " | " + showtime.entityDecode(json.video_list[i].title_orig) : "");
-                page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + escape(title), "video", {
-                    title: title,
-                    year: +parseInt(json.video_list[i].year),
-                    genre: (json.video_list[i].genre_list[0] ? unescape(json.video_list[i].genre_list[0].title) : ''),
-                    rating: json.video_list[i].rating_imdb * 10,
-                    duration: +parseInt(json.video_list[i].duration),
-                    description: new showtime.RichText(trim(showtime.entityDecode(unescape(json.video_list[i].description)))),
-                    icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
-                });
-            };
-            page.options.createAction('megogo_login', 'Войти в megogo.net', function() {
-                credentials = plugin.getAuthCredentials(slogan, 'Введите email и пароль', true);
-                page.flush();
-                renderHomePage();
+        }
+        if (!credentials || !json || json.result != 'ok') {
+            page.appendPassiveItem('file', '', {
+                title: new showtime.RichText(coloredStr('Авторизация не проведена', orange))
+            });
+        }
+
+        page.appendItem("", "separator", {
+            title: 'Категории:'
+        });
+        json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/p/categories?' + session + '&sign=' + showtime.md5digest(session + k2) + k1));
+        page.loading = false;
+        for (i in json.category_list) {
+            page.appendItem(PREFIX + ':genres:' + json.category_list[i].id + ':' + escape(json.category_list[i].title), 'directory', {
+                title: new showtime.RichText(unescape(json.category_list[i].title) + blueStr(json.category_list[i].total_num)),
+                icon: logo
             });
         };
 
-        setPageHeader(page, slogan);
-        credentials = plugin.getAuthCredentials(slogan, '', false);
-        renderHomePage();
+        page.appendItem("", "separator", {
+            title: 'Рекомендуемое:'
+        });
+        page.loading = true;
+        json = showtime.httpReq(BASE_URL + '/p/recommend?' + session + '&sign=' + showtime.md5digest(session + k2) + k1);
+        page.loading = false;
+        showtime.trace("The length of the reply is: " + json.toString().length);
+        while (json.toString().length < 100) {
+            showtime.trace("Recommended list is empty. Getting again...");
+            page.loading = true;
+            json = showtime.httpReq(BASE_URL + '/p/recommend?' + session + '&sign=' + showtime.md5digest(session + k2) + k1);
+            page.loading = false;
+        }
+	json = showtime.JSONDecode(json);
+        for (var i in json.video_list) {
+            var type = "video";
+            if (json.video_list[i].isSeries) type = "directory";
+            var title = showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " | " + showtime.entityDecode(json.video_list[i].title_orig) : "");
+            page.appendItem(PREFIX + ':' + type + ':' + json.video_list[i].id + ':' + escape(title), "video", {
+                title: title,
+                year: +parseInt(json.video_list[i].year),
+                genre: (json.video_list[i].genre_list[0] ? unescape(json.video_list[i].genre_list[0].title) : ''),
+                rating: json.video_list[i].rating_imdb * 10,
+                duration: +parseInt(json.video_list[i].duration),
+                description: new showtime.RichText(trim(showtime.entityDecode(unescape(json.video_list[i].description)))),
+                icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
+            });
+        };
     });
+
+    var settings = plugin.createSettings("megogo.net", logo, slogan);
+    settings.createAction('megogo_login', 'Войти в megogo.net', function() {
+        var credentials = plugin.getAuthCredentials(slogan, 'Введите email и пароль', true);
+        if (credentials && credentials.username && credentials.password) {
+            var params = 'login=' + credentials.username + '&pwd=' + credentials.password;
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/p/login?'+ params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
+            if (json && json.result == 'ok') {
+                showtime.message("Вход успешно произведен. Параметры входа сохранены.", true, false);
+                return;
+            }
+        }
+        showtime.message("Не удалось войти. Проверьте email/пароль...", true, false);
+    });
+
 
     plugin.addSearcher("megogo.net", logo, function(page, query) {
         session = '';
