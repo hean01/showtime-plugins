@@ -390,7 +390,11 @@
         var params = 'id=' + id;
         if (session) params += '&' + session;
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/v3/videos/season?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
+        while (1) {
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/v3/videos/season?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
+            if (json.result == 'ok') break;
+        }
+
         page.loading = false;
         for (var i=0; i < json.season.total_num; i++) {
             page.appendItem(PREFIX + ':video:' + json.season.episode_list[i].id + ':' + json.season.episode_list[i].title, "video", {
@@ -721,7 +725,7 @@
             page.loading = false;
             for (var i in json.video_list) {
                 var title = showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " | " + showtime.entityDecode(json.video_list[i].title_orig) : "");
-                page.appendItem(PREFIX + ':indexByID:' + json.video_list[i].id + ':' + escape(title), "video", {
+                page.appendItem(PREFIX + (json.video_list[i].type == 5 ? ':video' : ':indexByID:') + json.video_list[i].id + ':' + escape(title), "video", {
                     title: new showtime.RichText(title + (json.video_list[i].isSeries ? colorStr('сериал', orange) : '')),
                     year: +parseInt(json.video_list[i].year),
                     genre: (json.video_list[i].genre_list[0] ? unescape(json.video_list[i].genre_list[0].title) : ''),
