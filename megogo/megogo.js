@@ -18,7 +18,6 @@
  */
 
 (function(plugin) {
-
     var PREFIX = 'megogo';
     var BASE_URL = 'http://megogo.net';
     var logo = plugin.path + "logo.png";
@@ -255,7 +254,7 @@
 
         if (json.video.season_list[0]) {
             for (var i in json.video.season_list) {
-                page.appendItem(PREFIX + ':season:' + json.video.season_list[i].id + ':' + escape(json.video.title + ' - ' + json.video.season_list[i].title + (json.video.season_list[i].title_orig ? ' | ' + json.video.season_list[i].title_orig : '')), "video", {
+                page.appendItem(PREFIX + ':directory:' + json.video.season_list[i].id + ':' + escape(json.video.title + ' - ' + json.video.season_list[i].title + (json.video.season_list[i].title_orig ? ' | ' + json.video.season_list[i].title_orig : '')), "video", {
                     title: json.video.season_list[i].title + (json.video.season_list[i].title_orig ? ' | ' + json.video.season_list[i].title_orig : '') + ' (' + json.video.season_list[i].total_num + ' серий)',
                     year: +parseInt(json.video.year),
                     genre: genres,
@@ -417,7 +416,7 @@
     });
 
     // Shows episodes of the season
-    plugin.addURI(PREFIX + ":season:(.*):(.*)", function(page, id, title) {
+    plugin.addURI(PREFIX + ":directory:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
         var params = 'id=' + id;
         if (session) params += '&' + session;
@@ -462,6 +461,7 @@
 
     // Play megogo links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, id, title) {
+        checkConfig(page);
         var params = 'video=' + id;
         if (session) params += '&' + session;
         page.loading = true;
