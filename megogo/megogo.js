@@ -26,6 +26,23 @@
     var session, k1 = '_xbmc', k2 = 'acfed32a68da1d7c';
     var config, digest, showPaidContent;
 
+    function checkConfig(page) {
+        if (!session) {
+            session = '';
+            var credentials = plugin.getAuthCredentials(slogan, '', false);
+            if (credentials && credentials.username && credentials.password) {
+                var params = 'login=' + credentials.username + '&pwd=' + credentials.password;
+                var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/p/login?'+ params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
+                if (json && json.result == 'ok') session = 'session=' + json.session;
+            }
+        }
+        if (!config) {
+            page.loading = true;
+            config = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/v3/configuration?' + session + '&sign=' + showtime.md5digest(session + k2) + k1));
+            page.loading = false;
+        }
+    }
+
     function trim(s) {
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/, '');
     }
@@ -55,6 +72,7 @@
     }
 
     var service = plugin.createService("megogo.net", PREFIX + ":start", "video", true, logo);
+
     // Shows genres of the category
     plugin.addURI(PREFIX + ":genres:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
@@ -163,6 +181,7 @@
                         break;
                 }
             }
+            checkConfig(page);
             var genres = '', first = true;
             for (var j in config.categories) { // traversing categories
                 if (config.categories[j].id == json.member.filmography[i].category[0]) {
@@ -215,6 +234,7 @@
         }
         page.loading = false;
         var genres = '', first = true;
+        checkConfig(page);
         for (var j in config.categories) { // traversing categories
             if (config.categories[j].id == json.video.category[0]) {
                for (var k in json.video.genre_list) {
@@ -519,6 +539,7 @@
                     }
                 }
                 var genres = '', first = true;
+                checkConfig(page);
                 for (var j in config.categories) { // traversing categories
                     if (config.categories[j].id == json.video_list[i].category[0]) {
                         for (var k in json.video_list[i].genre_list) {
@@ -594,9 +615,7 @@
         page.appendItem("", "separator", {
             title: 'Категории:'
         });
-        page.loading = true;
-        config = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/v3/configuration?' + session + '&sign=' + showtime.md5digest(session + k2) + k1));
-        page.loading = false;
+        //checkConfig(page)
         //for (i in config.categories) {
         //    page.appendItem(PREFIX + ':genres:' + config.categories[i].id + ':' + escape(config.categories[i].title), 'directory', {
         //        title: new showtime.RichText(unescape(config.categories[i].title)),
@@ -690,6 +709,7 @@
                 }
             }
             var genres = '', first = true;
+            checkConfig(page);
             for (var j in config.categories) { // traversing categories
                 if (config.categories[j].id == digest.recommended[i].category[0]) {
                     for (var k in digest.recommended[i].genre_list) {
@@ -795,28 +815,15 @@
     });
 
     plugin.addSearcher("megogo.net", logo, function(page, query) {
-        session = '';
-        var credentials = plugin.getAuthCredentials(slogan, '', false);
-        if (credentials && credentials.username && credentials.password) {
-            var params = 'login=' + credentials.username + '&pwd=' + credentials.password;
-            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/p/login?'+ params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
-            if (json && json.result == 'ok') session = 'session=' + json.session;
-        }
-
-        if (!config) {
-            page.loading = true;
-            config = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/v3/configuration?' + session + '&sign=' + showtime.md5digest(session + k2) + k1));
-            page.loading = false;
-        }
+        checkConfig(page);
         page.entries = 0;
         var offset = 0, counter = 0, tryToSearch = true;
         function loader() {
             if (!tryToSearch) return false;
             var params = 'text=' + query + '&limit=20' + '&offset=' + offset;
             if (session) params += '&' + session;
-            var request = BASE_URL + '/p/search?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1;
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(request));
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/p/search?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
             page.loading = false;
             for (var i in json.video_list) {
                 var title = showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " | " + showtime.entityDecode(json.video_list[i].title_orig) : "");
