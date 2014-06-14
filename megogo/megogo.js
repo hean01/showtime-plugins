@@ -254,7 +254,7 @@
 
         if (json.video.season_list[0]) {
             for (var i in json.video.season_list) {
-                page.appendItem(PREFIX + ':directory:' + json.video.season_list[i].id + ':' + escape(json.video.title + ' - ' + json.video.season_list[i].title + (json.video.season_list[i].title_orig ? ' | ' + json.video.season_list[i].title_orig : '')), "video", {
+                page.appendItem(PREFIX + ':season:' + json.video.season_list[i].id + ':' + escape(json.video.title + ' - ' + json.video.season_list[i].title + (json.video.season_list[i].title_orig ? ' | ' + json.video.season_list[i].title_orig : '')), "video", {
                     title: json.video.season_list[i].title + (json.video.season_list[i].title_orig ? ' | ' + json.video.season_list[i].title_orig : '') + ' (' + json.video.season_list[i].total_num + ' серий)',
                     year: +parseInt(json.video.year),
                     genre: genres,
@@ -416,7 +416,7 @@
     });
 
     // Shows episodes of the season
-    plugin.addURI(PREFIX + ":directory:(.*):(.*)", function(page, id, title) {
+    plugin.addURI(PREFIX + ":season:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
         var params = 'id=' + id;
         if (session) params += '&' + session;
@@ -433,6 +433,27 @@
                 icon: unescape(json.season.episode_list[i].image)
             });
         }
+    });
+
+    // Shows seasons of the video (for legacy purposes)
+    plugin.addURI(PREFIX + ":directory:(.*):(.*)", function(page, id, title) {
+        setPageHeader(page, unescape(title));
+        checkConfig();
+        var params = 'video=' + id;
+        if (session) params += '&' + session;
+        var request = BASE_URL + '/p/video?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1;
+        page.loading = true;
+        var json = showtime.JSONDecode(showtime.httpReq(request));
+        page.loading = false;
+        for (var i in json.video[0].season_list) {
+            for (var j in json.video[0].season_list[i].episode_list) {
+                page.appendItem(PREFIX + ':video:' + json.video[0].season_list[i].episode_list[j].id + ':' + json.video[0].season_list[i].episode_list[j].title, "video", {
+                    title: showtime.entityDecode(unescape(json.video[0].season_list[i].title) + ' - ' + unescape(json.video[0].season_list[i].episode_list[j].title)),
+                    duration: +parseInt(json.video[0].season_list[i].episode_list[j].duration),
+                    icon: unescape(json.video[0].season_list[i].episode_list[j].poster)
+                });
+            }
+        };
     });
 
     // Search IMDB ID by title
