@@ -84,24 +84,32 @@
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/p/videos?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
             page.loading = false;
             for (var i in json.video_list) {
+                var genre = '', first = true;
+                for (var j in json.video_list[i].genre_list) {
+                    if (first) {
+                        genre = json.video_list[i].genre_list[j].title;
+                        first = false
+                    } else
+                        genre += ', ' + json.video_list[i].genre_list[j].title
+                }
                 var title = showtime.entityDecode(unescape(json.video_list[i].title)) + (json.video_list[i].title_orig ? " | " + showtime.entityDecode(json.video_list[i].title_orig) : "");
-                page.appendItem(PREFIX + ':indexByID:' + json.video_list[i].id + ':' + escape(title), "video", {
+                page.appendItem(PREFIX + (json.video_list[i].type == 5 ? ':video:' : ':indexByID:') + json.video_list[i].id + ':' + escape(title), "video", {
                     title: new showtime.RichText(title + (json.video_list[i].isSeries ? colorStr('сериал', orange) : '')),
                     year: +parseInt(json.video_list[i].year),
-                    genre: unescape(json.video_list[i].genre_list[0].title),
+                    genre: genre,
                     rating: json.video_list[i].rating_imdb * 10,
                     duration: +parseInt(json.video_list[i].duration),
                     description: new showtime.RichText('(' + coloredStr(json.video_list[i].like, green) + ' / ' + coloredStr(json.video_list[i].dislike, red) + ') ' +
-                        coloredStr('Страна: ', orange) + unescape(json.video_list[i].country) +
-                        (json.video_list[i].budget ? coloredStr(' Бюджет: ', orange) + unescape(json.video_list[i].budget) : '')+
+                        (json.video_list[i].country ? coloredStr('Страна: ', orange) + unescape(json.video_list[i].country) : '') +
+                        (json.video_list[i].budget ? coloredStr(' Бюджет: ', orange) + unescape(json.video_list[i].budget) : '') +
                         (json.video_list[i].slogan ? coloredStr('<br>Слоган: ', orange) + unescape(json.video_list[i].slogan) : '') +
                         coloredStr('<br>Описание: ', orange) + trim(showtime.entityDecode(unescape(json.video_list[i].description.replace(/&#151;/g, '—'))))),
                     icon: 'http://megogo.net' + unescape(json.video_list[i].image.small)
                 });
                 counter++;
             };
-            if (counter == +json.total_num) return tryToSearch = false;
             offset += 20;
+            if (counter == +json.total_num || offset > +json.total_num) return tryToSearch = false;
             return true;
         };
         loader();
@@ -129,12 +137,15 @@
         var params = 'id=' + id;
         if (session) params += '&' + session;
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/v3/peoples/info?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
+        while (1) {
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/v3/peoples/info?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
+            if (json.result == 'ok') break;
+        }
         page.loading = false;
         page.appendPassiveItem('video', '', {
             title: new showtime.RichText(json.member.name + (json.member.name_orig ? ' | ' + json.member.name_orig : '')),
             icon: json.member.avatar.image_360х360.replace(/13:/, ''),
-            description: new showtime.RichText(json.member.description)
+            description: new showtime.RichText(trim(json.member.description))
         });
 
         var first = true;
@@ -185,6 +196,10 @@
         while (1) {
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/v3/videos/info?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
             if (json.result == 'ok') break;
+            if (json.error == "Can't find requested object") {
+                page.error(json.error);
+                return;
+            }
         }
         page.loading = false;
         var genres = '', first = true;
@@ -243,10 +258,8 @@
             });
         }
 
-        page.appendItem("", "separator", {
-            title: 'Над фильмом работали:'
-        });
         // Show peoples
+        var first = true;
         if (json.video.people) {
             var prevType = '';
             for (var i in json.video.people) {
@@ -260,6 +273,12 @@
                        }
                        break;
                     }
+                }
+                if (first) {
+                    page.appendItem("", "separator", {
+                        title: 'Над видео работали:'
+                    });
+                    first = false;
                 }
                 page.appendItem(PREFIX + ':people:' + json.video.people[i].id + ':' + escape(json.video.people[i].name + (json.video.people[i].name_orig ? ' | ' + json.video.people[i].name_orig : '')), 'video', {
                     title: new showtime.RichText(json.video.people[i].name + (json.video.people[i].name_orig ? ' | ' + json.video.people[i].name_orig : '') + ' ' + colorStr(config.membertypes[j].title, orange)),
@@ -338,7 +357,7 @@
                     page.appendPassiveItem('video', '', {
                         title: new showtime.RichText(json.comments[i].user_name + ' (' +
                            json.comments[i].date.replace(/T/, ' ').replace(/\+00:00/, '') + ')' +
-                           (json.comments[i].sub_comments_count ? ' ' + coloredStr(json.comments[i].sub_comments_count + ' комментарий(ев)', orange) : '')),
+                           (json.comments[i].sub_comments_count ? ' ' + coloredStr(' комментариев ' + json.comments[i].sub_comments_count, orange) : '')),
                         icon: unescape(json.comments[i].user_avatar),
                         description: unescape(json.comments[i].text)
                     });
@@ -354,8 +373,8 @@
                     counter++;
                     if (counter == +json.total_num) break;
                 };
-                if (counter == +json.total_num) return tryToSearch = false;
                 offset += 20;
+                if (counter == +json.total_num || offset > +json.total_num) return tryToSearch = false;
                 return true;
             }
             loader();
@@ -498,8 +517,8 @@
                         coloredStr('<br>Страна: ', orange) + unescape(json.video_list[i].country))
                 });
             };
-            if (counter == +json.total_num) return tryToSearch = false;
             offset += 20;
+            if (counter == +json.total_num || offset > +json.total_num) return tryToSearch = false;
             return true;
         };
         loader();
@@ -718,8 +737,8 @@
                 page.entries++;
                 counter++;
             };
-            if (counter == +json.total_num) return tryToSearch = false;
             offset += 20;
+            if (counter == +json.total_num || offset > +json.total_num) return tryToSearch = false;
             return true;
         };
         loader();
