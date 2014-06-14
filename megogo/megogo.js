@@ -438,7 +438,7 @@
     // Shows seasons of the video (for legacy purposes)
     plugin.addURI(PREFIX + ":directory:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
-        checkConfig();
+        checkConfig(page);
         var params = 'video=' + id;
         if (session) params += '&' + session;
         var request = BASE_URL + '/p/video?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1;
