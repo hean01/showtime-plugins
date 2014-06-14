@@ -24,7 +24,7 @@
     var logo = plugin.path + "logo.png";
     var slogan = 'megogo.net - онлайн-кинотеатр с легальным контентом';
     var session, k1 = '_xbmc', k2 = 'acfed32a68da1d7c';
-    var config, digest;
+    var config, digest, showPaidContent;
 
     function trim(s) {
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/, '');
@@ -55,7 +55,6 @@
     }
 
     var service = plugin.createService("megogo.net", PREFIX + ":start", "video", true, logo);
-
     // Shows genres of the category
     plugin.addURI(PREFIX + ":genres:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
@@ -150,7 +149,20 @@
 
         var first = true;
         for (var i in json.member.filmography) {
-            if (!json.member.filmography[i].isAvailable) continue;
+            if (!json.member.filmography[i].isAvailable && !showPaidContent) continue;
+            var aType = '';
+            if (!json.member.filmography[i].isAvailable) {
+                switch (json.member.filmography[i].availableReason) {
+                    case 'svod':
+                        aType = coloredStr('+', orange);
+                        break;
+                    case 'tvod':
+                        aType = coloredStr('$', orange);
+                        break;
+                    default:
+                        break;
+                }
+            }
             var genres = '', first = true;
             for (var j in config.categories) { // traversing categories
                 if (config.categories[j].id == json.member.filmography[i].category[0]) {
@@ -176,7 +188,7 @@
                 first = false;
             }
             page.appendItem(PREFIX + ':indexByID:' + json.member.filmography[i].id + ':' + escape(json.member.filmography[i].title), "video", {
-                title: new showtime.RichText(json.member.filmography[i].title + (json.member.filmography[i].isSeries ? colorStr('сериал', orange) : '')),
+                title: new showtime.RichText(aType + json.member.filmography[i].title + (json.member.filmography[i].isSeries ? colorStr('сериал', orange) : '')),
                 year: +parseInt(json.member.filmography[i].year),
                 genre: genres,
                 icon: unescape(json.member.filmography[i].image.small),
@@ -232,7 +244,7 @@
                     duration: +parseInt(json.video.duration),
                     description: new showtime.RichText('(' + coloredStr(json.video.like, green) + ' / ' + coloredStr(json.video.dislike, red) + ') ' +
                     coloredStr('Комментариев: ', orange) + unescape(json.video.comments_num) +
-                    coloredStr('<br>Страна: ', orange) + unescape(json.video.country) +
+                    (json.video.country ? coloredStr('<br>Страна: ', orange) + unescape(json.video.country) : '') +
                     coloredStr('<br>Описание: ', orange) + trim(showtime.entityDecode(unescape(json.video.description.replace(/&#151;/g, '—')))))
                 });
             };
@@ -246,7 +258,7 @@
                 duration: +parseInt(json.video.duration),
                 description: new showtime.RichText('(' + coloredStr(json.video.like, green) + ' / ' + coloredStr(json.video.dislike, red) + ') ' +
                     coloredStr('Комментариев: ', orange) + unescape(json.video.comments_num) +
-                    coloredStr('<br>Страна: ', orange) + unescape(json.video.country) +
+                    (json.video.country ? coloredStr('<br>Страна: ', orange) + unescape(json.video.country) : '') +
                     coloredStr('<br>Описание: ', orange) + trim(showtime.entityDecode(unescape(json.video.description.replace(/&#151;/g, '—')))))
             });
         }
@@ -435,8 +447,8 @@
         page.loading = true;
         var json = showtime.httpReq(BASE_URL + '/p/info?' + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1).toString();
         page.loading = false;
-        if (json.match(/<forbidden>([\s\S]*?)<\/forbidden>/)) {
-            showtime.message(json.match(/<forbidden>([\s\S]*?)<\/forbidden>/)[1], true, false);
+        if (json.match(/<forbidden>/)) {
+            showtime.message('Не удается получить линк. Возможно видео платное или не доступно для Вашего региона.', true, false);
             return;
         }
         json = showtime.JSONDecode(json);
@@ -492,7 +504,20 @@
             page.loading = false;
             for (var i in json.video_list) {
                 counter++;
-                if (!json.video_list[i].isAvailable) continue;
+                if (!json.video_list[i].isAvailable && !showPaidContent) continue;
+                var aType = '';
+                if (!json.video_list[i].isAvailable) {
+                    switch (json.video_list[i].availableReason) {
+                        case 'svod':
+                            aType = coloredStr('+', orange);
+                            break;
+                        case 'tvod':
+                            aType = coloredStr('$', orange);
+                            break;
+                        default:
+                            break;
+                    }
+                }
                 var genres = '', first = true;
                 for (var j in config.categories) { // traversing categories
                     if (config.categories[j].id == json.video_list[i].category[0]) {
@@ -512,7 +537,7 @@
                     }
                 }
                 page.appendItem(PREFIX + ':indexByID:' + json.video_list[i].id + ':' + escape(json.video_list[i].title), "video", {
-                    title: new showtime.RichText(json.video_list[i].title + (json.video_list[i].isSeries ? colorStr('сериал', orange): '' )),
+                    title: new showtime.RichText(aType + json.video_list[i].title + (json.video_list[i].isSeries ? colorStr('сериал', orange): '' )),
                     year: +parseInt(json.video_list[i].year),
                     genre: genres,
                     icon: unescape(json.video_list[i].image.small),
@@ -596,11 +621,10 @@
         page.appendItem("", "separator", {
             title: 'Подборки:'
         });
-        var bType = 'collections'
-        for (var i in digest[bType]) {
-            page.appendItem(PREFIX + ':collection:' + digest[bType][i].id + ':' + escape(digest[bType][i].title), "video", {
-                title: new showtime.RichText(digest[bType][i].title),
-                icon: unescape(digest[bType][i].image.image_hp)
+        for (var i in digest.collections) {
+            page.appendItem(PREFIX + ':collection:' + digest.collections[i].id + ':' + escape(digest.collections[i].title), "video", {
+                title: new showtime.RichText(digest.collections[i].title),
+                icon: unescape(digest.collections[i].image.image_hp)
             });
         };
         page.appendItem(PREFIX + ':collections', 'directory', {
@@ -650,15 +674,27 @@
         page.appendItem("", "separator", {
             title: 'Выбор редакции:'
         });
-        var bType = 'recommended'
-        for (var i in digest[bType]) {
-            if (!digest[bType][i].isAvailable) continue;
+        for (var i in digest.recommended) {
+            if (!digest.recommended[i].isAvailable && !showPaidContent) continue;
+            var aType = '';
+            if (!digest.recommended[i].isAvailable) {
+                switch (digest.recommended[i].availableReason) {
+                    case 'svod':
+                        aType = coloredStr('+', orange);
+                        break;
+                    case 'tvod':
+                        aType = coloredStr('$', orange);
+                        break;
+                    default:
+                        break;
+                }
+            }
             var genres = '', first = true;
             for (var j in config.categories) { // traversing categories
-                if (config.categories[j].id == digest[bType][i].category[0]) {
-                    for (var k in digest[bType][i].genre_list) {
+                if (config.categories[j].id == digest.recommended[i].category[0]) {
+                    for (var k in digest.recommended[i].genre_list) {
                         for (var l in config.categories[j].genres) { // traversing genres
-                            if (digest[bType][i].genre_list[k] == config.categories[j].genres[l].id) {
+                            if (digest.recommended[i].genre_list[k] == config.categories[j].genres[l].id) {
                                 if (first) {
                                     genres = unescape(config.categories[j].genres[l].title);
                                     first = false;
@@ -671,16 +707,72 @@
                     break;
                 }
             }
-            var title = showtime.entityDecode(unescape(digest[bType][i].title));
-            page.appendItem(PREFIX + ':indexByID:' + digest[bType][i].id + ':' + escape(title), "video", {
-                title: new showtime.RichText(digest[bType][i].isSeries ? title + colorStr('сериал', orange) : title),
-                year: +parseInt(digest[bType][i].year),
+            var title = showtime.entityDecode(unescape(digest.recommended[i].title));
+            page.appendItem(PREFIX + ':indexByID:' + digest.recommended[i].id + ':' + escape(title), "video", {
+                title: new showtime.RichText(aType + (digest.recommended[i].isSeries ? title + colorStr('сериал', orange) : title)),
+                year: +parseInt(digest.recommended[i].year),
                 genre: genres,
-                icon: digest[bType][i].image.small,
-                description: new showtime.RichText('(' + coloredStr(digest[bType][i].like, green) + ' / ' + coloredStr(digest[bType][i].dislike, red) + ') ' +
-                    coloredStr('Комментариев: ', orange) + unescape(digest[bType][i].comments_num) +
-                    coloredStr('<br>Страна: ', orange) + unescape(digest[bType][i].country))
+                icon: digest.recommended[i].image.small,
+                description: new showtime.RichText('(' + coloredStr(digest.recommended[i].like, green) + ' / ' + coloredStr(digest.recommended[i].dislike, red) + ') ' +
+                    coloredStr('Комментариев: ', orange) + unescape(digest.recommended[i].comments_num) +
+                    coloredStr('<br>Страна: ', orange) + unescape(digest.recommended[i].country))
             });
+        };
+
+        // Show lists
+        for (var i in digest.videos) {
+            for (var j in config.categories) { // traversing categories
+                if (config.categories[j].id == digest.videos[i].category_id) {
+                   page.appendItem("", "separator", {
+                       title: config.categories[j].title
+                   });
+                   break;
+                }
+            }
+            for (var m in digest.videos[i].video_list) {
+                 if (!digest.videos[i].video_list[m].isAvailable && !showPaidContent) continue;
+                 var aType = '';
+                 if (!digest.videos[i].video_list[m].isAvailable) {
+                     switch (digest.videos[i].video_list[m].availableReason) {
+                         case 'svod':
+                             aType = coloredStr('+', orange);
+                             break;
+                         case 'tvod':
+                             aType = coloredStr('$', orange);
+                             break;
+                         default:
+                             break;
+                     }
+                 }
+                 var genres = '', first = true;
+                 for (var j in config.categories) { // traversing categories
+                     if (config.categories[j].id == digest.videos[i].video_list[m].category[0]) {
+                          for (var k in digest.videos[i].video_list[m].genre_list) {
+                              for (var l in config.categories[j].genres) { // traversing genres
+                                   if (digest.videos[i].video_list[m].genre_list[k] == config.categories[j].genres[l].id) {
+                                       if (first) {
+                                           genres = unescape(config.categories[j].genres[l].title);
+                                           first = false;
+                                       } else {
+                                           genres += ', ' + unescape(config.categories[j].genres[l].title);
+                                       }
+                                   }
+                              }
+                          }
+                          break;
+                     }
+                 }
+                 var title = showtime.entityDecode(unescape(digest.videos[i].video_list[m].title));
+                 page.appendItem(PREFIX + ':indexByID:' + digest.videos[i].video_list[m].id + ':' + escape(title), "video", {
+                     title: new showtime.RichText(aType + (digest.videos[i].video_list[m].isSeries ? title + colorStr('сериал', orange) : title)),
+                     year: +parseInt(digest.videos[i].video_list[m].year),
+                     genre: genres,
+                     icon: digest.videos[i].video_list[m].image.small,
+                     description: new showtime.RichText('(' + coloredStr(digest.videos[i].video_list[m].like, green) + ' / ' + coloredStr(digest.videos[i].video_list[m].dislike, red) + ') ' +
+                        coloredStr('Комментариев: ', orange) + unescape(digest.videos[i].video_list[m].comments_num) +
+                        coloredStr('<br>Страна: ', orange) + unescape(digest.videos[i].video_list[m].country))
+                 });
+            };
         };
         page.loading = false;
     });
@@ -697,6 +789,9 @@
             }
         }
         showtime.message("Не удалось войти. Проверьте email/пароль...", true, false);
+    });
+    settings.createBool('showPaidContent', 'Отображать платный контент', false, function(v) {
+        showPaidContent = v;
     });
 
     plugin.addSearcher("megogo.net", logo, function(page, query) {
