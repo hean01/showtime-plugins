@@ -567,20 +567,17 @@
             }
         }
 
-        response = doc.match(/<div class="b-section-list([\S\s]*?)<script type="text\/javascript">/)[1];
-        indexer(page);
-        return;
-        var pos = 90;
         function loader() {
-            page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(url +'?scrollload=1&view=detailed&start='+pos+'&length=18'));
-            page.loading = false;
-            for (i in json.content) {
-                response = showtime.entityDecode(json.content[i]);
-                indexer(page);
+            response = doc.match(/<div class="b-section-list([\S\s]*?)<script type="text\/javascript">/)[1];
+            indexer(page);
+            var nextPage = doc.match(/<a class="next-link"href="([\S\s]*?)">/);
+            if (nextPage) {
+                page.loading = true;
+                doc = showtime.httpReq(BASE_URL + nextPage[1]).toString();
+                page.loading = false;
+                return true;
             }
-            pos+=90;
-            return !json.is_last
+            return false;
         }
         loader();
         page.paginator = loader;
