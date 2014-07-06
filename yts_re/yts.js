@@ -18,95 +18,83 @@
  */
 
 (function(plugin) {
-
     var PREFIX = 'yts';
     var BASE_URL = 'https://yts.re/api/';
     var logo = plugin.path + "logo.png";
     var slogan = 'Welcome to the official YTS website. Here you will be able to browse and download movies in excellent DVD, 720p, 1080p and 3D quality, all at the smallest file size.';
 
-    var genres = [
-        "Action",
-        "Adventure",
-        "Animation",
-        "Biography",
-        "Comedy",
-        "Crime",
-        "Documentary",
-        "Drama",
-        "Family",
-        "Fantasy",
-        "Film-Noir",
-        "History",
-        "Horror",
-        "Music",
-        "Musical",
-        "Mystery",
-        "Romance",
-        "Sci-Fi",
-        "Short",
-        "Sport",
-        "Thriller",
-        "War",
-        "Western"];
-
-  plugin.createService("yts.re", PREFIX + ":start", "video", true, logo);
-
-  plugin.addURI(PREFIX + ":start", function(page) {
-      page.type = "directory";
-      page.loading = false;
-      page.metadata.title = "Genres";
-
-      for(var i in genres) {
-          var item = page.appendItem(PREFIX + ":genre:" + genres[i], "directory", {
-             title: genres[i]
-          });
-      }
-  });
-
-  function browseItems(page, query) {
-    var offset = 1;
-
-    function loader() {
-        var c = showtime.JSONDecode(showtime.httpReq(BASE_URL + 'list.json', {
-            args: [{
-                quality: '1080p',
-                limit: 40,
-                set: offset,
-                sort: 'rating'
-            }, query]
-        }));
-
-        for(var i in c.MovieList) {
-            var mov = c.MovieList[i];
-            var item = page.appendItem("torrent:video:" + mov.TorrentUrl, "video", {
-                title: mov.MovieTitleClean,
-                icon: mov.CoverImage
-            });
-            item.bindVideoMetadata({
-                imdb: mov.ImdbCode
-            });
+    function setPageHeader(page, title) {
+        if (page.metadata) {
+            page.metadata.title = title;
+            page.metadata.logo = logo;
         }
-        offset++;
-        return c.MovieList && c.MovieList.length > 0;
+        page.type = "directory";
+        page.contents = "items";
+        page.loading = false;
     }
 
-    page.loading = true;
-    loader();
-    page.loading = false;
-    page.paginator = loader;
-  }
+    var genres = [
+        "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime",
+        "Documentary", "Drama", "Family", "Fantasy", "Film-Noir", "History",
+        "Horror", "Music", "Musical", "Mystery", "Romance", "Sci-Fi", "Short",
+        "Sport", "Thriller", "War", "Western"];
 
-  plugin.addURI(PREFIX + ":genre:(.*)", function(page, genre) {
-    page.type = "directory";
-    page.metadata.title = genre;
-    browseItems(page, {
-        genre: genre
+    plugin.createService("yts.re", PREFIX + ":start", "video", true, logo);
+
+    plugin.addURI(PREFIX + ":start", function(page) {
+        setPageHeader(page, 'Genres');
+        for(var i in genres) {
+            var item = page.appendItem(PREFIX + ":genre:" + genres[i], "directory", {
+               title: genres[i]
+            });
+        }
     });
-  });
 
-  plugin.addSearcher("yts.re", null, function(page, query) {
-      browseItems(page, {
-          keywords: query
-      });
-  });
+    function browseItems(page, query) {
+        var offset = 1;
+        page.entries = 0;
+
+        function loader() {
+            var c = showtime.JSONDecode(showtime.httpReq(BASE_URL + 'list.json', {
+                args: [{
+                    quality: '1080p',
+                    limit: 40,
+                    set: offset,
+                    sort: 'rating'
+                }, query]
+            }));
+
+            for(var i in c.MovieList) {
+                var mov = c.MovieList[i];
+                var item = page.appendItem("torrent:video:" + mov.TorrentUrl, "video", {
+                    title: mov.MovieTitleClean,
+                    icon: mov.CoverImage
+                });
+                page.entries++;
+                item.bindVideoMetadata({
+                    imdb: mov.ImdbCode
+                });
+            }
+            offset++;
+            return c.MovieList && c.MovieList.length > 0;
+        }
+
+        page.loading = true;
+        loader();
+        page.loading = false;
+        page.paginator = loader;
+    }
+
+    plugin.addURI(PREFIX + ":genre:(.*)", function(page, genre) {
+        setPageHeader(page, genre);
+        browseItems(page, {
+            genre: genre
+        });
+    });
+
+    plugin.addSearcher("yts.re", logo, function(page, query) {
+        browseItems(page, {
+            keywords: query
+        });
+    });
 })(this);
