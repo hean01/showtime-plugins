@@ -31,15 +31,44 @@
         showtime.notify('Showtime is unlinked from Dropbox', 3, '');
     });
 
+    plugin.addURI("dropbox:auth:(.*)", function(page, code) {
+        page.loading = false;
+        try {
+            page.loading = true;
+            doc = showtime.httpReq("https://api.dropbox.com/1/oauth2/token", {
+                postdata: {
+                    'grant_type': 'authorization_code',
+                    'code': code,
+                    'client_id': OAUTH_CONSUMER_KEY,
+                    'client_secret': OAUTH_CONSUMER_SECRET
+                }
+            });
+            page.loading = false;
+        } catch (err) {
+            page.error('Wrong code. Please try again.');
+            return;
+        }
+        var json = showtime.JSONDecode(doc);
+        if (json.access_token)
+            store.access_token = json.access_token;
+        else {
+            page.error('Unknown error!');
+            return;
+        }
+        page.redirect('dropbox:browse:/');
+    });
+
     plugin.addURI("dropbox:browse:(.*)", function(page, path) {
         page.type = "directory";
         page.content = "items";
+        page.loading = false;
 
         if (!store.access_token) {
             var msg =  'To link Dropbox to Showtime, on any PC with internet browser open\n\n' +
-                       'https://www.dropbox.com/1/oauth2/authorize?response_type=code&client_id=' + OAUTH_CONSUMER_KEY +
+                       'http://dropbox.com/1/oauth2/authorize?response_type=code&client_id=' + OAUTH_CONSUMER_KEY +
                        '\n\nSign in to Dropbox and allow Showtime to access your folders and files.'+
-                       '\nAfter allowing the access - Dropbox will show you the code that you should enter to the textbox below:'
+                       '\nAfter allowing the access - Dropbox will show you the code that you should enter to the textbox below:\n'+
+                       '(alternatively you can enter the code via http://showtimeIP:42000/ as dropbox:auth:CodeFromDropbox'
 
             while (1) {
                 var result = showtime.textDialog(msg, true, true);
@@ -48,24 +77,25 @@
                     return;
                 }
                 try {
-                doc = showtime.httpReq("https://api.dropbox.com/1/oauth2/token", {
-                    postdata: {
-                        'grant_type': 'authorization_code',
-                        'code': result.input,
-                        'client_id': OAUTH_CONSUMER_KEY,
-                        'client_secret': OAUTH_CONSUMER_SECRET
-                    }
-                });
+                    page.loading = true;
+                    doc = showtime.httpReq("https://api.dropbox.com/1/oauth2/token", {
+                        postdata: {
+                            'grant_type': 'authorization_code',
+                            'code': result.input,
+                            'client_id': OAUTH_CONSUMER_KEY,
+                            'client_secret': OAUTH_CONSUMER_SECRET
+                        }
+                    });
+                    page.loading = false;
                 } catch (err) {
                     showtime.notify("Wrong code, please try again...", 5, '');
                     continue;
                 }
-
                 var json = showtime.JSONDecode(doc);
-                    if (json.access_token) {
-                        store.access_token = json.access_token;
-                        break;
-                    }
+                if (json.access_token) {
+                    store.access_token = json.access_token;
+                    break;
+                }
             }
         }
 
