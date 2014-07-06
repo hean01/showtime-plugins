@@ -1,0 +1,13 @@
+{
+	"description": "<p>yts.re – Here you will be able to browse and download movies in excellent DVD, 720p, 1080p and 3D quality, all at the smallest file size<p>For additional info, visit <a href=\"http://yts.re\">http://yts.re</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "yts.re",
+	"synopsis": "yts.re – Here you will be able to browse and download movies in excellent DVD, 720p, 1080p and 3D quality, all at the smallest file size",
+	"version": "0.1", "file": "yts.js",
+	"showtimeVersion": "4.7.90",
+	"type": "javascript", 
+	"id": "yts.re",
+	"icon": "logo.png",
+	"category": "video"
+}
