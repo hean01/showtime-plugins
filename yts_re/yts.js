@@ -60,36 +60,40 @@
         }
     });
 
-    plugin.addURI(PREFIX + ":trailer:(.*)", function(page, url) {
-        setPageHeader(page, '');
+    plugin.addURI(PREFIX + ":trailer:(.*):(.*)", function(page, url, title) {
+        setPageHeader(page, unescape(title));
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString();
-        doc = unescape(doc.match(/"url_encoded_fmt_stream_map":([\s\S]*?):/)[1]);
-        showtime.print(doc);
-        var re = /url=([\s\S]*?)\,/g;
+        doc = doc.match(/"url_encoded_fmt_stream_map": "([\s\S]*?):/);
+        if (!doc) {
+            page.error('Video is not available :(');
+            return;
+        }
+        doc = doc[1].replace(/\"/g,'');
+        var re = /([\s\S]*?)\,/g;
         var match = re.exec(doc);
+        var link, type, quality;
         while (match) {
-//            showtime.print(match);
-            page.appendItem(unescape(match[1]), "video", {
-                title: 'Trailer'
+            var block = match[1] + '\\';
+            link = "videoparams:" + showtime.JSONEncode({
+                title: unescape(title),
+                sources: [{
+                    url: unescape(block).match(/url=([\s\S]*?)\\/)[1]
+                }]
             });
+            type = unescape(block).replace(/\\/g,';').match(/type=video\/([\s\S]*?);/)[1];
+            quality = block.match(/quality=([\s\S]*?)\\/)[1];
+            //if (type == 'mp4') {
+                page.appendItem(link, "video", {
+                    title: type + ' ' + quality
+                });
+            //};
+            //if (type == 'mp4') break;
             match = re.exec(doc);
         }
-                page.loading = false;
-return;
         page.loading = false;
-            if (match) {
-                page.type = "video";
-                page.source = "videoparams:" + showtime.JSONEncode({
-//                    title: unescape(title),
-                    sources: [{
-                        url: "hls:" + match[1].replace(/\\\//g, '/')
-                    }]
-                });
-            } else
-                 page.error("Sorry, can't get channel's link :(");
-
-
+        //page.type = 'video';
+        //page.source = link;
     });
 
     plugin.addURI(PREFIX + ":movie:(.*)", function(page, id) {
@@ -115,7 +119,7 @@ return;
                    coloredStr(' Size: ', orange) + json.Size +
                    coloredStr('<br>Description: ', orange) + json.LongDescription)
         });
-        page.appendItem(PREFIX+':trailer:'+json.YoutubeTrailerUrl, "video", {
+        page.appendItem(PREFIX+':trailer:'+json.YoutubeTrailerUrl+':'+escape(json.MovieTitleClean), "video", {
             title: 'Trailer'
         });
         page.appendItem(json.LargeCover, "image", {
@@ -205,6 +209,14 @@ return;
         page.loading = false;
         page.paginator = loader;
     }
+
+
+    plugin.addURI(PREFIX + ":list:(.*)", function(page, query) {
+        setPageHeader(page, 'Filter by: ' + unescape(query));
+        browseItems(page, {
+            keywords: query
+        });
+    });
 
     plugin.addURI(PREFIX + ":genre:(.*)", function(page, genre) {
         setPageHeader(page, genre);
