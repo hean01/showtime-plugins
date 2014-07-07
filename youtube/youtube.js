@@ -1561,118 +1561,6 @@
         page.loading = false;
     });
 
-    function getVideoUrlMap(pl_obj, video, title) {
-                var links = [];
-                if (!video) video = {};
-                video["url_map"] = "true";
-               
-                var html = "";
-                if (pl_obj["args"] && pl_obj["args"]["fmt_stream_map"])
-                        html = pl_obj["args"]["fmt_stream_map"];
-               
-                if (html.length == 0 && pl_obj["args"] && pl_obj["args"]["url_encoded_fmt_stream_map"])
-                        html = unescape(pl_obj["args"]["url_encoded_fmt_stream_map"]);
-                
-                if (html.length == 0 && pl_obj["args"] && pl_obj["args"]["fmt_url_map"])
-                        html = pl_obj["args"]["fmt_url_map"];
-               
-                html = unescape(html);
-               
-                if (pl_obj["args"] && pl_obj["args"]["liveplayback_module"])
-                        video["live_play"] = "true";
-
-                var fmt_url_map = [];
-                var init = "";
-
-                html = html.replace(/sig=/g, "signature=");
-
-                if (html.indexOf("url=") > -1) {
-                    html = html.replace(/\?/g, "&");
-
-                    init = html.slice(0, html.indexOf("=")) + "=";
-                    var regex = new RegExp("," + init, "g");
-                    html = html.replace(regex, "?" + init);
-                    fmt_url_map = html.split("?");
-                }
-                else if (pl_obj["args"]["hlsvp"]) {
-                    return [{
-                            video_url: escape(pl_obj["args"]["hlsvp"]),
-                            quality: "480p",
-                            format: "hls",
-                            title: title
-                        }
-                    ];
-                }
-                else {
-                    debug("Unsupported method of getting video... Contact the developer.");
-                    return "Unsupported method of getting video... Contact the developer.";
-                }
-               
-                if (fmt_url_map.length > 0) {
-                    for (var index in fmt_url_map) {
-                        var fmt_url = fmt_url_map[index];
-
-                        var object = argsToObject(fmt_url);
-                        var url = object["url"];
-                        delete object["url"];
-
-                        fmt_url = url + "?" + objectToArgs(object);
-
-                        if (service.video_source == "fallback") {
-                            var host = url.slice(url.indexOf("://") + 3, url.indexOf("/", url.indexOf("://") + 3));
-                            var fmt_fallback = object["fallback_host"];
-                            fmt_url = fmt_url.replace(host, fmt_fallback);
-                            fmt_url = fmt_url.replace("fallback_host=" + fmt_fallback, "fallback_host=" + host);
-                        }
-
-                        var quality = "5";
-                        fmt_url = fmt_url.replace(" ", "%20").replace("url=", "");
-                                        
-                        quality = object["quality"];
-                        if (quality == "highres") quality = "hd720";
-
-                        if (fmt_url.indexOf("rtmp") > -1 && index > 0) {
-                            if (pl_obj["url"] || true)
-                                fmt_url += " swfurl=" + pl_obj["url"] + " swfvfy=1";
-
-                            var playpath = false;
-                            if (fmt_url.indexOf("stream=") > -1) {
-                                playpath = fmt_url.slice(fmt_url.indexOf("stream=")+7);
-                                if (playpath.indexOf("&") > -1)
-                                    playpath = playpath.slice(0, playpath.indexOf("&"));
-                            }
-                            else
-                                playpath = fmt_url_map[index - 1];
-
-                            if (playpath) {
-                                if (pl_obj["args"] && pl_obj["args"]["ptk"] && pl_obj["args"] && pl_obj["args"]["ptchn"])
-                                    fmt_url += " playpath=" + playpath + "?ptchn=" + pl_obj["args"]["ptchn"] + "&ptk=" + pl_obj["args"]["ptk"];
-                            }
-                        }
-
-                        var format = fmt_url.match('type=video/([^&|;|\\u0026]+)');
-                        if (format)
-                            format = format[1];
-                        else
-                            format = "Unknown";
-
-                        // Bypass any video in webm format, not supportable by Showtime
-                        if (format == "webm")
-                            continue;
-
-                        var video_item = {
-                            video_url: escape(fmt_url),
-                            quality: quality,
-                            format: format,
-                            title: title
-                        };
-                        links.push(video_item);
-                    }
-                }
-               
-                return links;
-    }
-
     function getUrlVars(url) {
         var hash, json = {}, hashes = url.split(/\&|%26|%3F/);
         for (var i = 0; i < hashes.length; i++) {
@@ -1801,7 +1689,7 @@
                 //showtime.print(json.assets.js); // player
                 var format;
                 if (url_data.type)
-                    format = url_data.type.match('video/([^&|;|\\u0026]+)');
+                    format = unescape(url_data.type).match('video/([^&|;|\\u0026]+)');
                 if (format)
                     format = format[1];
                 else
