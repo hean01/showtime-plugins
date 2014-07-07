@@ -1,0 +1,13 @@
+{
+	"description": "<p>Dropbox is a free service that lets you bring your photos, docs, and videos anywhere and share them easily. Never email yourself a file again!<p>For additional info, visit <a href=\"http://dropbox.com\">http://dropbox.com</a>",
+	"author": "lprot",
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "Dropbox",
+	"synopsis": "Dropbox – Your stuff, anywhere",
+	"version": "0.3", "file": "dropbox.js",
+	"showtimeVersion": "3.1.163",
+	"type": "javascript",
+	"id": "dropbox",
+	"icon": "logo.png",
+	"category": "video"
+}

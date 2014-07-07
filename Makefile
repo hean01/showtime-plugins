@@ -24,7 +24,8 @@ PLUGINS= \
 	kordonivkakino.zip \
         ingfilm.zip \
         oll_tv.zip \
-        yts_re.zip
+        yts_re.zip \
+        dropbox.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
