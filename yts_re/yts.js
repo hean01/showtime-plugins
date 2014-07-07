@@ -244,7 +244,7 @@
                     quality: '1080p',
                     limit: 40,
                     set: offset,
-                    sort: 'rating'
+                    sort: 'seeds'
                 }, query]
             }));
 

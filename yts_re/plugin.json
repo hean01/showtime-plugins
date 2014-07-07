@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "yts.re",
 	"synopsis": "yts.re – Here you will be able to browse and download movies in excellent DVD, 720p, 1080p and 3D quality, all at the smallest file size",
-	"version": "0.1.4", "file": "yts.js",
+	"version": "0.1.5", "file": "yts.js",
 	"showtimeVersion": "4.7.90",
 	"type": "javascript", 
 	"id": "yts.re",
