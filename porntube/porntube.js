@@ -313,7 +313,7 @@
             match = re.exec(v);
         }
         page.loading = true;
-	var v = showtime.httpReq('http://tkn.porntube.com/'+v.match(/data-id="([\d^]+)"/)[1]+'/desktop/'+maxRes, {
+	var v = showtime.httpReq('http://tkn.porntube.com/'+v.match(/button data-id="([\d^]+)"/)[1]+'/desktop/'+maxRes, {
 		'method' : 'POST',
 		'headers': { 'Host': 'tkn.porntube.com', 'Origin': BASE_URL,
 			'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36' }
