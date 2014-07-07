@@ -1718,11 +1718,11 @@
             age = true;
             doc = showtime.httpReq('http://www.youtube.com/get_video_info', {
                 args: {
-                   'video_id': video_id,
+                   'video_id': id,
                    'el': 'player_embedded',
                    'gl': 'US',
                    'hl': 'en',
-                   'eurl': 'https://youtube.googleapis.com/v/' + video_id,
+                   'eurl': 'https://youtube.googleapis.com/v/' + id,
                    'asv': 3,
                    'sts':'1588'
                 }
@@ -1774,7 +1774,7 @@
         //
         //        var links = getVideoUrlMap(player_object["PLAYER_CONFIG"], video, title);
         var links = [];
-        if (json.args.hlsvp) {
+        if (json.args && json.args.hlsvp) {
            var video_item = {
                video_url: escape(json.args.hlsvp),
                quality: "480p",

@@ -1,10 +1,10 @@
 {
 	"description": "<p>The best resource available on the Internet for Video sharing.<p>", 
-	"author": "F\u00e1bio Ferreira (facanferff)", 
+	"author": "F\u00e1bio Ferreira (facanferff), lprot",
 	"homepage": "https://github.com/facanferff/showtime-plugin-youtube", 
 	"title": "Youtube", 
 	"synopsis": "Youtube: Video Sharing service", 
-	"version": "2.2.9",
+	"version": "2.2.10",
 	"file": "youtube.js", 
 	"showtimeVersion": "4.3.248", 
 	"type": "javascript", 

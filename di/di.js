@@ -17,24 +17,34 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 (function(plugin) {
-    var BASE_URL = 'http://www.di.fm';
-    var PREFIX = 'di:';
+    var pInfo = plugin.getDescriptor();
+    var PREFIX = pInfo.id;
     var logo = plugin.path + 'di_square.png';
+    var BASE_URL = 'http://www.di.fm';
 
-    plugin.createService('Digitally Imported', PREFIX + 'start', 'audio', true, logo);
+    plugin.createService(pInfo.title, PREFIX + ':start', 'audio', true, logo);
 
     // Start page
-    plugin.addURI(PREFIX + 'start', function(page) {
+    plugin.addURI(PREFIX + ':start', function(page) {
+showtime.print(pInfo.id);
+showtime.print(pInfo.logo);
 	page.type = 'directory';
 	page.metadata.glwview = plugin.path + 'views/array.view';
 	page.contents = 'items';
 	page.metadata.logo = logo;
-	page.metadata.title = 'Digitally Imported';
+	page.metadata.title = pInfo.title;
         page.loading = true;
 	var doc = showtime.httpReq(BASE_URL).toString().match(/\.Channels([\S\s]*?)<\/script>/)[1];
         page.loading = false;
+
+        var json = doc.match(/NS\(\'AudioAddict\'\)\.Channels = ([\s\S]*?)<\/script>/);
+        if (json) {
+showtime.print('ssss')        ;
+            json = showtime.JSONDecode(json[1]);
+            showtime.print(showtime.JSONEncode(json));
+        }
+
 	// 1-description, 2-key, 3-title, 4-icon
         var re = /"description_short":"(.*?)"[\S\s]*?"key":"(.*?)"[\S\s]*?"name":"(.*?)"[\S\s]*?"default":"(.*?)\{/g;
         var match = re.exec(doc);
@@ -43,8 +53,8 @@
 		station: match[3],
 		title: match[3],
 		description: match[1],
-		icon: match[4]+'.jpg?size=150x150',
-		album_art: match[4]+'.jpg?size=150x150',
+		icon: match[4].substr(0, 4) == 'http' ? match[4] : 'http:' + match[4]+'.jpg?size=150x150',
+		album_art: match[4].substr(0, 4) == 'http' ? match[4] : 'http:' + match[4]+'.jpg?size=150x150',
 		album: ''
 	    });
 	    match = re.exec(doc);
