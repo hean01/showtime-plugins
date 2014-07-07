@@ -27,37 +27,25 @@
 
     // Start page
     plugin.addURI(PREFIX + ':start', function(page) {
-showtime.print(pInfo.id);
-showtime.print(pInfo.logo);
 	page.type = 'directory';
 	page.metadata.glwview = plugin.path + 'views/array.view';
 	page.contents = 'items';
 	page.metadata.logo = logo;
 	page.metadata.title = pInfo.title;
         page.loading = true;
-	var doc = showtime.httpReq(BASE_URL).toString().match(/\.Channels([\S\s]*?)<\/script>/)[1];
+	var doc = showtime.httpReq(BASE_URL).toString().match(/\.Channels = ([\S\s]*?)<\/script>/)[1];
         page.loading = false;
-
-        var json = doc.match(/NS\(\'AudioAddict\'\)\.Channels = ([\s\S]*?)<\/script>/);
-        if (json) {
-showtime.print('ssss')        ;
-            json = showtime.JSONDecode(json[1]);
-            showtime.print(showtime.JSONEncode(json));
-        }
-
-	// 1-description, 2-key, 3-title, 4-icon
-        var re = /"description_short":"(.*?)"[\S\s]*?"key":"(.*?)"[\S\s]*?"name":"(.*?)"[\S\s]*?"default":"(.*?)\{/g;
-        var match = re.exec(doc);
-        while (match) {
-	    page.appendItem('icecast:http://listen.di.fm/public3/'+match[2]+'.pls', 'station', {
-		station: match[3],
-		title: match[3],
-		description: match[1],
-		icon: match[4].substr(0, 4) == 'http' ? match[4] : 'http:' + match[4]+'.jpg?size=150x150',
-		album_art: match[4].substr(0, 4) == 'http' ? match[4] : 'http:' + match[4]+'.jpg?size=150x150',
+        var json = showtime.JSONDecode(doc);
+        for (var i in json) {
+            var icon = json[i].images.default.match(/(^[^\{]*)/)[1];
+	    page.appendItem('icecast:http://listen.di.fm/public3/'+ json[i].key + '.pls', 'station', {
+		station: json[i].name,
+		title: json[i].name,
+		description: json[i].description_short,
+		icon: icon.substr(0, 4) == 'http' ? icon : 'http:' + icon + '.jpg?size=150x150',
+		album_art: icon.substr(0, 4) == 'http' ? icon : 'http:' + icon + '.jpg?size=150x150',
 		album: ''
 	    });
-	    match = re.exec(doc);
 	};
     });
 })(this);
