@@ -21,6 +21,12 @@
     var logo = plugin.path + 'logo.png';
     var doc, slogan = 'Your stuff, anywhere';
 
+    var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
+
+    function colorStr(str, color) {
+        return '<font color="' + color + '"> (' + str + ')</font>';
+    }
+
     plugin.createService('Dropbox', 'dropbox:browse:/', 'other', true, logo);
   
     var store = plugin.createStore('authinfo', true);
@@ -108,7 +114,7 @@
             return;
         }
         var title = doc.path.split('/')
-        page.metadata.title = title.length ? title[title.length-1] : "Dropbox Root";
+        page.metadata.title = doc.path != '/' ? title[title.length-1] : "Dropbox Root";
 
         for (var i = 0; i < doc.contents.length; i++) {
             var item = doc.contents[i];
@@ -116,13 +122,13 @@
             title = title[title.length-1];
             if (item.is_dir) {
                 page.appendItem("dropbox:browse:" + showtime.pathEscape(item.path), "directory", {
-                    title: title
+                    title: new showtime.RichText(title + colorStr(item.modified.replace(/ \+0000/, ''), orange))
 	        });
             } else {
                 var url = "https://api-content.dropbox.com/1/files/dropbox" + showtime.pathEscape(item.path) + '?access_token='+store.access_token;
                 var type = item.mime_type.split('/')[0];
 	        page.appendItem(url, type, {
-	            title: title
+	            title: new showtime.RichText(title + colorStr(item.size, blue) + ' ' + item.modified.replace( /\+0000/, ''))
 	        });
             }
         }
