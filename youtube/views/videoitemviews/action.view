@@ -1,0 +1,36 @@
+#import "common.view"
+
+widget(container_y, {
+	widget(label, {
+		TextStyleItem();
+		.caption = $page.model.metadata.actions_title;
+		.sizeScale = 2.1;
+	});
+	
+	widget(list_x, {
+		&clone.focused = focusedChild();
+		$view.change = changed($clone.focused, 1);
+		cloner($page.model.actions, container_z, {
+			.hidden = ($self.metadata.hidden);
+			.focusable = true;
+			.padding = $ui.size;
+			widget(image, {
+				.source = $self.metadata.image;
+				.alpha = 0.6 + 0.4 * isFocused();
+			});
+			
+			widget(label, {
+				.caption = $self.metadata.title;
+				.align = bottom;
+				TextStyleItem();
+				.sizeScale = 1.4;
+			});
+			
+			onEvent(activate,
+				translate($self.type, void,
+				"pageevent", deliverEvent($page.eventSink, $self.data),
+				"navopen", navOpen($self.data)
+			));
+		});
+	});
+});

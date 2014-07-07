@@ -1,0 +1,31 @@
+#import "common.view"
+
+widget(container_y, {
+	widget(label, {
+		TextStyleItem();
+		caption: $self.metadata.title;
+		color: 0.7;
+		maxlines: 10;
+		align:left;
+		//size: 20;
+		.sizeScale = 1.4;
+	});
+
+	widget(container_x, {
+		widget(list_y, {
+			.id = "bodytext";
+
+			widget(label, {
+			TextStyleItem();
+			caption: $self.data;
+			maxlines: 50;
+			//align:justified;
+			//size: 20;
+			bold: true;
+			.sizeScale = 1.2;
+		});
+	});
+
+	LIST_Y_SLIDER("bodytext", true);
+	});
+});

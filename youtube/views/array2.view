@@ -1,0 +1,116 @@
+#import "common.view"
+
+$view.showFilter = $page.model.filter && 1;
+
+widget(container_y, {
+	// Top Bar
+	widget(loader, {
+		.source = "header.view";
+	});
+
+	widget(container_x, {
+		widget(dummy, { .width = 2; });
+
+		widget(keyintercept, {
+			bind($page.model.filter);
+			.enabled = $page.model.canFilter;
+      
+			widget(container_y, {
+				.filterConstraintX = true;
+	
+				widget(expander_y, {
+					.filterConstraintX = true;
+
+					.expansion = scurve($view.showFilter, 0.25);
+					.alpha     = scurve($view.showFilter, 0.25);
+	  
+					widget(container_x, {
+						widget(backdrop, {
+							.filterConstraintX = true;
+							.color = [0.3, 0.3, 0.3];
+							PLATE_GFX();
+							widget(container_x, {
+		
+								widget(label, {
+									.caption = "Filter: ";
+								});
+		
+								widget(label, {
+									.caption = $page.model.filter;
+								});
+      						});
+						});
+					});
+				});
+
+	
+				widget(array, {
+					$view.sizer = int(getWidth() / 100);
+
+					&clone.focused = focusedChild();
+					.id = "array";
+					.border = $view.sizer * 3;
+					.Xspacing = $view.sizer;
+					.Yspacing = $view.sizer;
+					.childTilesX = 5;
+					.childTilesY = 3;
+	  
+					cloner($page.model.nodes, displacement, {
+						onEvent(activate, select($ui.fancyAnimations,
+							navOpen($self.url, void, $self, $parent.model),
+							navOpen($self.url, void, void, $parent.model)));
+
+						widget(frontdrop, {
+							source: "itemviews/img/boxart-overlay.png";
+							automargin: true;
+							childAspect: 0.7;
+							border: 8;
+							margin: -6;
+							focusable: true;
+							onEvent(activate, navOpen($self.url));
+							color: iir(isFocused(), 4);
+			
+							widget(container_z, {
+								widget(image, {
+									height: $ui.size * 8;
+									source: $self.metadata.icon ?? "img/nophoto.bmp";
+									color: iir(isFocused(), 4) + 0.4;
+									saturation: 1 - iir(isReady(), 10);
+								});
+
+								widget(container_y, {
+									filterConstraintX: true;
+									space(6);
+
+									widget(container_z, {
+										widget(quad, {
+											color: 0;
+											alpha: 0.75;
+										});
+
+										widget(container_y, {
+											align: center;
+											padding: [$ui.size/2, 0];
+											widget(label, {
+												color: iir(isFocused(), 4) + 0.3;
+												caption: $self.metadata.title;
+												align: center;
+												shadow: true;
+												outline: true;
+												font: "theme://fonts/OpenSans-CondBold.ttf";
+											});
+										});
+									});
+								});
+							});
+						});
+					});
+				});	  
+			});
+		});
+
+		widget(dummy, { .width = 2; });
+		LIST_Y_SLIDER("array");
+		widget(dummy, { .width = 2; });
+	});
+});

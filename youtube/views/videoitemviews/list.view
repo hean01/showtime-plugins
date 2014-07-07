@@ -1,0 +1,107 @@
+#import "common.view"
+
+widget(container_y, {
+	widget(label, {
+		TextStyleItem();
+		.focusable = ($self.metadata.focusable);
+		onEvent(activate, navOpen($self.metadata.url));
+		.caption = $self.metadata.title;
+		//.size = 31;
+		.sizeScale = 2.1;
+		.color = 0.6 + 0.4 * isFocused();
+	});
+	
+	widget(list_x, {
+		.hidden = ($self.metadata.focusable);
+		&clone.focused = focusedChild();
+		$view.change = changed($clone.focused, 1);
+		spacing: 10;
+		cloner($self.data, displacement, {
+			/*.focusable = true;
+			.padding = $ui.size;
+			widget(image, {
+				.source = $self.image;
+				.alpha = 0.4 + 0.6 * isFocused();
+			});
+			
+			widget(label, {
+				.caption = $self.title;
+				.align = bottom;
+				TextStyleItem();
+				//.size = 15;
+				.sizeScale = 1.3;
+			});
+			
+			//onEvent(activate, navOpen($self.url));
+			onEvent(activate, translate($self.mode, navOpen($self.url),
+				"event", deliverEvent($self.eventSink, $self.url)));*/
+
+				widget(frontdrop, {
+source: "img/boxart-overlay.png";
+automargin: true;
+childAspect: 0.7;
+border: 8;
+margin: -6;
+focusable: true;
+onEvent(activate, navOpen($self.url));
+color: iir(isFocused(), 4);
+			
+			widget(container_z, {
+				widget(image, {
+					height: $ui.size * 8;
+					source: $self.image;
+					color: iir(isFocused(), 4) + 0.4;
+					saturation: 1 - iir(isReady(), 10);
+				});
+
+				widget(container_y, {
+					filterConstraintX: true;
+					space(6);
+
+					widget(container_z, {
+						widget(quad, {
+							color: 0;
+							alpha: 0.75;
+						});
+
+						widget(container_y, {
+							align: center;
+							padding: [$ui.size/2, 0];
+							widget(label, {
+								color: iir(isFocused(), 4) + 0.3;
+								caption: $self.title;
+								align: center;
+								shadow: true;
+								outline: true;
+								font: "theme://fonts/OpenSans-CondBold.ttf";
+							});
+						});
+					});
+
+					widget(container_z, {
+						.hidden = !($self.subtitle);
+
+						widget(quad, {
+							color: 0;
+							alpha: 0.75;
+						});
+
+						widget(container_y, {
+							align: center;
+							padding: [$ui.size/2, 0];
+							widget(label, {
+								color: iir(isFocused(), 4) + 0.3;
+								caption: $self.subtitle;
+								align: center;
+								shadow: true;
+								outline: true;
+								font: "theme://fonts/OpenSans-CondBold.ttf";
+							});
+						});
+					});
+				});
+			});
+		});
+		});
+	});
+});

@@ -1,0 +1,62 @@
+#import "common.view"
+
+widget(container_y, {
+	.height = $ui.size * 15;
+	widget(label, {
+		TextStyleItem();
+		.caption = $self.metadata.title;
+		.sizeScale = 2.1;
+		.color = 0.6 + 0.4 * isFocused();
+	});
+	
+	widget(list_x, {
+		&clone.focused = focusedChild();
+		spacing: 10;
+		cloner($self.data, displacement, {
+			widget(frontdrop, {
+				source: "img/boxart-overlay.png";
+				automargin: true;
+				childAspect: 0.7;
+				border: 8;
+				margin: -6;
+				focusable: true;
+				onEvent(activate, navOpen($self.url));
+				color: iir(isFocused(), 4);
+			
+				widget(container_z, {
+					widget(image, {
+						height: $ui.size * 8;
+						source: $self.image ?? "img/nophoto.bmp";
+						color: iir(isFocused(), 4) + 0.4;
+						saturation: 1 - iir(isReady(), 10);
+					});
+
+					widget(container_y, {
+						filterConstraintX: true;
+						space(6);
+
+						widget(container_z, {
+							widget(quad, {
+								color: 0;
+								alpha: 0.75;
+							});
+
+							widget(container_y, {
+								align: center;
+								padding: [$ui.size/2, 0];
+								widget(label, {
+									color: iir(isFocused(), 4) + 0.3;
+									caption: $self.title;
+									align: center;
+									shadow: true;
+									outline: true;
+									font: "theme://fonts/OpenSans-CondBold.ttf";
+								});
+							});
+						});
+					});
+				});
+			});
+		});
+	});
+});
