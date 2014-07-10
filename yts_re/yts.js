@@ -60,37 +60,96 @@
         }
     });
 
+    function getUrlVars(url) {
+        var hash, json = {}, hashes = url.split(/\&|%26|%3F/);
+        for (var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split(/\=|%3D/);
+            json[hash[0]] = hash[1];
+        }
+        return json;
+    }
+
+    function getMaps(url) {
+        var hash, json = {}, hashes = url.split(/\&/);
+        for (var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split(/\=/);
+            json[hash[0]] = hash[1];
+        }
+        return json;
+    }
+
     plugin.addURI(PREFIX + ":trailer:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
-        var doc = showtime.httpReq(unescape(url)).toString();
-        doc = doc.match(/"url_encoded_fmt_stream_map": "([\s\S]*?):/);
-        if (!doc) {
-            page.error('Video is not available :(');
-            return;
+        var video_id = unescape(url).match(/watch\?v=(.*)/)[1];
+
+        function unroll(a, age) {
+            if (age)
+                return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
+            a = a.split("");
+            var b = a[0];
+            a[0] = a[37%a.length];
+            a[37] = b;
+            a = a.reverse();
+            a = a.slice(1);
+            return a.join("")
         }
-        doc = doc[1].replace(/\"/g,'');
-        var re = /([\s\S]*?)\,/g;
-        var match = re.exec(doc);
-        var link, type, quality;
-        while (match) {
-            var block = match[1] + '\\';
-            link = "videoparams:" + showtime.JSONEncode({
-                title: unescape(title),
-                sources: [{
-                    url: unescape(block).match(/url=([\s\S]*?)\\/)[1]
-                }]
-            });
-            type = unescape(block).replace(/\\/g,';').match(/type=video\/([\s\S]*?);/)[1];
-            quality = block.match(/quality=([\s\S]*?)\\/)[1];
-            //if (type == 'mp4') {
-                page.appendItem(link, "video", {
-                    title: type + ' ' + quality
+        var doc = showtime.httpReq(unescape(url)).toString();
+        var encoded_url_map = '';
+
+        var json = showtime.JSONDecode(doc.match(/;ytplayer\.config\s*=\s*({.*?});/)[1]);
+        if (json.args.url_encoded_fmt_stream_map)
+            encoded_url_map = json.args.url_encoded_fmt_stream_map
+        if (json.args.adaptive_fmts) encoded_url_map += ',' + json.args.adaptive_fmts;
+
+        var age = false;
+        if (doc.match(/player-age-gate-content">/)) {
+            age = true;
+            doc = showtime.httpReq('http://www.youtube.com/get_video_info', {
+                args: {
+                   'video_id': video_id,
+                   'el': 'player_embedded',
+                   'gl': 'US',
+                   'hl': 'en',
+                   'eurl': 'https://youtube.googleapis.com/v/' + video_id,
+                   'asv': 3,
+                   'sts':'1588'
+                }
+            }).toString();
+            json = getMaps(doc);
+            encoded_url_map = unescape(json.url_encoded_fmt_stream_map) + ',' + unescape(json.adaptive_fmts);
+        }
+        encoded_url_map = encoded_url_map.split(',');
+        for (url_data_str in encoded_url_map) {
+            var url_data = getUrlVars(encoded_url_map[url_data_str]);
+            var realUrl = url_data.url + '?', first = true;
+            for (i in url_data) {
+                 if (i != 'url' && i != 's' && i != 'sig') {
+                    if (!first)
+                        realUrl+= '&' + i + '=' + url_data[i];
+                    else {
+                        first = false;
+                        realUrl+= i + '=' + url_data[i];
+                    }
+                 }
+            }
+            if (url_data.s) realUrl += '&signature=' + unroll(url_data.s, age);
+            if (url_data.sig) realUrl += '&signature=' + unroll(url_data.sig, age);
+            //showtime.print(json.assets.js); // player
+                page.appendItem(unescape(realUrl), "video", {
+                    title: new showtime.RichText(colorStr(url_data.itag, blue) + ' ' + unescape(url_data.type).replace(';+codecs',''))
                 });
+
+        }
+            //link = "videoparams:" + showtime.JSONEncode({
+            //    title: unescape(title),
+            //    sources: [{
+            //        url: realUrl
+            //    }]
+            //});
             //};
             //if (type == 'mp4') break;
-            match = re.exec(doc);
-        }
+        //}
         page.loading = false;
         //page.type = 'video';
         //page.source = link;
