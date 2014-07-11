@@ -145,7 +145,7 @@
                 if (url_data.s) realUrl += '&signature=' + eval(fnName + '(url_data.s)');
                 if (url_data.sig) realUrl += '&signature=' + eval(fnName + '(url_data.sig)');
             }
-            page.appendItem(unescape(realUrl), "video", {
+            page.appendItem(unescape(realUrl), unescape(url_data.type).match(/audio/) ? 'audio' : 'video', {
                 title: new showtime.RichText(colorStr(url_data.itag, blue) + ' ' + unescape(url_data.type).replace(';+codecs',''))
             });
         }
@@ -186,7 +186,7 @@
                    coloredStr(' Size: ', orange) + json.Size +
                    coloredStr('<br>Description: ', orange) + json.LongDescription)
         });
-        page.appendItem(PREFIX+':trailer:'+json.YoutubeTrailerUrl+':'+escape(json.MovieTitleClean), "video", {
+        page.appendItem(PREFIX+':trailer:'+escape(json.YoutubeTrailerUrl)+':'+escape(json.MovieTitleClean), "video", {
             title: 'Trailer'
         });
         page.appendItem(json.LargeCover, "image", {
