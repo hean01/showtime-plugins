@@ -1579,17 +1579,7 @@
         return json;
     }
 
-    function unroll(a, age) {
-        if (age)
-           return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
-        a = a.split("");
-        var b = a[0];
-        a[0] = a[37%a.length];
-        a[37] = b;
-        a = a.reverse();
-        a = a.slice(1);
-        return a.join("")
-    }
+    var player = '', fnName, fn;
 
     function getVideosList(page, id, number_items) {
         var doc = showtime.httpReq('http://www.youtube.com/watch?v='+id, {}, {
@@ -1597,7 +1587,7 @@
         }).toString();
 
         var encoded_url_map = '';
-        var json = showtime.JSONDecode(doc.match(/;ytplayer\.config\s*=\s*({.*?});/)[1]);
+        var json = showtime.JSONDecode(doc.match(/;ytplayer\.config\s*=\s*(\{.*?\});/)[1]);
         if (json.args.url_encoded_fmt_stream_map)
             encoded_url_map = json.args.url_encoded_fmt_stream_map
         if (json.args.adaptive_fmts) encoded_url_map += ',' + json.args.adaptive_fmts;
@@ -1619,6 +1609,10 @@
             encoded_url_map = unescape(json.url_encoded_fmt_stream_map) + ',' + unescape(json.adaptive_fmts);
         }
         encoded_url_map = encoded_url_map.split(',');
+
+        function unage(a) {
+            return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
+        }
 
         //if (data.indexOf('player" class="unavailable-player">') != -1) {
         //    data = data.slice(data.indexOf('player" class="unavailable-player">'));
@@ -1684,9 +1678,24 @@
                         }
                      }
                 }
-                if (url_data.s) realUrl += '&signature=' + unroll(url_data.s, age);
-                if (url_data.sig) realUrl += '&signature=' + unroll(url_data.sig, age);
-                //showtime.print(json.assets.js); // player
+                if (age) {
+                    if (url_data.s) realUrl += '&signature=' + unage(url_data.s);
+                    if (url_data.sig) realUrl += '&signature=' + unage(url_data.sig);
+                } else {
+                    if (player != json.assets.js) {
+                        //showtime.print('player: '+ json.assets.js);
+                        var code = showtime.httpReq('http:'+json.assets.js).toString();
+                        fnName = code.match(/signature=([^(]*)/)[1];
+                        var re = new RegExp('function ' + fnName + '\\(([^}]*)');
+                        fn = 'function ' + fnName + '(' + re.exec(code)[1] + '}';
+                        player = json.assets.js;
+                    }
+                    //showtime.print(fn);
+                    eval(fn);
+                    if (url_data.s) realUrl += '&signature=' + eval(fnName + '(url_data.s)');
+                    if (url_data.sig) realUrl += '&signature=' + eval(fnName + '(url_data.sig)');
+                }
+
                 var format;
                 if (url_data.type)
                     format = unescape(url_data.type).match('video/([^&|;|\\u0026]+)');

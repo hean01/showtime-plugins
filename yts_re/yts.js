@@ -78,40 +78,29 @@
         return json;
     }
 
+    var player = '', fnName, fn;
+
     plugin.addURI(PREFIX + ":trailer:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
-        var video_id = unescape(url).match(/watch\?v=(.*)/)[1];
 
-        function unroll(a, age) {
-            if (age)
-                return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
-            a = a.split("");
-            var b = a[0];
-            a[0] = a[37%a.length];
-            a[37] = b;
-            a = a.reverse();
-            a = a.slice(1);
-            return a.join("")
-        }
+        var id = unescape(url).match(/watch\?v=(.*)/)[1];
         var doc = showtime.httpReq(unescape(url)).toString();
         var encoded_url_map = '';
-
-        var json = showtime.JSONDecode(doc.match(/;ytplayer\.config\s*=\s*({.*?});/)[1]);
+        var json = showtime.JSONDecode(doc.match(/;ytplayer\.config\s*=\s*(\{.*?\});/)[1]);
         if (json.args.url_encoded_fmt_stream_map)
             encoded_url_map = json.args.url_encoded_fmt_stream_map
         if (json.args.adaptive_fmts) encoded_url_map += ',' + json.args.adaptive_fmts;
-
         var age = false;
         if (doc.match(/player-age-gate-content">/)) {
             age = true;
             doc = showtime.httpReq('http://www.youtube.com/get_video_info', {
                 args: {
-                   'video_id': video_id,
+                   'video_id': id,
                    'el': 'player_embedded',
                    'gl': 'US',
                    'hl': 'en',
-                   'eurl': 'https://youtube.googleapis.com/v/' + video_id,
+                   'eurl': 'https://youtube.googleapis.com/v/' + id,
                    'asv': 3,
                    'sts':'1588'
                 }
@@ -120,6 +109,11 @@
             encoded_url_map = unescape(json.url_encoded_fmt_stream_map) + ',' + unescape(json.adaptive_fmts);
         }
         encoded_url_map = encoded_url_map.split(',');
+
+        function unage(a) {
+            return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
+        }
+
         for (url_data_str in encoded_url_map) {
             var url_data = getUrlVars(encoded_url_map[url_data_str]);
             var realUrl = url_data.url + '?', first = true;
@@ -133,13 +127,27 @@
                     }
                  }
             }
-            if (url_data.s) realUrl += '&signature=' + unroll(url_data.s, age);
-            if (url_data.sig) realUrl += '&signature=' + unroll(url_data.sig, age);
-            //showtime.print(json.assets.js); // player
-                page.appendItem(unescape(realUrl), "video", {
-                    title: new showtime.RichText(colorStr(url_data.itag, blue) + ' ' + unescape(url_data.type).replace(';+codecs',''))
-                });
 
+            if (age) {
+                if (url_data.s) realUrl += '&signature=' + unage(url_data.s);
+                if (url_data.sig) realUrl += '&signature=' + unage(url_data.sig);
+            } else {
+                if (player != json.assets.js) {
+                    //showtime.print('player: '+ json.assets.js);
+                    var code = showtime.httpReq('http:'+json.assets.js).toString();
+                    fnName = code.match(/signature=([^(]*)/)[1];
+                    var re = new RegExp('function ' + fnName + '\\(([^}]*)');
+                    fn = 'function ' + fnName + '(' + re.exec(code)[1] + '}';
+                    player = json.assets.js;
+                }
+                //showtime.print(fn);
+                eval(fn);
+                if (url_data.s) realUrl += '&signature=' + eval(fnName + '(url_data.s)');
+                if (url_data.sig) realUrl += '&signature=' + eval(fnName + '(url_data.sig)');
+            }
+            page.appendItem(unescape(realUrl), "video", {
+                title: new showtime.RichText(colorStr(url_data.itag, blue) + ' ' + unescape(url_data.type).replace(';+codecs',''))
+            });
         }
             //link = "videoparams:" + showtime.JSONEncode({
             //    title: unescape(title),
@@ -148,7 +156,7 @@
             //    }]
             //});
             //};
-            //if (type == 'mp4') break;
+            //if (type == 'video/webm') continue;
         //}
         page.loading = false;
         //page.type = 'video';
