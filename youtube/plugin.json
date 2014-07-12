@@ -3,12 +3,12 @@
 	"author": "F\u00e1bio Ferreira (facanferff), lprot",
 	"homepage": "https://github.com/facanferff/showtime-plugin-youtube", 
 	"title": "Youtube", 
-	"synopsis": "Youtube: Video Sharing service", 
+	"synopsis": "Youtube: Broadcast Yourself",
 	"version": "2.2.13",
 	"file": "youtube.js", 
 	"showtimeVersion": "4.3.248", 
 	"type": "javascript", 
-	"id": "youtube", 
+	"id": "youtube2",
 	"icon": "logo.png", 
 	"category": "video"
 }
