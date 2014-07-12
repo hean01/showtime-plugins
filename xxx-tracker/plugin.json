@@ -1,0 +1,13 @@
+{
+	"description": "<p>XXX Трекер :: Порно Бесплатно и Без Регистрации!<p>Для дополнительной информации, посетите  <a href=\"http://xxx-tracker.com\">http://xxx-tracker.com</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "xxx-tracker.com",
+	"synopsis": "XXX Трекер :: Порно Бесплатно и Без Регистрации!",
+	"version": "0.1", "file": "xxx-tracker.js",
+	"showtimeVersion": "4.7.90",
+	"type": "javascript",
+	"icon": "logo.png",
+	"id": "xxx-tracker",
+	"category": "video"
+}

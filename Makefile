@@ -27,7 +27,8 @@ PLUGINS= \
         yts_re.zip \
         dropbox.zip \
         youtube.zip \
-	rutor.zip
+	rutor.zip \
+        xxx-tracker.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

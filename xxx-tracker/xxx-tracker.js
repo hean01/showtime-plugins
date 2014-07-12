@@ -1,5 +1,5 @@
 /**
- * rutor.org plugin for Showtime
+ * xxx-tracker.com plugin for Showtime
  *
  *  Copyright (C) 2014 lprot
  *
@@ -20,8 +20,7 @@
 (function(plugin) {
     var plugin_info = plugin.getDescriptor();
     var PREFIX = plugin_info.id;
-    //var BASE_URL = 'http://torrent-rutor.org';
-    var BASE_URL = 'http://torrent-rutor.org';
+    var BASE_URL = 'http://xxx-tracker.com';
     var logo = plugin.path + "logo.png";
     var slogan = plugin_info.synopsis;
 
@@ -52,7 +51,7 @@
         page.loading = true;
         var doc = showtime.httpReq(BASE_URL + '/top').toString();
         page.loading = false;
-        doc = doc.match(/<div id="index">([\s\S]*?)<!-- bottom banner -->/);
+        doc = doc.match(/<div id="index">([\s\S]*?)<\/div>/);
         if (doc) {
            var re = /<h2>([\s\S]*?)<\/h2>([\s\S]*?)<\/table>/g;
            var match = re.exec(doc[1]);
@@ -62,15 +61,15 @@
                });
                // 1-date, 2-filelink, 3-infolink, 4-title,
                // 5-(1)size, (2)seeds, (3)peers
-               var re2 = /<tr class="[gai|tum]+"><td>([\s\S]*?)<\/td>[\s\S]*?href="([\s\S]*?)"[\s\S]*?<a href[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>([\s\S]*?)<\/tr>/g;
+               var re2 = /<tr class="[gai|tum]+"><td>([\s\S]*?)<\/td>[\s\S]*?" href="([\s\S]*?)"[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>([\s\S]*?)<\/tr>/g;
                var match2 = re2.exec(match[2]);
                while (match2) {
-                   if (match2[5].match(/alt="C"/)) {
-                       var end = match2[5].match(/[\s\S]*?<td align="right">[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-                       var comments = match2[5].match(/[\s\S]*?<td align="right">([\s\S]*?)</)[1];
+                   if (match2[5].match(/alt="comment"/)) {
+                       var end = match2[5].match(/[\s\S]*?align="right">[\s\S]*?align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
+                       var comments = match2[5].match(/[\s\S]*?align="right">([\s\S]*?)</)[1];
                    } else
                        var end = match2[5].match(/[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-                   page.appendItem('torrent:video:'+match2[2], "directory", {
+                   page.appendItem('torrent:video:'+BASE_URL+match2[2], "directory", {
     	               title: new showtime.RichText(colorStr(match2[1], orange) + ' ' +
                            match2[4] + ' ('+ coloredStr(end[2], green) + '/'+
                            coloredStr(end[3], red) + ') ' + colorStr(end[1], blue) +
