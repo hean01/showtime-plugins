@@ -752,15 +752,17 @@
                                 }
                             }
                         }
-                        var title = '<font size="3" color="' + color + '">' + entry.title.$t + '</font>';
+                        //var title = '<font size="3" color="' + color + '">' + entry.title.$t + '</font>';
+                        var title = entry.title.$t;
                         if (metadata.duration)
-                            title += '<font size="3" color="6699CC"> (' + metadata.duration + ')</font>';
+                            //title += '<font size="3" color="6699CC"> (' + metadata.duration + ')</font>';
+                            title += '(' + metadata.duration + ')';
                         if (metadata.likesPercentage)
-                            metadata.likesPercentage_str = new showtime.RichText('<font size="3" color="99CC66"> ( ' + metadata.likesPercentage + '% )</font>');
+                            metadata.likesPercentage_str = new showtime.RichText('<font color="99CC66"> ( ' + metadata.likesPercentage + '% )</font>');
 
-                        metadata.title = new showtime.RichText(title);
+                        metadata.title = title;//new showtime.RichText(title);
 
-                        var subtitle1 = '<font size="2" color="66CCFF">';
+                        var subtitle1 = '<font color="66CCFF">';
                         if (metadata.views_str)
                             subtitle1 += 'Views: ' + metadata.views_str;
                         if (metadata.views_str && metadata.favorites)
@@ -779,7 +781,7 @@
                             dateInfo = 'Published ';
 
                             if (entry.author && entry.author[0].name) {
-                                dateInfo += 'by <font color="FFFF00">' + entry.author[0].name.$t + '</font><font size="2" color="99CC33"> ';
+                                dateInfo += 'by <font color="FFFF00">' + entry.author[0].name.$t + '</font><font color="99CC33"> ';
                             }
 
                             dateInfo += metadata.published;
@@ -803,8 +805,8 @@
                             lines += desc_split[i] + "\n";
                         }  
 
-                        metadata.description = new showtime.RichText(subtitle1 + "\n" + '<font size="2" color="99CC33">' + dateInfo + '</font>\n' +
-                            '<font size="2" color="EEEEEE">' + lines + '...' + '</font>');
+                        metadata.description = new showtime.RichText(subtitle1 + "\n" + '<font color="99CC33">' + dateInfo + '</font>\n' +
+                            '<font color="EEEEEE">' + lines + '...' + '</font>');
 
                         var images = [];
                         if (entry.media$group && entry.media$group.media$thumbnail) {
@@ -2177,10 +2179,9 @@
 
                         var playlistTitle = entry.snippet.title;
 
-                        var color = 'FFFFFF';
-                        var title = '<font size="3" color="' + color + '">' + playlistTitle + '</font>';
+                        var title = playlistTitle;
 
-                        metadata.title = new showtime.RichText(title);
+                        metadata.title = title;;
 
                         var desc = "";
                         if (entry.snippet.description) {
@@ -2193,7 +2194,7 @@
                             lines += desc_split[i] + "\n";
                         }  
 
-                        metadata.description = new showtime.RichText('<font size="2" color="EEEEEE">' + lines + '</font>');
+                        metadata.description = new showtime.RichText(lines);
 
                         var images = [];
                         images.push({
@@ -3075,7 +3076,7 @@
                     if (thumbnail.slice(0, 5) != "http:") thumbnail = "http:" + thumbnail;
                     var id = match3[1];
 
-                    var desc = '<font size="2" color="66CCFF">';
+                    var desc = '<font color="66CCFF">';
                     match3 = item.match(/<span class="video-view-count">(.+?) views.*<\/span>/);
                     desc += 'Views: ' + match3[1];
                     desc += '</font>';
@@ -3703,17 +3704,17 @@
                                 }
                             }
                         }*/
-                        var title = '<font size="3" color="' + color + '">' + videoTitle + '</font>';
+                        var title = videoTitle;
                         if (metadata.duration)
-                            title += '<font size="3" color="6699CC"> (' + metadata.duration + ')</font>';
+                            title += ' (' + metadata.duration + ')';
                         if (metadata.likesPercentage) {
-                            title += '<font size="3" color="99CC66"> ( ' + 
+                            title += '<font color="99CC66"> ( ' +
                             	metadata.likesPercentage + '% )</font>';
                         }
 
                         metadata.title = new showtime.RichText(title);
 
-                        var subtitle1 = '<font size="2" color="66CCFF">';
+                        var subtitle1 = '<font color="66CCFF">';
                         if (metadata.views)
                             subtitle1 += 'Views: ' + metadata.views;
                         if (metadata.views && metadata.favorites)
@@ -3732,7 +3733,7 @@
 
                             var author = entry.snippet.channelTitle;
                             if (author) {
-                                dateInfo += 'by <font color="FFFF00">' + author + '</font><font size="2" color="99CC33"> ';
+                                dateInfo += 'by <font color="FFFF00">' + author + '</font><font color="99CC33"> ';
                             }
 
                             dateInfo += metadata.published;
@@ -3756,9 +3757,9 @@
                             lines += desc_split[i] + "\n";
                         }  
 
-                        metadata.description = new showtime.RichText(subtitle1 + "\n" + '<font size="2" color="99CC33">' + 
+                        metadata.description = new showtime.RichText(subtitle1 + "\n" + '<font color="99CC33">' +
                         	dateInfo + '</font>\n' +
-                            '<font size="2" color="EEEEEE">' + lines + '...' + '</font>');
+                            '<font color="EEEEEE">' + lines + '...' + '</font>');
 
                         var images = [];
                         /*if (entry.media$group && entry.media$group.media$thumbnail) {
