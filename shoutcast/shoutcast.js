@@ -28,7 +28,7 @@
     function setPageHeader(page, title) {
         page.loading = false;
         if (page.metadata) {
-            page.metadata.title = title;
+            page.metadata.title = showtime.entityDecode(unescape(title));
             page.metadata.logo = logo;
         }
         page.type = "directory";
@@ -102,12 +102,12 @@
     });
 
     plugin.addURI(PREFIX + "genresearch:(.*):(.*)", function(page, id, title) {
-        setPageHeader(page, 'Shoutcast - ' + unescape(unescape(title)));
-        getStationsFromXML(page, BASE_URL+'/legacy/genresearch?k='+k+'&genre='+unescape(title).replace(/\s/g,'\+'));
+        setPageHeader(page, 'Shoutcast - ' + title);
+        getStationsFromXML(page, BASE_URL+'/legacy/genresearch?k='+k+'&genre='+showtime.entityDecode(unescape(title)).replace(/\s/g,'\+'));
     });
 
     plugin.addURI(PREFIX + "subgenre:(.*):(.*)", function(page, id, title) {
-        setPageHeader(page, 'Shoutcast - ' + unescape(title));
+        setPageHeader(page, 'Shoutcast - ' + title);
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL+'/genre/secondary?parentid='+id+'&k='+k+'&f=json').toString());
         page.loading = false;
@@ -116,7 +116,7 @@
         for (var i in json.response.data.genrelist.genre) {
             var genre = json.response.data.genrelist.genre[i];
 	    page.appendItem(PREFIX + "genresearch:"+genre.id+":"+escape(genre.name), "directory", {
-		title: genre.name
+		title: showtime.entityDecode(genre.name)
 	    });
         };
         }
@@ -132,7 +132,7 @@
         for (var i in json.response.data.genrelist.genre) {
             var genre = json.response.data.genrelist.genre[i];
             page.appendItem(PREFIX + (genre.haschildren ? 'subgenre:' : 'genresearch:') + genre.id+":"+escape(genre.name), "directory", {
-	        title: genre.name
+	        title: showtime.entityDecode(genre.name)
      	    });
         };
         getRandomStations(page);
