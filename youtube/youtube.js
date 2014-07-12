@@ -254,7 +254,7 @@
                 var title = obj.metadata.title;
                 title = title.replace(/<.+?>/g, "").replace(/\[.+?\]/g, "");
                 t("Search in Youtube: " + title);
-                nav.openURL(PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/videos?q=" + title));
+                nav.openURL(PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/videos?q=" + title)+':');
             }
         });
     }
@@ -269,7 +269,7 @@
         for (var i in api["standard_feeds"]) {
             var entry = api["standard_feeds"][i];
             standard_feeds.push({
-                url: PREFIX + ':feed:' + escape(entry[1]),
+                url: PREFIX + ':feed:' + escape(entry[1]) + ':' +escape('Standard Feeds'),
                 title: entry[0],
                 icon: entry[2]
             });
@@ -279,7 +279,7 @@
         for (var i in api["channel_feeds"]) {
             var entry = api["channel_feeds"][i];
             channel_feeds.push({
-                url: PREFIX + ':feed:' + escape(entry[1]),
+                url: PREFIX + ':feed:' + escape(entry[1])+ ':' +escape('Channel Feeds'),
                 title: entry[0],
                 icon: entry[2]
             });
@@ -394,12 +394,10 @@
             ];
         }
         else {
-            var screens = [
-                {
-                    image: "http://i.imgur.com/OaW6K.jpg",
-                    caption: "There was one error while trying to authenticate you. Try again later."
-                }
-            ];
+            var screens = [{
+                image: "http://i.imgur.com/OaW6K.jpg",
+                caption: "There was one error while trying to authenticate you. Try again later."
+            }];
         }
 
         page.metadata.screens = screens;
@@ -419,10 +417,30 @@
         page.subscribe("page.model.metadata.search", function(v) {
             page.metadata.search = v;
         });
-        page.appendAction("navopen", PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/videos?q=" + page.metadata.search), true, { title: "Search for Videos", icon: plugin.path + "views/img/search_videos.png", hidden: true, search: true });
-        page.appendAction("navopen", PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/snippets?q=" + page.metadata.search), true, { title: "Search for Playlists", icon: plugin.path + "views/img/search_playlists.png", hidden: true, search: true });
-        page.appendAction("navopen", PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/channels?q=" + page.metadata.search), true, { title: "Search for Channels", icon: plugin.path + "views/img/search_channels.png", hidden: true, search: true });
-        page.appendAction("navopen", PREFIX + ":disco:" + escape(page.metadata.search)+':'+escape('Search for Disco'), true, { title: "Disco", icon: plugin.path + "views/img/logos/music.png", hidden: true, search: true });
+        page.appendAction("navopen", PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/videos?q=" + page.metadata.search), true, {
+            title: "Search for Videos",
+            icon: plugin.path + "views/img/search_videos.png",
+            hidden: true,
+            search: true
+        });
+        page.appendAction("navopen", PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/snippets?q=" + page.metadata.search), true, {
+            title: "Search for Playlists",
+            icon: plugin.path + "views/img/search_playlists.png",
+            hidden: true,
+            search: true
+        });
+        page.appendAction("navopen", PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/channels?q=" + page.metadata.search), true, {
+            title: "Search for Channels",
+            icon: plugin.path + "views/img/search_channels.png",
+            hidden: true,
+            search: true
+        });
+        page.appendAction("navopen", PREFIX + ":disco:" + escape(page.metadata.search)+':'+escape('Search for Disco: '), true, {
+            title: "Search for Disco",
+            icon: plugin.path + "views/img/logos/music.png",
+            hidden: true,
+            search: true
+        });
 
         page.metadata.glwview = plugin.path + "views/search.view";
 
@@ -459,7 +477,7 @@
         for (var i in edu_categories) {
             var entry = edu_categories[i];
             if (entry[1] == "All") continue;
-            page.appendItem(PREFIX + ':edu:category:' + entry[0], 'directory', {
+            page.appendItem(PREFIX + ':edu:category:' + entry[0] + ':' + title, 'directory', {
                 title: entry[1]
             })
         }
@@ -475,11 +493,11 @@
 
         pageMenu(page, null, null);
 
-        page.appendItem(PREFIX + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/courses?category=" + categoryId), 'directory', {
+        page.appendItem(PREFIX + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/courses?category=" + categoryId) + ':Courses', 'directory', {
             title: "Courses"
         })
 
-        page.appendItem(PREFIX + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/lectures?category=" + categoryId), 'directory', {
+        page.appendItem(PREFIX + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/lectures?category=" + categoryId) + ':Lectures', 'directory', {
             title: "Lectures"
         })
         
@@ -542,11 +560,11 @@
 
         pageMenu(page);
 		
-		//page.metadata.glwview = plugin.path + "views/array2.view";
+        //page.metadata.glwview = plugin.path + "views/array2.view";
     
         for (var i in api[type]) {
             var entry = api[type][i];
-            page.appendItem(PREFIX + ':feed:' + escape(entry[1]),"directory", {
+            page.appendItem(PREFIX + ':feed:' + escape(entry[1])+':'+escape(entry[0]),"directory", {
                 title: entry[0],
                 icon: entry[2]
             });
@@ -557,7 +575,8 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":feed:sort:(.*):(.*)", function(page, category, url) {
+    plugin.addURI(PREFIX + ":feed:sort:(.*):(.*):(.*)", function(page, category, url, title) {
+        page.metadata.title = unescape(title);
         page.type = "directory";
         page.contents = "contents";
         page.loading = false;
@@ -579,11 +598,14 @@
             res.args['orderby'] = value[1];
             var link_tmp = putUrlArgs(link, res.args);
 
-            page.appendItem(PREFIX + ':feed:' + escape(link_tmp),"directory", {title: value[0]});
+            page.appendItem(PREFIX + ':feed:' + escape(link_tmp) + ':'+escape(value[0]),"directory", {
+                title: value[0]
+            });
         }
     });
 
-    plugin.addURI(PREFIX + ":feed:duration:(.*)", function(page, url) {
+    plugin.addURI(PREFIX + ":feed:duration:(.*):(.*)", function(page, url, title) {
+        page.metadata.title = unescape(title);
         page.type = "directory";
         page.contents = "contents";
         page.loading = false;
@@ -602,18 +624,24 @@
         res.args['duration'] = 'long';
         var link_tmp3 = putUrlArgs(link, res.args);
 
-        page.appendItem(PREFIX + ':feed:' + escape(link_tmp1),"directory", {title: 'Short: Less than 4 minutes'});
-        page.appendItem(PREFIX + ':feed:' + escape(link_tmp2),"directory", {title: 'Medium: Between 4 minutes and 20 minutes (inclusive)'});
-        page.appendItem(PREFIX + ':feed:' + escape(link_tmp3),"directory", {title: 'Long: Longer than 20 minutes'});
+        page.appendItem(PREFIX + ':feed:' + escape(link_tmp1)+':'+escape('Short: Less than 4 minutes'), "directory", {
+            title: 'Short: Less than 4 minutes'
+        });
+        page.appendItem(PREFIX + ':feed:' + escape(link_tmp2)+':'+escape('Medium: Between 4 minutes and 20 minutes (inclusive)'), "directory", {
+            title: 'Medium: Between 4 minutes and 20 minutes (inclusive)'
+        });
+        page.appendItem(PREFIX + ':feed:' + escape(link_tmp3)+':'+escape('Long: Longer than 20 minutes'), "directory", {
+            title: 'Long: Longer than 20 minutes'
+        });
     });
   
     function pageController(page, loader) {
         items = [];
         items_tmp = [];
-		if (page.metadata) {
-		    page.metadata.apiAuthenticated = apiV3.auth.authenticated;
-		    pageMenu(page, page.items);
-		}
+	if (page.metadata) {
+	    page.metadata.apiAuthenticated = apiV3.auth.authenticated;
+	    pageMenu(page, page.items);
+	}
 
         page.contents = 'list';
         var offset = 1;
@@ -726,7 +754,7 @@
                         }
                         var title = '<font size="3" color="' + color + '">' + entry.title.$t + '</font>';
                         if (metadata.duration)
-                            title += '<font size="3" color="6699CC"> ( ' + metadata.duration + ' )</font>';
+                            title += '<font size="3" color="6699CC"> (' + metadata.duration + ')</font>';
                         if (metadata.likesPercentage)
                             metadata.likesPercentage_str = new showtime.RichText('<font size="3" color="99CC66"> ( ' + metadata.likesPercentage + '% )</font>');
 
@@ -814,7 +842,7 @@
                         }
                         else if (entry.category[0].term == "http://gdata.youtube.com/schemas/2007#course") {
                             var match = entry.id.$t.match(":course:([^:]*)")[1];
-                            var item = page.appendItem(PREFIX + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/lectures?course=" + match), "directory", metadata);
+                            var item = page.appendItem(PREFIX + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/lectures?course=" + match)+':'+escape(title), "directory", metadata);
                         }
                         else if (doc.id.$t.toString().indexOf('charts:movies') != -1) {
                             
@@ -843,9 +871,9 @@
 
                                 metadata.title = "Season " + entry.yt$season.season + ' - ' + title;
 
-                                var item = page.appendItem(PREFIX + ':feed:' + escape(link.href), "directory", metadata);
+                                var item = page.appendItem(PREFIX + ':feed:' + escape(link.href) + ':' + escape(metadata.title), "directory", metadata);
 
-                                item.appendItem = "page.appendItem(PREFIX + ':feed:' + escape(link.href), \"directory\", metadata);";
+                                item.appendItem = "page.appendItem(PREFIX + ':feed:' + escape(link.href) + ':' + escape(title), \"directory\", metadata);";
                             }
                         }
                         else if (entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#video' ||
@@ -887,10 +915,10 @@
                         entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#show' ||
                         entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#season') {
                             url = entry.content.src;
-                            var item = page.appendItem(PREFIX + ':feed:' + escape(url), "directory", metadata);
+                            var item = page.appendItem(PREFIX + ':feed:' + escape(url)+':'+escape(title), "directory", metadata);
                         }
                         else if (entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#channel') {
-                            var item = page.appendItem(PREFIX + ':feed:' + escape(entry.gd$feedLink[0].href), "directory", metadata);
+                            var item = page.appendItem(PREFIX + ':feed:' + escape(entry.gd$feedLink[0].href)+':'+escape(title), "directory", metadata);
                         }
                         else if (entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#channelstandard') {
                             var icon = eval('(entry.media$group)?entry.media$group.media$thumbnail[0].url:null');
@@ -939,9 +967,13 @@
     }
   
     plugin.addURI(PREFIX + ":feed:(.*)", function(page, url) {
+        page.redirect(PREFIX + ":feed:"+url+':'+escape('Search results:'));
+    });
+
+    plugin.addURI(PREFIX + ":feed:(.*):(.*)", function(page, url, title) {
+        page.metadata.title = new showtime.RichText(unescape(title));
         page.type = "directory";
         page.contents = "items";
-
         var sort_included = false;
         var duration_included = false;
 
@@ -1010,12 +1042,14 @@
                 country = doc.headers['X-GData-User-Country'];
 
                 doc = doc.response;
-                if (doc.feed.title) {
-                    page.metadata.title = doc.feed.title.$t;
-                }
+                //if (doc.feed.title) {
+                //    page.metadata.title = doc.feed.title.$t;
+                //}
 
                 if (!duration_included) {
-                    page.appendItem(PREFIX + ':feed:duration:' + escape(link),"directory", {title: "Filter by duration"});
+                    page.appendItem(PREFIX + ':feed:duration:' + escape(link)+':'+escape('Filter by duration'), "directory", {
+                        title: "Filter by duration"}
+                    );
                     duration_included = true;
                 }
 
@@ -1138,7 +1172,7 @@
                             "subrequest": "list"
                         }
                     };
-                    args.url = PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args1))+':'+escape('Playlist');
+                    args.url = PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args1))+':'+escape(it.snippet.title);
                 }
                 else if (it.kind == "youtube#subscription" && it.snippet.resourceId.kind == "youtube#channel")
                     args.url = PREFIX + ":user:" + it.snippet.resourceId.channelId;
@@ -1150,7 +1184,6 @@
                 showtime.trace(ex.stack, "YOUTUBE-ERROR");
             }
         }
-
         return arr;
     }
 
@@ -1215,22 +1248,20 @@
         page.metadata.logo = data.items[0].snippet.thumbnails.default.url;
 
         if (apiV3.auth.authenticated && user != 'default') {
-			if (!hasSubscribed(channelId)) {
-        		var subscribeButton = page.appendAction("pageevent", "subscribeUser", false, {
-      				title: "Subscribe User" 
-    			});
+   	    if (!hasSubscribed(channelId)) {
+                var subscribeButton = page.appendAction("pageevent", "subscribeUser", false, {
+      		    title: "Subscribe User"
+    		});
 
-    			page.onEvent('subscribeUser', function() {
-      				p("Subscribe: " + channelId);
-      				var data = apiV3.subscriptions.insert(channelId);
-      				if (!data.error && data.response.snippet.resourceId.channelId == channelId) {
-      					showtime.notify("Subscribed to user succesfully", 2);
-      				}
-      				else {
-      					showtime.notify("Failed to subscribed to user", 2);
-      				}
-    			});
-    		}
+    		page.onEvent('subscribeUser', function() {
+      		    p("Subscribe: " + channelId);
+      		    var data = apiV3.subscriptions.insert(channelId);
+      			if (!data.error && data.response.snippet.resourceId.channelId == channelId) {
+      		   	    showtime.notify("Subscribed to user succesfully", 2);
+      			} else
+                            showtime.notify("Failed to subscribed to user", 2);
+                });
+    	    }
         }
 
         var lists_tmp = {};
@@ -1279,7 +1310,7 @@
                     newSubscriptionVideos.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/newsubscriptionvideos')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/newsubscriptionvideos')+':'+escape('See More')
                     });
 
                     if (user == "default") page.appendPassiveItem("list", newSubscriptionVideos, { title: "New Subscription Videos" });
@@ -1290,7 +1321,6 @@
                 }
             }
         }
-
 
         if (service.showFavorites) {
             try {
@@ -1307,7 +1337,7 @@
                     favorites.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/favorites')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/favorites')+':'+escape('See More')
                     });
 
                     if (user == "default") page.appendPassiveItem("list", favorites, { title: "Favorites" });
@@ -1324,7 +1354,6 @@
             }
         }
 
-
         if (user == "default") {
             if (service.showWatchLater) {
                 var data = apiV3.playlistItems.list({
@@ -1340,7 +1369,7 @@
                     watchLater.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_later')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_later')+':'+escape('See More')
                     });
 
                     if (user == "default") page.appendPassiveItem("list", watchLater, { title: "Watch Later" });
@@ -1365,7 +1394,7 @@
                     watchHistory.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_history')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_history')+':'+escape('See More')
                     });
 
                     if (user == "default") page.appendPassiveItem("list", watchHistory, { title: "Watch History" });
@@ -1390,7 +1419,7 @@
                     likes.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/" + likesPlaylistId)
+                        url: PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/" + likesPlaylistId)+':'+escape('See More')
                     });
 
                     if (user == "default") page.appendPassiveItem("list", watchLater, { title: "Likes" });
@@ -1416,7 +1445,7 @@
                     subscriptions.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/subscriptions')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/subscriptions')+':'+escape('See More')
                     });
 
                     if (user == "default") page.appendPassiveItem("list", subscriptions, { title: "Subscriptions" });
@@ -1427,7 +1456,6 @@
                 }
             }
         }
-
 
         if (service.showPlaylists) {
             try {
@@ -1444,7 +1472,7 @@
                     playlists.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/playlists')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/playlists')+':'+escape('See More')
                     });
 
                     if (user == "default") page.appendPassiveItem("list", playlists, { title: "Playlists" });
@@ -1505,7 +1533,7 @@
                     videoRecommendations.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/recommendations')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/recommendations')+':'+escape('See More')
                     });
 
                     if (user == "default") page.appendPassiveItem("list", videoRecommendations, { title: "Video Recommendations" });
@@ -1517,7 +1545,6 @@
             }
         }
 
-            
         if (service.showUploads) {
             var data = apiV3.playlistItems.list({
                 "part": "id,snippet",
@@ -1532,7 +1559,7 @@
                 uploads.push({
                     title: "See More",
                     image: plugin.path + "views/img/add.png",
-                    url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/uploads')
+                    url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/uploads')+':'+escape('See More')
                 });
 
                 if (user == "default") page.appendPassiveItem("list", uploads, { title: "Uploads" });
@@ -1987,13 +2014,13 @@
                 }
 
                 if (feed.rel == "http://gdata.youtube.com/schemas/2007#video.trailers") {
-                    page.appendAction("navopen", PREFIX + ':feed:' + escape(feed.href), true, {      
+                    page.appendAction("navopen", PREFIX + ':feed:' + escape(feed.href)+':Trailers', true, {
                         title: 'Trailers'
                     });
                     extras.push({
                         title: 'Trailers',
                         image: plugin.path + "views/img/logos/trailers.png",
-                        url: PREFIX + ':feed:' + escape(feed.href)
+                        url: PREFIX + ':feed:' + escape(feed.href)+':Trailers'
                     });
                 }
             }
@@ -2020,13 +2047,13 @@
             for (var i in video.link) {
                 var link = video.link[i];
                 if (link.rel == 'http://gdata.youtube.com/schemas/2007#video.responses') {
-                    page.appendAction("navopen", PREFIX + ':feed:'+escape('https://gdata.youtube.com/feeds/api/videos/'+id+'/responses'), true, {                  
+                    page.appendAction("navopen", PREFIX + ':feed:'+escape('https://gdata.youtube.com/feeds/api/videos/'+id+'/responses')+':'+escape('Response videos'), true, {
                         title: 'Response videos'          
                     });
                     extras.push({
                         title: 'Responses',
                         image: plugin.path + "views/img/nophoto.bmp",
-                        url: PREFIX + ':feed:'+escape('https://gdata.youtube.com/feeds/api/videos/'+id+'/responses')
+                        url: PREFIX + ':feed:'+escape('https://gdata.youtube.com/feeds/api/videos/'+id+'/responses')+':Responses'
                     });
                 }
             }
@@ -2115,15 +2142,15 @@
                 var data = loader(nextPageToken);
 
                 if (data.nextPageToken)
-                	nextPageToken = data.nextPageToken;
+                    nextPageToken = data.nextPageToken;
 
                 if (data.pageInfo) {
-                	page.entries = data.pageInfo.totalResults;
-                	total_items += data.pageInfo.resultsPerPage;
+                    page.entries = data.pageInfo.totalResults;
+                    total_items += data.pageInfo.resultsPerPage;
                 }
                 else {
-                	page.entries = 1;
-                	total_items = 1;
+                    page.entries = 1;
+                    total_items = 1;
                 }
 
                 if (page.entries < max_items)
@@ -2244,8 +2271,8 @@
 
     function getCatList(link) {
         var atom = new Namespace("http://www.w3.org/2005/Atom");
-
-        showtime.print(link);
+        if (service.enableDebug)
+            showtime.print(link);
       
         var data = new XML(valid_xml(showtime.httpGet(link).toString()));
         var list = [];
@@ -2885,11 +2912,11 @@
             var link = entry.link[i];
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.related") {
-                item.addOptURL("Related", PREFIX + ':feed:' + escape(link.href));
+                item.addOptURL("Related", PREFIX + ':feed:' + escape(link.href)+':Related');
             }
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.responses") {
-                item.addOptURL("Responses", PREFIX + ':feed:' + escape(link.href));
+                item.addOptURL("Responses", PREFIX + ':feed:' + escape(link.href)+':Responses');
             }
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.trailer-for") {
@@ -2900,15 +2927,15 @@
             }
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.trailers") {
-                item.addOptURL("Trailers", PREFIX + ':feed:' + escape(link.href));
+                item.addOptURL("Trailers", PREFIX + ':feed:' + escape(link.href)+':Trailers');
             }
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.show") {
-                item.addOptURL("Redirect to Show", PREFIX + ':feed:' + escape(link.href + "/content"));
+                item.addOptURL("Redirect to Show", PREFIX + ':feed:' + escape(link.href + "/content")+':'+escape('Redirect to Show'));
             }
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.season") {
-                item.addOptURL("Redirect to Season", PREFIX + ':feed:' + escape(link.href + "/episodes"));
+                item.addOptURL("Redirect to Season", PREFIX + ':feed:' + escape(link.href + "/episodes")+':'+escape('Redirect to Season'));
             }
         }
     }
@@ -3481,33 +3508,6 @@
                 item.addOptURL("Add to Playlist", PREFIX + ':playlist:add:' + escape(showtime.JSONEncode(args)));
             }
         }
-
-        /*for (var i in entry.link) {
-            var link = entry.link[i];
-
-            if (link.rel == "http://gdata.youtube.com/schemas/2007#video.responses") {
-                item.addOptURL("Responses", PREFIX + ':feed:' + escape(link.href));
-            }
-
-            if (link.rel == "http://gdata.youtube.com/schemas/2007#video.trailer-for") {
-                var match = link.href.match('videos/([^?]*)');
-                if (match) {
-                    item.addOptURL("Redirect to Movie", PREFIX + ':video:' + escape(match[1]));
-                }
-            }
-
-            if (link.rel == "http://gdata.youtube.com/schemas/2007#video.trailers") {
-                item.addOptURL("Trailers", PREFIX + ':feed:' + escape(link.href));
-            }
-
-            if (link.rel == "http://gdata.youtube.com/schemas/2007#video.show") {
-                item.addOptURL("Redirect to Show", PREFIX + ':feed:' + escape(link.href + "/content"));
-            }
-
-            if (link.rel == "http://gdata.youtube.com/schemas/2007#video.season") {
-                item.addOptURL("Redirect to Season", PREFIX + ':feed:' + escape(link.href + "/episodes"));
-            }
-        }*/
     }
 
     function addVideoItem(page, entry, metadata) {
@@ -3705,7 +3705,7 @@
                         }*/
                         var title = '<font size="3" color="' + color + '">' + videoTitle + '</font>';
                         if (metadata.duration)
-                            title += '<font size="3" color="6699CC"> ( ' + metadata.duration + ' )</font>';
+                            title += '<font size="3" color="6699CC"> (' + metadata.duration + ')</font>';
                         if (metadata.likesPercentage) {
                             title += '<font size="3" color="99CC66"> ( ' + 
                             	metadata.likesPercentage + '% )</font>';
@@ -3789,7 +3789,7 @@
                     		var channelTitle = entry.snippet.channelTitle;
                         	var params = entry.contentDetails[type];
                         	if (type == "upload") {
-                        		metadata.title = "[UPLOAD] " + title;
+                                    metadata.title = "[UPLOAD] " + title;
                                 var item = addVideoItem(page, {
                                     videoId: params.videoId,
                                     channelId: entry.snippet.channelId
@@ -3798,7 +3798,7 @@
                         	else if (type == "like") {
                         		var resourceId = entry.contentDetails[type].resourceId.kind;
                         		if (resourceId == "youtube#video") {
-                        			metadata.title = "[VIDEO LIKE] " + title;
+                                            metadata.title = "[VIDEO LIKE] " + title;
                                     var item = addVideoItem(page, {
                                         videoId: params.resourceId.videoId,
                                         channelId: entry.snippet.channelId
@@ -3808,7 +3808,7 @@
                         	else if (type == "favorite") {
                         		var resourceId = entry.contentDetails[type].resourceId.kind;
                         		if (resourceId == "youtube#video") {
-                        			metadata.title = "[VIDEO FAVORITE] " + title;
+                                            metadata.title = "[VIDEO FAVORITE] " + title;
                                     var item = addVideoItem(page, {
                                         videoId: params.resourceId.videoId,
                                         channelId: entry.snippet.channelId
@@ -3818,7 +3818,7 @@
                         	else if (type == "recommendation") {
                         		var resourceId = entry.contentDetails[type].resourceId.kind;
                         		if (resourceId == "youtube#video") {
-									metadata.title = "[VIDEO RECOMMENDATION] " + title;
+                                            metadata.title = "[VIDEO RECOMMENDATION] " + title;
                                     var item = addVideoItem(page, {
                                         videoId: params.resourceId.videoId,
                                         channelId: entry.snippet.channelId
@@ -3966,8 +3966,12 @@
                 api.args_common['start-index'] = offset;
                 api.args_common.q = escape(query);
 
-                page.appendItem(PREFIX + ':feed:sort:' + escape("http://gdata.youtube.com/schemas/2007#video") + ':' + escape("https://gdata.youtube.com/feeds/api/videos/?q=" + query),"directory", {title: "Sort by..."});
-                page.appendItem(PREFIX + ':feed:duration:' + escape("https://gdata.youtube.com/feeds/api/videos/?q=" + query),"directory", {title: "Filter by duration"});
+                page.appendItem(PREFIX + ':feed:sort:' + escape("http://gdata.youtube.com/schemas/2007#video") + ':' + escape("https://gdata.youtube.com/feeds/api/videos/?q=" + query)+':'+escape('Sort by...'),"directory", {
+                    title: "Sort by..."
+                });
+                page.appendItem(PREFIX + ':feed:duration:' + escape("https://gdata.youtube.com/feeds/api/videos/?q=" + query)+':'+escape('Filter by duration'), "directory", {
+                    title: "Filter by duration"
+                });
 
                 return showtime.JSONDecode(showtime.httpGet("https://gdata.youtube.com/feeds/api/videos", 
                     api.args_common, api.headers_common).toString());
