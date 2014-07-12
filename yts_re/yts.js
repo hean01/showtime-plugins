@@ -78,7 +78,33 @@
         return json;
     }
 
-    var player = '', fnName, fn;
+    var player = '', fnName = '', fnText = '';
+
+    function unroll(age, url, a) {
+        if (age)
+            return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
+        if (player != url) {
+            //showtime.print('player: '+ url);
+            var code = showtime.httpReq('http:'+url).toString();
+            player = url;
+            fnName = code.match(/signature=([^(]*)/)[1];
+            var re = new RegExp('function ' + fnName + '\\(([^}]*)');
+            fnText = 'function ' + fnName + '(' + re.exec(code)[1] + '}';
+            var re = /=([^\(]*)/g;
+            var match = re.exec(fnText);
+            var prev = '';
+            while (match) {
+                if (!match[1].match(/\./) && fnText.search('function '+match[1]) == -1) {
+                    var re2 = new RegExp('function ' + match[1] + '\\(([^}]*)');
+                    fnText = 'function ' + match[1] + '(' + re2.exec(code)[1] + '};' + fnText;
+                }
+                match = re.exec(fnText);
+            }
+        }
+        //showtime.print(fnText);
+        eval(fnText);
+        return eval(fnName + '(a)');
+    }
 
     plugin.addURI(PREFIX + ":trailer:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
@@ -86,6 +112,11 @@
 
         var id = unescape(url).match(/watch\?v=(.*)/)[1];
         var doc = showtime.httpReq(unescape(url)).toString();
+
+        var titleMatch = doc.match(/<meta property="og:title" content="(.+?)">/);
+        if (titleMatch)
+            var youtubeTitle = titleMatch[1];
+
         var encoded_url_map = '';
         var json = showtime.JSONDecode(doc.match(/;ytplayer\.config\s*=\s*(\{.*?\});/)[1]);
         if (json.args.url_encoded_fmt_stream_map)
@@ -110,10 +141,6 @@
         }
         encoded_url_map = encoded_url_map.split(',');
 
-        function unage(a) {
-            return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
-        }
-
         for (url_data_str in encoded_url_map) {
             var url_data = getUrlVars(encoded_url_map[url_data_str]);
             var realUrl = url_data.url + '?', first = true;
@@ -128,36 +155,20 @@
                  }
             }
 
-            if (age) {
-                if (url_data.s) realUrl += '&signature=' + unage(url_data.s);
-                if (url_data.sig) realUrl += '&signature=' + unage(url_data.sig);
-            } else {
-                if (player != json.assets.js) {
-                    //showtime.print('player: '+ json.assets.js);
-                    var code = showtime.httpReq('http:'+json.assets.js).toString();
-                    fnName = code.match(/signature=([^(]*)/)[1];
-                    var re = new RegExp('function ' + fnName + '\\(([^}]*)');
-                    fn = 'function ' + fnName + '(' + re.exec(code)[1] + '}';
-                    player = json.assets.js;
-                }
-                //showtime.print(fn);
-                eval(fn);
-                if (url_data.s) realUrl += '&signature=' + eval(fnName + '(url_data.s)');
-                if (url_data.sig) realUrl += '&signature=' + eval(fnName + '(url_data.sig)');
-            }
-            page.appendItem(unescape(realUrl), unescape(url_data.type).match(/audio/) ? 'audio' : 'video', {
+            if (url_data.s) realUrl += '&signature=' + unroll(age, json.assets ? json.assets.js : '', url_data.s);
+            if (url_data.sig) realUrl += '&signature=' + unroll(age, json.assets ? json.assets.js : '', url_data.sig);
+
+            var link = "videoparams:" + showtime.JSONEncode({
+                title: showtime.entityDecode(unescape(youtubeTitle)),
+                sources: [{
+                    url: unescape(realUrl)
+                }]
+            });
+
+            page.appendItem(link, unescape(url_data.type).match(/audio/) ? 'audio' : 'video', {
                 title: new showtime.RichText(colorStr(url_data.itag, blue) + ' ' + unescape(url_data.type).replace(';+codecs',''))
             });
         }
-            //link = "videoparams:" + showtime.JSONEncode({
-            //    title: unescape(title),
-            //    sources: [{
-            //        url: realUrl
-            //    }]
-            //});
-            //};
-            //if (type == 'video/webm') continue;
-        //}
         page.loading = false;
         //page.type = 'video';
         //page.source = link;
