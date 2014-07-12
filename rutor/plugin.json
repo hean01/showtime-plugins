@@ -1,0 +1,13 @@
+{
+	"description": "<p>rutor.org :: Свободный торрент трекер<p>Для дополнительной информации, посетите  <a href=\"http://rutor.org\">http://rutor.org</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "rutor.org",
+	"synopsis": "rutor.org :: Свободный торрент трекер",
+	"version": "0.1", "file": "rutor.js",
+	"showtimeVersion": "4.7.90",
+	"type": "javascript",
+	"icon": "logo.png",
+	"id": "rutor",
+	"category": "video"
+}
