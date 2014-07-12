@@ -8,7 +8,7 @@
 	"file": "youtube.js", 
 	"showtimeVersion": "4.3.248", 
 	"type": "javascript", 
-	"id": "youtube2",
+	"id": "youtube",
 	"icon": "logo.png", 
 	"category": "video"
 }

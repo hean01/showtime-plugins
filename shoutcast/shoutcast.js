@@ -101,9 +101,9 @@
         fill_fav(page);
     });
 
-    plugin.addURI(PREFIX + "listStations:(.*):(.*)", function(page, title, category) {
+    plugin.addURI(PREFIX + "genresearch:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, 'Shoutcast - ' + unescape(unescape(title)));
-        getStations(page, 'sub', '', category, '0');
+        getStationsFromXML(page, BASE_URL+'/legacy/genresearch?k='+k+'&genre='+unescape(title).replace(/\s/g,'\+'));
     });
 
     plugin.addURI(PREFIX + "subgenre:(.*):(.*)", function(page, id, title) {
@@ -115,7 +115,7 @@
         if (json.response.data.genrelist.genre) {
         for (var i in json.response.data.genrelist.genre) {
             var genre = json.response.data.genrelist.genre[i];
-	    page.appendItem(PREFIX + "subgenre:"+genre.id+":"+escape(genre.name), "directory", {
+	    page.appendItem(PREFIX + "genresearch:"+genre.id+":"+escape(genre.name), "directory", {
 		title: genre.name
 	    });
         };
@@ -131,9 +131,9 @@
 
         for (var i in json.response.data.genrelist.genre) {
             var genre = json.response.data.genrelist.genre[i];
-	    page.appendItem(PREFIX + "subgenre:"+genre.id+":"+escape(genre.name), "directory", {
-		title: genre.name
-	    });
+            page.appendItem(PREFIX + (genre.haschildren ? 'subgenre:' : 'genresearch:') + genre.id+":"+escape(genre.name), "directory", {
+	        title: genre.name
+     	    });
         };
         getRandomStations(page);
     });
