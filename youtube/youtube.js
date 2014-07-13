@@ -1620,7 +1620,7 @@
             fnName = code.match(/signature=([^(]*)/)[1];
             var re = new RegExp('function ' + fnName + '\\(([^}]*)');
             var fnText = 'function ' + fnName + '(' + re.exec(code)[1] + '}';
-            var outFn = fnText;
+            outFn = fnText;
             var re = /=([^\(]*)/g;
             var match = re.exec(fnText);
             //showtime.print(fnText);
@@ -1645,7 +1645,7 @@
                 match = re.exec(fnText);
             }
         }
-        showtime.print(outFn);
+        //showtime.print(outFn);
         var result;
         try {
             result = eval(outFn + fnName + '(a)');
