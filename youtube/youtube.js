@@ -1608,7 +1608,7 @@
         return json;
     }
 
-    var player = '', fnName = '', fnText = '';
+    var player = '', fnName = '', outFn = '';
 
     function unroll(age, url, a) {
         if (age)
@@ -1619,21 +1619,38 @@
             player = url;
             fnName = code.match(/signature=([^(]*)/)[1];
             var re = new RegExp('function ' + fnName + '\\(([^}]*)');
-            fnText = 'function ' + fnName + '(' + re.exec(code)[1] + '}';
+            var fnText = 'function ' + fnName + '(' + re.exec(code)[1] + '}';
+            var outFn = fnText;
             var re = /=([^\(]*)/g;
             var match = re.exec(fnText);
-            var prev = '';
+            //showtime.print(fnText);
             while (match) {
-                if (!match[1].match(/\./) && fnText.search('function '+match[1]) == -1) {
+                if (outFn.search('function '+match[1]+'\\(') == -1) { // check if we already included this function
                     var re2 = new RegExp('function ' + match[1] + '\\(([^}]*)');
-                    fnText = 'function ' + match[1] + '(' + re2.exec(code)[1] + '};' + fnText;
+                    var match2 = re2.exec(code);
+                    if (match2) {
+                      outFn = 'function ' + match[1] + '(' + match2[1] + '};' + outFn;
+                    } else { // look for vars
+                        var varName = match[1].substr(0, match[1].indexOf('.'));
+                        if (match[1].split('.').pop() != 'split')
+                        if (outFn.search('var '+varName+'=') == -1) { //check if we already included this var
+                            re2 = new RegExp('var ' + varName + '=([\\s\\S]*?)};');
+                            match2 = re2.exec(code);
+                            if (match2) {
+                                outFn = 'var ' + varName + '=' + match2[1] + '};' + outFn;
+                            }
+                        }
+                    }
                 }
                 match = re.exec(fnText);
             }
         }
-        //showtime.print(fnText);
-        eval(fnText);
-        return eval(fnName + '(a)');
+        showtime.print(outFn);
+        var result;
+        try {
+            result = eval(outFn + fnName + '(a)');
+        } catch (err) {};
+        return result;
     }
 
     function getVideosList(page, id, number_items) {
