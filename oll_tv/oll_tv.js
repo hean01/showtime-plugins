@@ -74,7 +74,7 @@
                     duration: json.items[j].duration != null ? showtime.durationToString(json.items[j].duration * 60) : '',
                     icon: unescape(json.items[j].src),
                     genre: unescape(json.items[j].genre),
-                    rating: unescape(json.items[j].rating)*10
+                    rating: unescape(json.items[j].rating)*20
                 });
                 page.entries++;
             };
@@ -93,10 +93,42 @@
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/getFilters?' + sn + '&cat_id=' + id));
         page.loading = false;
-        for (var i=0; json[0][i]; i++) {
-            page.appendItem(PREFIX + ':genre:' + id + ':' + json[0][i].equal + ':' + escape(json[0][i].name), 'directory', {
-                title: new showtime.RichText(json[0][i].name)
-            });
+        if (json[0]) {
+            for (var i=0; json[0][i]; i++) {
+                page.appendItem(PREFIX + ':genre:' + id + ':' + json[0][i].equal + ':' + escape(json[0][i].name), 'directory', {
+                    title: new showtime.RichText(json[0][i].name)
+                });
+            };
+        } else { // Process as a category
+            page.loading = true;
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/category?' + sn + '&id=' + id));
+            page.loading = false;
+            for (i in json) {
+               switch (json[i].block_type) {
+                   case 'navigation':
+                       break;
+                   default:
+                       page.appendItem("", "separator", {
+                           title: unescape(json[i].block_title)
+                       });
+                       for (var j = 0; j < json[i].items_number; j++) {
+                           if (!json[i].items[j]) continue;
+                           page.appendItem(PREFIX + ':index:' + json[i].items[j].id + ':' + escape(json[i].items[j].title), 'video', {
+                               title: new showtime.RichText((json[i].items[j].hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape(json[i].items[j].title)),
+                               description: new showtime.RichText(coloredStr('Страна: ', orange) + unescape(json[i].items[j].country) +
+                                   coloredStr('<br>Рейтинг: ', orange) + unescape(json[i].items[j].age_limit_name) +
+                                   (json[i].items[j].subs_type != 'undefined' ? coloredStr('<br>Субтитры: ', orange) + 'есть' : '') +
+                                   coloredStr('<br>Описание: ', orange) + unescape(json[i].items[j].descr)),
+                               year: +unescape(json[i].items[j].release_date),
+                               duration: json[i].items[j].duration != null ? showtime.durationToString(json[i].items[j].duration * 60) : '',
+                               icon: unescape(json[i].items[j].src),
+                               genre: unescape(json[i].items[j].genre),
+                               rating: unescape(json[i].items[j].rating)*20
+                           });
+                       };
+                       break;
+               };
+            };
         };
     });
 
@@ -159,7 +191,7 @@
                 duration: json.series[i].duration != null ? showtime.durationToString(json.series[i].duration * 60) : '',
                 icon: unescape(json.src),
                 genre: unescape(json.genre),
-                rating: unescape(json.rating)*10
+                rating: unescape(json.rating)*20
             });
         }
         page.loading = false;
@@ -181,7 +213,7 @@
                        duration: json.duration != null ? showtime.durationToString(json.duration * 60) : '',
                        icon: unescape(json.src),
                        genre: unescape(json.genre),
-                       rating: unescape(json.rating)*10
+                       rating: unescape(json.rating)*20
                    });
               }
               if (json.trailers) {
@@ -200,7 +232,7 @@
                       duration: json.series[j].duration != null ? showtime.durationToString(json.series[j].duration * 60) : '',
                       icon: unescape(json.src),
                       genre: unescape(json.genre),
-                      rating: unescape(json.rating)*10
+                      rating: unescape(json.rating)*20
                   });
               }
               if (json.trailers) {
@@ -218,7 +250,7 @@
                  duration: json.duration != null ? showtime.durationToString(json.duration * 60) : '',
                  icon: unescape(json.src),
                  genre: unescape(json.genre),
-                 rating: unescape(json.rating)*10
+                 rating: unescape(json.rating)*20
              });
              if (json.trailers) {
                  page.appendItem(PREFIX + ':play:' + json.trailers[0].id + ':' + json.trailers[0].title, 'video', {
@@ -268,7 +300,7 @@
                 duration: json.similar[i].duration != null ? showtime.durationToString(json.similar[i].duration * 60) : '',
                 icon: unescape(json.similar[i].src),
                 genre: unescape(json.similar[i].genre),
-                rating: unescape(json.similar[i].rating)*10
+                rating: unescape(json.similar[i].rating)*20
             });
         }
         page.loading = false;
@@ -292,7 +324,6 @@
                        title: unescape(json[i].block_title)
                    });
                    for (var j = 0; j < json[i].items_number; j++) {
-                       //if (json[i].items[j].cost) continue;
                        page.appendItem(PREFIX + ':index:' + json[i].items[j].id + ':' + escape(json[i].items[j].title), 'video', {
                            title: new showtime.RichText((json[i].items[j].hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape(json[i].items[j].title)),
                            description: new showtime.RichText(coloredStr('Страна: ', orange) + unescape(json[i].items[j].country) +
@@ -303,7 +334,7 @@
                            duration: json[i].items[j].duration != null ? showtime.durationToString(json[i].items[j].duration * 60) : '',
                            icon: unescape(json[i].items[j].src),
                            genre: unescape(json[i].items[j].genre),
-                           rating: unescape(json[i].items[j].rating)*10
+                           rating: unescape(json[i].items[j].rating)*20
                        });
                    };
                    break;
@@ -339,7 +370,7 @@
                     duration: json.items[j].duration != null ? showtime.durationToString(json.items[j].duration * 60) : '',
                     icon: unescape(json.items[j].src),
                     genre: unescape(json.items[j].genre),
-                    rating: unescape(json.items[j].rating)*10
+                    rating: unescape(json.items[j].rating)*20
                 });
                 page.entries++;
             };

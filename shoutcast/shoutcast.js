@@ -19,9 +19,11 @@
 
 
 (function(plugin) {
-    var BASE_URL = "http://www.shoutcast.com";
+    var plugin_info = plugin.getDescriptor();
+    var BASE_URL = "http://api.shoutcast.com";
     var PREFIX = "shoutcast:";
     var logo = plugin.path + "logo.png";
+    var k = 'sh1t7hyn3Kh0jhlV';
 
     function setPageHeader(page, title) {
         page.loading = false;
@@ -44,15 +46,15 @@
     if (!store.list) {
         store.version = "1";
         store.background = "";
-        store.title = "shoutcast » My Favorites";
+        store.title = "Shoutcast » My Favorites";
         store.list = "[]";
     }
 
     // create plugin service
-    plugin.createService("shoutcast", PREFIX + "start", "audio", true, logo);
+    plugin.createService(plugin_info.id, PREFIX + "start", "audio", true, logo);
 
     // create settings
-    var settings = plugin.createSettings("shoutcast", logo, "SHOUTcast Radio - Listen to Free Online Radio Stations");
+    var settings = plugin.createSettings(plugin_info.id, logo, plugin_info.synopsis);
 
     settings.createAction("cleanFavorites", "Clean My Favorites", function() {
         store.list = "[]";
@@ -65,7 +67,6 @@
 
     function fill_fav(page) {
 	var list = eval(store.list);
-
         if (!list || !list.toString()) {
            page.error("My Favorites list is empty");
            return;
@@ -73,11 +74,11 @@
 
         var pos = 0;
 	for (item in list) {
-	    var itemmd = showtime.JSONDecode(item);
+	    var itemmd = showtime.JSONDecode(list[item]);
 
 	    var item = page.appendItem(itemmd.url, "station", {
 		title: new showtime.RichText(itemmd.title),
-		station: itemmd.station
+                station: itemmd.station
 	    });
 
             item.addOptAction("Remove '" + itemmd.station + "' from My Favorites", pos);
@@ -105,114 +106,135 @@
         getStations(page, 'sub', '', category, '0');
     });
 
-    plugin.addURI(PREFIX + "subcategory:(.*):(.*):(.*)", function(page, title, subcat_list, category) {
+    plugin.addURI(PREFIX + "subgenre:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, 'Shoutcast - ' + unescape(title));
-
-        // 1-params, 2-title
-        var re = /<a href="([\S\s]*?)">([\S\s]*?)<\/a>/g;
-        var catlist = unescape(subcat_list);
-        var match = re.exec(catlist);
-        while (match) {
-	    var item = page.appendItem(PREFIX + "listStations:"+escape(match[2]) + ":" + escape(match[1].match(/\&cat=(.*)\#/)[1]), "directory", {
-		title: unescape(match[2])
-	    });
-            match = re.exec(catlist);
-        };
-        getStations(page, 'sub', '', category, '0');
-    });
-
-    plugin.addURI(PREFIX + "categories", function(page) {
-        setPageHeader(page, 'Shoutcast - Categories');
         page.loading = true;
-        var categories = showtime.httpReq(BASE_URL).toString();
+        var json = showtime.JSONDecode(showtime.httpReq(BASE_URL+'/genre/secondary?parentid='+id+'&k='+k+'&f=json').toString());
         page.loading = false;
 
-        // 1-params, 2-title, 3-submenu
-        var re = /class="files"><a href="([\S\s]*?)">([\S\s]*?)<\/a>[\S\s]*?<ul class="sub-menu">([\S\s]*?)<\/ul>/g;
-        var match = re.exec(categories);
-        while (match) {
-	    var item = page.appendItem(PREFIX + "subcategory:"+escape(match[2])+":"+escape(match[3])+":"+escape(match[1].match(/\&cat=(.*)\#/)[1]), "directory", {
-		title: unescape(match[2])
+        if (json.response.data.genrelist.genre) {
+        for (var i in json.response.data.genrelist.genre) {
+            var genre = json.response.data.genrelist.genre[i];
+	    page.appendItem(PREFIX + "subgenre:"+genre.id+":"+escape(genre.name), "directory", {
+		title: genre.name
 	    });
-            match = re.exec(categories);
         };
+        }
+        getRandomStations(page);
     });
 
-    function getStations(page, action, string, cat, cf_rc) {
-	var tryToSearch = true, fromPage = 1, itemsPerPage = 18;
-        // 1-link, 2-title, 3-genre, 4-listeners, 5-bitrate, 6-format
-        var re = /<a class="transition" href="([\S\s]*?)">([\S\s]*?)<\/a>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>[\S\s]*?<td width=[\S\s]*?>([\S\s]*?)<\/td>/g;
+    plugin.addURI(PREFIX + "genres", function(page) {
+        setPageHeader(page, 'Shoutcast - Genres');
+        page.loading = true;
+        var json = showtime.JSONDecode(showtime.httpReq(BASE_URL+'/genre/primary?k='+k+'&f=json').toString());
+        page.loading = false;
+
+        for (var i in json.response.data.genrelist.genre) {
+            var genre = json.response.data.genrelist.genre[i];
+	    page.appendItem(PREFIX + "subgenre:"+genre.id+":"+escape(genre.name), "directory", {
+		title: genre.name
+	    });
+        };
+        getRandomStations(page);
+    });
+
+    function getRandomStations(page) {
+        page.loading = true;
+        var xml = showtime.httpReq(BASE_URL+'/station/randomstations?k='+k+'&f=xml').toString();
+        page.loading = false;
+        // 1-title, 2-genre, 3-now playing, 4-format, 5-id, 6-bitrate, 7-listeners
+        var re = /<station name="([\s\S]*?)" genre="([\s\S]*?)" ct="([\s\S]*?)" mt="audio\/([\s\S]*?)" id="([\s\S]*?)" br="([\s\S]*?)" lc="([\s\S]*?)"/g;
+        var match = re.exec(xml);
+        while (match) {
+            var item = page.appendItem('icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id='+match[5], "station", {
+                title: new showtime.RichText(match[1]+colorStr(match[2], orange) +
+                    colorStr(match[7], orange)+colorStr(match[4]+' '+match[6], orange))
+            });
+            item.url = 'icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id='+match[3];
+            item.title = match[1]+colorStr(match[2], orange) +
+                         colorStr(match[7], orange)+colorStr(match[4]+' '+match[6], orange),
+            item.station = match[1];
+            item.onEvent("addFavorite", function(item) {
+                var entry = {
+                    url: this.url,
+                    title: this.title,
+                    station: this.station
+                };
+	        showtime.trace("item: "+showtime.JSONEncode(entry));
+                var list = eval(store.list);
+                var array = [showtime.JSONEncode(entry)].concat(list);
+                store.list = showtime.JSONEncode(array);
+                showtime.notify("'" + entry.station + "' has been added to My Favorites.", 2);
+            });
+	    item.addOptAction("Add '" + match[1] + "' to My Favorites", "addFavorite");
+            match = re.exec(xml);
+        };
+    };
+
+    function getStationsFromXML(page, url) {
+        page.entries = 0;
+	var tryToSearch = true, offset = 0;
 
         function loader() {
             if (!tryToSearch) return false;
-                page.loading = true;
-                var response = showtime.httpReq(BASE_URL + '/radiolist.cfm?action=' + action +
-                    '&string=' + string + '&cat=' + cat + '&start=' + fromPage +
-                    '&amount=' + itemsPerPage +
-                    '&order=listeners&_cf_containerId=radiolist&_cf_nodebug=true&_cf_nocache=true&_cf_rc=' + cf_rc).toString();
-                page.loading = false;
-                var match = re.exec(response);
-                while (match) {
-	              var item = page.appendItem("icecast:"+match[1], "station", {
-		          title: new showtime.RichText(unescape(match[2])+colorStr(match[3], orange)+
-                              colorStr(match[4], orange)+colorStr(match[6]+' '+match[5], orange)),
-		          station: unescape(match[2]),
-		          description: match[3],
-		          bitrate: match[5],
-		          format: match[6],
-		          listeners: match[4]
-	              });
-                      item.url = "icecast:"+match[1];
-	              item.title = unescape(match[2]) + colorStr(match[3], orange)+
-                              colorStr(match[6]+' '+match[5], orange);
-		      item.station = unescape(match[2]);
-	              item.onEvent("addFavorite", function(item) {
-		          var entry = {
-                               url: this.url,
-		               title: this.title,
-                               station: this.station
-		          };
-		          var list = eval(store.list);
-                          var array = [showtime.JSONEncode(entry)].concat(list);
-                          store.list = showtime.JSONEncode(array);
-		          showtime.notify("'" + entry.station + "' has been added to My Favorites.", 2);
-	              });
-	              item.addOptAction("Add '" + unescape(match[2]) + "' to My Favorites", "addFavorite");
-                      match = re.exec(response);
-                      page.entries++;
-                };
-                if (response.match(/class="more transition">Start again<\/a>/) ||
-                   !response.match(/class="more transition">/)) return tryToSearch = false;
-                fromPage += itemsPerPage;
-                return true;
+
+            page.loading = true;
+            var xml = showtime.httpReq(url+'&limit='+offset+','+20).toString();
+            // 1-title, 2-format, 3-id, 4-bitrate, 5-genre, 6-now playing, 7-listeners
+            var re = /<station name="([\s\S]*?)" mt="audio\/([\s\S]*?)" id="([\s\S]*?)" br="([\s\S]*?)" genre="([\s\S]*?)" ct="([\s\S]*?)" lc="([\s\S]*?)"/g;
+            page.loading = false;
+
+            var match = re.exec(xml);
+            if (!match) return tryToSearch = false;
+            while (match) {
+                  var item = page.appendItem('icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id='+match[3], "station", {
+                      title: new showtime.RichText(match[1]+colorStr(match[5], orange) +
+                             colorStr(match[7], orange)+colorStr(match[2]+' '+match[4], orange))
+	          });
+                  item.url = 'icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id='+match[3];
+                  item.title = match[1]+colorStr(match[5], orange) +
+                              colorStr(match[7], orange)+colorStr(match[2]+' '+match[4], orange),
+                  item.station = match[1];
+                  item.onEvent("addFavorite", function(item) {
+                      var entry = {
+                          url: this.url,
+                          title: this.title,
+                          station: this.station
+                      };
+		      showtime.trace("item: "+showtime.JSONEncode(entry));
+                      var list = eval(store.list);
+                      var array = [showtime.JSONEncode(entry)].concat(list);
+                      store.list = showtime.JSONEncode(array);
+                      showtime.notify("'" + entry.station + "' has been added to My Favorites.", 2);
+                  });
+	          item.addOptAction("Add '" + match[1] + "' to My Favorites", "addFavorite");
+                  page.entries++;
+                  match = re.exec(xml);
+            };
+            offset += 20;
+            return true;
         }
         loader();
         page.paginator = loader;
-    };
+    }
 
     // Start page
     plugin.addURI(PREFIX + "start", function(page) {
-        setPageHeader(page, "SHOUTcast Radio");
-        page.loading = true;
-        var categories = showtime.httpReq(BASE_URL).toString();
-        page.loading = false;
-        var info = categories.match(/<div class="infobox">[\S\s]*?<h3>([\S\s]*?)<\/h3>/);
-        if (info) setPageHeader(page, "SHOUTcast Radio - " + info[1]);
+        setPageHeader(page, plugin_info.synopsis);
 
-     	page.appendItem(PREFIX + "categories", "directory", {
-	    title: "Categories"
+     	page.appendItem(PREFIX + "genres", "directory", {
+	    title: "Genres"
 	});
 
 	page.appendItem(PREFIX + "favorites", "directory", {
 	    title: "My Favorites"
 	});
 
-        getStations(page, 'none', '', '', '0');
+        getStationsFromXML(page, BASE_URL+'/legacy/Top500?k=' + k);
     });
 
     plugin.addSearcher("Shoutcast", logo, function(page, query) {
-        page.entries = 0;
-        getStations(page, 'search', escape(query), '', '0');
+        getStationsFromXML(page, BASE_URL+'/legacy/stationsearch?k=' + k+'&search='+query.replace(/\s/g,'\+'));
     });
 
 })(this);
