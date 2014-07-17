@@ -1,7 +1,7 @@
 /**
  * Baskino.com plugin for Showtime
  *
- *  Copyright (C) 2013 lprot
+ *  Copyright (C) 2014 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -386,6 +386,23 @@
         page.loading = false;
     });
 
+    // Play gidtv links
+    plugin.addURI(PREFIX + ":gidtv:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
+        var doc = showtime.httpReq(unescape(url).match(/src="(.*)"/)[1]).toString();
+        page.loading = false;
+        page.type = "video";
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            imdbid: getIMDBid(title),
+            canonicalUrl: PREFIX + ":gidtv:" + url+':'+title,
+            sources: [{
+                url: doc.match(/setFlash\('([\s\S]*?)\s/)[1].replace(/manifest.f4m/,'index.m3u8')
+            }]
+        });
+        page.loading = false;
+    });
+
     // Index page
     plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
         var response = showtime.httpReq(unescape(url)).toString();
@@ -398,7 +415,8 @@
         var icon = response.match(/<img itemprop="image"[\S\s]*?src="([\S\s]*?)"/)[1];
         var year = +response.match(/>Год:<\/td>[\S\s]*?<a href="[\S\s]*?">([\S\s]*?)<\/a>/)[1];
         var country = response.match(/>Страна:<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>/)[1];
-        var slogan = response.match(/>Слоган:<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>/)[1];
+        var slogan = response.match(/>Слоган:<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>/)
+        if (slogan) slogan = slogan[1];
         var duration = response.match(/<td itemprop="duration">([\S\s]*?)<\/td>/);
         if (duration) duration = duration[1];
         var rating = response.match(/<b itemprop="ratingValue">([\S\s]*?)<\/b>/)[1].replace(",", ".") * 10;
@@ -476,23 +494,28 @@
                     else link = 0;
                 }
                 if (!link) {
-                    link = response.match(/value="pl=c:(.*?)&amp;/g); // try kinostok link
+                    link = response.match(/value="pl=c:(.*?)&amp;/g); //
                     if (link && link[num]) link = PREFIX + ":kinostok:" + escape(link[num]) + ":" + escape(title);
                     else link = 0;
                 }
                 if (!link) {
-                    link = response.match(/src="http:\/\/megogo.net(.*?)"/g); // try megogo.net link
+                    link = response.match(/src="http:\/\/megogo.net(.*?)"/g);
                     if (link && link[num]) link = PREFIX + ":megogo:" + escape(link[num]) + ":" + escape(title);
                     else link = 0;
                 }
                 if (!link) {
-                    link = response.match(/;file=(.*?)&amp;/g); // try armtube link
+                    link = response.match(/;file=(.*?)&amp;/g);
                     if (link && link[num]) link = PREFIX + ":armtube:" + escape(link[num]) + ":" + escape(title);
                     else link = 0;
                 }
                 if (!link) {
-                    link = response.match(/value="fileID=(.*?)&/g); // try meta.ua link
+                    link = response.match(/value="fileID=(.*?)&/g);
                     if (link && link[num]) link = PREFIX + ":metaua:" + escape(link[num]) + ":" + escape(title);
+                    else link = 0;
+                }
+                if (!link) {
+                    link = response.match(/src="http:\/\/gidtv.cc(.*?)"/g);
+                    if (link && link[num]) link = PREFIX + ":gidtv:" + escape(link[num]) + ":" + escape(title);
                     else link = 0;
                 }
                 if (!link) { // try baskino links
@@ -549,9 +572,8 @@
     plugin.addSearcher("baskino.com", logo,
 
     function(page, query) {
-	    page.entries = 0;
-        var fromPage = 1,
-            tryToSearch = true;
+        page.entries = 0;
+        var fromPage = 1, tryToSearch = true;
         // 1-link, 2-title, 3-image, 4-quality, 5-quoted full title, 6-raiting, 7-number of comments, 8-date added, 9-production date
         var re = /<div class="postcover">[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<img title="([\S\s]*?)" src="([\S\s]*?)"[\S\s]*?class="quality_type ([\S\s]*?)">[\S\s]*?<div class="posttitle">[\S\s]*?" >([\S\s]*?)<\/a>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>[\S\s]*?<!-- <div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="rinline">([\S\s]*?)<\/div>/g;
         var re2 = /href=\#>Вперед<\/a>/;
