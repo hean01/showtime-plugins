@@ -87,14 +87,14 @@
         page.loading = true;
         switch (unescape(url).substr(0, 9)) {
             case 'http://mo':
-                var html = showtime.httpReq(unescape(url)).toString();
-                var link = showtime.JSONDecode(showtime.httpReq('http://moonwalk.cc/sessions/create_session', {
+                    var html = showtime.httpReq(unescape(url)).toString();
+                    var link = showtime.JSONDecode(showtime.httpReq('http://moonwalk.cc/sessions/create_session', {
                                postdata: {
                                    'video_token': html.match(/video_token: '([\s\S]*?)'/)[1],
                                    'video_secret': html.match(/video_secret: '([\s\S]*?)'/)[1]
                                }
-                }));
-                link = 'hls:' + link['manifest_m3u8']
+                    }));
+                    link = 'hls:' + link['manifest_m3u8']
                 break;
             case 'http://vk':
             case 'https://v':
@@ -175,8 +175,7 @@
                     var re2 = /value="([\s\S]*?)">([\s\S]*?)<\/option>/g;
                     video = re2.exec(videos[1])
                     while (video) {
-                        var videoHtml = showtime.httpReq(match[15]+'?season='+series[1]+'&episode='+video[1]).toString();
-                        addItem(videoHtml.match(/url_720 = '([\s\S]*?)'/)[1], series[2] + ' - ' + video[2], series[2] + ' - ' + video[2]);
+                        addItem(match[15]+'?season='+series[1]+'&episode='+video[1], series[2] + ' - ' + video[2], series[2] + ' - ' + video[2]);
                         video = re2.exec(videos[1])
                     }
                     series = re.exec(block[1])
