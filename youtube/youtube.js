@@ -468,7 +468,7 @@
     });
 
     plugin.addURI(PREFIX + ":edu:(.*)", function(page, title) {
-        page.metadata.title = unescape(title);
+        page.metadata.title = unescape(showtime.entityDecode(title));
         page.metadata.logo = plugin.path + "views/img/logos/edu.png";
 
         pageMenu(page, null, null);
@@ -477,8 +477,8 @@
         for (var i in edu_categories) {
             var entry = edu_categories[i];
             if (entry[1] == "All") continue;
-            page.appendItem(PREFIX + ':edu:category:' + entry[0] + ':' + title, 'directory', {
-                title: entry[1]
+            page.appendItem(PREFIX + ':edu:category:' + entry[0] + ':' + escape(title), 'directory', {
+                title: unescape(showtime.entityDecode(entry[1]))
             })
         }
     
@@ -488,7 +488,7 @@
     });
 
     plugin.addURI(PREFIX + ":edu:category:(.*):(.*)", function(page, categoryId, title) {
-        page.metadata.title = unescape(title);
+        page.metadata.title = unescape(showtime.entityDecode(title));
         page.metadata.logo = plugin.path + "views/img/logos/edu.png";
 
         pageMenu(page, null, null);
@@ -507,7 +507,7 @@
     });
 
     plugin.addURI(PREFIX + ":disco:(.*):(.*)", function(page, query, title) {
-        page.metadata.title = unescape(title);
+        page.metadata.title = unescape(showtime.entityDecode(title));
         page.metadata.logo = plugin.path + "logo.png";
 
         pageMenu(page);
@@ -540,7 +540,10 @@
             
             for (var i in entries) {
                 var item = entries[i];
-                page.appendItem(PREFIX + ":video:" + item.id, "video", { title: showtime.entityDecode(item.title), icon: item.logo });
+                page.appendItem(PREFIX + ":video:" + item.id, "video", {
+                    title: showtime.entityDecode(unescape(item.title)),
+                    icon: item.logo
+                });
             }
         }
         catch (ex) {
@@ -555,7 +558,7 @@
     });
   
     plugin.addURI(PREFIX + ":mixfeeds:(.*):(.*)", function(page, type, title) {
-        page.metadata.title = unescape(title);
+        page.metadata.title = unescape(showtime.entityDecode(title));
         page.metadata.logo = plugin.path + "logo.png";
 
         pageMenu(page);
@@ -565,7 +568,7 @@
         for (var i in api[type]) {
             var entry = api[type][i];
             page.appendItem(PREFIX + ':feed:' + escape(entry[1])+':'+escape(entry[0]),"directory", {
-                title: entry[0],
+                title: unescape(showtime.entityDecode(entry[0])),
                 icon: entry[2]
             });
         }
@@ -576,7 +579,7 @@
     });
 
     plugin.addURI(PREFIX + ":feed:sort:(.*):(.*):(.*)", function(page, category, url, title) {
-        page.metadata.title = unescape(title);
+        page.metadata.title = unescape(showtime.entityDecode(title));
         page.type = "directory";
         page.contents = "contents";
         page.loading = false;
@@ -599,13 +602,13 @@
             var link_tmp = putUrlArgs(link, res.args);
 
             page.appendItem(PREFIX + ':feed:' + escape(link_tmp) + ':'+escape(value[0]),"directory", {
-                title: value[0]
+                title: unescape(showtime.entityDecode(value[0]))
             });
         }
     });
 
     plugin.addURI(PREFIX + ":feed:duration:(.*):(.*)", function(page, url, title) {
-        page.metadata.title = unescape(title);
+        page.metadata.title = unescape(showtime.entityDecode(title));
         page.type = "directory";
         page.contents = "contents";
         page.loading = false;
@@ -668,7 +671,9 @@
                 var c = 0;
 
                 if (!doc.entry) {
-                    page.appendItem(PREFIX + ':start', 'directory', { title: 'This feed does not contain any item. Sorry about that.' });
+                    page.appendItem(PREFIX + ':start', 'directory', {
+                        title: 'This feed does not contain any item. Sorry about that.'
+                    });
                 }
 
                 for (var i in doc.entry) {
@@ -760,7 +765,7 @@
                         if (metadata.likesPercentage)
                             metadata.likesPercentage_str = new showtime.RichText('<font color="99CC66"> ( ' + metadata.likesPercentage + '% )</font>');
 
-                        metadata.title = title;//new showtime.RichText(title);
+                        metadata.title = unescape(showtime.entityDecode(title));//new showtime.RichText(title);
 
                         var subtitle1 = '<font color="66CCFF">';
                         if (metadata.views_str)
@@ -973,7 +978,7 @@
     });
 
     plugin.addURI(PREFIX + ":feed:(.*):(.*)", function(page, url, title) {
-        page.metadata.title = new showtime.RichText(unescape(title));
+        page.metadata.title = new showtime.RichText(unescape(showtime.entityDecode(title)));
         page.type = "directory";
         page.contents = "items";
         var sort_included = false;
@@ -1077,10 +1082,10 @@
         page.loading = false;
     });
 
-	plugin.addURI(PREFIX + ":v3:request:(.*):(.*)", function(page, args, title) {
+    plugin.addURI(PREFIX + ":v3:request:(.*):(.*)", function(page, args, title) {
         page.type = "directory";
         page.contents = "items";
-        page.metadata.title = new showtime.RichText(unescape(title));
+        page.metadata.title = new showtime.RichText(unescape(showtime.entityDecode(title)));
         page.metadata.background = plugin.path + "views/img/background.png";
 
         args = showtime.JSONDecode(unescape(args));
@@ -1936,6 +1941,7 @@
         page.metadata.icon = "http://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
 
         page.type = "directory";
+
         page.metadata.glwview = plugin.path + "views/video.view";
 
         for (var title in apiV3.videos.information) {
@@ -1981,7 +1987,7 @@
         }
         else {
         	var title = videos_list[0].title;
-            page.metadata.title = title;
+            page.metadata.title = showtime.entityDecode(unescape(title));
 
             var quality_icon = {
                 "240p": plugin.path + "views/img/defaultscreen.bmp",
@@ -2007,7 +2013,6 @@
                 });
             }
             page.appendPassiveItem("list", videos, { title: "Video Playback" });
-
 
             var extras = [];
             extras.push({
@@ -2054,13 +2059,13 @@
                 }
             };
 
-            page.appendAction("navopen", PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape('Related Videos'), true, {
+            page.appendAction("navopen", PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args))+ ':' + escape('Related Videos'), true, {
                 title: 'Related videos'          
             });
             extras.push({
                 title: 'Related',
                 image: plugin.path + "views/img/nophoto.bmp",
-                url: PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args)+':'+escape('Related'))
+                url: PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape('Related Videos')
             });
     
             for (var i in video.link) {
