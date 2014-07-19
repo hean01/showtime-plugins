@@ -1861,7 +1861,7 @@
 
     plugin.addURI(PREFIX + ":video:simple:(.*)", function(page, id) {
         try {
-            var extractedId = id.match(/youtube.com\/embed\/(.*?)"/);
+            var extractedId = unescape(id).match(/youtube.com\/embed\/(.*?)"/);
             if (extractedId) id = extractedId[1];
             var video_url = getVideosList(page, id, 1);
 
