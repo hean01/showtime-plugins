@@ -25,6 +25,10 @@
         background : null
     };
 
+    function trim(s) {
+        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
+    }
+
     var service = plugin.createService(plugin_info.title, PREFIX + ":start", "video", true,
 	plugin.path + "logo.png");
         
@@ -1857,6 +1861,8 @@
 
     plugin.addURI(PREFIX + ":video:simple:(.*)", function(page, id) {
         try {
+            var extractedId = id.match(/youtube.com\/embed\/(.*?)"/);
+            if (extractedId) id = extractedId[1];
             var video_url = getVideosList(page, id, 1);
 
             if (typeof(video_url) == "string") {
@@ -1920,6 +1926,10 @@
     });
   
     plugin.addURI(PREFIX + ":video:advanced:(.*)", function(page, id) {
+        page.metadata.icon = "http://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
+        page.type = "directory";
+        page.metadata.glwview = plugin.path + "views/video.view";
+
         var videoId = id;
 
         var data = apiV3.videos.list({
@@ -1937,12 +1947,6 @@
         var video = data.response.items[0];
 
         var events = false;
-    
-        page.metadata.icon = "http://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
-
-        page.type = "directory";
-
-        page.metadata.glwview = plugin.path + "views/video.view";
 
         for (var title in apiV3.videos.information) {
             var code = apiV3.videos.information[title];
@@ -1954,8 +1958,7 @@
                 else {
                     page.appendPassiveItem("label", eval(code), {title: title+ ": "}); 
                 }
-            }
-            catch(err) {
+            } catch(err) {
                 showtime.trace('Video ' + id +' doesn\'t have a ' + title +' tag!');
                 e(err);
             }
@@ -1971,7 +1974,6 @@
         }
     
         page.appendPassiveItem("divider");  
-    
         page.appendPassiveItem("bodytext", new showtime.RichText(video.snippet.description));
     
         var channelId = video.snippet.channelId;
@@ -1984,9 +1986,8 @@
 
         if (typeof(videos_list) == "string") {
             page.error(videos_list);
-        }
-        else {
-        	var title = videos_list[0].title;
+        } else {
+            var title = videos_list[0].title;
             page.metadata.title = showtime.entityDecode(unescape(title));
 
             var quality_icon = {
@@ -2012,7 +2013,9 @@
                     url: PREFIX + ':video:stream:'+escape(title)+':'+escape(id) + ':' + item.video_url
                 });
             }
-            page.appendPassiveItem("list", videos, { title: "Video Playback" });
+            page.appendPassiveItem("list", videos, {
+                title: "Video Playback"
+            });
 
             var extras = [];
             extras.push({
@@ -2082,7 +2085,9 @@
                 }
             }
             if (extras.length > 0)
-                page.appendPassiveItem("list", extras, { title: "Extras" });
+                page.appendPassiveItem("list", extras, {
+                    title: "Extras"
+                });
 
             page.appendAction("pageevent", "like", true, {                  
                 title: 'Like',
@@ -2111,7 +2116,7 @@
                 api.addFavorite(videoId);
             });
 
-            page.appendAction("pageevent", "watchLater", true, {                  
+            page.appendAction("pageevent", "watchLater", true, {
                 title: 'Add to Watch Later',
                 icon: plugin.path + "views/img/watch_later.png",
                 listActions: true      
@@ -2121,10 +2126,10 @@
             });
 
             if (apiV3.auth.authenticated) {
-                page.appendAction("pageevent", "addToPlaylist", true, {                  
+                page.appendAction("pageevent", "addToPlaylist", true, {
                     title: 'Add to Playlist',
                     icon: plugin.path + "views/img/add.png",
-                    listActions: true      
+                    listActions: true
                 });
                 page.onEvent('addToPlaylist', function() {
                     var args = {
@@ -2142,16 +2147,18 @@
             page.onEvent('comment', function() {
                 api.comment(videoId);
             });
+            //http://gdata.youtube.com/feeds/api/videos/LjvUMr1-AAU/comments?v=2&alt=json
+            page.appendPassiveItem("video", '', {
+                title: 'Comment',
+                icon: plugin.path + "views/img/comment.png"
+            });
         }
     
-        page.metadata.logo = plugin.path + "logo.png";
-
         events = true;
-    
         page.loading = false;
     });
 
-	function pageControllerAddToPlaylist(page, args0, loader) {
+    function pageControllerAddToPlaylist(page, args0, loader) {
         page.contents = 'list';
         var offset = 1;
         var total_items = 0;
@@ -2171,8 +2178,7 @@
                 if (data.pageInfo) {
                     page.entries = data.pageInfo.totalResults;
                     total_items += data.pageInfo.resultsPerPage;
-                }
-                else {
+                } else {
                     page.entries = 1;
                     total_items = 1;
                 }
@@ -2248,8 +2254,7 @@
                     break;
             }
             offset += num;
-
-            return offset < page.entries;    
+            return offset < page.entries;
         }
     
         page.type = "directory";
@@ -2257,34 +2262,32 @@
         page.paginator = paginator;
     }
 
-	plugin.addURI(PREFIX + ":playlist:add:(.*)", function(page, args0) {
-		args0 = showtime.JSONDecode(unescape(args0));
-		if (args0.playlistId) {
-			if (apiV3.playlistItems.insert(args0.playlistId, args0.videoId)) {
-				showtime.notify("Video added succesfully", 2);
-			}
-			else {
-				showtime.notify("There was one error while trying to add video", 3);
-			}
-			//page.redirect(args0.referrer);
-			page.redirect(PREFIX + ":user:default");
-		}
-		else {
-			pageControllerAddToPlaylist(page, args0, function(nextPageToken) {
-            	var args = {
-            		"part": "id,snippet",
-            		"mine": "true",
-            		"maxResults": 50
+    plugin.addURI(PREFIX + ":playlist:add:(.*)", function(page, args0) {
+	args0 = showtime.JSONDecode(unescape(args0));
+	if (args0.playlistId) {
+	    if (apiV3.playlistItems.insert(args0.playlistId, args0.videoId)) {
+		showtime.notify("Video added succesfully", 2);
+	    } else {
+		showtime.notify("There was one error while trying to add video", 3);
+	    }
+	    //page.redirect(args0.referrer);
+	    page.redirect(PREFIX + ":user:default");
+	} else {
+	    pageControllerAddToPlaylist(page, args0, function(nextPageToken) {
+                var args = {
+            	    "part": "id,snippet",
+            	    "mine": "true",
+            	    "maxResults": 50
             	};
             	if (nextPageToken)
-            		args.pageToken = nextPageToken;
+                    args.pageToken = nextPageToken;
             	var data = apiV3.playlists.list(args);
             	data = data.response;
 
                 return data;
             });
-		}
-	});
+	}
+    });
   
     // We need to use this function so we can pass the correct title of video
     plugin.addURI(PREFIX + ":video:stream:(.*):(.*):(.*)", function(page, title, id, video_url) {

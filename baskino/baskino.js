@@ -377,7 +377,7 @@
             match = re.exec(response);
         };
 
-        if (timestamp) { // serial
+        if (timestamp) { // series
             var links = new Array();
             re = /"([0-9]+)":"([\S\s]*?)>"/g;
             match = re.exec(response);
@@ -457,6 +457,11 @@
                 if (!link) {
                     link = response.match(/src="http:\/\/gidtv.cc(.*?)"/g);
                     if (link && link[num]) link = PREFIX + ":gidtv:" + escape(link[num]) + ":" + escape(title);
+                    else link = 0;
+                }
+                if (!link) {
+                    link = response.match(/src="\/\/www.youtube.com\/embed\/(.*?)"/g);
+                    if (link && link[num]) link = 'youtube:video:' + escape(link[num]);
                     else link = 0;
                 }
                 if (!link) { // try baskino links
@@ -580,7 +585,7 @@
             page.appendItem(PREFIX + ':index:' + escape(BASE_URL + match[1]), 'video', {
                 title: new showtime.RichText(match[2]),
                 icon: match[3],
-                description: new showtime.RichText('Режиссер: ' + colorStr(match[4], blue))
+                description: new showtime.RichText(coloredStr('Режиссер: ', orange) + match[4])
             });
             match = re.exec(response);
         };
