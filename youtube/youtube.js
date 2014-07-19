@@ -1860,10 +1860,9 @@
     });
 
     plugin.addURI(PREFIX + ":video:simple:(.*)", function(page, id) {
+showtime.print(unescape(id));
         try {
             var extractedId = unescape(id).match(/youtube.com\/embed\/([^"]+)"/);
-showtime.print(unescape(id));
-showtime.print(extractedId);
             if (extractedId) id = extractedId[1];
             var video_url = getVideosList(page, id, 1);
 
