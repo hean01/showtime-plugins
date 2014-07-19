@@ -382,13 +382,28 @@
             re = /"([0-9]+)":"([\S\s]*?)>"/g;
             match = re.exec(response);
             while (match) {
-                var re2 = /<iframe [\S\s]*?src=\\"([\S\s]*?)\\"/; // try vk.com links
-                var lnk = re2.exec(match[2]);
-                if (lnk) lnk = PREFIX + ":vk:" + escape(lnk[1].replace(/\\/g, ''));
-                if (!lnk) {
-                    re2 = /file: \\"([\S\s]*?)\\"/; // try baskino links
-                    lnk = PREFIX + ":bk:" + escape(re2.exec(match[2])[1].replace(/\\/g, ''));
+                // try vk.com links
+                var lnk = match[2].match(/<iframe [\S\s]*?src=\\"http:\\\/\\\/vk([\S\s]*?)\\"/);
+                if (lnk) lnk = PREFIX + ":vk:" + escape('http://vk'+lnk[1].replace(/\\/g, ''));
+
+                if (!lnk) { // try vk links
+                    lnk = match[2].match(/<iframe [\S\s]*?src=\\"https:\\\/\\\/vk([\S\s]*?)\\"/);
+                    if (lnk) lnk = PREFIX + ":vk:" + escape('http://vk'+lnk[1].replace(/\\/g, ''));
                 }
+
+                if (!lnk) { // try megogo links
+                    lnk = match[2].match(/<iframe [\S\s]*?src=\\"http:\\\/\\\/megogo.net(.*?)\\"/);
+                    if (lnk) lnk = PREFIX + ":megogo:" + escape('http://megogo.net'+lnk[1].replace(/\\/g, ''));
+                }
+
+                if (!lnk) { // try youtube links
+                    lnk = match[2].match(/<iframe [\S\s]*?youtube(.*?)\\"/);
+                    if (lnk) lnk = "youtube:video:" + escape('www.youtube'+lnk[1].replace(/\\/g, '')+'"');
+                }
+
+                if (!lnk) // try baskino links
+                    lnk = PREFIX + ":bk:" + escape(match[2].match(/file: \\"([\S\s]*?)\\"/)[1].replace(/\\/g, ''));
+
                 links[+match[1]] = lnk;
                 match = re.exec(response);
             };
@@ -398,7 +413,7 @@
                 page.appendItem("", "separator", {
                     title: 'Сезон ' + match[1]
                 });
-                re2 = /<span onclick="showCode\(([0-9]+),this\);">([\S\s]*?)<\/span>/g;
+                var re2 = /<span onclick="showCode\(([0-9]+),this\);">([\S\s]*?)<\/span>/g;
                 var match2 = re2.exec(match[2]);
                 while (match2) {
                     page.appendItem(links[match2[1]] + ":" + escape(match2[2]), 'video', {
@@ -616,9 +631,9 @@
     plugin.addSearcher("baskino.com", logo, function(page, query) {
         page.entries = 0;
         var fromPage = 1, tryToSearch = true;
-        // 1-link, 2-title, 3-image, 4-quality, 5-quoted full title, 6-raiting, 7-number of comments, 8-date added, 9-production date
+        // 1-link, 2-title, 3-image, 4-quality, 5-quoted full title, 6-raiting,
+        // 7-number of comments, 8-date added, 9-production date
         var re = /<div class="postcover">[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<img title="([\S\s]*?)" src="([\S\s]*?)"[\S\s]*?class="quality_type ([\S\s]*?)">[\S\s]*?<div class="posttitle">[\S\s]*?" >([\S\s]*?)<\/a>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>[\S\s]*?<!-- <div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="rinline">([\S\s]*?)<\/div>/g;
-        var re2 = /href=\#>Вперед<\/a>/;
 
         function loader() {
             if (!tryToSearch) return false;
@@ -629,13 +644,15 @@
                     title: new showtime.RichText(match[5] + ' ' + (match[4] == "quality_hd" ? colorStr("HD", blue) : colorStr("DVD", orange))),
                     icon: match[3],
                     rating: +(match[6]) / 2,
-                    description: match[8] + '\n' + match[9].replace(/<span class="tvs_new">/, "").replace(/<\/span>/, "")
+                    year: match[9].match(/(\d+)/) ? +match[9].match(/(\d+)/)[1] : '',
+                    description: new showtime.RichText(coloredStr('Добавлен: ', orange) + match[8] + '\n' +
+                    (match[9].match(/<span class="tvs_new">(.*)<\/span>/) ? '\n' + match[9].match(/<span class="tvs_new">(.*)<\/span>/)[1] : ''))
                 });
                 page.entries++;
                 match = re.exec(response);
             };
 
-            if (!re2.exec(response)) return tryToSearch = false;
+            if (!response.match(/href=\#>Вперед<\/a>/)) return tryToSearch = false;
             fromPage++;
             return true;
         };
