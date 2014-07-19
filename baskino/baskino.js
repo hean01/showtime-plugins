@@ -18,7 +18,7 @@
  */
 
 (function(plugin) {
-
+    var plugin_info = plugin.getDescriptor();
     var PREFIX = 'baskino';
     var BASE_URL = 'http://baskino.com';
     var logo = plugin.path + "logo.png";
@@ -84,7 +84,7 @@
     function setPageHeader(page, title) {
         page.loading = false;
         if (page.metadata) {
-            page.metadata.title = title;
+            page.metadata.title = showtime.entityDecode(unescape(title));
             page.metadata.logo = logo;
         }
         page.type = "directory";
@@ -115,19 +115,20 @@
         };
     });
 
-
     function scrapePageAtURL(page, url, titleIsSet) {
-        var p = 1,
-            tryToSearch = true;
+        var p = 1, tryToSearch = true;
 
         function loader() {
             if (!tryToSearch) return false;
+            page.loading = true;
             var response = showtime.httpReq(BASE_URL + url + "/page/" + p + "/").toString();
+            page.loading = false;
             if (!titleIsSet) {
                 setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1]);
                 titleIsSet = true;
             }
-            // 1 - link, 2 - title, 3 - image, 4 - quality, 5 - quoted full title, 6 - raiting, 7 - number of comments, 8 - date added, 9 - production date
+            // 1-link, 2-title, 3-icon, 4-quality, 5-full title,
+            // 6-rating, 7-num of comments, 8-date added, 9-year
             var re = /<div class="postcover">[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?<img title="([\S\s]*?)" src="([\S\s]*?)"[\S\s]*?class="quality_type ([\S\s]*?)">[\S\s]*?<div class="posttitle">[\S\s]*?">([\S\s]*?)<\/a>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>[\S\s]*?<!-- <div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="rinline">([\S\s]*?)<\/div>/g;
             var match = re.exec(response);
             while (match) {
@@ -135,7 +136,11 @@
                     title: new showtime.RichText(match[5] + ' ' + (match[4] == "quality_hd" ? colorStr("HD", blue) : colorStr("DVD", orange))),
                     rating: +(match[6]) / 2,
                     icon: match[3],
-                    description: match[7] + '\n' + match[8] + '\n' + match[9].replace(/<span class="tvs_new">/, "").replace(/<\/span>/, "")
+                    year: match[9].match(/(\d+)/) ? +match[9].match(/(\d+)/)[1] : '',
+                    timestamp: getTimestamp(match[8]),
+                    description: new showtime.RichText(coloredStr('Комментариев: ', orange) + match[7].match(/(\d+)/)[1] +
+                        coloredStr(' Добавлено: ', orange) + match[8] +
+                        (match[9].match(/<span class="tvs_new">(.*)<\/span>/) ? '\n' + match[9].match(/<span class="tvs_new">(.*)<\/span>/)[1] : '') )
                 });
                 match = re.exec(response);
             };
@@ -159,73 +164,13 @@
         var match = re.exec(response);
         while (match) {
             page.appendItem(PREFIX + ":indexURL:" + match[1], 'directory', {
-                title: match[2]
+                title: new showtime.RichText(match[2])
             });
             match = re.exec(response);
         };
     });
 
-    function startPage(page) {
-        var response = showtime.httpReq(BASE_URL).toString();
-        setPageHeader(page, 'Baskino.com - Онлайн фильмы в HD качестве');
-
-        page.appendItem(PREFIX + ':movies', 'directory', {
-            title: 'Фильмы',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':indexURL:/new', 'directory', {
-            title: 'Новинки',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':top', 'directory', {
-            title: 'Топ-250',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':indexURL:/serial', 'directory', {
-            title: 'Сериалы',
-            icon: logo
-        });
-
-        page.appendItem("", "separator", {
-            title: 'Рекомендуемое:'
-        });
-        // 1 - link, 2 - title, 3 - image, 4 - regie
-        var re = /<img  onclick=\(window.location.href='(.*?)'\); title="(.*?)"[\S\s]*?src="(.*?)"[\S\s]*?'\);>(.*?)<\/span>/g;
-        var match = re.exec(response);
-        while (match) {
-            page.appendItem(PREFIX + ':index:' + escape(BASE_URL + match[1]), 'video', {
-                title: new showtime.RichText(match[2]),
-                icon: match[3],
-                description: new showtime.RichText('Режиссер: ' + colorStr(match[4], blue))
-            });
-            match = re.exec(response);
-        };
-
-        page.appendItem("", "separator", {
-            title: 'Новинки:'
-        });
-        re = /<div class="carousel">([\S\s]*?)<\/div>/;
-        var n = re.exec(response)[1];
-        // 1 - link, 2 - title, 3 - image, 4 - quality
-        re = /<a href="([\S\s]*?)"><img title="([\S\s]*?)" src="([\S\s]*?)"[\S\s]*?class="quality_type ([\S\s]*?)">/g;
-        var match = re.exec(n);
-        while (match) {
-            page.appendItem(PREFIX + ':index:' + escape(BASE_URL + match[1]), 'video', {
-                title: new showtime.RichText(match[2] + ' ' + (match[4] == "quality_hd" ? colorStr("HD", blue) : colorStr("DVD", orange))),
-                icon: match[3]
-            });
-            match = re.exec(n);
-        };
-
-        page.appendItem("", "separator", {
-            title: 'Фильмы онлайн:'
-        });
-
-        scrapePageAtURL(page, '', true);
-    };
-
     // Search IMDB ID by title
-
     function getIMDBid(title) {
         var resp = showtime.httpReq('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
         var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
@@ -247,33 +192,24 @@
 
     //Play vk* links
     plugin.addURI(PREFIX + ":vk:(.*):(.*)", function(page, url, title) {
-        page.loading = true;
-        var response = showtime.httpReq(unescape(url));
-        var re = /url720=(.*?)&/;
-        var link = re.exec(response);
-        if (!link) {
-            re = /url480=(.*?)&/;
-            link = re.exec(response);
-        }
-        if (!link) {
-            re = /url360=(.*?)&/;
-            link = re.exec(response);
-        }
-        if (!link) {
-            re = /url240=(.*?)&/;
-            link = re.exec(response);
-        }
-        if (link) {
-            page.type = "video";
-            page.source = "videoparams:" + showtime.JSONEncode({
-                title: unescape(title),
-                imdbid: getIMDBid(title),
-                sources: [{
-                    url: link[1]
-                }]
-            });
-        } else page.error('Видео не доступно. / This video is not available, sorry :(');
+        var response = showtime.httpReq(unescape(url)).toString();
+        var link = response.match(/url720=(.*?)&/);
+        if (!link) link = response.match(/url480=(.*?)&/);
+        if (!link) link = response.match(/url360=(.*?)&/);
+        if (!link) link = response.match(/url240=(.*?)&/);
         page.loading = false;
+        if (!link) {
+            page.error('Видео не доступно. / This video is not available, sorry :(');
+            return;
+        }
+        page.type = "video";
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            imdbid: getIMDBid(title),
+            sources: [{
+                url: link[1]
+            }]
+        });
     });
 
     //Play bk.com links
@@ -346,18 +282,20 @@
 
     //Play HDSerials links
     plugin.addURI(PREFIX + ":moonwalk:(.*):(.*)", function(page, url, title) {
-        var v = showtime.JSONDecode(showtime.httpPost('http://moonwalk.cc/sessions/create', {
-            'video_token': unescape(url).match(/<iframe src="http:\/\/moonwalk.cc\/video\/(.*?)\//)[1]
-        }, "", {
-            'X-Requested-With': 'XMLHttpRequest'
+        var html = showtime.httpReq(unescape(url)).toString();
+        var link = showtime.JSONDecode(showtime.httpReq('http://moonwalk.cc/sessions/create_session', {
+            postdata: {
+                'video_token': html.match(/video_token: '([\s\S]*?)'/)[1],
+                'video_secret': html.match(/video_secret: '([\s\S]*?)'/)[1]
+            }
         }));
-        page.loading = true;
+        link = 'hls:' + link['manifest_m3u8']
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(title),
             sources: [{
-                url: 'hls:' + v['manifest_m3u8']
+                url: link
             }]
         });
         page.loading = false;
@@ -405,9 +343,8 @@
 
     // Index page
     plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
-        var response = showtime.httpReq(unescape(url)).toString();
-        var re;
-        setPageHeader(page, showtime.entityDecode(response.match(/<title>(.*?)<\/title>/)[1].replace(' - смотреть онлайн бесплатно в хорошем качестве', '')));
+        var response = showtime.httpReq(unescape(url)).toString(), re;
+        setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1].replace(' - смотреть онлайн бесплатно в хорошем качестве', ''));
         var description = trim(response.match(/<div class="description"[\S\s]*?<div id="[\S\s]*?">([\S\s]*?)<br\s\/>/)[1]);
         var title = response.match(/<td itemprop="name">([\S\s]*?)<\/td>/)[1];
         var origTitle = response.match(/<td itemprop="alternativeHeadline">([\S\s]*?)<\/td>/);
@@ -421,8 +358,7 @@
         if (duration) duration = duration[1];
         var rating = response.match(/<b itemprop="ratingValue">([\S\s]*?)<\/b>/)[1].replace(",", ".") * 10;
         var director = response.match(/<a itemprop="director" href="[\S\s]*?">([\S\s]*?)<\/a>/)[1];
-        re = /<div class="last_episode">Последняя серия добавлена ([\S\s]*?)<\/div>/;
-        var timestamp = re.exec(response);
+        var timestamp = response.match(/<div class="last_episode">Последняя серия добавлена ([\S\s]*?)<\/div>/);
         if (timestamp) timestamp = getTimestamp(timestamp[1]);
         re = /<span itemprop="name">([\S\s]*?)<\/span>/g;
         var match = re.exec(response);
@@ -489,6 +425,11 @@
                 if (link && link[num]) link = PREFIX + ":vk:" + escape(link[num]) + ":" + escape(title);
                 else link = 0;
                 if (!link) {
+                    link = response.match(/<iframe src="https:\/\/vk(.*?)"/g); // try to get vks link
+                    if (link && link[num]) link = PREFIX + ":vk:" + escape(link[num]) + ":" + escape(title);
+                    else link = 0;
+                }
+                if (!link) {
                     link = response.match(/<iframe src="http:\/\/moonwalk.cc\/video\/(.*?)\//g); // try to get hdserials link
                     if (link && link[num]) link = PREFIX + ":moonwalk:" + escape(link[num]) + ":" + escape(title);
                     else link = 0;
@@ -540,38 +481,134 @@
                     duration: duration,
                     rating: rating,
                     timestamp: timestamp,
-                    description: new showtime.RichText(coloredStr("Страна: ", orange) + country + coloredStr(" Слоган: ", orange) + slogan + coloredStr(" Режиссер: ", orange) + director + coloredStr(" В ролях: ", orange) + actors + "\n\n" + description)
+                    description: new showtime.RichText(coloredStr("Страна: ", orange) +
+                        country + coloredStr(" Слоган: ", orange) + slogan +
+                        coloredStr(" Режиссер: ", orange) + director +
+                        coloredStr(" В ролях: ", orange) + actors + "\n\n" + description)
                 });
                 match = re.exec(player_tabs);
                 num++;
             };
 
         };
-        re = /<div class="related_news">([\S\s]*?)<\/li><\/ul>/;
-        response = re.exec(response)[1];
-        re = /<div class="mbastitle">([\S\s]*?)<\/div>/;
+
+        //related
+        var html = response.match(/<div class="related_news">([\S\s]*?)<\/li><\/ul>/)[1];
         page.appendItem("", "separator", {
-            title: re.exec(response)[1]
+            title: html.match(/<div class="mbastitle">([\S\s]*?)<\/div>/)[1]
         });
         // 1 - link, 2 - icon, 3 - title, 4 - quality
         re = /<a href="([\S\s]*?)"><img src="([\S\s]*?)"[\S\s]*?\/><span>([\S\s]*?)<\/span>[\S\s]*?class="quality_type ([\S\s]*?)">/g;
-        match = re.exec(response);
+        match = re.exec(html);
         while (match) {
             page.appendItem(PREFIX + ":index:" + escape(match[1]), 'video', {
                 title: new showtime.RichText(match[3] + ' ' + (match[4] == "quality_hd" ? colorStr("HD", blue) : colorStr("DVD", orange))),
                 icon: match[2]
             });
 
-            match = re.exec(response);
+            match = re.exec(html);
         };
+
+        //comments
+        var tryToSearch = true, first = true;
+        function loader() {
+            if (!tryToSearch) return false;
+            html = response.match(/<div class="listcomments">([\S\s]*?)<\/form>/)[1];
+            // 1-user+added, 2-icon, 3-comment
+            re = /<div class="linline author">([\S\s]*?)<div class="rinline acts">[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?<div id='[\S\s]*?'>([\S\s]*?)<\/div>/g;
+            match = re.exec(html);
+            while (match) {
+                if (first) {
+                   page.appendItem("", "separator", {
+                       title: html.match(/<div class="mbastitle">([\S\s]*?)<\/div>/)[1]
+                   });
+                   first = false;
+                }
+                var author = match[1].match(/href="[\S\s]*?">([\S\s]*?)<\/a>([\S\s]*?)<\/div>/);
+                var added = '';
+                if (author) {
+                    added = author[2];
+                    author = author[1];
+                } else {
+                    author = trim(match[1].match(/Добавил ([\S\s]*?)<\/div>/)[1]);
+                }
+                page.appendPassiveItem('video', '', {
+                    title: new showtime.RichText(coloredStr(trim(author), orange) + added),
+                    icon: match[2].substr(0, 4) == 'http' ? match[2] : BASE_URL + match[2],
+                    description: new showtime.RichText(trim(match[3]))
+                    });
+                    match = re.exec(html);
+            };
+            var next = response.match(/<div class="dle-comments-navigation">[\S\s]*?<\/span> <a href="([\S\s]*?)">/);
+            if (!next) return tryToSearch = false;
+            response = showtime.httpReq(next[1]).toString();
+            return true;
+        };
+        loader();
         page.loading = false;
+        page.paginator = loader;
     });
 
-    plugin.addURI(PREFIX + ":start", startPage);
+    plugin.addURI(PREFIX + ":start", function(page) {
+        var response = showtime.httpReq(BASE_URL).toString();
+        setPageHeader(page, plugin_info.synopsis);
 
-    plugin.addSearcher("baskino.com", logo,
+        page.appendItem(PREFIX + ':movies', 'directory', {
+            title: 'Фильмы',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':indexURL:/new', 'directory', {
+            title: 'Новинки',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':top', 'directory', {
+            title: 'Топ-250',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':indexURL:/serial', 'directory', {
+            title: 'Сериалы',
+            icon: logo
+        });
 
-    function(page, query) {
+        page.appendItem("", "separator", {
+            title: 'Рекомендуемое:'
+        });
+        // 1 - link, 2 - title, 3 - image, 4 - regie
+        var re = /<img  onclick=\(window.location.href='(.*?)'\); title="(.*?)"[\S\s]*?src="(.*?)"[\S\s]*?'\);>(.*?)<\/span>/g;
+        var match = re.exec(response);
+        while (match) {
+            page.appendItem(PREFIX + ':index:' + escape(BASE_URL + match[1]), 'video', {
+                title: new showtime.RichText(match[2]),
+                icon: match[3],
+                description: new showtime.RichText('Режиссер: ' + colorStr(match[4], blue))
+            });
+            match = re.exec(response);
+        };
+
+        page.appendItem("", "separator", {
+            title: 'Новинки:'
+        });
+        re = /<div class="carousel">([\S\s]*?)<\/div>/;
+        var n = re.exec(response)[1];
+        // 1 - link, 2 - title, 3 - image, 4 - quality
+        re = /<a href="([\S\s]*?)"><img title="([\S\s]*?)" src="([\S\s]*?)"[\S\s]*?class="quality_type ([\S\s]*?)">/g;
+        var match = re.exec(n);
+        while (match) {
+            page.appendItem(PREFIX + ':index:' + escape(BASE_URL + match[1]), 'video', {
+                title: new showtime.RichText(match[2] + ' ' + (match[4] == "quality_hd" ? colorStr("HD", blue) : colorStr("DVD", orange))),
+                icon: match[3]
+            });
+            match = re.exec(n);
+        };
+
+        page.appendItem("", "separator", {
+            title: 'Фильмы онлайн:'
+        });
+
+        scrapePageAtURL(page, '', true);
+    });
+
+    plugin.addSearcher("baskino.com", logo, function(page, query) {
         page.entries = 0;
         var fromPage = 1, tryToSearch = true;
         // 1-link, 2-title, 3-image, 4-quality, 5-quoted full title, 6-raiting, 7-number of comments, 8-date added, 9-production date
