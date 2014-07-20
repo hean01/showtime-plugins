@@ -271,7 +271,7 @@
                 page.appendItem("", "separator", {
                     title: 'Год'
                 });
-                page.appendItem(PREFIX + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + '::&sort=rating', "directory", {
+                page.appendItem(PREFIX + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + ':no:&sort=rating', "directory", {
                     title: year[2]
                 });
             } else { // handle as serials
@@ -280,7 +280,7 @@
                     page.appendItem("", "separator", {
                         title: 'Год'
                     });
-                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + '::&sort=rating', "directory", {
+                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + ':no:&sort=rating', "directory", {
                         title: year[2]
                     });
                 }
@@ -297,7 +297,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по жанру: '+m[2]) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по жанру: '+m[2]) + ':no:&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -313,7 +313,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<\/span>([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по стране: '+trim(showtime.entityDecode(m[2]))) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по стране: '+trim(showtime.entityDecode(m[2]))) + ':no:&sort=year', "directory", {
                         title: trim(showtime.entityDecode(m[2]))
                     });
                     m = re.exec(htmlBlock[1]);
@@ -330,7 +330,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по режиссеру: '+m[2]) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по режиссеру: '+m[2]) + ':no:&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -346,7 +346,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по актеру: '+m[2]) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по актеру: '+m[2]) + ':no:&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -361,7 +361,7 @@
                     var re = /<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/g;
                     var m = re.exec(htmlBlock[1]);
                     while (m) {
-                        page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по ведущему: '+m[2]) + '::&sort=year', "directory", {
+                        page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по ведущему: '+m[2]) + ':no:&sort=year', "directory", {
                             title: m[2]
                         });
                         m = re.exec(htmlBlock[1]);
@@ -560,7 +560,7 @@
         } catch (err) {}
         page.loading = false;
         if (doc) {
-             if (populars) {
+             if (populars == 'yes') {
                 var match = doc.match(/<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-clear">/);
                 if (match) {
                     showPopulars(page, match[1], 'Самое просматриваемое сейчас');
