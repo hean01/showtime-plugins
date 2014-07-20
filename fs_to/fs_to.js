@@ -552,6 +552,7 @@
 
     // Index page
     plugin.addURI(PREFIX + ":index:(.*):(.*):(.*):(.*)", function(page, url, title, populars, param) {
+        if (param == 'noparam') param = ''; // workaround for ps3 regex quirks
         setPageHeader(page, unescape(title));
         page.loading = true;
         try {
@@ -697,7 +698,7 @@
         var re = /<a class="b-header__menu-subsections-item" href="([\S\s]*?)">[\S\s]*?<span class="b-header__menu-subsections-item-title m-header__menu-subsections-item-title_type_[\S\s]*?">([\S\s]*?)<\/span>/g;
         var match = re.exec(menu);
         while (match) {
-            page.appendItem(PREFIX + ":index:" + escape(BASE_URL + match[1]) + ':' + trim(match[2]) + ':yes:', 'directory', {
+            page.appendItem(PREFIX + ":index:" + escape(BASE_URL + match[1]) + ':' + trim(match[2]) + ':yes:noparam', 'directory', {
                 title: trim(match[2])
             });
             match = re.exec(menu);
