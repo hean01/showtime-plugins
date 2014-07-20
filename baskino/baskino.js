@@ -124,8 +124,10 @@
             page.loading = true;
             if (url.substr(0,4) == '&sto')
                 var response = showtime.httpReq(BASE_URL+'/index.php?do=search&subaction=search&search_start=' + p + url).toString();
-            else
+            else {
+showtime.print((url.substr(0, 4) == 'http' ? '' : BASE_URL) + unescape(url) + "/page/" + p + "/");
                 var response = showtime.httpReq((url.substr(0, 4) == 'http' ? '' : BASE_URL) + unescape(url) + "/page/" + p + "/").toString();
+            }
             page.loading = false;
             if (!titleIsSet) {
                 setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1].replace(' - смотреть онлайн бесплатно в хорошем качестве', ''));
@@ -149,6 +151,7 @@
                 page.entries++;
                 match = re.exec(response);
             };
+            if (!response.match(/<div class="navigation">/)) return tryToSearch = false;
             if (response.match(/<span>Вперед<\/span>/)) return tryToSearch = false;
             p++;
             return true;
