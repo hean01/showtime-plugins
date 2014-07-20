@@ -60,120 +60,6 @@
         }
     });
 
-    function getUrlVars(url) {
-        var hash, json = {}, hashes = url.split(/\&|%26|%3F/);
-        for (var i = 0; i < hashes.length; i++) {
-            hash = hashes[i].split(/\=|%3D/);
-            json[hash[0]] = hash[1];
-        }
-        return json;
-    }
-
-    function getMaps(url) {
-        var hash, json = {}, hashes = url.split(/\&/);
-        for (var i = 0; i < hashes.length; i++) {
-            hash = hashes[i].split(/\=/);
-            json[hash[0]] = hash[1];
-        }
-        return json;
-    }
-
-    var player = '', fnName = '', fnText = '';
-
-    function unroll(age, url, a) {
-        if (age)
-            return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
-        if (player != url) {
-            //showtime.print('player: '+ url);
-            var code = showtime.httpReq('http:'+url).toString();
-            player = url;
-            fnName = code.match(/signature=([^(]*)/)[1];
-            var re = new RegExp('function ' + fnName + '\\(([^}]*)');
-            fnText = 'function ' + fnName + '(' + re.exec(code)[1] + '}';
-            var re = /=([^\(]*)/g;
-            var match = re.exec(fnText);
-            var prev = '';
-            while (match) {
-                if (!match[1].match(/\./) && fnText.search('function '+match[1]) == -1) {
-                    var re2 = new RegExp('function ' + match[1] + '\\(([^}]*)');
-                    fnText = 'function ' + match[1] + '(' + re2.exec(code)[1] + '};' + fnText;
-                }
-                match = re.exec(fnText);
-            }
-        }
-        //showtime.print(fnText);
-        eval(fnText);
-        return eval(fnName + '(a)');
-    }
-
-    plugin.addURI(PREFIX + ":trailer:(.*):(.*)", function(page, url, title) {
-        setPageHeader(page, unescape(title));
-        page.loading = true;
-
-        var id = unescape(url).match(/watch\?v=(.*)/)[1];
-        var doc = showtime.httpReq(unescape(url)).toString();
-
-        var titleMatch = doc.match(/<meta property="og:title" content="(.+?)">/);
-        if (titleMatch)
-            var youtubeTitle = titleMatch[1];
-
-        var encoded_url_map = '';
-        var json = showtime.JSONDecode(doc.match(/;ytplayer\.config\s*=\s*(\{.*?\});/)[1]);
-        if (json.args.url_encoded_fmt_stream_map)
-            encoded_url_map = json.args.url_encoded_fmt_stream_map
-        if (json.args.adaptive_fmts) encoded_url_map += ',' + json.args.adaptive_fmts;
-        var age = false;
-        if (doc.match(/player-age-gate-content">/)) {
-            age = true;
-            doc = showtime.httpReq('http://www.youtube.com/get_video_info', {
-                args: {
-                   'video_id': id,
-                   'el': 'player_embedded',
-                   'gl': 'US',
-                   'hl': 'en',
-                   'eurl': 'https://youtube.googleapis.com/v/' + id,
-                   'asv': 3,
-                   'sts':'1588'
-                }
-            }).toString();
-            json = getMaps(doc);
-            encoded_url_map = unescape(json.url_encoded_fmt_stream_map) + ',' + unescape(json.adaptive_fmts);
-        }
-        encoded_url_map = encoded_url_map.split(',');
-
-        for (url_data_str in encoded_url_map) {
-            var url_data = getUrlVars(encoded_url_map[url_data_str]);
-            var realUrl = url_data.url + '?', first = true;
-            for (i in url_data) {
-                 if (i != 'url' && i != 's' && i != 'sig') {
-                    if (!first)
-                        realUrl+= '&' + i + '=' + url_data[i];
-                    else {
-                        first = false;
-                        realUrl+= i + '=' + url_data[i];
-                    }
-                 }
-            }
-
-            if (url_data.s) realUrl += '&signature=' + unroll(age, json.assets ? json.assets.js : '', url_data.s);
-            if (url_data.sig) realUrl += '&signature=' + unroll(age, json.assets ? json.assets.js : '', url_data.sig);
-
-            var link = "videoparams:" + showtime.JSONEncode({
-                title: showtime.entityDecode(unescape(youtubeTitle)),
-                sources: [{
-                    url: unescape(realUrl)
-                }]
-            });
-
-            page.appendItem(link, unescape(url_data.type).match(/audio/) ? 'audio' : 'video', {
-                title: new showtime.RichText(colorStr(url_data.itag, blue) + ' ' + unescape(url_data.type).replace(';+codecs',''))
-            });
-        }
-        page.loading = false;
-        //page.type = 'video';
-        //page.source = link;
-    });
-
     plugin.addURI(PREFIX + ":movie:(.*)", function(page, id) {
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + 'movie.json?id=' + id));
@@ -197,7 +83,7 @@
                    coloredStr(' Size: ', orange) + json.Size +
                    coloredStr('<br>Description: ', orange) + json.LongDescription)
         });
-        page.appendItem(PREFIX+':trailer:'+escape(json.YoutubeTrailerUrl)+':'+escape(json.MovieTitleClean), "video", {
+        page.appendItem('youtube:video:'+escape(json.YoutubeTrailerUrl), "video", {
             title: 'Trailer'
         });
         page.appendItem(json.LargeCover, "image", {

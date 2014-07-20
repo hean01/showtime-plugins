@@ -29,6 +29,16 @@
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
     }
 
+    var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
+
+    function colorStr(str, color) {
+        return '<font color="' + color + '"> (' + str + ')</font>';
+    }
+
+    function coloredStr(str, color) {
+        return '<font color="' + color + '">' + str + '</font>';
+    }
+
     var service = plugin.createService(plugin_info.title, PREFIX + ":start", "video", true,
 	plugin.path + "logo.png");
         
@@ -1747,8 +1757,14 @@
                     title: title
                 };
                 links.push(video_item);
+                if (service.enableDebug) {
+                    page.appendItem(unescape(realUrl), unescape(url_data.type).match(/audio/) ? 'audio' : 'video', {
+                        title: new showtime.RichText(colorStr(url_data.itag, blue) + ' ' + unescape(url_data.type).replace(';+codecs',''))
+                    });
+                }
             }
         }
+
         if (links.length == 0)
             debug("getVideoLinks Couldn't find url map or stream map.");
         videos_list_tmp = links;
@@ -1866,7 +1882,12 @@
     plugin.addURI(PREFIX + ":video:simple:(.*)", function(page, id) {
         try {
             var video_url = getVideosList(page, id, 1);
-
+            if (service.enableDebug) {
+                page.metadata.title = 'Streams list'
+                page.type = 'directory';
+                page.loading = false;
+                return;
+            };
             if (typeof(video_url) == "string") {
                 page.error(video_url);
                 return;
@@ -1899,7 +1920,12 @@
     plugin.addURI(PREFIX + ":video:simple:(.*):(.*)", function(page, title, id) {
         try {
             var video_url = getVideosList(page, id, 1);
-
+            if (service.enableDebug) {
+                page.metadata.title = 'Streams list'
+                page.type = 'directory';
+                page.loading = false;
+                return;
+            };
             if (typeof(video_url) == "string") {
                 page.error(video_url);
                 return;
@@ -1985,7 +2011,12 @@
         });
 
         var videos_list = getVideosList(page, id, 'any');
-
+        if (service.enableDebug) {
+            page.metadata.title = 'Streams list'
+                page.type = 'directory';
+                page.loading = false;
+                return;
+        };
         if (typeof(videos_list) == "string") {
             page.error(videos_list);
         } else {
