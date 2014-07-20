@@ -121,7 +121,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var response = showtime.httpReq(BASE_URL + url + "/page/" + p + "/").toString();
+            var response = showtime.httpReq((url.substr(0, 4) == 'http' ? '' : BASE_URL) + unescape(url) + "/page/" + p + "/").toString();
             page.loading = false;
             if (!titleIsSet) {
                 setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1]);
@@ -350,24 +350,16 @@
         var origTitle = response.match(/<td itemprop="alternativeHeadline">([\S\s]*?)<\/td>/);
         if (origTitle) title += " | " + origTitle[1];
         var icon = response.match(/<img itemprop="image"[\S\s]*?src="([\S\s]*?)"/)[1];
-        var year = +response.match(/>Год:<\/td>[\S\s]*?<a href="[\S\s]*?">([\S\s]*?)<\/a>/)[1];
+        var year = response.match(/>Год:<\/td>[\S\s]*?<a href="([\S\s]*?)">([\S\s]*?)<\/a>/);
         var country = response.match(/>Страна:<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>/)[1];
         var slogan = response.match(/>Слоган:<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>/)
         if (slogan) slogan = slogan[1];
         var duration = response.match(/<td itemprop="duration">([\S\s]*?)<\/td>/);
         if (duration) duration = duration[1];
         var rating = response.match(/<b itemprop="ratingValue">([\S\s]*?)<\/b>/)[1].replace(",", ".") * 10;
-        var director = response.match(/<a itemprop="director" href="[\S\s]*?">([\S\s]*?)<\/a>/)[1];
+        var directors = response.match(/<a itemprop="director"([\S\s]*?)<\/td>/)[1];
         var timestamp = response.match(/<div class="last_episode">Последняя серия добавлена ([\S\s]*?)<\/div>/);
         if (timestamp) timestamp = getTimestamp(timestamp[1]);
-        re = /<span itemprop="name">([\S\s]*?)<\/span>/g;
-        var match = re.exec(response);
-        var actors = 0;
-        while (match) {
-            if (!actors) actors = match[1];
-            else actors += ", " + match[1];
-            match = re.exec(response);
-        };
         re = /<a itemprop="genre" href="[\S\s]*?">([\S\s]*?)<\/a>/g;
         var match = re.exec(response);
         var genre = 0;
@@ -402,7 +394,8 @@
                 }
 
                 if (!lnk) // try baskino links
-                    lnk = PREFIX + ":bk:" + escape(match[2].match(/file: \\"([\S\s]*?)\\"/)[1].replace(/\\/g, ''));
+                    lnk = match[2].match(/file: \\"([\S\s]*?)\\"/);
+                    if (lnk) lnk = PREFIX + ":bk:" + escape(lnk[1].replace(/\\/g, ''));
 
                 links[+match[1]] = lnk;
                 match = re.exec(response);
@@ -419,12 +412,13 @@
                     page.appendItem(links[match2[1]] + ":" + escape(match2[2]), 'video', {
                         title: match2[2],
                         icon: icon,
-                        year: year,
+                        year: +year[2],
                         genre: genre,
                         duration: duration,
                         rating: rating,
                         timestamp: timestamp,
-                        description: new showtime.RichText(coloredStr("Страна: ", orange) + country + coloredStr(" Слоган: ", orange) + slogan + coloredStr(" Режиссер: ", orange) + director + coloredStr(" В ролях: ", orange) + actors + "\n\n" + description)
+                        description: new showtime.RichText(coloredStr("Страна: ", orange) +
+                            country + coloredStr(" Слоган: ", orange) + slogan + "\n" + description)
                     });
                     match2 = re2.exec(match[2]);
                 };
@@ -496,15 +490,14 @@
                 page.appendItem(link, 'video', {
                     title: new showtime.RichText(title + ' ' + coloredStr(match[2], orange)),
                     icon: icon,
-                    year: year,
+                    year: +year[2],
                     genre: genre,
                     duration: duration,
                     rating: rating,
                     timestamp: timestamp,
                     description: new showtime.RichText(coloredStr("Страна: ", orange) +
-                        country + coloredStr(" Слоган: ", orange) + slogan +
-                        coloredStr(" Режиссер: ", orange) + director +
-                        coloredStr(" В ролях: ", orange) + actors + "\n\n" + description)
+                        country + coloredStr(" Слоган: ", orange) + slogan + "\n" +
+                        description)
                 });
                 match = re.exec(player_tabs);
                 num++;
@@ -512,8 +505,53 @@
 
         };
 
+        //trailer
+        var html = response.match(/<span class="trailer_link">[\S\s]*?src="([\S\s]*?)"/);
+        if (html)
+            page.appendItem("youtube:video:" + escape(html[1].replace(/\\/g, '')+'"'), 'video', {
+                title: 'Трейлер'
+            });
+
+        //year
+        page.appendItem("", "separator", {
+            title: 'Год:'
+        });
+        page.appendItem(PREFIX + ":indexURL:" + escape(year[1]), 'directory', {
+            title: year[2]
+        });
+
+        //directors
+        page.appendItem("", "separator", {
+            title: 'Режиссеры:'
+        });
+        re = /href="([\S\s]*?)">([\S\s]*?)<\/a>/g;
+        html = re.exec(directors);
+        while (html) {
+            page.appendItem(PREFIX + ":indexURL:" + escape(html[1]), 'directory', {
+                title: html[2]
+            });
+            html = re.exec(directors);
+        }
+
+        //actors
+        page.appendItem("", "separator", {
+            title: 'В ролях:'
+        });
+        var actors = response.match(/"post-actors-list">([\S\s]*?)<\/td>/)[1];
+        re = /data\-person="([\S\s]*?)" href="([\S\s]*?)"/g;
+        html = re.exec(actors);
+        while (html) {
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/engine/ajax/getActorData.php?name='+encodeURIComponent(html[1])));
+            page.appendItem(PREFIX + ":indexURL:" + escape(html[2]), 'video', {
+                title: html[1],
+                icon: json.image
+            });
+            html = re.exec(actors);
+        };
+
+
         //related
-        var html = response.match(/<div class="related_news">([\S\s]*?)<\/li><\/ul>/)[1];
+        html = response.match(/<div class="related_news">([\S\s]*?)<\/li><\/ul>/)[1];
         page.appendItem("", "separator", {
             title: html.match(/<div class="mbastitle">([\S\s]*?)<\/div>/)[1]
         });
