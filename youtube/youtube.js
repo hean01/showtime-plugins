@@ -1856,9 +1856,9 @@
     }
 
     plugin.addURI(PREFIX + ":video:(.*)", function(page, id) {
-        var extractedId = unescape(id).match(/\/embed\/(.*)["|\?]/);
+        var extractedId = unescape(id).match(/\/embed\/([^\?|^\&|"]+)/);
         if (!extractedId)
-            extractedId = unescape(id).match(/watch\?v=(.*)\&/);
+            extractedId = unescape(id).match(/watch\?v=([^\?|^\&|"]+)/);
         if (extractedId) id = extractedId[1];
     	page.redirect(PREFIX + ":video:" + service.mode + ":" + id);
     });
