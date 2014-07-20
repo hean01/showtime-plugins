@@ -398,7 +398,7 @@
 
                 if (!lnk) { // try youtube links
                     lnk = match[2].match(/<iframe [\S\s]*?youtube(.*?)\\"/);
-                    if (lnk) lnk = "youtube:video:" + escape('www.youtube'+lnk[1].replace(/\\/g, '')+'"');
+                    if (lnk) lnk = "youtube:video:" + escape(lnk[1].replace(/\\/g, '')+'"');
                 }
 
                 if (!lnk) // try baskino links
