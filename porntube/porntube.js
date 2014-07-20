@@ -322,7 +322,7 @@
 	match = v.match(/"token":"([\S\s]*?)"}/);
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
-            title: unescape(title),
+            title: showtime.entityDecode(unescape(title)),
             canonicalUrl: PREFIX + ":video:" + url + ":" + title,
             sources: [{
                 url: unescape(showtime.entityDecode(match[1]))
