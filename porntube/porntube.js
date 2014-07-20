@@ -154,7 +154,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var v = showtime.httpReq(BASE_URL + '/channels?p=' + fromPage + '&letter=' + Letter + '&sort=' + Order).toString();
+            var v = showtime.httpReq(BASE_URL + '/channels?p=' + fromPage + '&letter=' + Letter + (Order ? '&sort=' + Order : '')).toString();
             page.loading = false;
             var htmlBlock = v.match(/channels_page([\S\s]*?)class="footer"/);
             if (htmlBlock) {
@@ -332,17 +332,17 @@
     });
 
     var re, v;
-    function scrape(page) {
+    function scrape(page, html) {
         var bw = re.exec(v)[1];
-        // 1-link, 2-title, 3-HDflag, 5-views, 4-duration, 6-was added, 7-icon
-        re = /<a href="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?<ul class="thumb-info_top">([\S\s]*?)div class="bottom">[\S\s]*?"icon icon-timer"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-eye"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-up"><\/i>([\S\s]*?)<\/li>[\S\s]*?<img data-original="([\S\s]*?)"/g;
+        // 1-link, 2-title, 3-icon, 4-HDflag, 5-duration, 6-views, 7-was added
+        re = /<a href="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?<img data-original="([\S\s]*?)"[\S\s]*?<ul class="thumb-info_top">([\S\s]*?)div class="bottom">[\S\s]*?"icon icon-timer"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-eye"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-up"><\/i>([\S\s]*?)<\/li>/g;
         var match = re.exec(bw);
         while (match) {
             page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(match[2]), 'video', {
-                title: new showtime.RichText((match[3].match(/>HD</) ? blueStr("HD ") : "") + match[2]),
-                duration: trim(match[4]),
-                description: new showtime.RichText("Views: " + blueStr(trim(match[5])) + "\nAdded: " + blueStr(trim(match[6]))),
-                icon: match[7]
+                title: new showtime.RichText((match[4].match(/>HD</) ? blueStr("HD ") : "") + match[2]),
+                duration: trim(match[5]),
+                description: new showtime.RichText("Views: " + blueStr(trim(match[6])) + "\nAdded: " + blueStr(trim(match[7]))),
+                icon: match[3]
             });
             page.entries++;
             match = re.exec(bw);
