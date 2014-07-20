@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/facanferff/showtime-plugin-youtube", 
 	"title": "Youtube", 
 	"synopsis": "Youtube: Broadcast Yourself",
-	"version": "2.2.24",
+	"version": "2.2.25",
 	"file": "youtube.js", 
 	"showtimeVersion": "4.3.248", 
 	"type": "javascript", 
