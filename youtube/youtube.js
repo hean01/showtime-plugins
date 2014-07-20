@@ -1856,14 +1856,13 @@
     }
 
     plugin.addURI(PREFIX + ":video:(.*)", function(page, id) {
+        var extractedId = unescape(id).match(/\/embed\/(.*)"/);
+        if (extractedId) id = extractedId[1];
     	page.redirect(PREFIX + ":video:" + service.mode + ":" + id);
     });
 
     plugin.addURI(PREFIX + ":video:simple:(.*)", function(page, id) {
-showtime.print(unescape(id));
         try {
-            var extractedId = unescape(id).match(/youtube.com\/embed\/([^"]+)"/);
-            if (extractedId) id = extractedId[1];
             var video_url = getVideosList(page, id, 1);
 
             if (typeof(video_url) == "string") {
