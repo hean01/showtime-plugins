@@ -382,27 +382,25 @@
             while (match) {
                 // try vk.com links
                 var lnk = match[2].match(/<iframe [\S\s]*?src=\\"http:\\\/\\\/vk([\S\s]*?)\\"/);
-                if (lnk) lnk = PREFIX + ":vk:" + escape('http://vk'+lnk[1].replace(/\\/g, ''));
-
+                if (lnk) {
+                    lnk = PREFIX + ":vk:" + escape('http://vk'+lnk[1].replace(/\\/g, ''));
+                }
                 if (!lnk) { // try vk links
                     lnk = match[2].match(/<iframe [\S\s]*?src=\\"https:\\\/\\\/vk([\S\s]*?)\\"/);
-                    if (lnk) lnk = PREFIX + ":vk:" + escape('http://vk'+lnk[1].replace(/\\/g, ''));
+                    if (lnk) lnk = PREFIX + ":vk:" + escape('https://vk'+lnk[1].replace(/\\/g, ''));
                 }
-
                 if (!lnk) { // try megogo links
                     lnk = match[2].match(/<iframe [\S\s]*?src=\\"http:\\\/\\\/megogo.net(.*?)\\"/);
                     if (lnk) lnk = PREFIX + ":megogo:" + escape('http://megogo.net'+lnk[1].replace(/\\/g, ''));
                 }
-
                 if (!lnk) { // try youtube links
                     lnk = match[2].match(/<iframe [\S\s]*?youtube(.*?)\\"/);
                     if (lnk) lnk = "youtube:video:" + escape(lnk[1].replace(/\\/g, '')+'"');
                 }
-
-                if (!lnk) // try baskino links
+                if (!lnk) { // try baskino links
                     lnk = match[2].match(/file: \\"([\S\s]*?)\\"/);
                     if (lnk) lnk = PREFIX + ":bk:" + escape(lnk[1].replace(/\\/g, ''));
-
+                }
                 links[+match[1]] = lnk;
                 match = re.exec(response);
             };
