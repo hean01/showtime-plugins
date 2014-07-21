@@ -346,6 +346,25 @@
         page.loading = false;
     });
 
+    //Play Rutube links
+    plugin.addURI(PREFIX + ":rutube:(.*):(.*)", function(page, url, title) {
+        var html = showtime.httpReq(unescape(url)).toString();
+        var link = html.match(/"m3u8": "([\s\S]*?)"\}/);
+        if (!link) {
+            page.error('Видео удалено Администрацией RuTube');
+            return;
+        }
+        page.type = "video";
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            imdbid: getIMDBid(title),
+            sources: [{
+                url: 'hls:' + link[1]
+            }]
+        });
+        page.loading = false;
+    });
+
     // Index page
     plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
         var response = showtime.httpReq(unescape(url)).toString(), re;
@@ -396,6 +415,10 @@
                 if (!lnk) { // try youtube links
                     lnk = match[2].match(/<iframe [\S\s]*?youtube(.*?)\\"/);
                     if (lnk) lnk = "youtube:video:" + escape(lnk[1].replace(/\\/g, '')+'"');
+                }
+                if (!lnk) { // try rutube links
+                    lnk = match[2].match(/<iframe [\S\s]*?rutube(.*?)\\"/);
+                    if (lnk) lnk = PREFIX + ":rutube:" + escape('https://rutube'+lnk[1].replace(/\\/g, ''));
                 }
                 if (!lnk) { // try baskino links
                     lnk = match[2].match(/file: \\"([\S\s]*?)\\"/);
