@@ -3509,7 +3509,12 @@
         }
     }
 
+    function trim(s) {
+        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/, '');
+    }
+
     function convert(c) {
+        c = trim(c);
         switch (c) {
             case 'red':
                 return 'FF0000';
@@ -3518,8 +3523,10 @@
             case 'blue':
                 return '0000FF';
             case 'white':
+            case '000000':
                 return 'FFFFFF';
             default:
+                if (c.length > 8) c = c.substr(0, 8);
                 if (c.length == 8) return c.substr(2, 6);
                 return c;
         }
@@ -3552,7 +3559,7 @@
         var text_final = textOut.replace(/\[COLOR=([^\]]+)\]/g, function (match, color) {
             return '<font color="#' + convert(color) + '" size="'+size+'>';
         });
-        return '<font color="#ffffff" size="' + size + '>' + text_final.replace(/\[\/COLOR\]/g, '<\/font>') + '<\/font>';
+        return '<font color="#ffffff" size="' + size + '>' + text_final.replace(/\[\/COLOR\]/g, '<\/font>').replace(/\s{2,}/g, ' ') + '<\/font>';
     }
 
     function ProcessorLocalFilename(url) {
