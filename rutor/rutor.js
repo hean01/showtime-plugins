@@ -70,11 +70,11 @@
                        var comments = match2[5].match(/[\s\S]*?<td align="right">([\s\S]*?)</)[1];
                    } else
                        var end = match2[5].match(/[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-                   page.appendItem('torrent:video:'+match2[2], "directory", {
-    	               title: new showtime.RichText(colorStr(match2[1], orange) + ' ' +
-                           match2[4] + ' ('+ coloredStr(end[2], green) + '/'+
-                           coloredStr(end[3], red) + ') ' + colorStr(end[1], blue) +
-                           (comments ? colorStr(comments, orange) : ''))
+                       page.appendItem('torrent:video:'+ match2[2].replace(/\/parse\//,'http://'), "directory", {
+    	                   title: new showtime.RichText(colorStr(match2[1], orange) + ' ' +
+                               match2[4] + ' ('+ coloredStr(end[2], green) + '/'+
+                               coloredStr(end[3], red) + ') ' + colorStr(end[1], blue) +
+                               (comments ? colorStr(comments, orange) : ''))
                    });
                    match2 = re2.exec(match[2]);
                }
