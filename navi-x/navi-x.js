@@ -1,7 +1,7 @@
 /**
  * Navi-X plugin for showtime by facanferff (Fábio Ferreira / facanferff.showtime@hotmail.com)
  *
- *  Copyright (C) 2012-2013 facanferff (Fábio Ferreira / facanferff.showtime@hotmail.com)
+ *  Copyright (C) 2012-2014 facanferff, lprot
  * 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
  */
  
 (function(plugin) {
-
     var PREFIX = "navi-x";
     var plxVersion = 8;
     var version = '1.1';
@@ -102,7 +101,7 @@
 
     settings.createDivider('User Interface');
 
-    settings.createBool("backgroundEnabled", "Background", false, function(v) { service.backgroundEnabled = v; });
+    settings.createBool("backgroundEnabled", "Background", true, function(v) { service.backgroundEnabled = v; });
     settings.createBool("customViews", "Custom Views", false, function(v) { service.customViews = v; });
 
     settings.createDivider('Processor Settings');
@@ -149,27 +148,6 @@
 
     settings.createBool("historyTracking", "Enable History Tracking (local, My History in Navi-X's homepage)", true, function (v) { service.historyTracking = v; });
     
-    function startPage(page) {
-        page.metadata.background = plugin.path + "views/img/background.png";
-
-        // Page Menu
-        pageMenu(page);
-
-        if (service.customViews)
-            page.metadata.glwview = plugin.path + "views/array.view";
-
-        page.type = "directory";
-        page.contents = "list";
-
-        playlist = new Playlist(page, home_URL, new MediaItem());
-        var result = playlist.loadPlaylist(home_URL);
-
-        playlist = new Playlist(page, "store://homeitems", new MediaItem());
-        result = playlist.loadPlaylist("store://homeitems", false);
-        
-        page.loading = false;
-    }
-
     plugin.addURI(PREFIX + ":text:(.*):(.*)", function(page, title, url) {
         page.type = "item";
         page.metadata.background = plugin.path + "views/img/background.png";
@@ -186,11 +164,10 @@
         page.metadata.background = plugin.path + "views/img/background.png";
         page.loading = true;
 
-        // Page Menu
-        pageMenu(page);
-
-        if (service.customViews)
+        if (service.customViews) {
+            addPageOptions(page); // Page Menu
             page.metadata.glwview = plugin.path + "views/array.view";
+        }
 
         page.type = "directory";
 
@@ -212,8 +189,8 @@
     plugin.addURI(PREFIX + ":playlist:(.*):list_processor:(.*)", function (page, type, processor) {
         page.loading = true;
 
-        // Page Menu
-        pageMenu(page);
+        if (service.customViews)
+            addPageOptions(page);
 
         page.type = "directory";
 
@@ -3532,21 +3509,50 @@
         }
     }
 
-    function parse_string_color(text, size) {
-        function convert(c) {
-            switch (c) {
-                case 'red':
-                    return 'FF0000';
-                default:
-                    if (c.length == 8) return c.substr(2, 6);
-                    return c;
-            }
+    function convert(c) {
+        switch (c) {
+            case 'red':
+                return 'FF0000';
+            case 'green':
+                return '00FF00';
+            case 'blue':
+                return '0000FF';
+            case 'white':
+                return 'FFFFFF';
+            default:
+                if (c.length == 8) return c.substr(2, 6);
+                return c;
         }
+    }
 
-        var text_final = text.replace(/\[COLOR=([^\]]+)\]/g, function (match, color) {
+    function parse_string_color(text, size) {
+        var lastPos = 0, textOut = '', lastColor = '';
+        while (lastPos < text.length) {
+            var openTagStartPos = text.indexOf('[COLOR=', lastPos);
+            if (openTagStartPos > -1) {
+                textOut += text.substring(lastPos, openTagStartPos);
+                var openTagEndPos = text.indexOf(']', openTagStartPos);
+                lastColor = text.substring(openTagStartPos, openTagEndPos + 1);
+                var closeTagStartPos = text.indexOf('[/COLOR]', openTagEndPos);
+                var orphanTagStartPos = text.substring(openTagEndPos, closeTagStartPos).indexOf('[COLOR=');
+                if (orphanTagStartPos > -1) {
+                    textOut += lastColor + text.substring(openTagEndPos + 1, openTagEndPos + orphanTagStartPos) + '[/COLOR]'; //p.3.1
+                    textOut += text.substring(openTagEndPos + orphanTagStartPos, closeTagStartPos) + '[/COLOR]' + lastColor;
+                    lastPos = closeTagStartPos+7;
+                } else {
+                    textOut += text.substring(openTagStartPos, closeTagStartPos+8);
+                    lastPos = closeTagStartPos + 7;
+                }
+            } else {
+               textOut += text.substr(lastPos);
+               break;
+            }
+            lastPos++;
+        }
+        var text_final = textOut.replace(/\[COLOR=([^\]]+)\]/g, function (match, color) {
             return '<font color="#' + convert(color) + '" size="'+size+'>';
         });
-        return text_final.replace(/\[\/COLOR\]/g, '<\/font>');
+        return '<font color="#ffffff" size="' + size + '>' + text_final.replace(/\[\/COLOR\]/g, '<\/font>') + '<\/font>';
     }
 
     function ProcessorLocalFilename(url) {
@@ -3626,20 +3632,18 @@
         return array;
     }
 
-    function pageMenu(page) {
-        if (service.customViews) {
-            page.options.createInt('childTilesX', 'Number of X Child Tiles', 6, 1, 10, 1, '', function (v) {
-                page.metadata.childTilesX = v;
-            }, true);
+    function addPageOptions(page) {
+        page.options.createInt('childTilesX', 'Number of X Child Tiles', 6, 1, 10, 1, '', function (v) {
+            page.metadata.childTilesX = v;
+        }, true);
 
-            page.options.createInt('childTilesY', 'Number of Y Child Tiles', 3, 1, 4, 1, '', function (v) {
-                page.metadata.childTilesY = v;
-            }, true);
+        page.options.createInt('childTilesY', 'Number of Y Child Tiles', 3, 1, 4, 1, '', function (v) {
+            page.metadata.childTilesY = v;
+        }, true);
 
-            page.options.createBool('informationBar', 'Information Bar', true, function (v) {
-                page.metadata.informationBar = v;
-            }, true);
-        }
+        page.options.createBool('informationBar', 'Information Bar', true, function (v) {
+            page.metadata.informationBar = v;
+        }, true);
     }
 
     function encodeString(decoded) {
@@ -3676,5 +3680,22 @@
         showtime.print(message);
     }
 	
-    plugin.addURI(PREFIX + ":start", startPage);
+    plugin.addURI(PREFIX + ":start", function(page) {
+        page.type = "directory";
+        page.contents = "list";
+        page.metadata.background = plugin.path + "views/img/background.png";
+
+        if (service.customViews) {
+            addPageOptions(page);
+            page.metadata.glwview = plugin.path + "views/array.view";
+        };
+
+        playlist = new Playlist(page, "store://homeitems", new MediaItem());
+        result = playlist.loadPlaylist("store://homeitems", false);
+
+        playlist = new Playlist(page, home_URL, new MediaItem());
+        var result = playlist.loadPlaylist(home_URL);
+
+        page.loading = false;
+    });
 })(this);
