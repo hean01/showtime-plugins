@@ -556,7 +556,7 @@
         setPageHeader(page, unescape(title));
         page.loading = true;
         try {
-             var doc = showtime.httpReq(unescape(url) + '?view=detailed'+param).toString();
+             var doc = showtime.httpReq(url.substr(0,4) == 'http' ? unescape(url) + '?view=detailed'+param : BASE_URL + unescape(url) + '?view=detailed'+param).toString();
         } catch (err) {}
         page.loading = false;
         if (doc) {
@@ -576,7 +576,7 @@
                 var nextPage = doc.match(/<a class="next-link"href="([\S\s]*?)">/);
                 if (nextPage) {
                     page.loading = true;
-                    doc = showtime.httpReq(BASE_URL + nextPage[1]).toString();
+                    doc = showtime.httpReq(nextPage[1].substr(0, 4) == 'http' ? nextPage[1] : BASE_URL + nextPage[1]).toString();
                     page.loading = false;
                     return true;
                 }
@@ -709,22 +709,34 @@
     plugin.addURI(PREFIX + ":start", function(page) {
         setPageHeader(page, slogan);
         page.loading = true;
-        var doc = showtime.httpReq(BASE_URL).toString();
+        response = showtime.httpReq(BASE_URL).toString();
         page.loading = false;
 
         // Building menu
-        //1-link, 2-title, 3-submenus
-        var re = /<div class="b-header__menu-section[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?">([\S\s]*?)<\/a>([\S\s]*?)<div class="b-clear">/g;
-        var match = re.exec(doc);
-        while (match) {
-            page.appendItem(PREFIX + ":submenu:" + match[1]+ ':' + escape(trim(match[2])) + ':' + escape(match[3]), 'directory', {
-                title: trim(match[2])
-            });
-            match = re.exec(doc);
+        if (response.match(/<link rel="canonical" href="http:\/\/cxz.to/)) { // cxz.to
+            //1-link, 2-title
+            var re = /<div class="b-header__menu-section[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?">([\S\s]*?)<\/a>/g;
+            var match = re.exec(response);
+            while (match) {
+                page.appendItem(PREFIX + ":index:" + match[1]+ ':' + escape(trim(match[2])) + ':no:noparam', 'directory', {
+                    title: trim(match[2])
+                });
+                match = re.exec(response);
+            }
+        } else {
+            //1-link, 2-title, 3-submenus
+            var re = /<div class="b-header__menu-section[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?">([\S\s]*?)<\/a>([\S\s]*?)<div class="b-clear">/g;
+            var match = re.exec(response);
+            while (match) {
+                page.appendItem(PREFIX + ":submenu:" + match[1]+ ':' + escape(trim(match[2])) + ':' + escape(match[3]), 'directory', {
+                    title: trim(match[2])
+                });
+                match = re.exec(response);
+            }
         }
 
         // Scraping commentable
-        comments = doc.match(/<div class="b-main__top-commentable-inner">([\S\s]*?)<div class="b-clear">/);
+        comments = response.match(/<div class="b-main__top-commentable-inner">([\S\s]*?)<div class="b-clear">/);
         if (comments) {
             comments = comments[1];
             page.appendItem(PREFIX + ':comments', "directory", {
@@ -733,34 +745,39 @@
         }
 
         // Show most popular
-        match = doc.match(/<div class="b-main__posters([\S\s]*?)<div class="b-clear">/);
+        match = response.match(/__posters([\S\s]*?)<div class="b-clear">/);
         if (match)
             showPopulars(page, match[1], 'Самые популярные материалы');
 
         // Front page scraper
-        doc = doc.match(/<div class="b-main__new-title">([\S\s]*?)#content-->/);
+        var doc = response.match(/<div class="b-main__new-title">([\S\s]*?)#content-->/);
         if (doc) {
-           page.appendItem("", "separator", {
-               title: 'Новое на сайте'
-           });
+            page.appendItem("", "separator", {
+                title: 'Новое на сайте'
+            });
 
-           //1-link, 2-icon, 3-type, 4-title, 5-genre, 6-produced, 7-description,
-           //8-author, 9-time
-           var re = /<a href="([\S\s]*?)"[\S\s]*?url\('([\S\s]*?)'\);[\S\s]*?<span class="b-main__new-item-subsection">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__new-item-title m-main__new-item-title_theme_[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<\/span>([\S\s]*?)<\/span>([\S\s]*?)<span class="b-main__new-item-add-info-auth">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__new-item-add-info-time">([\S\s]*?)<\/span>/g;
+            //1-link, 2-icon, 3-type, 4-title, 5-genre, 6-produced, 7-description,
+            //8-author, 9-time
+            var re = /<a href="([\S\s]*?)"[\S\s]*?url\('([\S\s]*?)'\);[\S\s]*?<span class="b-main__new-item-subsection">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__new-item-title m-main__new-item-title_theme_[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<\/span>([\S\s]*?)<\/span>([\S\s]*?)<span class="b-main__new-item-add-info-auth">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__new-item-add-info-time">([\S\s]*?)<\/span>/g;
 
-           var match = re.exec(doc[1]);
-           while (match) {
-               var description = trim(match[7].replace(/<[^>]*>/g, '').replace('.......',''))
-               page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[4])), "video", {
-                   title: new showtime.RichText(match[4]),
-                   icon: match[2].replace('/9/','/2/'),
-                   genre: new showtime.RichText(match[3] + ' ' + (trim(match[5].replace(/<[^>]*>/g, '')) ? colorStr(trim(match[5]), orange) : '')),
-                   description: new showtime.RichText((trim(match[6]) ? coloredStr('Произведено: ',orange) + trim(match[6]) + ' ' : '') +
-                      coloredStr('Добавил: ',orange) + match[8] + ' ' + colorStr(match[9], blue) +
-                      (description ? coloredStr(' Описание: ',orange) + description : ''))
-               });
-               match = re.exec(doc[1]);
-           }
+            var match = re.exec(doc[1]);
+            while (match) {
+                var description = trim(match[7].replace(/<[^>]*>/g, '').replace('.......',''))
+                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[4])), "video", {
+                    title: new showtime.RichText(match[4]),
+                    icon: match[2].replace('/9/','/2/'),
+                    genre: new showtime.RichText(match[3] + ' ' + (trim(match[5].replace(/<[^>]*>/g, '')) ? colorStr(trim(match[5]), orange) : '')),
+                    description: new showtime.RichText((trim(match[6]) ? coloredStr('Произведено: ',orange) + trim(match[6]) + ' ' : '') +
+                       coloredStr('Добавил: ',orange) + match[8] + ' ' + colorStr(match[9], blue) +
+                       (description ? coloredStr(' Описание: ',orange) + description : ''))
+                });
+                match = re.exec(doc[1]);
+            }
+        } else {
+            page.appendItem("", "separator", {
+               title: 'Популярные материалы'
+            });
+            indexer(page);
         }
     });
 
