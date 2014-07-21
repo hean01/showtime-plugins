@@ -116,20 +116,24 @@
     });
 
     function scrapePageAtURL(page, url, titleIsSet) {
+        page.entries = 0;
         var p = 1, tryToSearch = true;
 
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var response = showtime.httpReq((url.substr(0, 4) == 'http' ? '' : BASE_URL) + unescape(url) + "/page/" + p + "/").toString();
+            if (url.substr(0,4) == '&sto')
+                var response = showtime.httpReq(BASE_URL+'/index.php?do=search&subaction=search&search_start=' + p + url).toString();
+            else
+                var response = showtime.httpReq((url.substr(0, 4) == 'http' ? '' : BASE_URL) + unescape(url) + "/page/" + p + "/").toString();
             page.loading = false;
             if (!titleIsSet) {
-                setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1]);
+                setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1].replace(' - смотреть онлайн бесплатно в хорошем качестве', ''));
                 titleIsSet = true;
             }
             // 1-link, 2-title, 3-icon, 4-quality, 5-full title,
             // 6-rating, 7-num of comments, 8-date added, 9-year
-            var re = /<div class="postcover">[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?<img title="([\S\s]*?)" src="([\S\s]*?)"[\S\s]*?class="quality_type ([\S\s]*?)">[\S\s]*?<div class="posttitle">[\S\s]*?">([\S\s]*?)<\/a>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>[\S\s]*?<!-- <div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="rinline">([\S\s]*?)<\/div>/g;
+            var re = /<div class="postcover">[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<img title="([\S\s]*?)" src="([\S\s]*?)"[\S\s]*?class="quality_type ([\S\s]*?)">[\S\s]*?<div class="posttitle">[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>[\S\s]*?<!-- <div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="rinline">([\S\s]*?)<\/div>/g;
             var match = re.exec(response);
             while (match) {
                 page.appendItem(PREFIX + ':index:' + escape(match[1]), 'video', {
@@ -138,13 +142,14 @@
                     icon: match[3],
                     year: match[9].match(/(\d+)/) ? +match[9].match(/(\d+)/)[1] : '',
                     timestamp: getTimestamp(match[8]),
-                    description: new showtime.RichText(coloredStr('Комментариев: ', orange) + match[7].match(/(\d+)/)[1] +
+                    description: new showtime.RichText((match[7].match(/(\d+)/) ? coloredStr('Комментариев: ', orange) + match[7].match(/(\d+)/)[1] : '') +
                         coloredStr(' Добавлено: ', orange) + match[8] +
                         (match[9].match(/<span class="tvs_new">(.*)<\/span>/) ? '\n' + match[9].match(/<span class="tvs_new">(.*)<\/span>/)[1] : '') )
                 });
+                page.entries++;
                 match = re.exec(response);
             };
-            if (!response.match(/">Вперед<\/a>/)) tryToSearch = false;
+            if (response.match(/<span>Вперед<\/span>/)) return tryToSearch = false;
             p++;
             return true;
         };
@@ -360,13 +365,14 @@
         var directors = response.match(/<a itemprop="director"([\S\s]*?)<\/td>/)[1];
         var timestamp = response.match(/<div class="last_episode">Последняя серия добавлена ([\S\s]*?)<\/div>/);
         if (timestamp) timestamp = getTimestamp(timestamp[1]);
-        re = /<a itemprop="genre" href="[\S\s]*?">([\S\s]*?)<\/a>/g;
-        var match = re.exec(response);
+        var genres = response.match(/<a itemprop="genre"([\S\s]*?)<\/td>/)[1];
+        var re = /href="[\S\s]*?">([\S\s]*?)<\/a>/g;
         var genre = 0;
+        var match = re.exec(genres);
         while (match) {
             if (!genre) genre = match[1];
             else genre += ", " + match[1];
-            match = re.exec(response);
+            match = re.exec(genres);
         };
 
         if (timestamp) { // series
@@ -520,6 +526,39 @@
             title: year[2]
         });
 
+        //collections
+        var first = true;
+        var collections = response.match(/class="b-collection__cell">([\S\s]*?)<\/td>/);
+        if (collections) {
+            re = /<a href="([\S\s]*?)">([\S\s]*?)<\/a>/g;
+            html = re.exec(collections[1]);
+            while (html) {
+                if (first) {
+                    page.appendItem("", "separator", {
+                        title: 'Цикл:'
+                    });
+                    first = false;
+                }
+                page.appendItem(PREFIX + ":indexURL:" + escape(html[1]), 'directory', {
+                    title: html[2]
+                });
+                html = re.exec(collections[1]);
+            };
+        };
+
+        // genres
+        page.appendItem("", "separator", {
+            title: 'Жанры:'
+        });
+        re = /href="([\S\s]*?)">([\S\s]*?)<\/a>/g;
+        html = re.exec(genres);
+        while (html) {
+            page.appendItem(PREFIX + ":indexURL:" + escape(html[1]), 'directory', {
+                title: html[2]
+            });
+            html = re.exec(genres);
+        };
+
         //directors
         page.appendItem("", "separator", {
             title: 'Режиссеры:'
@@ -548,7 +587,6 @@
             });
             html = re.exec(actors);
         };
-
 
         //related
         html = response.match(/<div class="related_news">([\S\s]*?)<\/li><\/ul>/)[1];
@@ -667,34 +705,6 @@
     });
 
     plugin.addSearcher("baskino.com", logo, function(page, query) {
-        page.entries = 0;
-        var fromPage = 1, tryToSearch = true;
-        // 1-link, 2-title, 3-image, 4-quality, 5-quoted full title, 6-raiting,
-        // 7-number of comments, 8-date added, 9-production date
-        var re = /<div class="postcover">[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<img title="([\S\s]*?)" src="([\S\s]*?)"[\S\s]*?class="quality_type ([\S\s]*?)">[\S\s]*?<div class="posttitle">[\S\s]*?" >([\S\s]*?)<\/a>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>[\S\s]*?<!-- <div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="rinline">([\S\s]*?)<\/div>/g;
-
-        function loader() {
-            if (!tryToSearch) return false;
-            var response = showtime.httpReq(BASE_URL + '/index.php?do=search&subaction=search&search_start=' + fromPage + '&story=' + query.replace(/\s/g, '\+'));
-            var match = re.exec(response);
-            while (match) {
-                page.appendItem(PREFIX + ':index:' + escape(match[1]), 'video', {
-                    title: new showtime.RichText(match[5] + ' ' + (match[4] == "quality_hd" ? colorStr("HD", blue) : colorStr("DVD", orange))),
-                    icon: match[3],
-                    rating: +(match[6]) / 2,
-                    year: match[9].match(/(\d+)/) ? +match[9].match(/(\d+)/)[1] : '',
-                    description: new showtime.RichText(coloredStr('Добавлен: ', orange) + match[8] + '\n' +
-                    (match[9].match(/<span class="tvs_new">(.*)<\/span>/) ? '\n' + match[9].match(/<span class="tvs_new">(.*)<\/span>/)[1] : ''))
-                });
-                page.entries++;
-                match = re.exec(response);
-            };
-
-            if (!response.match(/href=\#>Вперед<\/a>/)) return tryToSearch = false;
-            fromPage++;
-            return true;
-        };
-        loader();
-        page.paginator = loader;
+        scrapePageAtURL(page, '&story=' + query.replace(/\s/g, '\+'), false)
     });
 })(this);
