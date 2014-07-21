@@ -18,9 +18,11 @@
  */
 
 (function(plugin) {
-    var PREFIX = 'redtube';
+    var pluginInfo = getDescriptor();
+    var PREFIX = pluginInfo.id;
     var BASE_URL = 'http://www.redtube.com';
     var logo = plugin.path + "logo.png";
+    var slogan = pluginInfo.synopsis;
 
     function fix_entity(doc) {
         doc = doc.replace(/\&Acirc;\&iexcl;/g, '\u00a1');
@@ -54,7 +56,7 @@
         doc = doc.replace(/\&#39;/g, '\'');
         if (doc.indexOf('\&Atilde;') != -1) showtime.message(doc, true, false);
         if (doc.indexOf('\&Acirc;') != -1) showtime.message(doc, true, false);
-        return doc;
+        return trim(doc);
     }
 
     // remove multiple, leading or trailing spaces and line feeds
@@ -78,9 +80,9 @@
         page.loading = false;
     }
 
-    var service = plugin.createService("Redtube", PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(pluginInfo.title, PREFIX + ":start", "video", true, logo);
 
-    var settings = plugin.createSettings("Redtube", logo, "Redtube: Home of free porn videos");
+    var settings = plugin.createSettings(pluginInfo.title, logo, slogan);
 
     function index_pornstars(page, url) {
         setPageHeader(page, 'Redtube - Pornstar Directory');
@@ -92,7 +94,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var response = showtime.httpGet(url+'?page='+fromPage).toString();
+            var response = showtime.httpReq(url+'?page='+fromPage).toString();
             page.loading = false;
             if (fromPage == 1) {
                 match = response.match(/categoryHeading">[\S\s^]*?([\d].*)\)/);
@@ -102,7 +104,7 @@
             var match = re.exec(response);
             while (match) {
                 page.appendItem(PREFIX + ":index:" + match[1] + '?:' + match[2], "video", {
-                    title: new showtime.RichText(match[2] + ' <font color="6699CC">(' + match[4] + ')</font>'),
+                    title: new showtime.RichText(match[2] + coloredStr(' (' + match[4] + ')', orange)),
                     icon: match[3]
                 });
                 match = re.exec(response);
@@ -118,15 +120,15 @@
     function index(page, url, title) {
         setPageHeader(page, title);
 	var fromPage = 1, tryToSearch = true;
-        //1-link, 2-title, 3-icon, 4-duration, 5-rating, 6-date added
-        var re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?class="d">([^\<]+)[\S\s]*?;">([\S\s]*?)<\/[\S\s]*?;">([\S\s]*?)<\//g;
+        //1-link, 2-title, 3-icon, 4-hd flag, 5-duration, 6-rating, 7-date added
+        var re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?<\/a>([\S\s]*?)<\/div>[\S\s]*?class="d">([^\<]+)[\S\s]*?;">([\S\s]*?)<\/[\S\s]*?;">([\S\s]*?)<\//g;
         var re2 = /"Next Page/;
         var profile = "";
 
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var response = showtime.httpGet(url + "page=" + fromPage).toString();
+            var response = showtime.httpReq(url + "page=" + fromPage).toString();
             if (fromPage == 1) {
                 var details = response.match(/<ul class="pornstar-details">([\S\s]*?)<\/ul>/);
                 if (details) {
@@ -142,12 +144,12 @@
             var match = re.exec(response);
             while (match) {
                 page.appendItem(PREFIX + ":play:" + escape(match[1]) + ":" + escape(match[2]), "video", {
-                    title: new showtime.RichText(match[2] + '<font color="6699CC"> (' + match[4] + ')</font>'),
+                    title: new showtime.RichText((trim(match[4]) ? coloredStr('HD ', orange) : '') + match[2] + coloredStr(' (' + match[5] + ')', orange)),
                     icon: match[3],
-                    description: new showtime.RichText(trim(match[6])+ profile),
+                    description: new showtime.RichText(trim(match[7])+ profile),
                     genre: 'Adult',
-                    duration: match[4],
-                    rating: +(match[5]) * 20
+                    duration: match[5],
+                    rating: +(match[6]) * 20
                 });
                 match = re.exec(response);
             }
@@ -163,12 +165,12 @@
         setPageHeader(page, 'Redtube - Categories');
         //Getting pictures
         page.loading = true;
-        var response = showtime.httpGet(BASE_URL + "/channels");
+        var response = showtime.httpReq(BASE_URL + "/channels");
         page.loading = false;
         var re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?numberVideos">[\S\s]*?([0-9].*)\sVideos/g;
         var match = re.exec(response);
         page.loading = true;
-        var jsonobj = showtime.JSONDecode(showtime.httpGet("http://api.redtube.com/?data=redtube.Categories.getCategoriesList&output=json").toString());
+        var jsonobj = showtime.JSONDecode(showtime.httpReq("http://api.redtube.com/?data=redtube.Categories.getCategoriesList&output=json").toString());
         page.loading = false;
 	var lastIcon;
         for (var i in jsonobj.categories) {
@@ -185,13 +187,13 @@
     plugin.addURI(PREFIX + ":categories", function(page) {
         setPageHeader(page, 'Redtube - Categories');
         page.loading = true;
-        var response = showtime.httpGet(BASE_URL + "/channels");
+        var response = showtime.httpReq(BASE_URL + "/channels");
         page.loading = false;
         var re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?numberVideos">[\S\s]*?([0-9].*)\sVideos/g;
         var match = re.exec(response);
         while (match) {
             page.appendItem(PREFIX + ":sorting:" + match[1] + ":" + match[2], "video", {
-                title: new showtime.RichText(match[2] + '<font color="6699CC"> (' + match[4].replace(',', '') + ')</font>'),
+                title: new showtime.RichText(match[2] + coloredStr(' (' + match[4].replace(',', '') + ')', orange)),
                 icon: match[3]
             });
             match = re.exec(response);
@@ -233,7 +235,7 @@
     plugin.addURI(PREFIX + ":tags", function(page) {
         setPageHeader(page, 'Redtube - Tags');
         page.loading = true;
-        var jsonobj = showtime.JSONDecode(showtime.httpGet("http://api.redtube.com/?data=redtube.Tags.getTagList&output=json").toString());
+        var jsonobj = showtime.JSONDecode(showtime.httpReq("http://api.redtube.com/?data=redtube.Tags.getTagList&output=json").toString());
         page.loading = false;
         for (var i in jsonobj.tags) {
             page.appendItem(PREFIX + ':search:tags[]=' + escape(jsonobj.tags[i].tag.tag_name), 'directory', {
@@ -245,7 +247,7 @@
 
     plugin.addURI(PREFIX + ":stars", function(page) {
         page.loading = true;
-        var jsonobj = showtime.JSONDecode(showtime.httpGet("http://api.redtube.com/?data=redtube.Stars.getStarList&output=json").toString());
+        var jsonobj = showtime.JSONDecode(showtime.httpReq("http://api.redtube.com/?data=redtube.Stars.getStarList&output=json").toString());
         page.loading = false;
         if (!jsonobj) return;
         var starCounter = 0;
@@ -277,22 +279,22 @@
         return +Date.UTC(d[0], d[1] - 1, d[2], d[3], d[4], d[5]) / 1000;
     }
 
-    function preparePage(page, url, query) {
+    function scraper(page, url, query) {
         url = unescape(url);
         query = unescape(query);
         var pageNum = 0, offset = 0;
 
-        function showPage() {
+        function loader() {
             pageNum++;
             page.loading = true;
-            var jsonobj = showtime.JSONDecode(showtime.httpGet(url + query + "&page=" + pageNum).toString());
+            var jsonobj = showtime.JSONDecode(showtime.httpReq(url + query + "&page=" + pageNum).toString());
             page.loading = false;
             if (!jsonobj.videos) return -1;
             setPageHeader(page, 'Redtube - Search (found ' + jsonobj.count + ' videos)');
             for (var i in jsonobj.videos) {
-                var description = '<font color="6699CC">Video ID: </font>' + jsonobj.videos[i].video.video_id + ' ';
-                description += '<font color="6699CC">Views: </font>' + jsonobj.videos[i].video.views + ' ';
-                description += '<font color="6699CC">Ratings: </font>' + jsonobj.videos[i].video.ratings + '\n';
+                var description = coloredStr('Video ID: ', orange) + jsonobj.videos[i].video.video_id +
+                    coloredStr(' Views: ', orange) + jsonobj.videos[i].video.views +
+                    coloredStr(' Ratings: ', orange) + jsonobj.videos[i].video.ratings + '\n';
 
                 var stars = 0;
                 if (jsonobj.videos[i].video.stars) {
@@ -302,7 +304,7 @@
                         stars += jsonobj.videos[i].video.stars[j].star_name;
                     };
                 };
-                if (stars) description += '<font color="6699CC">Starring: </font>' + stars + '.\n';
+                if (stars) description += coloredStr('Starring: ', orange) + stars + '.\n';
 
                 var tags = 0;
                 if (jsonobj.videos[i].video.tags) {
@@ -312,19 +314,19 @@
                         tags += jsonobj.videos[i].video.tags[j].tag_name;
                     };
                 };
-                if (tags) description += '<font color="6699CC">Tags: </font>' + tags + '.';
+                if (tags) description += coloredStr('Tags: ', orange) + tags + '.';
 
                 if (jsonobj.videos[i].video.title)
                     var title = jsonobj.videos[i].video.title
                 else {
                     page.loading = true;
-                    var title = showtime.JSONDecode(showtime.httpGet("http://api.redtube.com/?data=redtube.Videos.getVideoById&video_id=" + jsonobj.videos[i].video.video_id + "&output=json&thumbsize=none").toString());
+                    var title = showtime.JSONDecode(showtime.httpReq("http://api.redtube.com/?data=redtube.Videos.getVideoById&video_id=" + jsonobj.videos[i].video.video_id + "&output=json&thumbsize=none").toString());
                     page.loading = false;
                     title = title.video.title
                 }
                 title = showtime.entityDecode(fix_entity(title));
                 page.appendItem(PREFIX + ":play:" + jsonobj.videos[i].video.video_id + ":" + escape(title), "video", {
-                    title: new showtime.RichText(title + '<font color="6699CC"> (' + jsonobj.videos[i].video.duration + ')'),
+                    title: new showtime.RichText(title + coloredStr(' (' + jsonobj.videos[i].video.duration + ')', orange)),
                     rating: +(jsonobj.videos[i].video.rating) * 20,
                     icon: jsonobj.videos[i].video.default_thumb,
                     duration: jsonobj.videos[i].video.duration,
@@ -338,12 +340,12 @@
             page.entries = jsonobj.count;
             return offset < page.entries;
         }
-        showPage();
-        page.paginator = showPage;
+        loader();
+        page.paginator = loader;
     };
 
     plugin.addURI(PREFIX + ":search:(.*)", function(page, query) {
-        preparePage(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&"), escape(query))
+        scraper(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&"), escape(query))
     });
 
     plugin.addURI(PREFIX + ":play:(.*):(.*)", function(page, video_id, title) {
@@ -361,7 +363,7 @@
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, 'Redtube - Home Page');
+        setPageHeader(page, slogan);
 
         page.appendItem(PREFIX + ':index:/?:Newest videos', 'directory', {
             title: 'Newest videos',
@@ -446,7 +448,7 @@
         });
     });
 
-    plugin.addSearcher("Redtube - Videos", logo, function(page, query) {
-        preparePage(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&search="), escape(query.replace(/\s/g, '\+')));
+    plugin.addSearcher(pluginInfo.title, logo, function(page, query) {
+        scraper(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&search="), escape(query.replace(/\s/g, '\+')));
     });
 })(this);
