@@ -28,7 +28,8 @@ PLUGINS= \
         dropbox.zip \
         youtube.zip \
 	rutor.zip \
-        xxx-tracker.zip
+        xxx-tracker.zip \
+        divan_tv.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

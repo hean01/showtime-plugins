@@ -1,0 +1,13 @@
+{
+	"description": "<p>Онлайн ТВ и фильмы на телевизоре, планшете, смартфоне и компьютере - DIVAN.TV<p>Для дополнительной информации, посетите <a href=\"http://divan.tv\">http://divan.tv</a>",
+	"author": "lprot", 
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "Divan.tv",
+	"synopsis": "Онлайн ТВ и фильмы на телевизоре, планшете, смартфоне и компьютере - DIVAN.TV",
+	"version": "0.1", "file": "divan_tv.js",
+	"showtimeVersion": "4.1.397",
+	"type": "javascript", 
+	"id": "divan.tv",
+	"icon": "logo.png",
+	"category": "video"
+}
