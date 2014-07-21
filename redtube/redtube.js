@@ -18,10 +18,8 @@
  */
 
 (function(plugin) {
-
     var PREFIX = 'redtube';
     var BASE_URL = 'http://www.redtube.com';
-
     var logo = plugin.path + "logo.png";
 
     function fix_entity(doc) {
@@ -64,7 +62,7 @@
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
     }
 
-    const blue = "6699CC", orange = "FFA500";
+    var blue = "6699CC", orange = "FFA500";
 
     function coloredStr(str, color) {
         return '<font color="' + color + '">' + str + '</font>';
@@ -82,93 +80,7 @@
 
     var service = plugin.createService("Redtube", PREFIX + ":start", "video", true, logo);
 
-    var settings = plugin.createSettings("Redtube", plugin.path + "logo.png", "Redtube: Home of free porn videos");
-
-    function startPage(page) {
-        setPageHeader(page, 'Redtube - Home Page');
-
-        page.appendItem(PREFIX + ':index:/?:Newest videos', 'directory', {
-            title: 'Newest videos',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:/top?:Top rated', 'directory', {
-            title: 'Top rated (weekly)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:/top?period=monthly&:Top rated (monthly)', 'directory', {
-            title: 'Top rated (monthly)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:/top?period=alltime&:Top rated (all time)', 'directory', {
-            title: 'Top rated (all time)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:/mostviewed?:Most viewed (weekly)', 'directory', {
-            title: 'Most viewed (weekly)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:/mostviewed?period=monthly&:Most viewed (monthly)', 'directory', {
-            title: 'Most viewed (monthly)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:/mostviewed?period=alltime&:Most viewed (all time)', 'directory', {
-            title: 'Most viewed (all time)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:/mostfavored?:Most favored (weekly)', 'directory', {
-            title: 'Most favored (weekly)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:/mostfavored?period=monthly&:Most favored (monthly)', 'directory', {
-            title: 'Most favored (monthly)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:/mostfavored?period=alltime&:Most favored (all time)', 'directory', {
-            title: 'Most favored (all time)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':categories', 'directory', {
-            title: 'Categories',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':categoriesAPI', 'directory', {
-            title: 'Categories (API)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':tags', 'directory', {
-            title: 'Tags',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index_stars:/pornstar/alphabetical', 'directory', {
-            title: 'Pornstar Directory (Female by Alphabet)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index_stars:/pornstar', 'directory', {
-            title: 'Pornstar Directory (Female by Videocount)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index_stars:/pornstar/alphabetical/male', 'directory', {
-            title: 'Pornstar Directory (Male by Alphabet)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index_stars:/pornstar/male', 'directory', {
-            title: 'Pornstar Directory (Male by Videocount)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index_stars:/pornstar/alphabetical/all', 'directory', {
-            title: 'Pornstar Directory (All by Alphabet)',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index_stars:/pornstar/all', 'directory', {
-            title: 'Pornstar Directory (All by Videocount)',
-            icon: logo
-        });
-
-        page.appendItem(PREFIX + ':stars', 'directory', {
-            title: 'Stars',
-            icon: logo
-        });
-    };
+    var settings = plugin.createSettings("Redtube", logo, "Redtube: Home of free porn videos");
 
     function index_pornstars(page, url) {
         setPageHeader(page, 'Redtube - Pornstar Directory');
@@ -435,27 +347,104 @@
     });
 
     plugin.addURI(PREFIX + ":play:(.*):(.*)", function(page, video_id, title) {
-        page.loading = false;
-        var re = /flv_h264_url=(.*?)&/;
-        var re2 = /flv_url=(.*?)&/;
         page.loading = true;
-	var st = showtime.httpGet("http://www.redtube.com/" + video_id).toString();
+	var link = showtime.httpReq("http://www.redtube.com/" + video_id).toString().match(/vpVideoSource[\S\s]*?"([\S\s]*?)"/);
         page.loading = false;
-        var m = re.exec(st);
-	if (showtime.probe(unescape(m[1])).result != 0) {
-		m = re2.exec(st);
-	}
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             canonicalUrl: PREFIX + ":play:" + video_id + ":" + title,
             sources: [{
-                url: unescape(m[1])
+                url: unescape(link[1]).replace(/\\/g,'')
             }]
         });
     });
 
-    plugin.addURI(PREFIX + ":start", startPage);
+    plugin.addURI(PREFIX + ":start", function(page) {
+        setPageHeader(page, 'Redtube - Home Page');
+
+        page.appendItem(PREFIX + ':index:/?:Newest videos', 'directory', {
+            title: 'Newest videos',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/top?:Top rated', 'directory', {
+            title: 'Top rated (weekly)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/top?period=monthly&:Top rated (monthly)', 'directory', {
+            title: 'Top rated (monthly)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/top?period=alltime&:Top rated (all time)', 'directory', {
+            title: 'Top rated (all time)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostviewed?:Most viewed (weekly)', 'directory', {
+            title: 'Most viewed (weekly)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostviewed?period=monthly&:Most viewed (monthly)', 'directory', {
+            title: 'Most viewed (monthly)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostviewed?period=alltime&:Most viewed (all time)', 'directory', {
+            title: 'Most viewed (all time)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostfavored?:Most favored (weekly)', 'directory', {
+            title: 'Most favored (weekly)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostfavored?period=monthly&:Most favored (monthly)', 'directory', {
+            title: 'Most favored (monthly)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/mostfavored?period=alltime&:Most favored (all time)', 'directory', {
+            title: 'Most favored (all time)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':categories', 'directory', {
+            title: 'Categories',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':categoriesAPI', 'directory', {
+            title: 'Categories (API)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':tags', 'directory', {
+            title: 'Tags',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index_stars:/pornstar/alphabetical', 'directory', {
+            title: 'Pornstar Directory (Female by Alphabet)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index_stars:/pornstar', 'directory', {
+            title: 'Pornstar Directory (Female by Videocount)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index_stars:/pornstar/alphabetical/male', 'directory', {
+            title: 'Pornstar Directory (Male by Alphabet)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index_stars:/pornstar/male', 'directory', {
+            title: 'Pornstar Directory (Male by Videocount)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index_stars:/pornstar/alphabetical/all', 'directory', {
+            title: 'Pornstar Directory (All by Alphabet)',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index_stars:/pornstar/all', 'directory', {
+            title: 'Pornstar Directory (All by Videocount)',
+            icon: logo
+        });
+
+        page.appendItem(PREFIX + ':stars', 'directory', {
+            title: 'Stars',
+            icon: logo
+        });
+    });
 
     plugin.addSearcher("Redtube - Videos", logo, function(page, query) {
         preparePage(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&search="), escape(query.replace(/\s/g, '\+')));
