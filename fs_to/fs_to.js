@@ -270,7 +270,7 @@
                 page.appendItem("", "separator", {
                     title: 'Год'
                 });
-                page.appendItem(PREFIX + ":index:" + BASE_URL + year[1] + ":" + escape(year[2]) + '::&sort=rating', "directory", {
+                page.appendItem(PREFIX + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + '::&sort=rating', "directory", {
                     title: year[2]
                 });
             } else { // handle as serials
@@ -279,7 +279,7 @@
                     page.appendItem("", "separator", {
                         title: 'Год'
                     });
-                    page.appendItem(PREFIX + ":index:" + BASE_URL + year[1] + ":" + escape(year[2]) + '::&sort=rating', "directory", {
+                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + '::&sort=rating', "directory", {
                         title: year[2]
                     });
                 }
@@ -296,7 +296,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Отбор по жанру: '+m[2]) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по жанру: '+m[2]) + '::&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -312,7 +312,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<\/span>([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Отбор по стране: '+trim(showtime.entityDecode(m[2]))) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по стране: '+trim(showtime.entityDecode(m[2]))) + '::&sort=year', "directory", {
                         title: trim(showtime.entityDecode(m[2]))
                     });
                     m = re.exec(htmlBlock[1]);
@@ -329,7 +329,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Отбор по режиссеру: '+m[2]) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по режиссеру: '+m[2]) + '::&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -345,7 +345,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Отбор по актеру: '+m[2]) + '::&sort=year', "directory", {
+                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по актеру: '+m[2]) + '::&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -360,7 +360,7 @@
                     var re = /<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/g;
                     var m = re.exec(htmlBlock[1]);
                     while (m) {
-                        page.appendItem(PREFIX + ":index:" + BASE_URL + m[1] + ":" + escape('Отбор по ведущему: '+m[2]) + '::&sort=year', "directory", {
+                        page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по ведущему: '+m[2]) + '::&sort=year', "directory", {
                             title: m[2]
                         });
                         m = re.exec(htmlBlock[1]);
@@ -555,7 +555,7 @@
     plugin.addURI(PREFIX + ":index:(.*):(.*):(.*):(.*)", function(page, url, title, populars, param) {
         setPageHeader(page, unescape(title));
         page.loading = true;
-        var doc = showtime.httpReq(url + '?view=detailed'+param).toString();
+        var doc = showtime.httpReq(unescape(url) + '?view=detailed'+param).toString();
         page.loading = false;
         if (populars) {
             var match = doc.match(/<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-clear">/);
@@ -705,7 +705,7 @@
         var re = /<a class="b-header__menu-subsections-item" href="([\S\s]*?)">[\S\s]*?<span class="b-header__menu-subsections-item-title m-header__menu-subsections-item-title_type_[\S\s]*?">([\S\s]*?)<\/span>/g;
         var match = re.exec(menu);
         while (match) {
-            page.appendItem(PREFIX + ":index:" + BASE_URL + match[1] + ':' + trim(match[2]) + ':yes:', 'directory', {
+            page.appendItem(PREFIX + ":index:" + escape(BASE_URL + match[1]) + ':' + trim(match[2]) + ':yes:', 'directory', {
                 title: trim(match[2])
             });
             match = re.exec(menu);
