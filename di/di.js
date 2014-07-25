@@ -42,8 +42,8 @@
 		station: json[i].name,
 		title: json[i].name,
 		description: json[i].description_short,
-		icon: icon.substr(0, 4) == 'http' ? icon : 'http:' + icon + '.jpg?size=150x150',
-		album_art: icon.substr(0, 4) == 'http' ? icon : 'http:' + icon + '.jpg?size=150x150',
+		icon: icon.substr(0, 4) == 'http' ? icon : 'http:' + icon + '?size=150x150',
+		album_art: icon.substr(0, 4) == 'http' ? icon : 'http:' + icon + '?size=150x150',
 		album: ''
 	    });
 	};

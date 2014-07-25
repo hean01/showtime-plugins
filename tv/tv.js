@@ -339,7 +339,6 @@
         //rtsp://media2.lsops.net/live/euronews_ru_high.sdp
         //hls:http://hd1.lsops.net/live/euronews_en.smil/playlist.m3u8
         addChannel(page, 'Euronews', 'rtmp://fr-par-10-stream-relay.hexaglobe.net/rtpeuronewslive/en_video750_rtp.sdp swfUrl=http://www.euronews.com/media/player_live_1_14.swf swfVfy=true live=true', 'http://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Euronews_logo.svg/200px-Euronews_logo.svg.png');
-        addChannel(page, 'UN1', 'hls:http://jn1-live.hls.adaptive.level3.net/apple/jn1/stream001/ENGhi.m3u8', '');
         //addChannel(page, 'Russia Today', 'hls:http://178.49.132.73/streaming/russiatoday/tvrec/playlist.m3u8', '');
         addChannel(page, 'Russia Today', 'hls:http://rt.ashttp14.visionip.tv/live/rt-global-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Russia-today-logo.svg/200px-Russia-today-logo.svg.png');
         addChannel(page, 'Russia Today Documentary', 'hls:http://rt.ashttp14.visionip.tv/live/rt-doc-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Russia-today-logo.svg/200px-Russia-today-logo.svg.png');
@@ -514,7 +513,6 @@
         }
         //addChannel(page, 'Euronews', 'rtmp://fr-par-10-stream-relay.hexaglobe.net/rtpeuronewslive/ua_video750_rtp.sdp swfUrl=http://www.euronews.com/media/player_live_1_14.swf swfVfy=true live=true', 'http://ua.euronews.com/media/logo_222.gif');
         addChannel(page, 'Euronews', 'jampo:euronews-ukr', 'http://ua.euronews.com/media/logo_222.gif');
-        addChannel(page, 'UN1', 'hls:http://serv03.vintera.tv:1935/restream/jno.stream/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/ru/3/3e/Jewish_News_One_Logo.jpg');
         addChannel(page, 'Espreso TV', 'youtube', 'https://yt3.ggpht.com/-bVnYWgZunWc/AAAAAAAAAAI/AAAAAAAAAAA/lscLbX2rp2A/s88-c-k-no/photo.jpg');
         addChannel(page, 'Hromadske.tv', 'youtube', 'https://yt3.ggpht.com/-p31Ot-UmPks/AAAAAAAAAAI/AAAAAAAAAAA/4bKlgSnfyOs/s88-c-k-no/photo.jpg');
         addChannel(page, '5 канал', 'youtube', 'http://upload.wikimedia.org/wikipedia/commons/3/3e/5logo.jpg');
@@ -596,7 +594,7 @@
         addChannel(page, 'Life News', 'hls:http://tv.life.ru/lifetv/720p/index.m3u8', 'http://lifenews.ru/assets/logo-0a3a75be3dcc15b6c6afaef4adab52dd.png');
         addChannel(page, 'Россия 24', 'hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21', '');
         addChannel(page, 'РИА Новости', 'hls:http://rian.cdnvideo.ru:1935/rr/stream20/index.m3u8', '');
-        addChannel(page, 'RTД', 'youtube', '');
+        addChannel(page, 'RTД', 'hls:http://62.213.85.137/rtdru/rtdru.m3u8', '');
         //addChannel(page, 'Дождь', 'hls:http://178.49.132.73/streaming/rain/tvrec/playlist.m3u8', '');
         addChannel(page, 'Дождь', 'hls:http://tvrain-video.ngenix.net/mobile/TVRain_1m.stream/playlist.m3u8', 'http://tvrain-st.cdn.ngenix.net/static/css/pub/images/logo-tvrain.png');
         addChannel(page, 'HD Media', 'hls:http://serv02.vintera.tv:1935/push/hdmedia.stream/playlist.m3u8', '');
