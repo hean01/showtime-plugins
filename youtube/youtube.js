@@ -1633,16 +1633,15 @@
         if (age)
             return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
         if (player != url) {
-            //showtime.print('player: '+ url);
+            if (service.enableDebug) showtime.print('player: '+ url);
             var code = showtime.httpReq('http:'+url).toString();
             player = url;
             fnName = code.match(/signature=([^(]*)/)[1];
             var re = new RegExp('function ' + fnName + '\\(([^}]*)');
             var fnText = 'function ' + fnName + '(' + re.exec(code)[1] + '}';
             outFn = fnText;
-            var re = /=([^\(]*)/g;
+            var re = /[=|;]([^\(]*)/g;
             var match = re.exec(fnText);
-            //showtime.print(fnText);
             while (match) {
                 if (outFn.search('function '+match[1]+'\\(') == -1) { // check if we already included this function
                     var re2 = new RegExp('function ' + match[1] + '\\(([^}]*)');
@@ -1652,23 +1651,25 @@
                     } else { // look for vars
                         var varName = match[1].substr(0, match[1].indexOf('.'));
                         if (match[1].split('.').pop() != 'split')
-                        if (outFn.search('var '+varName+'=') == -1) { //check if we already included this var
-                            re2 = new RegExp('var ' + varName + '=([\\s\\S]*?)};');
-                            match2 = re2.exec(code);
-                            if (match2) {
-                                outFn = 'var ' + varName + '=' + match2[1] + '};' + outFn;
+                            if (outFn.search('var '+varName+'=') == -1) { //check if we already included this var
+                                re2 = new RegExp('var ' + varName + '=([\\s\\S]*?)};');
+                                match2 = re2.exec(code);
+                                if (match2) {
+                                    outFn = 'var ' + varName + '=' + match2[1] + '};' + outFn;
+                                }
                             }
-                        }
                     }
                 }
                 match = re.exec(fnText);
             }
         }
-        //showtime.print(outFn);
+        if (service.enableDebug) showtime.print('a_in: ' + a);
         var result;
         try {
+            if (service.enableDebug) showtime.print(outFn);
             result = eval(outFn + fnName + '(a)');
         } catch (err) {};
+        if (service.enableDebug) showtime.print('a_out: ' + result);
         return result;
     }
 
