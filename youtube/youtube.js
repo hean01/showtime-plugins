@@ -1673,6 +1673,29 @@
         return result;
     }
 
+    var itagToInfo = {
+        "5":"426x240 (flv)","6":"450x270 (flv)","13":"mpeg4","17":"176x144 (mpeg4)",
+        "18":"640x360 (h264)", "22":"1280x720 (h264)","34":"640x360 (flv)",
+        "35":"854x480 (flv)","36":"320x180 (mpeg4)","37":"1920x1080 (h264)",
+        "38":"4096x3072 (h264)","43":"640x360 (vp8)","44":"854x480 (vp8)",
+        "45":"1280x720 (vp8)","46":"1920x1080 (vp8)",
+        "82":"640x360 (h264 3d)","83": "854x480 (h264 3d)","84":"1280x720 (h264 3d)",
+        "85":"1920x1080 (h264 3d)","100":"640x360 (vp8 3d)","101":"3D webm 480p",
+        "102":"3D webm 720p",
+        "92":"HLS mp4 240p","93":"HLS mp4 360p","94":"HLS mp4 480p",
+        "95":"HLS mp4 720p","96":"HLS mp4 1080p","132":"HLS mp4 240p",
+        "151":"HLS mp4 72p",
+        "133":"426x240 (h264 dv)","134":"640x360 (h264 dv)","135":"854x480 (h264 dv)",
+        "136":"1280x720 (h264 dv)","137":"1920x1080 (h264 dv)","138":"3840x2160 (h264 dv)",
+        "160":"256x144 (h264 dv)","264":"2560x1440 (h264 dv)",
+        "139":"aac 48bps","140":"aac 128bps","141":"aac 256bps",
+        "167":"640x360 (vp8 dv)","168":"854x480 (vp8 dv)","169":"1280x720 (vp8 dv)",
+        "170":"1920x1080 (vp8 dv)","218":"854x480 (vp8 dv)","219":"854x480 (vp8 dv)",
+        "242":"426x240 (vp9 dv)","243":"640x360 (vp9 dv)","244":"854x480 (vp9 dv)",
+        "245":"854x480 (vp9 dv)","246":"854x480 (vp9 dv)","247":"1280x720 (vp9 dv)",
+        "248":"1920x1080 (vp9 dv)","271":"2560x1440 (vp9 dv)","272":"3840x2160 (vp9 dv)",
+        "171":"vorbis 48bps","172":"vorbis 256bps"};
+
     function getVideosList(page, id, number_items) {
         var doc = showtime.httpReq('http://www.youtube.com/watch?v='+id, {}, {
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1'   
@@ -1760,7 +1783,7 @@
                 links.push(video_item);
                 if (service.enableDebug) {
                     page.appendItem(unescape(realUrl), unescape(url_data.type).match(/audio/) ? 'audio' : 'video', {
-                        title: new showtime.RichText(colorStr(url_data.itag, blue) + ' ' + unescape(url_data.type).replace(';+codecs',''))
+                        title: (itagToInfo[url_data.itag] ? itagToInfo[url_data.itag] : 'unknown itag' ) + ' (' + url_data.itag + ')'
                     });
                 }
             }
