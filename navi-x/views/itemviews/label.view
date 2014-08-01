@@ -1,0 +1,18 @@
+#import "common.view"
+
+widget(container_x, {
+  widget(label, {
+    TextStyleItem();
+    autohide: true;
+    caption: $self.metadata.title + " ";
+    align: left;
+  });
+
+  widget(label, {
+    TextStyleItem();
+    caption: $self.data;
+    align: left;
+    maxlines: 5;
+	color: 0.7;
+  });
+});

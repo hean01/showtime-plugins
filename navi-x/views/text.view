@@ -1,0 +1,30 @@
+#import "common.view"
+
+widget(container_y, {
+	padding: $ui.size;
+	
+	widget(container_x, {
+		widget(label, {
+			caption: $page.model.metadata.title;
+			TextStyleItem();
+			size: 42;
+		});
+	});
+
+	widget(container_x, {
+		.padding = $ui.size;
+		widget(list_y, {
+			.id = "bodytext";
+
+			widget(label, {
+				TextStyleItem();
+				caption: $page.model.metadata.content;
+				maxlines: $page.model.metadata.lines;
+				align:justified;
+				size: 20;
+			});
+		});
+
+		LIST_Y_SLIDER("bodytext", true);
+	});
+});

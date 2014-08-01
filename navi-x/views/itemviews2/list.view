@@ -1,0 +1,37 @@
+#import "common.view"
+
+widget(container_y, {
+	widget(label, {
+		TextStyleItem();
+		.focusable = ($self.metadata.focusable);
+		onEvent(activate, navOpen($self.metadata.url));
+		.caption = $self.metadata.title;
+		//.size = 31;
+		.sizeScale = 2.1;
+		.color = 0.6 + 0.4 * isFocused();
+	});
+	
+	widget(list_x, {
+		.hidden = ($self.metadata.focusable);
+		&clone.focused = focusedChild();
+		cloner($self.data, container_z, {
+			.focusable = true;
+			.padding = $ui.size;
+			widget(image, {
+				.source = $self.image;
+				//.height = $ui.size * 6;
+				.alpha = 0.6 + 0.4 * isFocused();
+			});
+			
+			widget(label, {
+				.caption = $self.title;
+				.align = bottom;
+				TextStyleItem();
+				//.size = 15;
+				.sizeScale = 0.7;
+			});
+			
+			onEvent(activate, navOpen($self.url));
+		});
+	});
+});

@@ -1,0 +1,61 @@
+#import "common.view"
+
+widget(container_y, {
+	padding: $ui.size;
+
+	widget(container_x, {
+		widget(label, {
+			caption: $page.model.metadata.title;
+			TextStyleItem();
+			//size: 42;
+			.sizeScale = 3;
+		});
+	});
+
+	widget(container_x, {
+		padding: $ui.size * 2;
+		widget(container_y, {
+			// Image cover
+			widget(image, {
+				source: $page.model.metadata.logo;
+				width: $ui.height * 3/5;
+			});
+		});
+	
+		widget(container_y, {
+			// Details
+			padding: $ui.size;
+			.width = $ui.width / 3;
+
+			widget(label, {
+				TextStyleItem();
+				.caption = "Details";
+				//.size = 31;
+				.sizeScale = 2.3;
+			});
+			
+			spacing: $ui.size * 0.5;
+			cloner($page.model.nodes, loader, {
+				.hidden = ($self.type == "list");
+				source: "itemviews2/" + $self.type + ".view";
+			});
+		});
+	
+		widget(container_y, {
+			// Lists
+			spacing: $ui.size * 0.5;
+			cloner($page.model.nodes, loader, {
+				.hidden = ($self.type != "list");
+				source: "itemviews2/" + $self.type + ".view";
+			});
+			
+			widget(dummy, { height: $ui.size; });
+			
+			widget(label, {
+				.caption = "Currently selected: " + $clone.focused;
+			});
+			
+			.width = $ui.width - $ui.width / 4 - $ui.width / 3;
+		});
+	});
+});

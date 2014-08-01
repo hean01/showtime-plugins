@@ -1,0 +1,34 @@
+#import "common.view"
+//#import "theme://popups/common.view"
+
+	widget(container_y, {
+		padding: $ui.width / 35;
+		spacing: 15;
+
+		widget(container_y, {
+			widget(label, {
+				sizeScale: 1.2;
+				caption: $page.model.metadata.message;
+				maxlines: 20;
+				align: justified;
+			});
+
+			widget(dummy, {
+				height: $ui.size;
+			});
+
+			widget(container_x, {
+				widget(container_x, {
+					button("Authorize", deliverEvent($page.eventSink, "authorize"),
+						true, 0);
+				});
+
+				widget (dummy, { width: $ui.size; });
+
+				widget(container_x, {
+					button("I don't!", deliverEvent($page.eventSink, "unauthorize"),
+						true, 0);
+				});
+			});
+		});
+	});

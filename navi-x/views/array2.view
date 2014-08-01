@@ -1,0 +1,131 @@
+#import "common.view"
+
+widget(container_y, {
+	widget(container_x, {
+		//height: $ui.height * 5/6;
+		widget(dummy, { .width = 2; });
+
+		widget(keyintercept, {
+
+			widget(container_y, {
+				widget(array, {
+					$view.sizer = int(getWidth() / 100);
+
+					&clone.focused = focusedChild();
+					.id = "array";
+					.border = $view.sizer * 3;
+					.Xspacing = $view.sizer;
+					.Yspacing = $view.sizer;
+					.childTilesX = $page.model.metadata.childTilesX ?? 6;
+					.childTilesY = $page.model.metadata.childTilesY ?? 3;
+	  
+					cloner($page.model.nodes, displacement, {
+						.focusable = true;
+						.focusOnClick = true;
+						//.padding = $view.sizer * -1.5 * iir(isHovered() || isFocused(), 3) + $view.sizer * iir(isPressed(), 3);
+
+						onEvent(activate, select($ui.fancyAnimations,
+							navOpen($self.url, void, $self, $parent.model),
+							navOpen($self.url, void, void, $parent.model)));
+						widget(container_y, {
+							.spacing = 5;
+							widget(detachable, {
+								widget(container_y, {
+									align: top;
+									widget(frontdrop, {
+							source: "img/boxart-overlay.png";
+							automargin: true;
+							childAspect: 0.7;
+							border: 8;
+							margin: -6;
+							focusable: true;
+							onEvent(activate, navOpen($self.url));
+							color: iir(isFocused(), 4);
+			
+							widget(container_z, {
+								widget(image, {
+									height: $ui.size * 14;
+									source: $self.metadata.icon ?? "img/nophoto.png";
+									color: iir(isFocused(), 4) + 0.4;
+									saturation: 1 - iir(isReady(), 10);
+								});
+
+								widget(container_y, {
+									filterConstraintX: true;
+									space(6);
+
+									widget(container_z, {
+										widget(quad, {
+											color: 0;
+											alpha: 0.75;
+										});
+
+										widget(container_y, {
+											align: center;
+											padding: [$ui.size/2, 0];
+											widget(label, {
+												color: iir(isFocused(), 4) + 0.3;
+												caption: $self.metadata.title;
+												align: center;
+												shadow: true;
+												outline: true;
+												font: "theme://fonts/OpenSans-CondBold.ttf";
+											});
+										});
+									});
+								});
+							});
+						});
+								});
+							});
+						});
+					});
+				});	  
+			});
+		});
+
+		widget(dummy, { .width = 2; });
+		LIST_Y_SLIDER("array");
+		widget(dummy, { .width = 2; });
+	});
+
+	widget(frontdrop, {
+		source: "img/infobar.png";
+		border: 8;
+		padding: 10;
+		.hidden = !($clone.focused.metadata.title && $page.model.metadata.informationBar == true);
+		
+		widget(container_y, {
+			.spacing = 5;
+			.padding = 5;
+			widget(label, {
+				.caption = "Title: " + $clone.focused.metadata.title;
+				.align = center;
+				.ellipsize = true;
+				.shadow = true;
+				.color = 1.0;
+				.sizeScale = 1.6;
+			});
+
+			widget(label, {
+				.hidden = !($clone.focused.metadata.url);
+				.caption = "URL: " + $clone.focused.metadata.url;
+				.align = center;3
+				.ellipsize = true;
+				.shadow = true;
+				.color = 1.0;
+				.sizeScale = 1.1;
+			});
+
+			widget(label, {
+				.hidden = !($clone.focused.metadata.processor);
+				.caption = "Processor: " + $clone.focused.metadata.processor;
+				.align = center;
+				.ellipsize = true;
+				.shadow = true;
+				.color = 1.0;
+				.sizeScale = 1.1;
+			});
+		});
+	});
+});
