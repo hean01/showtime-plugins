@@ -453,7 +453,7 @@
                 match = re.exec(response);
             };
         } else { // movie
-            var player_tabs = response.match(/<ul id="player_tabs" class="tabs">([\S\s]*?)<\/ul>/)[1];
+            var player_tabs = response.match(/<ul id="player_tabs" class="tabs.*">([\S\s]*?)<\/ul>/)[1];
             re = /<li rel="([\S\s]*?)">([\S\s]*?)<\/li>/g;
             match = re.exec(player_tabs);
             var num = 0;
