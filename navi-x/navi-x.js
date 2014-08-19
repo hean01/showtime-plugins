@@ -111,16 +111,7 @@
 
     settings.createDivider('User Settings (only functional if authenticated)');
 
-    if (service.enableLogin) {
-        try {
-            // Try to parse some possible previous authentications and check if adult content value changed
-            server.init();
-            server.adultContent();
-        }
-        catch (ex) { e(ex); showtime.notify('Error while authenticating and parsing default playlists', 2); }
-    }
-
-    settings.createBool("enableLogin", "Enable Login", true, function (v) { 
+    settings.createBool("enableLogin", "Enable Login", true, function (v) {
         try {
             service.enableLogin = v; 
             if (service.enableLogin) {
@@ -3688,6 +3679,16 @@
     }
 	
     plugin.addURI(PREFIX + ":start", function(page) {
+        if (service.enableLogin) {
+            try {
+                // Try to parse some possible previous authentications and check if adult content value changed
+                server.init();
+                server.adultContent();
+            } catch (ex) {
+                e(ex); showtime.notify('Error while authenticating and parsing default playlists', 2);
+            }
+        }
+
         page.type = "directory";
         page.contents = "list";
         page.metadata.background = plugin.path + "views/img/background.png";
