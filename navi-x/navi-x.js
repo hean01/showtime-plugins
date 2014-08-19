@@ -112,15 +112,7 @@
     settings.createDivider('User Settings (only functional if authenticated)');
 
     settings.createBool("enableLogin", "Enable Login", true, function (v) {
-        try {
-            service.enableLogin = v; 
-            if (service.enableLogin) {
-                // Try to parse some possible previous authentications and check if adult content value changed
-                server.init();
-                server.adultContent();
-            }
-        }
-        catch (ex) { e(ex); showtime.notify('Error while authenticating and parsing default playlists', 2); }
+        service.enableLogin = v;
     });
     settings.createBool("adultContent", "Adult Content", false, function (v) { service.adult = v; });
 
