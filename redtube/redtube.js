@@ -121,7 +121,7 @@
         setPageHeader(page, title);
 	var fromPage = 1, tryToSearch = true;
         //1-link, 2-title, 3-icon, 4-hd flag, 5-duration, 6-rating, 7-date added
-        var re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?<\/a>([\S\s]*?)<\/div>[\S\s]*?class="d">([^\<]+)[\S\s]*?;">([\S\s]*?)<\/[\S\s]*?;">([\S\s]*?)<\//g;
+        var re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?<\/a>([\S\s]*?)<\/div>[\S\s]*?class="d">([^\<]+)[\S\s]*?">([\S\s]*?)<\/[\S\s]*?">[\S\s]*?">([\S\s]*?)<\//g;
         var re2 = /"Next Page/;
         var profile = "";
 
