@@ -339,6 +339,7 @@
         //rtsp://media2.lsops.net/live/euronews_ru_high.sdp
         //hls:http://hd1.lsops.net/live/euronews_en.smil/playlist.m3u8
         addChannel(page, 'Euronews', 'rtmp://fr-par-10-stream-relay.hexaglobe.net/rtpeuronewslive/en_video750_rtp.sdp swfUrl=http://www.euronews.com/media/player_live_1_14.swf swfVfy=true live=true', 'http://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Euronews_logo.svg/200px-Euronews_logo.svg.png');
+        addChannel(page, 'UkraineToday Live', 'youtube', '');
         //addChannel(page, 'Russia Today', 'hls:http://178.49.132.73/streaming/russiatoday/tvrec/playlist.m3u8', '');
         addChannel(page, 'Russia Today', 'hls:http://rt.ashttp14.visionip.tv/live/rt-global-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Russia-today-logo.svg/200px-Russia-today-logo.svg.png');
         addChannel(page, 'Russia Today Documentary', 'hls:http://rt.ashttp14.visionip.tv/live/rt-doc-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Russia-today-logo.svg/200px-Russia-today-logo.svg.png');
@@ -580,8 +581,7 @@
         addChannel(page, 'HD Media', 'hls:http://serv02.vintera.tv:1935/push/hdmedia.stream/playlist.m3u8', '');
         addChannel(page, 'HD Media 3D', 'hls:http://hdmedia3d.vintera.tv:1935/hdmedia3d/hdmedia3d.stream/playlist.m3u8', '');
         addChannel(page, 'Brodilo.TV', 'ts:http://brodilo.tv/channel.php', '');
-        addChannel(page, 'ЕДАI', 'youtube', '');
-        addChannel(page, 'ЛДПР live', 'hls:http://109.239.142.90:1935/live/mcstream_1080p/playlist.m3u8', 'http://ldpr.tv/img/header/logo.png');
+        addChannel(page, 'ЛДПР live', 'hls:http://213.247.198.250:1935/live/ldpr.stream/playlist.m3u8', 'http://ldpr.tv/img/header/logo.png');
         addChannel(page, 'Россия 24', 'hls:http://178.49.132.73/streaming/vesti/tvrec/playlist.m3u8', '');
         addChannel(page, 'Россия 1', 'hls:http://178.49.132.73/streaming/rossija/tvrec/playlist.m3u8', '');
         addChannel(page, 'Россия 2', 'hls:http://178.49.132.73/streaming/sport/tvrec/playlist.m3u8', '');
