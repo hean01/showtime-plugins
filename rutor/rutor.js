@@ -50,7 +50,8 @@
     plugin.addURI(PREFIX + ":start", function(page) {
         setPageHeader(page, plugin_info.synopsis);
         page.loading = true;
-        var doc = showtime.httpReq(BASE_URL + '/top').toString();
+        //var doc = showtime.httpReq(BASE_URL + '/top').toString();
+        var doc = showtime.httpReq(BASE_URL).toString();
         page.loading = false;
         doc = doc.match(/<div id="index">([\s\S]*?)<!-- bottom banner -->/);
         if (doc) {
@@ -70,7 +71,7 @@
                        var comments = match2[5].match(/[\s\S]*?<td align="right">([\s\S]*?)</)[1];
                    } else
                        var end = match2[5].match(/[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-                       page.appendItem('torrent:video:'+ match2[2].replace(/\/parse\//,'http://'), "directory", {
+                       page.appendItem('torrent:browse:'+ match2[2].replace(/\/parse\//,'http://'), "directory", {
     	                   title: new showtime.RichText(colorStr(match2[1], orange) + ' ' +
                                match2[4] + ' ('+ coloredStr(end[2], green) + '/'+
                                coloredStr(end[3], red) + ') ' + colorStr(end[1], blue) +
