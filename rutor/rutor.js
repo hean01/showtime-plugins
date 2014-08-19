@@ -21,7 +21,7 @@
     var plugin_info = plugin.getDescriptor();
     var PREFIX = plugin_info.id;
     //var BASE_URL = 'http://torrent-rutor.org';
-    var BASE_URL = 'http://torrent-rutor.org';
+    var BASE_URL = 'http://new-rutor.org';
     var logo = plugin.path + "logo.png";
     var slogan = plugin_info.synopsis;
 
@@ -50,8 +50,8 @@
     plugin.addURI(PREFIX + ":start", function(page) {
         setPageHeader(page, plugin_info.synopsis);
         page.loading = true;
-        //var doc = showtime.httpReq(BASE_URL + '/top').toString();
-        var doc = showtime.httpReq(BASE_URL).toString();
+        var doc = showtime.httpReq(BASE_URL + '/top').toString();
+        //var doc = showtime.httpReq(BASE_URL).toString();
         page.loading = false;
         doc = doc.match(/<div id="index">([\s\S]*?)<!-- bottom banner -->/);
         if (doc) {
