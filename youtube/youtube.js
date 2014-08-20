@@ -669,7 +669,7 @@
 
         function paginator() {      
             var num = 0;
-            while(total_items < max_items) {	
+            while(total_items < max_items) {
                 var doc = loader(offset + num).feed;
                 if (!doc || typeof(doc) == String) {
                     break;
@@ -1004,7 +1004,7 @@
 
             pageController(page, function(offset) { 
                 api.args_common['start-index']=offset;
-            
+
                 url=unescape(url)
             
                 if (url.indexOf('?')!=-1) {
@@ -1020,7 +1020,7 @@
                 }
 
                 var link = putUrlArgs(url, api.args_common);
-            
+
                 if (url.indexOf('/standardfeeds/') != -1) {
                     if (service.region && service.region != 'all' && (url.indexOf('/' + service.region + '/') == -1)) {
                         var type_init = url.indexOf('/standardfeeds/');
@@ -2560,8 +2560,8 @@
         this.reset_args = function() {
             this.args_common = {
                 'alt' : 'json',
-                'max-results' : 25,
-                'safeSearch' : (service.safeSearch)?service.safeSearch: 'moderate'
+                'max-results' : 25
+                // 'safeSearch' : (service.safeSearch)?service.safeSearch: 'moderate'
             }
 
             if (service.resolutionFilter == 'hd')
