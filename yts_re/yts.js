@@ -82,7 +82,7 @@
         var json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'movie.json?id=' + id));
         setPageHeader(page, json.MovieTitle);
 
-        page.appendItem('torrent:video:' + json.TorrentUrl, "video", {
+        page.appendItem('torrent:video:' + service.proto + service.baseurl.replace('/api', '') + json.TorrentUrl.replace("http://yts.re/", '').replace("https://yts.re/", ''), "video", {
                title: new showtime.RichText(json.MovieTitleClean + colorStr(json.Size, blue)),
                year: +json.MovieYear,
                duration: json.MovieRuntime * 60,
