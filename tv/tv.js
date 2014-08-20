@@ -246,6 +246,40 @@
                  page.error("Sorry, can't get the link :(");
     });
 
+    plugin.addURI(PREFIX + "gamax:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
+        var resp = showtime.httpReq(url).toString();
+        page.loading = false;
+        var match = resp.match(/'file': '([\S\s]*?)' \}/);
+            if (match) {
+                page.type = "video";
+                page.source = "videoparams:" + showtime.JSONEncode({
+                    title: unescape(title),
+                    sources: [{
+                        url: match[1]
+                    }]
+                });
+            } else
+                 page.error("Sorry, can't get the link :(");
+    });
+
+    plugin.addURI(PREFIX + "euronews:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
+        var resp = showtime.httpReq(url).toString();
+        page.loading = false;
+        var match = resp.match(/file: "([\S\s]*?)"\}/);
+            if (match) {
+                page.type = "video";
+                page.source = "videoparams:" + showtime.JSONEncode({
+                    title: unescape(title),
+                    sources: [{
+                        url: match[1]
+                    }]
+                });
+            } else
+                 page.error("Sorry, can't get the link :(");
+    });
+
     function addChannel(page, title, url, icon) {
         var mimetype = '';
         if (url.substr(0, 3) == 'ts:') {
@@ -275,6 +309,12 @@
 
         if (url.substr(0, 3)  == 'trk')
             link = PREFIX + "trk:" + escape(title);
+
+        if (url.substr(0, 5)  == 'gamax')
+            link = PREFIX + url + ":" + escape(title);
+
+        if (url.substr(0, 8)  == 'euronews')
+            link = PREFIX + url + ":" + escape(title);
 
         var item = page.appendItem(link, "video", {
             title: title,
@@ -336,16 +376,13 @@
         page.appendItem("", "separator", {
             title: 'English'
         });
-        //rtsp://media2.lsops.net/live/euronews_ru_high.sdp
-        //hls:http://hd1.lsops.net/live/euronews_en.smil/playlist.m3u8
-        addChannel(page, 'Euronews', 'rtmp://fr-par-10-stream-relay.hexaglobe.net/rtpeuronewslive/en_video750_rtp.sdp swfUrl=http://www.euronews.com/media/player_live_1_14.swf swfVfy=true live=true', 'http://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Euronews_logo.svg/200px-Euronews_logo.svg.png');
+        addChannel(page, 'Euronews', 'euronews:http://www.euronews.com/news/streaming-live/', 'http://en.euronews.com/media/logo_222.gif');
         addChannel(page, 'UkraineToday Live', 'youtube', '');
-        //addChannel(page, 'Russia Today', 'hls:http://178.49.132.73/streaming/russiatoday/tvrec/playlist.m3u8', '');
         addChannel(page, 'Russia Today', 'hls:http://rt.ashttp14.visionip.tv/live/rt-global-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Russia-today-logo.svg/200px-Russia-today-logo.svg.png');
         addChannel(page, 'Russia Today Documentary', 'hls:http://rt.ashttp14.visionip.tv/live/rt-doc-live-HD/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Russia-today-logo.svg/200px-Russia-today-logo.svg.png');
         addChannel(page, 'BBC World News', 'hls:http://livestation_hls-lh.akamaihd.net/i/bbcworld_en@105465/index_928_av-b.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/6/6c/BBC_World_News_red.svg');
-        addChannel(page, 'DW Europe', 'hls:http://dwtvios_europa-i.akamaihd.net/hls/live/200515/dwtveuropa/1/playlist1x.m3u8', 'https://lh5.googleusercontent.com/-9Ir29NdKHLU/AAAAAAAAAAI/AAAAAAAAIiY/TF5J4A4ZdP8/s120-c/photo.jpg');
-        addChannel(page, 'France 24', 'hls:http://vipwowza.yacast.net/f24_hlslive_en/_definst_/mp4:fr24_en_748.stream/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/en/thumb/6/65/FRANCE_24_logo.svg/200px-FRANCE_24_logo.svg.png');
+        addChannel(page, 'DW Europe', 'hls:http://www.metafilegenerator.de/DWelle/tv-europa/ios/master.m3u8', 'https://lh5.googleusercontent.com/-9Ir29NdKHLU/AAAAAAAAAAI/AAAAAAAAIiY/TF5J4A4ZdP8/s120-c/photo.jpg');
+        addChannel(page, 'France 24', 'hls:http://vipwowza.yacast.net/f24_hlslive_en/smil:iphone.fr24en.smil/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/en/thumb/6/65/FRANCE_24_logo.svg/200px-FRANCE_24_logo.svg.png');
         //addChannel(page, 'CNN', 'rtmp://hd1.lsops.net/live/ playpath=cnn_en_584 swfUrl="http://static.ls-cdn.com/player/5.10/livestation-player.swf" swfVfy=true live=true', 'http://upload.wikimedia.org/wikipedia/commons/8/8b/Cnn.svg');
         //addChannel(page, 'CNN', 'hls:http://livestation_hls-lh.akamaihd.net/i/cnn_en@105455/master.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/8/8b/Cnn.svg');
         addChannel(page, 'CNN', 'hls:http://178.49.132.73/streaming/cnn/tvrec/playlist.m3u8', '');
@@ -496,8 +533,7 @@
                 title: 'Ukrainian'
             });
         }
-        //addChannel(page, 'Euronews', 'rtmp://fr-par-10-stream-relay.hexaglobe.net/rtpeuronewslive/ua_video750_rtp.sdp swfUrl=http://www.euronews.com/media/player_live_1_14.swf swfVfy=true live=true', 'http://ua.euronews.com/media/logo_222.gif');
-        addChannel(page, 'Euronews', 'jampo:euronews-ukr', 'http://ua.euronews.com/media/logo_222.gif');
+        addChannel(page, 'Euronews', 'euronews:http://ua.euronews.com/news/streaming-live/', 'http://ua.euronews.com/media/logo_222.gif');
         addChannel(page, 'Espreso TV', 'youtube', 'https://yt3.ggpht.com/-bVnYWgZunWc/AAAAAAAAAAI/AAAAAAAAAAA/lscLbX2rp2A/s88-c-k-no/photo.jpg');
         addChannel(page, 'Hromadske.tv', 'youtube', 'https://yt3.ggpht.com/-p31Ot-UmPks/AAAAAAAAAAI/AAAAAAAAAAA/4bKlgSnfyOs/s88-c-k-no/photo.jpg');
         addChannel(page, '5 канал', 'youtube', 'http://upload.wikimedia.org/wikipedia/commons/3/3e/5logo.jpg');
@@ -539,26 +575,25 @@
         addChannel(page, 'БТБ', 'rtmp://94.45.140.4/live/livestream', 'http://btbtv.com.ua/images/logo.png');
       }
 
-      if (category == "Polish" || category == "All") {
-       if (category == "All") {
-        page.appendItem("", "separator", {
-            title: 'Polish'
-        });
-       }
-        addChannel(page, 'Fight Box HD', 'hls:http://spi-live.ercdn.net/spi/smil:fightboxhd_0.smil/playlist.m3u8', '');
-        addChannel(page, 'Arthouse Box', 'hls:http://spi-live.ercdn.net/spi/smil:fbarthousehd_0.smil/playlist.m3u8', '');
-        addChannel(page, 'Kino Polska', 'hls:http://spi-live.ercdn.net/spi/smil:kinopolskahd_international_0.smil/playlist.m3u8', '');
-        addChannel(page, 'Filmbox Basic', 'hls:http://spi-live.ercdn.net/spi/smil:filmboxbasicsd_pl_0.smil/playlist.m3u8', '');
-        addChannel(page, 'Filmbox Extra', 'hls:http://spi-live.ercdn.net/spi/smil:filmboxextrasd_pl_0.smil/playlist.m3u8', '');
-      }
-
       if (category == "Hungarian" || category == "All") {
        if (category == "All") {
         page.appendItem("", "separator", {
             title: 'Hungarian'
         });
        }
+        addChannel(page, 'Euronews', 'euronews:http://hu.euronews.com/news/streaming-live/', 'http://hu.euronews.com/media/logo_222.gif');
         addChannel(page, 'Fix', 'rtmp://video.fixhd.tv/fix/hd.stream', 'http://dtvnews.hu/sites/default/files/images/fix_large.w160.jpg');
+        addChannel(page, 'm1', 'gamax:http://admin.gamaxmedia.hu/player-inside-full?streamid=mtv1live&userid=mtva', '');
+        addChannel(page, 'm2', 'gamax:http://admin.gamaxmedia.hu/player-inside-full?streamid=mtv2live&userid=mtva', '');
+        addChannel(page, 'Duna TV', 'gamax:http://admin.gamaxmedia.hu/player-inside-full?streamid=dunalive&userid=mtva', '');
+        addChannel(page, 'Duna World', 'gamax:http://admin.gamaxmedia.hu/player-inside-full?streamid=dunaworldlive&userid=mtva', '');
+        addChannel(page, 'Konyha TV', 'hls:http://91.82.85.44:1935/live/konyhatv/playlist.m3u8', '');
+        addChannel(page, 'ATV', 'rtmp://195.228.75.100/atvliveedge/_definst_/atvstream_2_aac', '');
+        addChannel(page, 'Hir TV', 'hls:http://streamserver.mno.netrix.hu/hls_delayed/live_ep_512k.m3u8', '');
+        addChannel(page, 'NY TV', 'rtmp://193.138.125.14/live/nytv.stream', '');
+        addChannel(page, 'Debrecen TV', 'rtmp://91.82.85.44:1935/relay2/DTV', '');
+        addChannel(page, 'Pannon RTV', 'ts:http://212.200.235.242:8080/', '');
+
       }
 
       if (category == "Russian" || category == "All") {
@@ -567,10 +602,8 @@
             title: 'Russian'
         });
        }
-        addChannel(page, 'Euronews', 'hls:http://178.49.132.73/streaming/euronews/tvrec/playlist.m3u8', '');
-        //rtmp://fr-par-10-stream-relay.hexaglobe.net/rtpeuronewslive/ru_video750_rtp.sdp swfUrl=http://www.euronews.com/media/player_live_1_14.swf swfVfy=true live=true
-        //addChannel(page, 'Euronews', 'hls:http://hd1.lsops.net/live/euronews_ru.smil/playlist.m3u8', '');
-        // http://tv.life.ru/index.m3u8
+        addChannel(page, 'Euronews', 'euronews:http://ru.euronews.com/news/streaming-live/', 'http://ru.euronews.com/media/logo_222.gif');
+        //http://tv.life.ru/index.m3u8
         addChannel(page, 'Life News', 'hls:http://tv.life.ru/lifetv/720p/index.m3u8', 'http://lifenews.ru/assets/logo-0a3a75be3dcc15b6c6afaef4adab52dd.png');
         addChannel(page, 'Россия 24', 'hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21', '');
         addChannel(page, 'Россия 1', 'hls:http://213.208.179.135/rr2/smil:rtp_r1_rr.smil/playlist.m3u8?auth=vh&cast_id=2961', '');
@@ -578,7 +611,6 @@
         addChannel(page, 'Москва 24', 'hls:http://testlivestream.rfn.ru/live/smil:m24.smil/playlist.m3u8?auth=vh&cast_id=1661', '');
         addChannel(page, 'РИА Новости', 'hls:http://rian.cdnvideo.ru:1935/rr/stream20/index.m3u8', '');
         addChannel(page, 'RTД', 'hls:http://62.213.85.137/rtdru/rtdru.m3u8', '');
-        //addChannel(page, 'Дождь', 'hls:http://178.49.132.73/streaming/rain/tvrec/playlist.m3u8', '');
         addChannel(page, 'Дождь', 'hls:http://tvrain-video.ngenix.net/mobile/TVRain_1m.stream/playlist.m3u8', 'http://tvrain-st.cdn.ngenix.net/static/css/pub/images/logo-tvrain.png');
         addChannel(page, 'HD Media', 'hls:http://serv02.vintera.tv:1935/push/hdmedia.stream/playlist.m3u8', '');
         addChannel(page, 'HD Media 3D', 'hls:http://hdmedia3d.vintera.tv:1935/hdmedia3d/hdmedia3d.stream/playlist.m3u8', '');
@@ -644,8 +676,6 @@
                   title: 'XXX'
               });
           }
-          addChannel(page, 'Erox HD', 'hls:http://spi-live.ercdn.net/spi/eroxhd_0_1/playlist.m3u8', 'http://www.lyngsat-logo.com/hires/ee/erox_box_hd.png');
-          addChannel(page, 'Eroxxx HD', 'hls:http://spi-live.ercdn.net/spi/eroxxhd_0_1/playlist.m3u8', 'http://www.lyngsat-logo.com/hires/ee/eroxxx_box_hd.png');
           addChannel(page, 'Hallo TV', 'hls:http://83.169.58.38:1935/live/HalloTV1/playlist.m3u8', 'http://www.lyngsat-logo.com/logo/tv/hh/hallo_tv_at.jpg');
           addChannel(page, 'Playboy TV', 'rtmp://111.118.21.77/ptv3/phd499', 'http://www.playboy.tv/assets/Playboy/PlayboyTv/Tour/assets/common/img/main-logo.png');
           addChannel(page, 'Playboy Spice TV HD', 'rtmp://111.118.21.77/ptv3/phd497', '');
@@ -689,9 +719,6 @@
 	});
 	page.appendItem(PREFIX + "category:Russian", "directory", {
 	    title: "Russian"
-	});
-	page.appendItem(PREFIX + "category:Polish", "directory", {
-	    title: "Polish"
 	});
 	page.appendItem(PREFIX + "category:Hungarian", "directory", {
 	    title: "Hungarian"
