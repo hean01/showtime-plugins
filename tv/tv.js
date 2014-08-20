@@ -676,7 +676,11 @@
                   title: 'XXX'
               });
           }
+          addChannel(page, 'Brazileirinhas', 'rtmp://edge-05.livestreamcast.org/Brasileirinhas/Brasileirinhas/ playpath=Brasileirinhas swfUrl=http://livestreamcast.org/jwplayer/jwplayer.flash.swf live=1 pageUrl=http://livestreamcast.org/embed.php?c=brasileirinhas&vw=100%&vh=100%"', '');
+          addChannel(page, 'Brazzers', 'hls:http://195.154.188.161/hls/sexy.m3u8', '');
           addChannel(page, 'Hallo TV', 'hls:http://83.169.58.38:1935/live/HalloTV1/playlist.m3u8', 'http://www.lyngsat-logo.com/logo/tv/hh/hallo_tv_at.jpg');
+          addChannel(page, 'Visit-X', 'rtmp://194.116.150.47/live//visitx.stream1', 'https://pbs.twimg.com/profile_images/1625623578/social_logo.jpg');
+          //addChannel(page, 'Visit-X', 'rtmp://194.116.150.47/live//visitx.stream2', 'https://pbs.twimg.com/profile_images/1625623578/social_logo.jpg');
           addChannel(page, 'Playboy TV', 'rtmp://111.118.21.77/ptv3/phd499', 'http://www.playboy.tv/assets/Playboy/PlayboyTv/Tour/assets/common/img/main-logo.png');
           addChannel(page, 'Playboy Spice TV HD', 'rtmp://111.118.21.77/ptv3/phd497', '');
           addChannel(page, 'Delight Empire HD', 'rtmp://111.118.21.75/ptv2/phd63', '');
@@ -691,8 +695,6 @@
           addChannel(page, 'Asia ON', 'rtmp://lm02.everyon.tv/ptv2/phd60', '');
           addChannel(page, 'LiveTing TV', 'rtmp://lm02.everyon.tv/ptv2/tv/phd64', '');
           addChannel(page, 'Hot Girl TV', 'rtmp://lm02.everyon.tv/ptv2/tv/phd59', '');
-          addChannel(page, 'Visit-X', 'rtmp://194.116.150.47/live//visitx.stream1', 'https://pbs.twimg.com/profile_images/1625623578/social_logo.jpg');
-          //addChannel(page, 'Visit-X', 'rtmp://194.116.150.47/live//visitx.stream2', 'https://pbs.twimg.com/profile_images/1625623578/social_logo.jpg');
       }
     });
 

@@ -234,7 +234,6 @@
                 video = video.slice(0, url_end);
 
             showtime.trace('Video Playback: Reading ' + video);
-
             var videoparams = {
                 title: unescape(title),
                 sources: [
@@ -1278,8 +1277,7 @@
             this.type = type;
 			
             //remove the [COLOR] tags from the name
-            var reg1 = new RegExp(/\[.*?\]/g);
-            var t = this.title.replace(reg1, '');
+            var t = this.title.replace(/\[.*?\]/g, '');
             page.metadata.title = new showtime.RichText(t);
 
             if (t.toLowerCase().indexOf("movie") != -1 || t.toLowerCase().indexOf("films") != -1) {
@@ -3497,8 +3495,14 @@
     }
 
     function convert(c) {
-        c = trim(c);
+        c = trim(c).replace('=', '');
         switch (c) {
+            case 'brown':
+                return 'A52A2A';
+            case 'bisque':
+                return 'FFE4C4';
+            case 'aqua':
+                return '00FFFF';
             case 'red':
                 return 'FF0000';
             case 'green':
@@ -3518,13 +3522,13 @@
     function parse_string_color(text, size) {
         var lastPos = 0, textOut = '', lastColor = '';
         while (lastPos < text.length) {
-            var openTagStartPos = text.indexOf('[COLOR=', lastPos);
+            var openTagStartPos = text.indexOf('[COLOR', lastPos);
             if (openTagStartPos > -1) {
                 textOut += text.substring(lastPos, openTagStartPos);
                 var openTagEndPos = text.indexOf(']', openTagStartPos);
                 lastColor = text.substring(openTagStartPos, openTagEndPos + 1);
                 var closeTagStartPos = text.indexOf('[/COLOR]', openTagEndPos);
-                var orphanTagStartPos = text.substring(openTagEndPos, closeTagStartPos).indexOf('[COLOR=');
+                var orphanTagStartPos = text.substring(openTagEndPos, closeTagStartPos).indexOf('[COLOR');
                 if (orphanTagStartPos > -1) {
                     textOut += lastColor + text.substring(openTagEndPos + 1, openTagEndPos + orphanTagStartPos) + '[/COLOR]'; //p.3.1
                     textOut += text.substring(openTagEndPos + orphanTagStartPos, closeTagStartPos) + '[/COLOR]' + lastColor;
@@ -3539,7 +3543,7 @@
             }
             lastPos++;
         }
-        var text_final = textOut.replace(/\[COLOR=([^\]]+)\]/g, function (match, color) {
+        var text_final = textOut.replace(/\[COLOR([^\]]+)\]/g, function (match, color) {
             return '<font color="#' + convert(color) + '" size="'+size+'>';
         });
         return '<font color="#ffffff" size="' + size + '>' + text_final.replace(/\[\/COLOR\]/g, '<\/font>').replace(/\s{2,}/g, ' ') + '<\/font>';
