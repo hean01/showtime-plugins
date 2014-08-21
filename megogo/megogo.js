@@ -64,7 +64,7 @@
         page.loading = true;
         while (1) {
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + api + url + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
-            if (json.result == 'ok') break;
+            if (json.result == 'ok' || json.result == 'error') break;
         }
         page.loading = false;
         return json;
@@ -249,8 +249,14 @@
         appendVideosToPage(page, json.member.filmography, 0, 'Фильмография:');
     });
 
+    // This route should be keep for legacy purposes
+    plugin.addURI(PREFIX + ':directory:(.*):(.*)', function(page, id, title) {
+        page.redirect(PREFIX + ':indexByID:' + id + ':' + title);
+    });
+
     // Shows video page
-    plugin.addURI(PREFIX + ":indexByID:(.*):(.*)", function(page, id, title) {
+    plugin.addURI(PREFIX + ':indexByID:(.*):(.*)', function(page, id, title) {
+        loginAndGetConfig(page, false);
         setPageHeader(page, unescape(title));
         var json = getJSON(page, API, '/videos/info?', 'id=' + id);
         var genres = '', first = true;
