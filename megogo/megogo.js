@@ -57,6 +57,7 @@
         while (numOfTries < 10) {
             //showtime.print(BASE_URL + api + url + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1);
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + api + url + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
+            //showtime.print(showtime.JSONEncode(json));
             if (json.result == 'ok') break;
             numOfTries++;
         }
@@ -171,19 +172,55 @@
     }
 
     function appendItem(page, json, route, title, genres) {
-        page.appendItem(route, "video", {
+        var item = page.appendItem(route, "video", {
             title: new showtime.RichText(getReason(json) + title),
             year: +parseInt(json.year),
             genre: genres,
             icon: json.image.small,
             rating: json.rating_imdb ? json.rating_imdb * 10 : null,
             duration: json.duration ? +parseInt(json.duration) : null,
-            description: new showtime.RichText('(' + coloredStr(json.like, green) + ' / ' + coloredStr(json.dislike, red) + ') ' +
+            description: new showtime.RichText((json.availableReason == 'tvod' && json.purchase_info ? coloredStr('Стоимость фильма: ', orange) + json.purchase_info.tvod.subscriptions[0].tariffs[0].price + ' ' + json.purchase_info.tvod.subscriptions[0].currency + '<br>': '') +
+                (json.vote != 0 ? coloredStr('Вы голосовали за этот фильм: ', orange) + (json.vote ? 'Нравится' : 'Не нравится') + '<br>': '') +
+                (json.isFavorite ? coloredStr('Фильм находится в Избранном', orange)  + '<br>': '') +
+                '(' + coloredStr(json.like, green) + ' / ' + coloredStr(json.dislike, red) + ') ' +
                 coloredStr('Комментариев: ', orange) + unescape(json.comments_num) +
                 (json.country ? coloredStr('<br>Страна: ', orange) + unescape(json.country) : '') +
                 (json.description ? coloredStr('<br>Описание: ', orange) +
                     trim(showtime.entityDecode(unescape(json.description.replace(/&#151;/g, '—')))): ''))
         });
+        item.id = json.id;
+        item.vote = json.vote;
+        item.isFavorite = json.isFavorite;
+
+        // Voting
+        item.onEvent('vote', function(item) {
+            if (+this.vote < 1) {
+                getJSON(page, API, '/videos/addvote?', 'video_id=' + this.id + '&like=1');
+                //this.vote = 1;
+                showtime.notify("Ваш голос (нравится) '" + title + "' добавлен.", 2);
+            } else {
+                getJSON(page, API, '/videos/addvote?', 'video_id=' + this.id + '&like=-1');
+                //this.vote = -1;
+                showtime.notify("Ваш голос (не нравится) '" + title + "' добавлен.", 2);
+            }
+	});
+        if (+item.vote < 1) item.addOptAction("Голосовать (нравится) за '" + title.replace(/<[^>]*>/g, '') + "'", 'vote');
+        if (+item.vote > -1) item.addOptAction("Голосовать (не нравится) за '" + title.replace(/<[^>]*>/g, '') + "'", 'vote');
+
+        // Favorite
+        item.onEvent('addFavorite', function(item) {
+            if (this.isFavorite == false) {
+                getJSON(page, API, '/favorites/add?', 'video_id=' + this.id);
+                showtime.notify("'" + title.replace(/<[^>]*>/g, '') + "' добавлен в 'Избранное'", 2);
+                //this.isFavorite = true;
+            } else {
+                getJSON(page, API, '/favorites/remove?', 'video_id=' + this.id);
+                showtime.notify("'" + title.replace(/<[^>]*>/g, '') + "' удален из 'Избранное'", 2);
+                //this.isFavorite = false;
+            }
+	});
+	if (item.isFavorite == false) item.addOptAction("Добавить '" + title.replace(/<[^>]*>/g, '') + "' в 'Избранное'", 'addFavorite');
+	else item.addOptAction("Удалить '" + title.replace(/<[^>]*>/g, '') + "' из 'Избранное'", 'addFavorite');
     }
 
     function processVideoItem(page, json, json2, genres) {
@@ -269,7 +306,7 @@
         var counter = 1;
         for (var i in json) {
             page.appendItem(unescape(json[i].big), "video", {
-                title: 'Кадр' + counter,
+                title: 'Фото' + counter,
                 icon: unescape(json[i].small)
             });
             counter++;
@@ -308,7 +345,7 @@
         // Screenshots
         if (json.video.screenshots[0]) {
             page.appendItem(PREFIX + ':screenshots:' + escape(json.video.title + (json.video.title_orig ? ' | ' + json.video.title_orig : '')) + ':' + escape(showtime.JSONEncode(json.video.screenshots)), 'directory', {
-                title: 'Кадры из фильма'
+                title: 'Фото из фильма'
             });
         }
 
@@ -476,12 +513,12 @@
     // Shows videos of the collection
     plugin.addURI(PREFIX + ":collection:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
-        var offset = 0, counter = 0, tryToSearch = true;
+        var offset = 0, limit = 20, counter = 0, tryToSearch = true;
         function loader() {
             if (!tryToSearch) return false;
-            var json = getJSON(page, API, '/videos/collection?', 'id=' + id + '&offset=' + offset + '&limit=20');
+            var json = getJSON(page, API, '/videos/collection?', 'id=' + id + '&offset=' + offset + '&limit=' + limit);
             counter = appendVideosToPage(page, json.video_list, counter);
-            offset += 20;
+            offset += limit;
             if (counter == +json.total_num || offset > +json.total_num) return tryToSearch = false;
             return true;
         };
@@ -502,8 +539,51 @@
     });
 
     plugin.addURI(PREFIX + ":premieres", function(page, title) {
-        setPageHeader(page, 'Прьемьеры');
-        getVideosList(page, API, '/premieres?', '', 100);
+        setPageHeader(page, 'Премьеры');
+        var offset = 0, limit = 20, counter = 0, tryToSearch = true;
+        function loader() {
+            if (!tryToSearch) return false;
+            var json = getJSON(page, API, '/premieres?', '&offset=' + offset + '&limit=' + limit);
+            counter = appendVideosToPage(page, json.video_list, counter);
+            offset += limit;
+            if (counter == +json.total_num || offset > +json.total_num) return tryToSearch = false;
+            return true;
+        };
+        loader();
+        page.loading = false;
+        page.paginator = loader;
+    });
+
+    plugin.addURI(PREFIX + ":watchlater", function(page, title) {
+        setPageHeader(page, 'Избранное');
+        var offset = 0, limit = 20, counter = 0, tryToSearch = true;
+        function loader() {
+            if (!tryToSearch) return false;
+            var json = getJSON(page, API, '/favorites?', '&offset=' + offset + '&limit=' + limit);
+            counter = appendVideosToPage(page, json.video_list, counter);
+            offset += limit;
+            if (counter == +json.total_num || offset > +json.total_num) return tryToSearch = false;
+            return true;
+        };
+        loader();
+        page.loading = false;
+        page.paginator = loader;
+    });
+
+    plugin.addURI(PREFIX + ":paid", function(page, title) {
+        setPageHeader(page, 'Купленные фильмы');
+        var offset = 0, limit = 20, counter = 0, tryToSearch = true;
+        function loader() {
+            if (!tryToSearch) return false;
+            var json = getJSON(page, API, '/payments/full?', '&offset=' + offset + '&limit=' + limit);
+            counter = appendVideosToPage(page, json.video_list, counter);
+            offset += limit;
+            if (counter == +json.total_num || offset > +json.total_num) return tryToSearch = false;
+            return true;
+        };
+        loader();
+        page.loading = false;
+        page.paginator = loader;
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
@@ -516,6 +596,14 @@
                  description: new showtime.RichText(coloredStr('ID: ', orange) + users.user_id +
                      coloredStr('<br>Email: ', orange) + users.email +
                      coloredStr('<br>Псевдоним: ', orange) + users.nickname)
+             });
+             page.appendItem(PREFIX + ':watchlater', 'directory', {
+                 title: 'Избранное',
+                 icon: logo
+             });
+             page.appendItem(PREFIX + ':paid', 'directory', {
+                 title: 'Купленные фильмы',
+                 icon: logo
              });
         } else {
              page.appendPassiveItem('file', '', {
