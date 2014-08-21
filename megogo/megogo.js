@@ -19,15 +19,15 @@
 
 (function(plugin) {
     var descriptor = getDescriptor();
+    var slogan = descriptor.synopsis;
+    var logo = plugin.path + "logo.png";
     var PREFIX = 'megogo';
     var BASE_URL = 'http://megogo.net', API = '/api/v4';
-    var logo = plugin.path + "logo.png";
-    var slogan = descriptor.synopsis;
-    var session, credentials, k1 = '_showtime', k2 = 'd661fc50be';
-    var config, digest, showPaidContent;
+    var logged, credentials, k1 = '_showtime', k2 = 'd661fc50be';
+    var users, config, digest, showPaidContent;
 
     function trim(s) {
-        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/, '');
+        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/g, '');
     }
 
     var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
@@ -50,20 +50,12 @@
         page.loading = false;
     }
 
-    var service = plugin.createService(descriptor.id, PREFIX + ":start", "video", true, logo);
-
-    var settings = plugin.createSettings(descriptor.id, logo, slogan);
-    settings.createAction('megogo_login', 'Войти в megogo.net', function() {
-        loginAndGetConfig(0, true);
-    });
-    settings.createBool('showPaidContent', 'Отображать платный контент', false, function(v) {
-        showPaidContent = v;
-    });
-
     function getJSON(page, api, url, params) {
         page.loading = true;
+        if (!params) params = '';
         var numOfTries = 0;
         while (numOfTries < 10) {
+            //showtime.print(BASE_URL + api + url + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1);
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + api + url + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
             if (json.result == 'ok') break;
             numOfTries++;
@@ -76,10 +68,10 @@
         var text = '';
         if (showDialog) {
            text = 'Введите email и пароль';
-           session = false;
+           logged = false;
         }
 
-        if (!session) {
+        if (!logged) {
             credentials = plugin.getAuthCredentials(slogan, text, showDialog);
             if (credentials && credentials.username && credentials.password) {
                 var params = 'login=' + credentials.username + '&password=' + credentials.password + '&remember=1';
@@ -93,16 +85,17 @@
                     }
                 }));
                 page.loading = false;
-                if (json && json.result == 'ok') session = true;
+                if (json && json.result == 'ok') logged = true;
             }
         }
 
         if (showDialog) {
-           if (session) showtime.message("Вход успешно произведен. Параметры входа сохранены.", true, false);
+           if (logged) showtime.message("Вход успешно произведен. Параметры входа сохранены.", true, false);
            else showtime.message("Не удалось войти. Проверьте email/пароль...", true, false);
         }
 
-        if (!config) config = getJSON(page, API, '/configuration?', '');
+        if (!users) users = getJSON(page, API, '/users?');
+        if (!config) config = getJSON(page, API, '/configuration?');
     }
 
     function getVideosList(page, api, url, static_params, limit) {
@@ -128,57 +121,101 @@
             counter++;
             page.entries++;
             if (!json[i].isAvailable && !showPaidContent) continue;
-            var aType = '';
-            if (!json[i].isAvailable) {
-                switch (json[i].availableReason) {
-                    case 'svod':
-                        aType = coloredStr('+', orange);
-                        break;
-                    case 'tvod':
-                        aType = coloredStr('$', orange);
-                        break;
-                    default:
-                        break;
-                }
-            }
-            var genres = '', first = true;
-            for (var j in config.categories) { // traversing categories
-                if (config.categories[j].id == json[i].category[0]) {
-                    for (var k in json[i].genre_list) {
-                        for (var l in config.categories[j].genres) { // traversing genres
-                            if (json[i].genre_list[k] == config.categories[j].genres[l].id) {
-                                if (first) {
-                                    genres = unescape(config.categories[j].genres[l].title);
-                                    first = false;
-                                } else {
-                                    genres += ', ' + unescape(config.categories[j].genres[l].title);
-                                }
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-
+            var genres = getGenre(json[i].category, json[i].genre_list);
             if (separator) {
                 page.appendItem("", "separator", {
                     title: separator
                 });
                 separator = false;
             }
-
-            page.appendItem(PREFIX + ':indexByID:' + json[i].id + ':' + escape(json[i].title), "video", {
-                title: new showtime.RichText(aType + json[i].title + (json[i].isSeries ? colorStr('сериал', orange): '' )),
-                year: +parseInt(json[i].year),
-                genre: genres,
-                icon: unescape(json[i].image.small),
-                description: new showtime.RichText('(' + coloredStr(json[i].like, green) + ' / ' + coloredStr(json[i].dislike, red) + ') ' +
-                    coloredStr('Комментариев: ', orange) + unescape(json[i].comments_num) +
-                    coloredStr('<br>Страна: ', orange) + unescape(json[i].country))
-            });
+            appendItem(page, json[i], PREFIX + ':indexByID:' + json[i].id + ':' + escape(json[i].title),
+                json[i].title + (json[i].isSeries ? colorStr('сериал', orange): '' ),
+                genres
+            );
         };
         return counter;
     };
+
+    function getGenre(category, genre_list) {
+        var genres = '';
+        for (var i in config.categories) {
+            if (config.categories[i].id == category[0]) {
+               for (var j in genre_list) {
+                   for (var k in config.categories[i].genres) {
+                       if (genre_list[j] == config.categories[i].genres[k].id) {
+                           if (!genres)
+                               genres = unescape(config.categories[i].genres[k].title);
+                           else
+                               genres += ', ' + unescape(config.categories[i].genres[k].title);
+                       }
+                   }
+               }
+               break;
+            }
+        }
+        return genres;
+    }
+
+    function getReason(json) {
+        if (!json.isAvailable) {
+            switch (json.availableReason) {
+                case 'svod':
+                    return coloredStr('+', orange);
+                case 'tvod':
+                    return coloredStr('$', orange);
+                default:
+                    return '';
+            }
+        }
+        return '';
+    }
+
+    function appendItem(page, json, route, title, genres) {
+        page.appendItem(route, "video", {
+            title: new showtime.RichText(getReason(json) + title),
+            year: +parseInt(json.year),
+            genre: genres,
+            icon: json.image.small,
+            rating: json.rating_imdb ? json.rating_imdb * 10 : null,
+            duration: json.duration ? +parseInt(json.duration) : null,
+            description: new showtime.RichText('(' + coloredStr(json.like, green) + ' / ' + coloredStr(json.dislike, red) + ') ' +
+                coloredStr('Комментариев: ', orange) + unescape(json.comments_num) +
+                (json.country ? coloredStr('<br>Страна: ', orange) + unescape(json.country) : '') +
+                (json.description ? coloredStr('<br>Описание: ', orange) +
+                    trim(showtime.entityDecode(unescape(json.description.replace(/&#151;/g, '—')))): ''))
+        });
+    }
+
+    function processVideoItem(page, json, json2, genres) {
+        if (json2) { // season
+           for (var i in json2) {
+               appendItem(page, json.video, PREFIX + ':season:' + json2[i].id + ':' +
+                   escape(json.video.title + ' - ' + json2[i].title +
+                   (json2[i].title_orig ? ' | ' + json2[i].title_orig : '')),
+                   json2[i].title + (json2[i].title_orig ? ' | ' +
+                   json2[i].title_orig : '') + ' (' + json2[i].total_num + ' серий)',
+                   genres
+               );
+           }
+        } else {
+               appendItem(page, json.video, PREFIX + ':video:' + json.video.id + ':' +
+                   escape(json.video.title + (json.video.title_orig ? ' | ' +
+                   json.video.title_orig : '')),
+                   json.video.title + (json.video.title_orig ? ' | ' +
+                   json.video.title_orig : ''), genres
+               );
+        }
+    }
+
+    var service = plugin.createService(descriptor.id, PREFIX + ":start", "video", true, logo);
+
+    var settings = plugin.createSettings(descriptor.id, logo, slogan);
+    settings.createAction('megogo_login', 'Войти в megogo.net', function() {
+        loginAndGetConfig(0, true);
+    });
+    settings.createBool('showPaidContent', 'Отображать платный контент', false, function(v) {
+        showPaidContent = v;
+    });
 
     // Shows genres of the category
     plugin.addURI(PREFIX + ":genres:(.*):(.*)", function(page, id, title) {
@@ -244,14 +281,14 @@
         setPageHeader(page, unescape(title));
         var json = getJSON(page, API, '/peoples/info?', 'id=' + id);
         page.appendPassiveItem('video', '', {
-            title: new showtime.RichText(json.member.name + (json.member.name_orig ? ' | ' + json.member.name_orig : '')),
+            title: new showtime.RichText(json.member.name + (trim(json.member.name_orig) ? ' | ' + trim(json.member.name_orig) : '')),
             icon: json.member.avatar.image_360х360.replace(/13:/, ''),
             description: new showtime.RichText(trim(json.member.description))
         });
         appendVideosToPage(page, json.member.filmography, 0, 'Фильмография:');
     });
 
-    // This route should be keep for legacy purposes
+    // This route should be kept for legacy purposes
     plugin.addURI(PREFIX + ':directory:(.*):(.*)', function(page, id, title) {
         page.redirect(PREFIX + ':indexByID:' + id + ':' + title);
     });
@@ -261,54 +298,12 @@
         loginAndGetConfig(page, false);
         setPageHeader(page, unescape(title));
         var json = getJSON(page, API, '/videos/info?', 'id=' + id);
-        var genres = '', first = true;
-        for (var j in config.categories) { // traversing categories
-            if (config.categories[j].id == json.video.category[0]) {
-               for (var k in json.video.genre_list) {
-                   for (var l in config.categories[j].genres) { // traversing genres
-                       if (json.video.genre_list[k] == config.categories[j].genres[l].id) {
-                           if (first) {
-                               genres = unescape(config.categories[j].genres[l].title);
-                               first = false;
-                           } else {
-                               genres += ', ' + unescape(config.categories[j].genres[l].title);
-                           }
-                       }
-                   }
-               }
-               break;
-            }
-        }
 
-        if (json.video.season_list[0]) {
-            for (var i in json.video.season_list) {
-                page.appendItem(PREFIX + ':season:' + json.video.season_list[i].id + ':' + escape(json.video.title + ' - ' + json.video.season_list[i].title + (json.video.season_list[i].title_orig ? ' | ' + json.video.season_list[i].title_orig : '')), "video", {
-                    title: json.video.season_list[i].title + (json.video.season_list[i].title_orig ? ' | ' + json.video.season_list[i].title_orig : '') + ' (' + json.video.season_list[i].total_num + ' серий)',
-                    year: +parseInt(json.video.year),
-                    genre: genres,
-                    icon: unescape(json.video.image.small),
-                    rating: json.video.rating_imdb * 10,
-                    duration: +parseInt(json.video.duration),
-                    description: new showtime.RichText('(' + coloredStr(json.video.like, green) + ' / ' + coloredStr(json.video.dislike, red) + ') ' +
-                        coloredStr('Комментариев: ', orange) + unescape(json.video.comments_num) +
-                        (json.video.country ? coloredStr('<br>Страна: ', orange) + unescape(json.video.country) : '') +
-                        coloredStr('<br>Описание: ', orange) + trim(showtime.entityDecode(unescape(json.video.description.replace(/&#151;/g, '—')))))
-                });
-            };
-        } else {
-            page.appendItem(PREFIX + ':video:' + json.video.id + ':' + escape(json.video.title + (json.video.title_orig ? ' | ' + json.video.title_orig : '')), "video", {
-                title: json.video.title + (json.video.title_orig ? ' | ' + json.video.title_orig : ''),
-                year: +parseInt(json.video.year),
-                genre: genres,
-                icon: unescape(json.video.image.small),
-                rating: json.video.rating_imdb * 10,
-                duration: +parseInt(json.video.duration),
-                description: new showtime.RichText('(' + coloredStr(json.video.like, green) + ' / ' + coloredStr(json.video.dislike, red) + ') ' +
-                    coloredStr('Комментариев: ', orange) + unescape(json.video.comments_num) +
-                    (json.video.country ? coloredStr('<br>Страна: ', orange) + unescape(json.video.country) : '') +
-                    coloredStr('<br>Описание: ', orange) + trim(showtime.entityDecode(unescape(json.video.description.replace(/&#151;/g, '—')))))
-            });
-        }
+        var genres = getGenre(json.video.category, json.video.genre_list);
+        if (json.video.season_list[0])
+            processVideoItem(page, json, json.video.season_list, genres);
+        else
+            processVideoItem(page, json, 0, genres);
 
         // Screenshots
         if (json.video.screenshots[0]) {
@@ -339,8 +334,8 @@
                     });
                     first = false;
                 }
-                page.appendItem(PREFIX + ':people:' + json.video.people[i].id + ':' + escape(json.video.people[i].name + (json.video.people[i].name_orig ? ' | ' + json.video.people[i].name_orig : '')), 'video', {
-                    title: new showtime.RichText(json.video.people[i].name + (json.video.people[i].name_orig ? ' | ' + json.video.people[i].name_orig : '') + ' ' + colorStr(config.membertypes[j].title, orange)),
+                page.appendItem(PREFIX + ':people:' + json.video.people[i].id + ':' + escape(json.video.people[i].name + (trim(json.video.people[i].name_orig) ? ' | ' + trim(json.video.people[i].name_orig) : '')), 'video', {
+                    title: new showtime.RichText(json.video.people[i].name + (trim(json.video.people[i].name_orig) ? ' | ' + trim(json.video.people[i].name_orig) : '') + ' ' + colorStr(config.membertypes[j].title, orange)),
                     icon: json.video.people[i].avatar.image_360x360.replace(/13:/, '')
                 });
             }
@@ -358,7 +353,7 @@
                 });
             }
             page.appendPassiveItem('video', '', {
-                title: json.video.comments_list[i].user_name + ' (' + json.video.comments_list[i].date.replace(/T/, ' ').replace(/\+00:00/, '') + ')',
+                title: new showtime.RichText(coloredStr(json.video.comments_list[i].user_name, orange) + ' (' + json.video.comments_list[i].date.replace(/T/, ' ').replace(/\+00:00/, '') + ')'),
                 icon: unescape(json.video.comments_list[i].user_avatar),
                 description: unescape(json.video.comments_list[i].text)
             });
@@ -372,7 +367,7 @@
                 var json = getJSON(page, API, '/comments?', 'video_id=' + id + '&offset=' + offset + '&limit=' + limit);
                 for (var i in json.comments) {
                     page.appendPassiveItem('video', '', {
-                        title: new showtime.RichText(json.comments[i].user_name + ' (' +
+                        title: new showtime.RichText(coloredStr(json.comments[i].user_name, orange) + ' (' +
                            json.comments[i].date.replace(/T/, ' ').replace(/\+00:00/, '') + ')' +
                            (json.comments[i].sub_comments_count ? ' ' + coloredStr(' комментариев ' + json.comments[i].sub_comments_count, orange) : '')),
                         icon: unescape(json.comments[i].user_avatar),
@@ -380,7 +375,7 @@
                     });
                     for (var j in json.comments[i].sub_comments) {
                         page.appendPassiveItem('video', '', {
-                            title: new showtime.RichText(json.comments[i].sub_comments[j].user_name + ' (' +
+                            title: new showtime.RichText(coloredStr(json.comments[i].sub_comments[j].user_name, orange) + ' (' +
                                json.comments[i].sub_comments[j].date.replace(/T/, ' ').replace(/\+00:00/, '') + ')' +
                                (json.comments[i].sub_comments[j].sub_comments_count ? ' ' + coloredStr(json.comments[i].sub_comments[j].sub_comments_count + ' комментарий(ев)', orange) : '')),
                             icon: unescape(json.comments[i].sub_comments[j].user_avatar),
@@ -513,10 +508,21 @@
 
     plugin.addURI(PREFIX + ":start", function(page) {
         setPageHeader(page, slogan);
-        loginAndGetConfig(page, session = false);
-        page.appendPassiveItem('file', '', {
-            title: new showtime.RichText(coloredStr(session ? credentials.username : 'Авторизация не проведена', orange) + ' (' + config.geo + ')')
-        });
+        loginAndGetConfig(page, logged = false);
+        if (logged) {
+             page.appendPassiveItem('video', '', {
+                 title: new showtime.RichText(coloredStr(users.nickname ? users.nickname : users.email, orange) + ' (' + config.geo + ')'),
+                 icon: users.avatar,
+                 description: new showtime.RichText(coloredStr('ID: ', orange) + users.user_id +
+                     coloredStr('<br>Email: ', orange) + users.email +
+                     coloredStr('<br>Псевдоним: ', orange) + users.nickname)
+             });
+        } else {
+             page.appendPassiveItem('file', '', {
+                 title: new showtime.RichText(coloredStr('Авторизация не проведена', orange) + ' (' + config.geo + ')'),
+                 icon: users.avatar
+             });
+        }
 
         page.appendItem("", "separator", {
             title: 'Категории:'
