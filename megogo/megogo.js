@@ -62,9 +62,11 @@
 
     function getJSON(page, api, url, params) {
         page.loading = true;
-        while (1) {
+        var numOfTries = 0;
+        while (numOfTries < 10) {
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + api + url + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
-            if (json.result == 'ok' || json.result == 'error') break;
+            if (json.result == 'ok') break;
+            numOfTries++;
         }
         page.loading = false;
         return json;
