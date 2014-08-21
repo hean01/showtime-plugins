@@ -48,6 +48,7 @@
         page.type = "directory";
         page.contents = "items";
         page.loading = false;
+        if (!config) loginAndGetConfig(page, false);
     }
 
     function getJSON(page, api, url, params) {
@@ -179,7 +180,9 @@
             icon: json.image.small,
             rating: json.rating_imdb ? json.rating_imdb * 10 : null,
             duration: json.duration ? +parseInt(json.duration) : null,
-            description: new showtime.RichText((json.availableReason == 'tvod' && json.purchase_info ? coloredStr('Стоимость фильма: ', orange) + json.purchase_info.tvod.subscriptions[0].tariffs[0].price + ' ' + json.purchase_info.tvod.subscriptions[0].currency + '<br>': '') +
+            description: new showtime.RichText(
+                (json.exclusive ? coloredStr('Эксклюзивно на megogo!', red)  + '<br>': '') +
+                (json.availableReason == 'tvod' && json.purchase_info ? coloredStr('Стоимость фильма: ', orange) + json.purchase_info.tvod.subscriptions[0].tariffs[0].price + ' ' + json.purchase_info.tvod.subscriptions[0].currency + '<br>': '') +
                 (json.vote != 0 ? coloredStr('Вы голосовали за этот фильм: ', orange) + (json.vote ? 'Нравится' : 'Не нравится') + '<br>': '') +
                 (json.isFavorite ? coloredStr('Фильм находится в Избранном', orange)  + '<br>': '') +
                 '(' + coloredStr(json.like, green) + ' / ' + coloredStr(json.dislike, red) + ') ' +
@@ -221,6 +224,24 @@
 	});
 	if (item.isFavorite == false) item.addOptAction("Добавить '" + title.replace(/<[^>]*>/g, '') + "' в 'Избранное'", 'addFavorite');
 	else item.addOptAction("Удалить '" + title.replace(/<[^>]*>/g, '') + "' из 'Избранное'", 'addFavorite');
+
+        // Comment
+        item.onEvent('addComment', function(item) {
+            var text = showtime.textDialog('Введите комментарий: ', true, true);
+            if (!text.rejected && text.input) {
+                page.loading = true;
+                var params = 'video_id=' + this.id + 'text=' + text.input;
+                var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/v4/comments/add?sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1, {
+                    postdata: {
+                        'video_id': this.id,
+                        'text': text.input
+                    }
+                }));
+                page.loading = false;
+                showtime.notify("Комментарий добавлен.", 2);
+            }
+	});
+	item.addOptAction("Добавить комментарий к '" + title.replace(/<[^>]*>/g, ''), 'addComment');
     }
 
     function processVideoItem(page, json, json2, genres) {
@@ -332,7 +353,6 @@
 
     // Shows video page
     plugin.addURI(PREFIX + ':indexByID:(.*):(.*)', function(page, id, title) {
-        loginAndGetConfig(page, false);
         setPageHeader(page, unescape(title));
         var json = getJSON(page, API, '/videos/info?', 'id=' + id);
 
