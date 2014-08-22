@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Watch.is",
 	"synopsis": "Watch.is: Онлайн фильмы",
-	"version": "0.3.3", "file": "watch_is.js",
+	"version": "0.4", "file": "watch_is.js",
 	"showtimeVersion": "4.3.9",
 	"type": "javascript", 
 	"id": "watch.is",

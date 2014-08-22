@@ -92,44 +92,9 @@
         login(0, true);
     });
 
-    function scraper(page, url, args) {
-        page.loading = true;
-        var v = showtime.httpReq(url, args);
-        page.loading = false;
-
-        page.entries = 0; var tryToSearch = true;
-
-        function loader() {
-            if (!tryToSearch) return false;
-            // 1 - link, 2 - image, 3 - HD, 4 - votes, 5 - views, 6 - comments, 7 - title_rus, 8 - title_orig
-            var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
-            var match = re.exec(v);
-            while (match) {
-                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")), 'video', {
-                    title: new showtime.RichText((match[3].match(/<div class="hd">/) ? coloredStr('HD ', blue) : '') +
-                        trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")),
-                    icon: BASE_URL + match[2],
-                    description: new showtime.RichText(coloredStr('Голосов: ', orange) + match[4] + '\n' +
-                         coloredStr('Просмотров: ', orange) + match[5] + '\n' +
-                         coloredStr('Комментариев: ', orange) + match[6])
-                });
-                page.entries++;
-                match = re.exec(v);
-            };
-            re = /class="page next" href="([^"]+)">/;
-            match = re.exec(v);
-            if (!match) return tryToSearch = false;
-            v = showtime.httpReq(BASE_URL + match[1]);
-            return true;
-        };
-        loader();
-        page.loading = false;
-        page.paginator = loader;
-    }
-
     plugin.addURI(PREFIX + ":genre:(.*):(.*)", function(page, url, title) {
         if (!setPageHeader(page, unescape(title))) return;
-        scraper(page, BASE_URL + unescape(url));
+        scraper(page, BASE_URL + unescape(url), null);
     });
 
     plugin.addURI(PREFIX + ":best", function(page) {
@@ -141,14 +106,25 @@
         var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
         var match = re.exec(v);
         while (match) {
-            var hd = match[3].match(/<div class="hd">/);
             page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")), 'video', {
-                title: new showtime.RichText(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
+                title: new showtime.RichText((match[3].match(/<div class="hd">/) ? coloredStr('HD ', blue) : "") + trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")),
                 icon: BASE_URL + match[2],
-                description: new showtime.RichText("Голосов: " + blueStr(match[4]) + "\nПросмотров: " + blueStr(match[5]) + "\nКомментариев: " + blueStr(match[6]))
+                description: new showtime.RichText(coloredStr("Голосов: ", orange) + match[4] + '\n' + coloredStr('Просмотров: ', orange) + match[5] + '\n' + coloredStr('Комментариев: ', orange) + match[6])
             });
             match = re.exec(v);
         };
+    });
+
+    plugin.addURI(PREFIX + ":genres", function(page) {
+        if (!setPageHeader(page, 'Жанры')) return;
+        var re = /<li><a href="([\S\s]*?)">([\S\s]*?)<\/a><\/li>/g;
+        var match = re.exec(genresList);
+        while (match) {
+            page.appendItem(PREFIX + ':genre:' + escape(match[1]) + ":" + escape(match[2]), 'directory', {
+                title: new showtime.RichText(match[2])
+            });
+            match = re.exec(genresList);
+        }
     });
 
     // Search IMDB ID by title
@@ -182,28 +158,28 @@
 		genre: v.match(/<genre>([\S\s]*?)<\/genre>/)[1],
 		year: parseInt(v.match(/<year>([\S\s]*?)<\/year>/)[1]),
 		duration: parseInt(v.match(/<duration>([\S\s]*?)<\/duration>/)[1]),
-		description: new showtime.RichText(orangeStr("Страна: ")+v.match(/<country>([\S\s]*?)<\/country>/)[1] +
-		    orangeStr(" Режиссер: ")+v.match(/<director>([\S\s]*?)<\/director>/)[1] +
-		    orangeStr(" В ролях: ")+v.match(/<cast>([\S\s]*?)<\/cast>/)[1] + "<br>" +
-		    orangeStr("Описание: ")+v.match(/<about>([\S\s]*?)<\/about>/)[1])
+		description: new showtime.RichText(coloredStr("Страна: ", orange)+v.match(/<country>([\S\s]*?)<\/country>/)[1] +
+		    coloredStr(" Режиссер: ", orange) + v.match(/<director>([\S\s]*?)<\/director>/)[1] +
+		    coloredStr(" В ролях: ", orange) + trim(v.match(/<cast>([\S\s]*?)<\/cast>/)[1]) + '\n\n' +
+		    coloredStr("Описание: ", orange) + v.match(/<about>([\S\s]*?)<\/about>/)[1])
 	    });
 	    page.loading = false;
 	}
         var v = showtime.httpReq(BASE_URL + '/api/watch/' + unescape(url).match(/[\S\s]*?([\d+]+)/i)[1]).toString();
         var tmp = v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp>/);
-	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], blueStr("HD RTMP"));
+	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], coloredStr("HD RTMP", blue));
         tmp = v.match(/<rtmp>([\S\s]*?)<\/rtmp>/);
-	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], blueStr("SD RTMP"));
+	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], coloredStr("SD RTMP", blue));
         tmp = v.match(/<hdvideo>([\S\s]*?)<\/hdvideo>/);
 
 	var html = showtime.httpReq(BASE_URL + unescape(url)).toString();
-        addItem(html.match(/<video src="([\S\s]*?)"/)[1], blueStr("SD HLS"));
+        addItem(html.match(/<video src="([\S\s]*?)"/)[1], coloredStr("SD HLS", blue));
 	page.loading = false;
 
-	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], blueStr("HD MP4"));
+	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], coloredStr("HD MP4", blue));
         tmp = v.match(/<video>([\S\s]*?)<\/video>/);
-	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], blueStr("SD MP4"));
-	addItem(html.match(/file:"([^"]+)/)[1], blueStr("SD FILE"));
+	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], coloredStr("SD MP4", blue));
+	addItem(html.match(/file:"([^"]+)/)[1], coloredStr("SD FILE", blue));
 
 	// 1-icon, 2-nick, 3-age, 4-date/time, 5-comment
 	var re = /<div class="avatar"><a href="[\s\S]*?"><img src="([\s\S]*?)"[\s\S]*?<strong>([\s\S]*?)<\/strong>[\s\S]*?<div class="sex">([\s\S]*?)<\/span>[\s\S]*?<div class="date">([\s\S]*?)<\/div>[\s\S]*?<div class="comment" id="[\s\S]*?">([\s\S]*?)<\/div>/g;
@@ -217,7 +193,7 @@
 	        counter++;
 	    };
             page.appendPassiveItem('video', "", {
-		title: new showtime.RichText(orangeStr(match[2])+" "+match[3]+" "+match[4]),
+		title: new showtime.RichText(coloredStr(match[2], orange)+" "+match[3]+" "+match[4]),
 		description: new showtime.RichText(match[5]),
 		icon: match[1][0] == "/" ?  BASE_URL + match[1] : match[1]
 	    });
@@ -225,10 +201,15 @@
 	};
     });
 
-    var v, Genre = "0", Year = "0", Sorting = "added", Order = "desc";
+    var genresList;
 
-    plugin.addURI(PREFIX + ":start", function(page) {
-	if (!setPageHeader(page, descriptor.synopsis)) return;
+    function scraper(page, url, args, genre) {
+        var v, Genre = "0", Year = "0", Sorting = "added", Order = "desc", addOptions =true;
+        page.entries = 0; var tryToSearch = true;
+
+        if (url.match(/genre\/(.*)$/))
+            Genre = url.match(/genre\/(.*)$/)[1];
+
         function topPart() {
             page.appendItem(PREFIX + ':best', 'directory', {
                 title: "Лучшие"
@@ -238,105 +219,97 @@
                 title: "Жанры"
             });
 
-            v = showtime.httpReq(BASE_URL + "/?genre=" + Genre + "&year=" + Year + "&sorting=" + Sorting + "&order=" + Order).toString();
-            // let's show genres
-            var genres = v.match(/<ul>([\S\s]*?)<\/ul>/)[1];
-            var re = /<li><a href="([\S\s]*?)">([\S\s]*?)<\/a><\/li>/g;
-            var match = re.exec(genres);
-            while (match) {
-                page.appendItem(PREFIX + ':genres:' + escape(match[1]) + ":" + escape(match[2]), 'directory', {
-                    title: new showtime.RichText(match[2])
-                });
-                match = re.exec(genres);
+            v = showtime.httpReq(url + "?genre=" + Genre + "&year=" + Year + "&sorting=" + Sorting + "&order=" + Order).toString();
+            genresList = v.match(/<ul>([\S\s]*?)<\/ul>/)[1];
+
+            if (addOptions) {
+            var re = /<option label="([\S\s]*?)" value="([\S\s]*?)"[\S\s]*?<\/option>/g;
+            function getElements(blob) {
+                var obj = [], result = [];
+                var match = re.exec(blob);
+                var defOpt = true;
+                while (match) {
+                    obj[0] = match[2];
+                    obj[1] = match[1];
+                    obj[2] = defOpt;
+                    result.push(obj);
+                    obj = [];
+                    defOpt = false;
+                    match = re.exec(blob);
+                }
+                return result;
             }
-        };
 
+            var genre = getElements(v.match(/<select name="genre">([\S\s]*?)<\/select>/)[1]);
+            var year = getElements(v.match(/<select name="year">([\S\s]*?)<\/select>/)[1]);
+            var sorting = getElements(v.match(/<select name="sorting">([\S\s]*?)<\/select>/)[1]);
+            var order = getElements(v.match(/<select name="order">([\S\s]*?)<\/select>/)[1]);
 
-        topPart();
+            page.options.createMultiOpt("genre", "Жанр", genre, function(res) {
+                Genre = res;
+            });
+            page.options.createMultiOpt("year", "Год", year, function(res) {
+                Year = res;
+            });
+            page.options.createMultiOpt("sorting", "Сортировка", sorting, function(res) {
+                Sorting = res;
+            });
+            page.options.createMultiOpt("order", "Порядок", order, function(res) {
+                Order = res;
+            });
+            page.options.createAction('apply', 'Применить', function() {
+                page.paginator = function dummy() {
+                    return true
+                };
+                page.flush();
+                topPart();
+                tryToSearch = true;
+                loader();
+                page.paginator = loader;
+            });
+            addOptions = false;
+            }
+        }
 
-        var re = /<option label="([\S\s]*?)" value="([\S\s]*?)"[\S\s]*?<\/option>/g;
-        // add genres to the page.options
-        var genre = [],  obj = [];
-        var genres = v.match(/<select name="genre">([\S\s]*?)<\/select>/)[1];
-        var match = re.exec(genres);
-        var defOpt = true;
-        while (match) {
-            obj[0] = match[2];
-            obj[1] = match[1];
-            obj[2] = defOpt;
-            genre.push(obj);
-            obj = [];
-            defOpt = false;
-            match = re.exec(genres);
-        };
-
-        // add years to the page.options
-        var year = [];
-        var years = v.match(/<select name="year">([\S\s]*?)<\/select>/)[1];
-        var match = re.exec(years);
-        var defOpt = true;
-        while (match) {
-            obj[0] = match[2];
-            obj[1] = match[1];
-            obj[2] = defOpt;
-            year.push(obj);
-            obj = [];
-            defOpt = false;
-            match = re.exec(years);
-        };
-
-        // add sorting to the page.options
-        var sorting = [];
-        var sorts = v.match(/<select name="sorting">([\S\s]*?)<\/select>/)[1];
-        var match = re.exec(sorts);
-        var defOpt = true;
-        while (match) {
-            obj[0] = match[2];
-            obj[1] = match[1];
-            obj[2] = defOpt;
-            sorting.push(obj);
-            obj = [];
-            defOpt = false;
-            match = re.exec(sorts);
-        };
-
-        // add sorting to the page.options
-        var order = [];
-        var orders = v.match(/<select name="order">([\S\s]*?)<\/select>/)[1];
-        var match = re.exec(orders);
-        var defOpt = true;
-        while (match) {
-            obj[0] = match[2];
-            obj[1] = match[1];
-            obj[2] = defOpt;
-            order.push(obj);
-            obj = [];
-            defOpt = false;
-            match = re.exec(orders);
-        };
-
-        page.options.createMultiOpt("genre", "Жанр", genre, function(res) {
-            Genre = res;
-        });
-        page.options.createMultiOpt("year", "Год", year, function(res) {
-            Year = res;
-        });
-        page.options.createMultiOpt("sorting", "Сортировка", sorting, function(res) {
-            Sorting = res;
-        });
-        page.options.createMultiOpt("order", "Порядок", order, function(res) {
-            Order = res;
-        });
-        page.options.createAction('apply', 'Выбрать', function() {
-            page.paginator = function dummy() {
-                return true
-            };
-            page.flush();
+        page.loading = true;
+        if (args)
+            v = showtime.httpReq(url, args);
+        else {
             topPart();
-            tryToSearch = true;
-            loader();
-            page.paginator = loader;
-        });
+        }
+        page.loading = false;
+
+        function loader() {
+            if (!tryToSearch) return false;
+            // 1 - link, 2 - image, 3 - HD, 4 - votes, 5 - views, 6 - comments, 7 - title_rus, 8 - title_orig
+            var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
+            var match = re.exec(v);
+            while (match) {
+                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")), 'video', {
+                    title: new showtime.RichText((match[3].match(/<div class="hd">/) ? coloredStr('HD ', blue) : '') +
+                        trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")),
+                    icon: BASE_URL + match[2],
+                    description: new showtime.RichText(coloredStr('Голосов: ', orange) + match[4] + '\n' +
+                         coloredStr('Просмотров: ', orange) + match[5] + '\n' +
+                         coloredStr('Комментариев: ', orange) + match[6])
+                });
+                page.entries++;
+                match = re.exec(v);
+            };
+            re = /class="page next" href="([^"]+)">/;
+            match = re.exec(v);
+            if (!match) return tryToSearch = false;
+            v = showtime.httpReq(BASE_URL + match[1]);
+            return true;
+        };
+        loader();
+        page.loading = false;
+        page.paginator = loader;
+    }
+
+    plugin.addURI(PREFIX + ":start", function(page) {
+	if (!setPageHeader(page, descriptor.synopsis)) return;
+        scraper(page, BASE_URL + '/', null);
     });
 
     plugin.addSearcher(descriptor.id, logo, function(page, query) {
