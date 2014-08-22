@@ -18,7 +18,8 @@
  */
 
 (function(plugin) {
-    var PREFIX = 'porntube';
+    var descriptor = getDescriptor();
+    var PREFIX = descriptor.id;
     var BASE_URL = 'http://www.porntube.com';
     var logo = plugin.path + "logo.png";
 
@@ -36,7 +37,7 @@
         page.loading = false;
     }
 
-    var service = plugin.createService("Porntube", PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(descriptor.title, PREFIX + ":start", "video", true, logo);
     var Order = "", Quality = "", Age = "";
 
     function trim(s) {
@@ -50,7 +51,7 @@
     }
 
     plugin.addURI(PREFIX + ":videos:(.*):(.*)", function(page, url, title) {
-        setPageHeader(page, 'Porntube - ' + unescape(title));
+        setPageHeader(page, descriptor.title + ' - ' + unescape(title));
         var fromPage = 1, tryToSearch = true;
         var Order = '', Quality = '', Duration = '', Age = '';
 
@@ -111,7 +112,7 @@
     });
 
     plugin.addURI(PREFIX + ":categories", function(page) {
-        setPageHeader(page, 'Porntube - Categories');
+        setPageHeader(page, descriptor.title + ' - Categories');
         page.loading = true;
         var v = showtime.httpReq(BASE_URL + "/tags").toString();
         page.loading = false;
@@ -146,9 +147,8 @@
     });
 
     plugin.addURI(PREFIX + ":channels", function(page) {
-        setPageHeader(page, 'Porntube - Channels');
-        var fromPage = 1,
-            tryToSearch = true;
+        setPageHeader(page, descriptor.title + ' - Channels');
+        var fromPage = 1, tryToSearch = true;
         var Letter = '', Order = '', Age = "alltime";
 
         function loader() {
@@ -159,7 +159,7 @@
             var htmlBlock = v.match(/channels_page([\S\s]*?)class="footer"/);
             if (htmlBlock) {
                 // 1-link, 2-count, 3-title, 4-icon
-                var re = /<a class="thumb-link" href="([\S\s]*?)"[\S\s]*?<\/i>([\S\s]*?)<\/li>[\S\s]*?class="thumb-title">([\S\s]*?)<[\S\s]*?data-original="([\S\s]*?)"/g;
+                var re = /<a class="thumb-link" href="([\S\s]*?)"[\S\s]*?<\/i>([\S\s]*?)<\/li>[\S\s]*?">([\S\s]*?)<[\S\s]*?data-original="([\S\s]*?)"/g;
                 var match = re.exec(htmlBlock[1]);
                 while (match) {
                     page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
@@ -204,7 +204,7 @@
     });
 
     plugin.addURI(PREFIX + ":pornstars", function(page) {
-        setPageHeader(page, 'Porntube - Pornstars');
+        setPageHeader(page, descriptor.title + ' - Pornstars');
         var fromPage = 1, tryToSearch = true;
         var Letter = '', Order = 'rating', Titties = '', Age = '', Hair = '', Height = '';
 
@@ -215,13 +215,14 @@
             page.loading = false;
             var htmlBlock = v.match(/pornstars_page([\S\s]*?)class="footer"/);
             if (htmlBlock) {
-                // 1-link, 2-count, 3-title, 4-icon
-                var re = /<a class="thumb-link" href="([\S\s]*?)"[\S\s]*?<\/i>([\S\s]*?)<\/li>[\S\s]*?class="thumb-title">([\S\s]*?)<[\S\s]*?data-original="([\S\s]*?)"/g;
+                // 1-link, 2-title, 3-count, 4-followers, 5-icon
+                var re = /<a class="thumb-link" href="([\S\s]*?)" title="([\S\s]*?)"[\S\s]*?<\/i>([\S\s]*?)<\/li>[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?data-original="([\S\s]*?)"/g;
                 var match = re.exec(htmlBlock[1]);
                 while (match) {
                     page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
-                       title: new showtime.RichText(match[3] + blueStr(" (" + trim(match[2].replace(',','')) + ")")),
-                       icon: match[4]
+                       title: new showtime.RichText(match[2] + blueStr(" (" + trim(match[3].replace(',','')) + ")")),
+                       icon: match[5],
+                       description: match[4]
                     });
                     match = re.exec(htmlBlock[1]);
                 };
@@ -335,7 +336,7 @@
     function scrape(page, html) {
         var bw = re.exec(v)[1];
         // 1-link, 2-title, 3-icon, 4-HDflag, 5-duration, 6-views, 7-was added
-        re = /<a href="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?<img data-original="([\S\s]*?)"[\S\s]*?<ul class="thumb-info_top">([\S\s]*?)div class="bottom">[\S\s]*?"icon icon-timer"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-eye"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-up"><\/i>([\S\s]*?)<\/li>/g;
+        re = /<a href="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?<ul class="thumb-info_top">([\S\s]*?)div class="bottom">[\S\s]*?"icon icon-timer"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-eye"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-up"><\/i>([\S\s]*?)<\/li>/g;
         var match = re.exec(bw);
         while (match) {
             page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(match[2]), 'video', {
@@ -350,7 +351,7 @@
     }
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, 'Porntube - Watch FREE Porn Videos');
+        setPageHeader(page, descriptor.synopsis);
         page.appendItem(PREFIX + ':videos:/videos:Videos', 'directory', {
             title: 'Videos',
             icon: logo
@@ -401,7 +402,7 @@
         page.paginator = loader;
     });
 
-    plugin.addSearcher("Porntube", logo, function(page, query) {
+    plugin.addSearcher(descriptor.title, logo, function(page, query) {
         page.entries = 0;
         var fromPage = 1, tryToSearch = true;
 
