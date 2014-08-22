@@ -219,7 +219,7 @@
                 var re = /<a class="thumb-link" href="([\S\s]*?)" title="([\S\s]*?)"[\S\s]*?<\/i>([\S\s]*?)<\/li>[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?data-original="([\S\s]*?)"/g;
                 var match = re.exec(htmlBlock[1]);
                 while (match) {
-                    page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
+                    page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[2]), 'video', {
                        title: new showtime.RichText(match[2] + blueStr(" (" + trim(match[3].replace(',','')) + ")")),
                        icon: match[5],
                        description: match[4]
