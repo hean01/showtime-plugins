@@ -18,10 +18,10 @@
  */
 
 (function(plugin) {
+    var pluginInfo = getDescriptor();
     var PREFIX = 'yts';
-    var BASE_URL = 'https://yts.re/api/';
     var logo = plugin.path + "logo.png";
-    var slogan = 'Welcome to the official YTS website. Here you will be able to browse and download movies in excellent DVD, 720p, 1080p and 3D quality, all at the smallest file size.';
+    var slogan = pluginInfo.synopsis;
 
     var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
@@ -49,10 +49,27 @@
         "Horror", "Music", "Musical", "Mystery", "Romance", "Sci-Fi", "Short",
         "Sport", "Thriller", "War", "Western"];
 
-    plugin.createService("yts.re", PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(pluginInfo.id, PREFIX + ":start", "video", true, logo);
+
+    var settings = plugin.createSettings(pluginInfo.id, logo, pluginInfo.synopsis);
+
+    settings.createMultiOpt("protocol", "Protocol", [
+        ['https', 'https', true],
+        ['http', 'http']
+        ], function(v) {
+            service.proto = v;
+    });
+
+    settings.createMultiOpt("baseurl", "Base URL", [
+        ['://yts.re/api/', 'yts.re', true],
+        ['://yify.unlocktorrent.com/api/', 'yify.unlocktorrent.com'],
+        ['://yts.im/api/', 'yts.im']
+        ], function(v) {
+            service.baseurl = v;
+    });
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, 'Genres');
+        setPageHeader(page, service.proto + service.baseurl + 'Genres');
         for(var i in genres) {
             var item = page.appendItem(PREFIX + ":genre:" + genres[i], "directory", {
                title: genres[i]
@@ -62,7 +79,7 @@
 
     plugin.addURI(PREFIX + ":movie:(.*)", function(page, id) {
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + 'movie.json?id=' + id));
+        var json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'movie.json?id=' + id));
         setPageHeader(page, json.MovieTitle);
 
         page.appendItem('torrent:video:' + json.TorrentUrl, "video", {
@@ -118,7 +135,7 @@
         }
 
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + 'comments.json?movieid=' + id));
+        var json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'comments.json?movieid=' + id));
         page.loading = false;
 
         var first = true;
@@ -144,7 +161,7 @@
         page.entries = 0;
 
         function loader() {
-            var c = showtime.JSONDecode(showtime.httpReq(BASE_URL + 'list.json', {
+            var c = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'list.json', {
                 args: [{
                     quality: '1080p',
                     limit: 40,

@@ -75,7 +75,7 @@
                        var comments = match2[5].match(/[\s\S]*?align="right">([\s\S]*?)</)[1];
                    } else
                        var end = match2[5].match(/[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-                   page.appendItem('torrent:video:'+BASE_URL+match2[2], "directory", {
+                   page.appendItem('torrent:browse:'+BASE_URL+match2[2], "directory", {
     	               title: new showtime.RichText(colorStr(match2[1], orange) + ' ' +
                            entityEncode(match2[4]) + ' ('+ coloredStr(end[2], green) + '/'+
                            coloredStr(end[3], red) + ') ' + colorStr(end[1], blue) +
