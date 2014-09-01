@@ -81,8 +81,12 @@
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'movie.json?id=' + id));
         setPageHeader(page, json.MovieTitle);
-
-        page.appendItem('torrent:video:' + service.proto + service.baseurl.replace('/api', '') + json.TorrentUrl.replace("http://yts.re/", '').replace("https://yts.re/", ''), "video", {
+        var link = json.TorrentUrl.match(/(download(.*))/);
+        if (link)
+            link = service.proto + service.baseurl.replace('/api', '') + link[1];
+        else
+            link = json.TorrentUrl;
+        page.appendItem('torrent:video:' + link, "video", {
                title: new showtime.RichText(json.MovieTitleClean + colorStr(json.Size, blue)),
                year: +json.MovieYear,
                duration: json.MovieRuntime * 60,
