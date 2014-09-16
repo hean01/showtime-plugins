@@ -193,6 +193,7 @@
     });
 
     plugin.addURI(PREFIX + ":video:(.*):(.*):(.*):(.*)", function (page, id, title, url, proc) {
+        title = unescape(title).replace(/\[COLOR.*?\]/g, '').replace(/\[\/COLOR.*?\]/g, '');
         page.type = "directory";
         page.contents = "list";
         var video = unescape(url);
@@ -200,7 +201,7 @@
         if (playlist)
             var item = playlist.list[id];
 
-        if (proc != 'undefined' && proc != '') {
+        if (proc && proc != 'undefined') {
             var mediaitem = new MediaItem();
             mediaitem.URL = unescape(url);
             mediaitem.processor = unescape(proc);
@@ -213,18 +214,16 @@
 
         page.loading = false;
 
-        if (proc != 'undefined' && proc != '' && result.error) {
+        if (proc && proc != 'undefined' && result.error) {
             showtime.trace(result.message);
             page.error(result.message);
-        }
-        else {
+        } else {
             if (service.historyTracking == "1") {
-                var name = unescape(title);
-
+                var name = title;
                 store.add_to_playlist("history", item);
             }
 
-            if (proc != 'undefined' && proc != '') {
+            if (proc && proc != 'undefined') {
                 showtime.trace(result.message);
                 video = result.video;
             }
@@ -233,13 +232,11 @@
             if (url_end != -1)
                 video = video.slice(0, url_end);
 
-            showtime.trace('Video Playback: Reading ' + video);
             var videoparams = {
-                title: unescape(title),
-                sources: [
-	            {
-	                url: video
-	            }],
+                title: title,
+                sources: [{
+	            url: video
+	        }],
                 no_fs_scan: true,
                 subtitles: []
             };
@@ -254,11 +251,7 @@
                     }
                 }
             }
-
-            showtime.trace('Any error from this point is a bug of Showtime.\nPlease wait for Showtime to load the video...', 3);
-            
             page.source = "videoparams:" + showtime.JSONEncode(videoparams);
-
             page.type = "video";
         }
     });
@@ -1277,7 +1270,7 @@
             this.type = type;
 			
             //remove the [COLOR] tags from the name
-            var t = this.title.replace(/\[.*?\]/g, '');
+            var t = this.title.replace(/\[COLOR.*?\]/g, '').replace(/\[\/COLOR.*?\]/g, '');
             page.metadata.title = new showtime.RichText(t);
 
             if (t.toLowerCase().indexOf("movie") != -1 || t.toLowerCase().indexOf("films") != -1) {
@@ -1286,7 +1279,8 @@
             }
 			
             //set the background image   
-            showtime.print("Background: " + this.background);
+            if (this.verbose)
+                showtime.print("Background: " + this.background);
             if (service.backgroundEnabled == "1" && this.background != "default" && this.background != "previous") {
                 var m = this.background;
                 page.metadata.background = m;
@@ -1432,8 +1426,12 @@
                             if (link.indexOf('youtube.com') != -1) {
                                 var regex = new RegExp("youtu(?:\.be|be\.com)/(?:.*v(?:/|=)|(?:.*/)?)([a-zA-Z0-9-_]+)");
                                 var id = regex.exec(m.URL);
-
-                                item = page.appendItem('youtube:video:simple:' + escape(m.name) + ":" + escape(id[1]), "directory", {
+                                var subs = '';
+                                if (playlist)
+                                    for (var tag in playlist.list[i])
+                                        if (tag.slice(0, 9) == 'subtitle.')
+                                             subs += ':' + escape(tag.slice(9)) + ':' + escape(playlist.list[i][tag]);
+                                item = page.appendItem('youtube:video:simple:' + escape(m.name) + ":" + escape(id[1]) + escape(subs), "directory", {
                                     title: metadataTitle, icon: cover
                                 });
                             }

@@ -383,8 +383,7 @@
         addChannel(page, 'DW Europe', 'direct', 'hls:http://www.metafilegenerator.de/DWelle/tv-europa/ios/master.m3u8', 'https://lh5.googleusercontent.com/-9Ir29NdKHLU/AAAAAAAAAAI/AAAAAAAAIiY/TF5J4A4ZdP8/s120-c/photo.jpg');
         addChannel(page, 'France 24', 'direct', 'hls:http://vipwowza.yacast.net/f24_hlslive_en/smil:iphone.fr24en.smil/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/en/thumb/6/65/FRANCE_24_logo.svg/200px-FRANCE_24_logo.svg.png');
         //addChannel(page, 'CNN', 'direct', 'rtmp://hd1.lsops.net/live/ playpath=cnn_en_584 swfUrl="http://static.ls-cdn.com/player/5.10/livestation-player.swf" swfVfy=true live=true', 'http://upload.wikimedia.org/wikipedia/commons/8/8b/Cnn.svg');
-        //addChannel(page, 'CNN', 'direct', 'hls:http://livestation_hls-lh.akamaihd.net/i/cnn_en@105455/master.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/8/8b/Cnn.svg');
-        addChannel(page, 'CNN', 'direct', 'hls:http://178.49.132.73/streaming/cnn/tvrec/playlist.m3u8', '');
+        addChannel(page, 'CNN', 'livestation', '/en/cnni', 'http://upload.wikimedia.org/wikipedia/commons/8/8b/Cnn.svg');
         addChannel(page, 'CNBC', 'livestation', '/en/cnbc', 'http://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/CNBC_logo.svg/200px-CNBC_logo.svg.png');
         //addChannel(page, 'Bloomberg', 'direct', 'hls:http://hd4.lsops.net/live/bloomber_en_hls.smil/playlist.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Bloomberg_logo.svg/200px-Bloomberg_logo.svg.png');
         addChannel(page, 'Bloomberg', 'livestation', '/en/bloomberg', 'http://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Bloomberg_logo.svg/200px-Bloomberg_logo.svg.png');
