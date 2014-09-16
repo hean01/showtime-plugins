@@ -217,11 +217,11 @@
         service.universalSubtitles = v;
     });
 
-    settings.createBool("transcribedCaptions", "Enable Transcribed Captions", false, function(v) {
+    settings.createBool("transcribedCaptions", "Enable Transcribed Captions", true, function(v) {
         service.transcribedCaptions = v;
     });
 
-    settings.createBool("automaticSpeechCaptions", "Enable Automatic Speech", false, function(v) {
+    settings.createBool("automaticSpeechCaptions", "Enable Automatic Speech", true, function(v) {
         service.automaticSpeechCaptions = v;
     });
 
@@ -1843,35 +1843,42 @@
 
     function playVideo(page, title, id, video_url) {
         var url = unescape(unescape(video_url));
-        var videoParams = {      
+        var videoParams = {
             title: showtime.entityDecode(unescape(unescape(title))),
             canonicalUrl: PREFIX + ':video:' + id,
             sources: [{	
                 url: url  
-            }]    
+            }],
+            subtitles: []
         }
-        if (service.universalSubtitles == '1')
-            videoParams.subtitles = getUniversalSubtitles(id);
-        if (service.transcribedCaptions == '1' || service.automaticSpeechCaptions == '1') {
+
+        var subs = unescape(id);
+        var re = /\:(.*)\:(.*)/g;
+        var match = re.exec(subs);
+        while (match) {
+            videoParams.subtitles.push({
+                url: unescape(match[2]),
+                language: unescape(match[1]),
+                title: 'External subtitles'
+            });
+            match = re.exec(subs);
+        }
+
+        if (service.universalSubtitles)
+            videoParams.subtitles = getUniversalSubtitles(id, videoParams.subtitles);
+        if (service.transcribedCaptions || service.automaticSpeechCaptions) {
             var caption = getDefaultCaptionLink(id);
             if (caption) {
                 var data = new XML(showtime.httpGet(caption + '&type=list&tlangs=1&asrs=1').toString());
-            
-                if (service.transcribedCaptions == '1') {
+                if (service.transcribedCaptions) {
                     var subtitles = getTranscribedCaptions(caption, data);
-
-                    for (var i in subtitles) {
-                        var track = subtitles[i];
-                        videoParams.subtitles.push(track);
-                    }
+                    for (var i in subtitles)
+                        videoParams.subtitles.push(subtitles[i]);
                 }
-                if (service.automaticSpeechCaptions == '1') {
-                    var subtitles = getAutomaticSpeechCaptions(caption, data);
-
-                    for (var i in subtitles) {
-                        var track = subtitles[i];
-                        videoParams.subtitles.push(track);
-                    }
+                if (service.automaticSpeechCaptions) {
+                    var subtitles = getAutomaticSpeechCaptions(caption, data)
+                    for (var i in subtitles)
+                        videoParams.subtitles.push(subtitles[i]);
                 }
             }
         }
@@ -2708,7 +2715,7 @@
         }
     }
 
-    function getUniversalSubtitles(video_id) {
+    function getUniversalSubtitles(video_id, subtitles) {
         var args = 'video_url=' + escape('http://youtube.com/watch?v=' + video_id);
         var data = showtime.httpPost('http://www.universalsubtitles.org/en/videos/create/', args).toString();
 
@@ -2720,8 +2727,6 @@
         var nice = data.slice(begin, end);
         var split = nice.split('</li>');
     
-        var subtitles = [];
-        
         for (var i in split) {
             var item = split[i];
             var language = item.match('<a href="/en/videos/(.*)/(.*)/(.*)/">');
