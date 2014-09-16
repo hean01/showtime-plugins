@@ -1432,12 +1432,13 @@
                                         if (tag.slice(0, 9) == 'subtitle.')
                                              subs += ':' + escape(tag.slice(9)) + ':' + escape(playlist.list[i][tag]);
                                 item = page.appendItem('youtube:video:simple:' + escape(m.name) + ":" + escape(id[1]) + escape(subs), "directory", {
-                                    title: metadataTitle, icon: cover
+                                    title: metadataTitle,
+                                    icon: cover
                                 });
                             }
                             else {
                                 if (m.processor != "undefined") {
-                                    m.description = "Processor: " + m.processor + "\n" + m.description;
+                                    m.description = m.description + "\n\nProcessor: " + m.processor;
                                     item = page.appendItem(PREFIX + ':video:' + i + ':' + escape(m.name) + ':' + escape(link) + ":" + escape(m.processor), "video", {
                                         title: metadataTitle,
                                         icon: cover,
@@ -1446,14 +1447,30 @@
                                         duration: m.duration,
                                         processor: m.processor
                                     });
-                                }
-                                else {
-                                    item = page.appendItem(link, "video", {
-                                        title: metadataTitle,
-                                        icon: cover,
-                                        description: m.description,
-                                        url: link.match(/m3u8/) ? link = 'hls:' + link : link
-                                    });
+                                } else {
+                                     var videoparams = {
+                                        title: name.replace(/\[COLOR.*?\]/g, '').replace(/\[\/COLOR.*?\]/g, ''),
+                                        sources: [{
+	                                    url: link.match(/m3u8/) ? link = 'hls:' + link : link
+	                                }],
+                                        no_fs_scan: true,
+                                        subtitles: []
+                                     };
+
+                                     if (playlist)
+                                         for (var tag in playlist.list[i])
+                                             if (tag.slice(0, 9) == 'subtitle.')
+                                                  videoparams.subtitles.push({
+                                                      url: playlist.list[i][tag],
+                                                      language: tag.slice(9),
+                                                      title: 'External subtitles'
+                                             });
+
+                                     item = page.appendItem("videoparams:" + showtime.JSONEncode(videoparams), "video", {
+                                         title: metadataTitle,
+                                         icon: cover,
+                                         description: m.description
+                                     });
                                 }
                             }
                             break;
