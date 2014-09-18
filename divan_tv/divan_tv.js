@@ -18,25 +18,16 @@
  */
 
 (function(plugin) {
-    var plugin_info = getDescriptor();
-    var PREFIX = 'divan_tv';
     var BASE_URL = 'http://p.divan.tv/jsonrpc';
     var logo = plugin.path + "logo.png";
-    var slogan = plugin_info.synopsis;
+    var baseClientKey = '6838b9dca903f24bbe1edc1e12dd795b';
+    var login = null, userKey = null, countryCode = 'UA';
 
     function trim(s) {
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/, '');
     }
 
-    function blueStr(str) {
-        return '<font color="6699CC"> (' + str + ')</font>';
-    }
-
     var blue = "6699CC", orange = "FFA500";
-
-    function colorStr(str, color) {
-        return '<font color="' + color + '"> (' + str + ')</font>';
-    }
 
     function coloredStr(str, color) {
         return '<font color="' + color + '">' + str + '</font>';
@@ -52,18 +43,25 @@
         page.loading = false;
     }
 
-    var service = plugin.createService("divan.tv", PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(getDescriptor().id, getDescriptor().id + ":start", "video", true, logo);
 
-    // Index media by id
-    plugin.addURI(PREFIX + ":index:(.*):(.*)", function(page, id, title) {
+    plugin.addURI(getDescriptor().id + ":getChannelInfoById:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
-        page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(BASE_URL, {
-            postdata: '{"method":"getChannelInfoById","Params":{"baseClientKey":"6838b9dca903f24bbe1edc1e12dd795b","id":'+id+',"login":null,"userKey":null,"ip":null,"mobile":true,"international":false}}'
+        var json = request(page, showtime.JSONEncode({
+                        method: "getChannelInfoById",
+                        Params: {
+                            baseClientKey:baseClientKey,
+                            id: +id,
+                            login: login,
+                            userKey: userKey,
+                            ip:null,
+                            mobile:true,
+                            international:false
+                        }
         }));
         var lnk = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            //canonicalUrl: PREFIX + ":play:" + id + ":" + title,
+            //canonicalUrl: getDescriptor().id + ":play:" + id + ":" + title,
             sources: [{
                 url: "hls:" + json.stream
             }]
@@ -75,11 +73,86 @@
                   icon: json.image,
                   rating: json.rating*10
         });
-        page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, slogan);
+    plugin.addURI(getDescriptor().id + ":getMovieInfoById:(.*):(.*)", function(page, id, title) {
+        setPageHeader(page, unescape(title));
+        var json = request(page, showtime.JSONEncode({
+                        method: "getMovieInfoById",
+                        Params: {
+                            baseClientKey:baseClientKey,
+                            id: +id,
+                            login: login,
+                            userKey: userKey,
+                            ip:null,
+                            international:false,
+                            mobile:true,
+                            countryCode: countryCode
+                        }
+        }));
+
+        for (var i in json.named_streams) {
+            var lnk = "videoparams:" + showtime.JSONEncode({
+                title: json.title_ru + (json.title_orig ? ' | ' + json.title_orig : '') + (json.named_streams[i].name && json.named_streams[i].name != json.title_ru ? ' - ' + json.named_streams[i].name : ''),
+                canonicalUrl: getDescriptor().id + ':getMovieInfoById:' + i + ":" + title,
+                sources: [{
+                    url: json.named_streams[i].url
+                }]
+            });
+            var genre = '';
+            for (j in json.categories)
+                if (genre)
+                    genre += ', ' + json.categories[j];
+                else
+                    genre += json.categories[j];
+
+            var tariffs = '';
+            if (!+json.free)
+                for (j in json.tariffs)
+                    if (tariffs)
+                        tariffs += ', ' + json.tariffs[j];
+                    else
+                        tariffs += json.tariffs[j];
+
+            page.appendItem(lnk, 'video', {
+                title: new showtime.RichText((+json.hd ? coloredStr('HD ', blue) : '') + json.title_ru + (json.title_orig ? ' | ' + json.title_orig : '') + (json.named_streams[i].name && json.named_streams[i].name != json.title_ru ? ' - ' + json.named_streams[i].name : '') + coloredStr(' (' + json.language + ')', orange)),
+                icon: json.image,
+                rating: json.rating*10,
+                genre: genre,
+                description: new showtime.RichText((+json.limited_sale ? coloredStr('Ограниченная распродажа\n', orange) : '') +
+                    (tariffs ? coloredStr('Доступно в пакетах: ', orange) + tariffs + '\n' : '') +
+                    coloredStr('Страна: ', orange) + json.countries[0] +
+                    coloredStr(' Режиссер: ', orange) + json.director +
+                    (json.actor ? coloredStr('\nВ ролях: ', orange) + json.actor : '') +
+                    coloredStr('\nОписание: ', orange) + json.descr),
+                year: +json.year
+            });
+        }
+    });
+
+    plugin.addURI(getDescriptor().id + ":getRadioInfoById:(.*):(.*)", function(page, id, title) {
+        setPageHeader(page, unescape(title));
+        var json = request(page, showtime.JSONEncode({
+                        method: "getRadioInfoById",
+                        Params: {
+                            id: +id,
+                            baseClientKey:baseClientKey
+                        }
+        }));
+        for (var i in json.streams) {
+            page.appendItem('icecast:'+json.streams[i].stream, 'video', {
+                title: new showtime.RichText(json.name + coloredStr(' (' + json.streams[i].name + ')', orange)),
+                icon: json.image,
+                rating: json.rating*10,
+                genre: json.category_name,
+                description: new showtime.RichText(coloredStr('Страна: ', orange) + json.country_name +
+                    coloredStr('\nОписание: ', orange) + json.description.replace(/<br>/g, ''))
+            });
+        }
+    });
+
+    plugin.addURI(getDescriptor().id + ":paginator:(.*):(.*):(.*):(.*)", function(page, request, scroller, parser, title) {
+        setPageHeader(page, unescape(title));
         var totalItems, counter = 50, offset = 50, tryToSearch = true;
         function loader() {
             if (!tryToSearch) return false;
@@ -87,34 +160,72 @@
             var json;
             if (offset == 50) {
                 json = showtime.JSONDecode(showtime.httpReq(BASE_URL, {
-                    postdata: '{"method":"getFilteredChannelsAndNewFilters","Params":{"isFree":null,"categoryIDs":null,"count":50,"needProgram":false,"mobile":true,"international":false,"baseClientKey":"6838b9dca903f24bbe1edc1e12dd795b"}}'
+                    postdata: showtime.JSONEncode({
+                        method: request,
+                        Params: {
+                            isFree:null,
+                            categoryIDs:null,
+                            count:50,
+                            needProgram:false,
+                            mobile:true,
+                            international:false,
+                            baseClientKey:baseClientKey
+                        }
+                    })
                 }));
                 totalItems = json.count;
             } else {
                 json = showtime.JSONDecode(showtime.httpReq(BASE_URL, {
-                    postdata: '{"method":"getFilteredChannels","Params":{"isFree":null,"categoryIDs":null,"count":50,"offset":'+offset+',"mobile":true,"international":false,"baseClientKey":"6838b9dca903f24bbe1edc1e12dd795b"}}'
+                    postdata: showtime.JSONEncode({
+                        method: scroller,
+                        Params: {
+                            isFree:null,
+                            categoryIDs:null,
+                            count:50,
+                            offset:offset,
+                            needProgram:false,
+                            mobile:true,
+                            international:false,
+                            baseClientKey:baseClientKey
+                        }
+                    })
                 }));
             }
             page.loading = false;
+            var jsonPointer;
             if (offset == 50) {
-                for (i in json.channels) {
-                    page.appendItem(PREFIX + ':index:' + json.channels[i].id + ':' + escape(json.channels[i].name), 'video', {
-                        title: json.channels[i].name,
-                        icon: json.channels[i].image,
-                        rating: json.channels[i].rating * 10
+                if (parser == 'getMovieInfoById')
+                    jsonPointer = json.movies;
+                if (parser == 'getRadioInfoById')
+                    jsonPointer = json.entries;
+                else
+                    jsonPointer = json.channels;
+            } else
+                jsonPointer = json;
+            if (parser == 'getMovieInfoById')
+                for (i in jsonPointer) {
+                    page.appendItem(getDescriptor().id + ':' + parser + ':' + jsonPointer[i].id + ':' + escape(jsonPointer[i].title_ru), 'video', {
+                        title: jsonPointer[i].title_ru,
+                        icon: jsonPointer[i].image,
+                        genre: jsonPointer[i].category_names,
+                        year: +jsonPointer[i].year,
+                        rating: jsonPointer[i].rating * 10,
+                        description: new showtime.RichText(coloredStr('Страна: ', orange) + jsonPointer[i].country +
+                            coloredStr(' Режиссер: ', orange) + jsonPointer[i].director +
+                            (jsonPointer[i].actor ? coloredStr('\nВ ролях: ', orange) + jsonPointer[i].actor : ''))
                     });
                     counter++;
                 }
-            } else {
-                for (i in json) {
-                    page.appendItem(PREFIX + ':index:' + json[i].id + ':' + escape(json[i].name), 'video', {
-                        title: json[i].name,
-                        icon: json[i].image,
-                        rating: json[i].rating * 10
+            else
+                for (i in jsonPointer) {
+                    page.appendItem(getDescriptor().id + ':' + parser + ':' + jsonPointer[i].id + ':' + escape(jsonPointer[i].name), 'video', {
+                        title: jsonPointer[i].name,
+                        icon: jsonPointer[i].image,
+                        rating: jsonPointer[i].rating * 10,
+                        description: new showtime.RichText(jsonPointer[i].country_name ? coloredStr('Страна: ', orange) + jsonPointer[i].country_name : '')
                     });
                     counter++;
                 }
-            };
             if (counter >= totalItems) return tryToSearch = false;
             offset += 50;
             return true;
@@ -122,5 +233,129 @@
         loader();
         page.loading = false;
         page.paginator = loader;
+    });
+
+    function request(page, json) {
+        page.loading = true;
+        var result = showtime.JSONDecode(showtime.httpReq(BASE_URL, { postdata: json }));
+        page.loading = false;
+        return result;
+    }
+
+    plugin.addURI(getDescriptor().id + ":start", function(page) {
+        setPageHeader(page, getDescriptor().synopsis);
+        page.loading = true;
+        countryCode = showtime.httpReq(BASE_URL, {
+            postdata: showtime.JSONEncode({
+                method: "getCountryCodeByIp",
+                Params: {
+                    baseClientKey:baseClientKey
+                }
+            })
+        });
+
+        // channels
+        var json = request(page, showtime.JSONEncode({
+                        method: "getInterestingChannels",
+                        Params: {
+                            count: 5,
+                            offset: 0,
+                            mobile:true,
+                            countryCode: countryCode,
+                            international:false,
+                            baseClientKey:baseClientKey
+                        }
+        }));
+        page.appendItem("", "separator", {
+            title: 'Популярные каналы'
+        });
+        for (var i in json) {
+            page.appendItem(getDescriptor().id + ':getChannelInfoById:' + json[i].id + ':' + escape(json[i].name), 'video', {
+                title: json[i].name,
+                icon: json[i].image
+            });
+        }
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredChannelsAndNewFilters:getFilteredChannels:getChannelInfoById:'+escape('ТВ каналы'), 'directory', {
+            title: 'Все ►'
+        });
+
+        // movies
+        var json = request(page, showtime.JSONEncode({
+                        method: "getNewFilms",
+                        Params: {
+                            count: 5,
+                            mobile:true,
+                            countryCode: countryCode,
+                            international:false,
+                            baseClientKey:baseClientKey
+                        }
+        }));
+        page.appendItem("", "separator", {
+            title: 'Новые фильмы'
+        });
+        for (var i in json) {
+            page.appendItem(getDescriptor().id + ':getMovieInfoById:' + json[i].id + ':' + escape(json[i].title_ru), 'video', {
+                title: json[i].title_ru,
+                year: +json[i].year,
+                genre: json[i].category_name,
+                rating: json[i].rating * 10,
+                icon: json[i].image,
+                description: new showtime.RichText(coloredStr('Страна: ', orange) + json[i].country)
+            });
+        }
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredFilmsAndNewFilters:getFilteredFilms:getMovieInfoById:'+escape('Фильмы'), 'directory', {
+            title: 'Все ►'
+        });
+
+        // cartoons
+        var json = request(page, showtime.JSONEncode({
+                        method: "getRandomCartoons",
+                        Params: {
+                            count: 5,
+                            countryCode: countryCode,
+                            international:false,
+                            baseClientKey:baseClientKey
+                        }
+        }));
+        page.appendItem("", "separator", {
+            title: 'Популярные мультфильмы'
+        });
+        for (var i in json) {
+            page.appendItem(getDescriptor().id + ':getMovieInfoById:' + json[i].id + ':' + escape(json[i].title_ru), 'video', {
+                title: json[i].title_ru,
+                year: +json[i].year,
+                genre: json[i].category_name,
+                rating: json[i].rating * 10,
+                icon: json[i].image,
+                description: new showtime.RichText(coloredStr('Страна: ', orange) + json[i].country)
+            });
+        }
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredCartoonsAndNewFilters:getFilteredCartoons:getMovieInfoById:'+escape('Мультфильмы'), 'directory', {
+            title: 'Все ►'
+        });
+
+        // Radios
+        var json = request(page, showtime.JSONEncode({
+                        method: "getPopularRadio",
+                        Params: {
+                            count: 5,
+                            mobile:true,
+                            baseClientKey:baseClientKey
+                        }
+        }));
+        page.appendItem("", "separator", {
+            title: 'Популярные радиостанции'
+        });
+        for (var i in json) {
+            page.appendItem(getDescriptor().id + ':getRadioInfoById:' + json[i].id + ':' + escape(json[i].name), 'video', {
+                title: json[i].name,
+                genre: json[i].category_name,
+                rating: json[i].rating * 10,
+                icon: json[i].image
+            });
+        }
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredRadioAndNewFilters:getFilteredRadio:getRadioInfoById:'+escape('Радио'), 'directory', {
+            title: 'Все ►'
+        });
     });
 })(this);
