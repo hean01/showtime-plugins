@@ -18,20 +18,57 @@
  */
 
 (function(plugin) {
+    var descriptor = getDescriptor();
     var PREFIX = 'watch_is';
     var BASE_URL = 'http://watch.is';
-
     var logo = plugin.path + "logo.png";
+    var logged = false;
 
     function trim(s) {
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
     }
 
-    function orangeStr(str) {
-        return '<font color="FFA500">' + str + '</font>';
+    var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
+
+    function colorStr(str, color) {
+        return '<font color="' + color + '"> (' + str + ')</font>';
     }
-    function blueStr(str) {
-        return '<font color="6699CC">' + str + '</font>';
+
+    function coloredStr(str, color) {
+        return '<font color="' + color + '">' + str + '</font>';
+    }
+
+    function login(page, showDialog) {
+        if (logged && page) return true; // page here stands as a forced logon flag (from settings)
+        var ask = showDialog;
+        if (showDialog && page) ask = false; // first time we just try to read credentials silently
+
+        while (1) {
+            var credentials = plugin.getAuthCredentials(descriptor.synopsis, "Login required", ask);
+            if (credentials.rejected) return false;
+            if ((!credentials || !credentials.username || !credentials.password) && showDialog) {
+                ask = true;
+                continue;
+            }
+            if ((!credentials || !credentials.username || !credentials.password) && !showDialog) return false; // searcher case
+
+            logged = false;
+            page.loading = true;
+            var v = showtime.httpReq(BASE_URL + '/api/', {
+                args: {
+                    'username': credentials.username,
+                    'password': credentials.password
+                },
+                noFollow: true
+            }).toString();
+            page.loading = false;
+            if (v.match(/<error>/) && !showDialog) return false; // searcher case
+            if (!v.match(/<error>/)) {
+                if (!page) showtime.notify('Logged in successfully', 3);
+                break;
+            }
+        };
+        return logged = true;
     }
 
     function setPageHeader(page, title) {
@@ -42,34 +79,25 @@
         page.type = "directory";
         page.contents = "items";
         page.loading = false;
+        if (!login(page, true)) {
+            page.error('Error. Cannot login. Please check username/password.');
+            return false;
+        }
+        return true;
     }
 
-    var service = plugin.createService("watch.is", PREFIX + ":start", "video", true, logo);
-    var Genre = "0",
-        Year = "0",
-        Sorting = "added",
-        Order = "desc";
+    var service = plugin.createService(descriptor.id, PREFIX + ":start", "video", true, logo);
+    var settings = plugin.createSettings(descriptor.id, logo, descriptor.synopsis);
+    settings.createAction(descriptor.id + '_login', 'Change account', function() {
+        login(0, true);
+    });
 
-    function startPage(page) {
-        var v, tryToSearch = true;
+    function scraper(page, url, args) {
+        page.loading = true;
+        var v = showtime.httpReq(url, args);
+        page.loading = false;
 
-        function topPart() {
-            page.appendItem(PREFIX + ':best', 'directory', {
-                title: "Лучшие"
-            });
-            v = showtime.httpGet(BASE_URL + "/?genre=" + Genre + "&year=" + Year + "&sorting=" + Sorting + "&order=" + Order).toString();
-
-            // let's show genres
-            var genres = v.match(/<ul>([\S\s]*?)<\/ul>/);
-            var re = /<li><a href="([\S\s]*?)">([\S\s]*?)<\/a><\/li>/g;
-            var match = re.exec(genres[1]);
-            while (match) {
-                page.appendItem(PREFIX + ':genres:' + escape(match[1]) + ":" + escape(match[2]), 'directory', {
-                    title: new showtime.RichText(match[2])
-                });
-                match = re.exec(genres[1]);
-            }
-        };
+        page.entries = 0; var tryToSearch = true;
 
         function loader() {
             if (!tryToSearch) return false;
@@ -77,182 +105,37 @@
             var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
             var match = re.exec(v);
             while (match) {
-                var hd = match[3].match(/<div class="hd">/);
                 page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")), 'video', {
-                    title: new showtime.RichText(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
+                    title: new showtime.RichText((match[3].match(/<div class="hd">/) ? coloredStr('HD ', blue) : '') +
+                        trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")),
                     icon: BASE_URL + match[2],
-                    description: new showtime.RichText("Голосов: " + blueStr(match[4]) + "\nПросмотров: " + blueStr(match[5]) + "\nКомментариев: " + blueStr(match[6]))
+                    description: new showtime.RichText(coloredStr('Голосов: ', orange) + match[4] + '\n' +
+                         coloredStr('Просмотров: ', orange) + match[5] + '\n' +
+                         coloredStr('Комментариев: ', orange) + match[6])
                 });
+                page.entries++;
                 match = re.exec(v);
             };
             re = /class="page next" href="([^"]+)">/;
             match = re.exec(v);
             if (!match) return tryToSearch = false;
-            v = showtime.httpGet(BASE_URL + match[1]);
-            return true;
-        };
-
-        setPageHeader(page, 'watch.is - Онлайн фильмы');
-        var showAuthCredentials = false;
-        while (1) {
-            var credentials = plugin.getAuthCredentials("Watch.is - Онлайн фильмы", "Login required", showAuthCredentials);
-            if (credentials.rejected) return; //rejected by user
-            if (credentials) {
-                // var v = showtime.httpPost(BASE_URL + '/login', {
-                //  'username': credentials.username,
-                //  'password': credentials.password,
-                //  'login': '+'
-                // }, "", "", {
-                //  'noFollow': 'true'
-                // });
-                // var re = /class="page-login"/;
-                var v = showtime.httpGet(BASE_URL + '/api/', {
-                    'username': credentials.username,
-                    'password': credentials.password
-                }, "", {
-                    'noFollow': 'true'
-                });
-                showAuthCredentials = v.toString().match(/<error>/);
-                if (!showAuthCredentials) break;
-            };
-            showAuthCredentials = true;
-        };
-
-        topPart();
-
-        // add genres to the page.options
-        var genre = [],
-            obj = [];
-        var re = /<select name="genre">([\S\s]*?)<\/select>/;
-        var genres = re.exec(v);
-        re = /<option label="([\S\s]*?)" value="([\S\s]*?)"[\S\s]*?<\/option>/g;
-        var match = re.exec(genres[1]);
-        var defOpt = true;
-        while (match) {
-            obj[0] = match[2];
-            obj[1] = match[1];
-            obj[2] = defOpt;
-            genre.push(obj);
-            obj = [];
-            defOpt = false;
-            match = re.exec(genres[1]);
-        };
-
-        // add years to the page.options
-        var year = [];
-        re = /<select name="year">([\S\s]*?)<\/select>/;
-        var genres = re.exec(v);
-        re = /<option label="([\S\s]*?)" value="([\S\s]*?)"[\S\s]*?<\/option>/g;
-        var match = re.exec(genres[1]);
-        var defOpt = true;
-        while (match) {
-            obj[0] = match[2];
-            obj[1] = match[1];
-            obj[2] = defOpt;
-            year.push(obj);
-            obj = [];
-            defOpt = false;
-            match = re.exec(genres[1]);
-        };
-
-        // add sorting to the page.options
-        var sorting = [];
-        re = /<select name="sorting">([\S\s]*?)<\/select>/;
-        var genres = re.exec(v);
-        re = /<option label="([\S\s]*?)" value="([\S\s]*?)"[\S\s]*?<\/option>/g;
-        var match = re.exec(genres[1]);
-        var defOpt = true;
-        while (match) {
-            obj[0] = match[2];
-            obj[1] = match[1];
-            obj[2] = defOpt;
-            sorting.push(obj);
-            obj = [];
-            defOpt = false;
-            match = re.exec(genres[1]);
-        };
-
-        // add sorting to the page.options
-        var order = [];
-        re = /<select name="order">([\S\s]*?)<\/select>/;
-        var genres = re.exec(v);
-        re = /<option label="([\S\s]*?)" value="([\S\s]*?)"[\S\s]*?<\/option>/g;
-        var match = re.exec(genres[1]);
-        var defOpt = true;
-        while (match) {
-            obj[0] = match[2];
-            obj[1] = match[1];
-            obj[2] = defOpt;
-            order.push(obj);
-            obj = [];
-            defOpt = false;
-            match = re.exec(genres[1]);
-        };
-
-        page.options.createMultiOpt("genre", "Жанр", genre, function(res) {
-            Genre = res;
-        });
-        page.options.createMultiOpt("year", "Год", year, function(res) {
-            Year = res;
-        });
-        page.options.createMultiOpt("sorting", "Сортировка", sorting, function(res) {
-            Sorting = res;
-        });
-        page.options.createMultiOpt("order", "Порядок", order, function(res) {
-            Order = res;
-        });
-        page.options.createAction('apply', 'Выбрать', function() {
-            page.paginator = function dummy() {
-                return true
-            };
-            page.flush();
-            topPart();
-            tryToSearch = true;
-            loader();
-            page.paginator = loader;
-        });
-        loader();
-        page.loading = false;
-        page.paginator = loader;
-    };
-
-    plugin.addURI(PREFIX + ":genres:(.*):(.*)", function(page, url, title) {
-        var v = showtime.httpGet(BASE_URL + unescape(url));
-        setPageHeader(page, unescape(title));
-        var done = false;
-
-        function loader() {
-            if (done) return false;
-            // 1 - link, 2 - image, 3 - HD, 4 - votes, 5 - views, 6 - comments, 7 - title_rus, 8 - title_orig
-            var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
-            var match = re.exec(v);
-            while (match) {
-                var hd = match[3].match(/<div class="hd">/);
-                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")), 'video', {
-                    title: new showtime.RichText(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
-                    icon: BASE_URL + match[2],
-                    description: new showtime.RichText("Голосов: " + blueStr(match[4]) + "\nПросмотров: " + blueStr(match[5]) + "\nКомментариев: " + blueStr(match[6]))
-                });
-                match = re.exec(v);
-            };
-            re = /class="page next" href="([^"]+)">/;
-            match = re.exec(v);
-            if (!match) {
-                done = true;
-                return false;
-            }
-            v = showtime.httpGet(BASE_URL + match[1]);
+            v = showtime.httpReq(BASE_URL + match[1]);
             return true;
         };
         loader();
         page.loading = false;
         page.paginator = loader;
+    }
+
+    plugin.addURI(PREFIX + ":genre:(.*):(.*)", function(page, url, title) {
+        if (!setPageHeader(page, unescape(title))) return;
+        scraper(page, BASE_URL + unescape(url));
     });
 
     plugin.addURI(PREFIX + ":best", function(page) {
-        var v = showtime.httpGet(BASE_URL + "/top");
-        var re = /<title>(.*?)<\/title>/;
-        setPageHeader(page, re.exec(v)[1]);
+        if (!setPageHeader(page, 'Лучшие')) return;
+        var v = showtime.httpReq(BASE_URL + "/top");
+
         page.loading = false;
         // 1 - link, 2 - image, 3 - HD, 4 - votes, 5 - views, 6 - comments, 7 - title_rus, 8 - title_orig
         var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
@@ -272,14 +155,14 @@
     function getIMDBid(title) {
         var origTitle = unescape(title).split(' | ');
         origTitle[1] ? origTitle = origTitle[1] : origTitle = origTitle[0];
-        var resp = showtime.httpGet('http://www.imdb.com/find?q=' + encodeURIComponent(showtime.entityDecode(origTitle.replace(/ (HD)/,''))).toString()).toString();
+        var resp = showtime.httpReq('http://www.imdb.com/find?q=' + encodeURIComponent(showtime.entityDecode(origTitle.replace(/ (HD)/,''))).toString()).toString();
         var imdbid = resp.match(/class="findResult[\S\s]*?<a href="\/title\/([\S\s]*?)\/\?/);
         return imdbid ? imdbid[1] : '';
     };
 
     // Play links
     plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
-	setPageHeader(page, unescape(title));
+	if (!setPageHeader(page, unescape(title))) return;
 	page.loading = true;
         var imdbid = getIMDBid(title);
 
@@ -306,14 +189,14 @@
 	    });
 	    page.loading = false;
 	}
-        var v = showtime.httpGet(BASE_URL + '/api/watch/' + unescape(url).match(/[\S\s]*?([\d+]+)/i)[1]).toString();
+        var v = showtime.httpReq(BASE_URL + '/api/watch/' + unescape(url).match(/[\S\s]*?([\d+]+)/i)[1]).toString();
         var tmp = v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp>/);
 	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], blueStr("HD RTMP"));
         tmp = v.match(/<rtmp>([\S\s]*?)<\/rtmp>/);
 	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], blueStr("SD RTMP"));
         tmp = v.match(/<hdvideo>([\S\s]*?)<\/hdvideo>/);
 
-	var html = showtime.httpGet(BASE_URL + unescape(url)).toString();
+	var html = showtime.httpReq(BASE_URL + unescape(url)).toString();
         addItem(html.match(/<video src="([\S\s]*?)"/)[1], blueStr("SD HLS"));
 	page.loading = false;
 
@@ -342,48 +225,122 @@
 	};
     });
 
-    plugin.addURI(PREFIX + ":start", startPage);
+    var v, Genre = "0", Year = "0", Sorting = "added", Order = "desc";
 
-    plugin.addSearcher("Watch.is", logo, function(page, query) {
-        page.entries = 0;
+    plugin.addURI(PREFIX + ":start", function(page) {
+	if (!setPageHeader(page, descriptor.synopsis)) return;
+        function topPart() {
+            page.appendItem(PREFIX + ':best', 'directory', {
+                title: "Лучшие"
+            });
 
-        var credentials = plugin.getAuthCredentials("Watch.is - Онлайн фильмы", "Login required", false);
-        if (credentials) {
-            var v = showtime.httpPost(BASE_URL + '/login', {
-                'username': credentials.username,
-                'password': credentials.password,
-                'login': '+'
-            }, "", "", {
-                'noFollow': 'true'
-            }).toString();
-            if (v.match(/class="page-login"/)) return;
-        };
-        var v = showtime.httpGet(BASE_URL + '/?search=' + query.replace(/\s/g, '\+'));
-        var tryToSearch = true;
+            page.appendItem(PREFIX + ':genres', 'directory', {
+                title: "Жанры"
+            });
 
-        function loader() {
-            if (!tryToSearch) return false;
-            // 1 - link, 2 - image, 3 - HD, 4 - votes, 5 - views, 6 - comments, 7 - title_rus, 8 - title_orig
-            var re = /<div class="poster">[\S\s]*?<a href="([^"]+)"><img src="([\S\s]*?)"([\S\s]*?)<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<span class="text">([\S\s]*?)<\/span>[\S\s]*?<div class="name"><a href="[^"]+" class="name"><strong>([\S\s]*?)<\/strong> <span>([\S\s]*?)<\/span>/g;
-            var match = re.exec(v);
+            v = showtime.httpReq(BASE_URL + "/?genre=" + Genre + "&year=" + Year + "&sorting=" + Sorting + "&order=" + Order).toString();
+            // let's show genres
+            var genres = v.match(/<ul>([\S\s]*?)<\/ul>/)[1];
+            var re = /<li><a href="([\S\s]*?)">([\S\s]*?)<\/a><\/li>/g;
+            var match = re.exec(genres);
             while (match) {
-                var hd = match[3].match(/<div class="hd">/);
-                page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "")), 'video', {
-                    title: new showtime.RichText(trim(match[7]) + (match[8] ? " | " + trim(match[8]) : "") + (hd ? blueStr(" (HD)") : "")),
-                    icon: BASE_URL + match[2],
-                    description: new showtime.RichText("Голосов: " + blueStr(match[4]) + "\nПросмотров: " + blueStr(match[5]) + "\nКомментариев: " + blueStr(match[6]))
+                page.appendItem(PREFIX + ':genres:' + escape(match[1]) + ":" + escape(match[2]), 'directory', {
+                    title: new showtime.RichText(match[2])
                 });
-                page.entries++;
-                match = re.exec(v);
-            };
-            re = /class="page next" href="([^"]+)">/;
-            match = re.exec(v);
-            if (!match) return tryToSearch = false;
-            v = showtime.httpGet(BASE_URL + match[1]);
-            return true;
+                match = re.exec(genres);
+            }
         };
-        loader();
-        page.loading = false;
-        page.paginator = loader;
+
+
+        topPart();
+
+        var re = /<option label="([\S\s]*?)" value="([\S\s]*?)"[\S\s]*?<\/option>/g;
+        // add genres to the page.options
+        var genre = [],  obj = [];
+        var genres = v.match(/<select name="genre">([\S\s]*?)<\/select>/)[1];
+        var match = re.exec(genres);
+        var defOpt = true;
+        while (match) {
+            obj[0] = match[2];
+            obj[1] = match[1];
+            obj[2] = defOpt;
+            genre.push(obj);
+            obj = [];
+            defOpt = false;
+            match = re.exec(genres);
+        };
+
+        // add years to the page.options
+        var year = [];
+        var years = v.match(/<select name="year">([\S\s]*?)<\/select>/)[1];
+        var match = re.exec(years);
+        var defOpt = true;
+        while (match) {
+            obj[0] = match[2];
+            obj[1] = match[1];
+            obj[2] = defOpt;
+            year.push(obj);
+            obj = [];
+            defOpt = false;
+            match = re.exec(years);
+        };
+
+        // add sorting to the page.options
+        var sorting = [];
+        var sorts = v.match(/<select name="sorting">([\S\s]*?)<\/select>/)[1];
+        var match = re.exec(sorts);
+        var defOpt = true;
+        while (match) {
+            obj[0] = match[2];
+            obj[1] = match[1];
+            obj[2] = defOpt;
+            sorting.push(obj);
+            obj = [];
+            defOpt = false;
+            match = re.exec(sorts);
+        };
+
+        // add sorting to the page.options
+        var order = [];
+        var orders = v.match(/<select name="order">([\S\s]*?)<\/select>/)[1];
+        var match = re.exec(orders);
+        var defOpt = true;
+        while (match) {
+            obj[0] = match[2];
+            obj[1] = match[1];
+            obj[2] = defOpt;
+            order.push(obj);
+            obj = [];
+            defOpt = false;
+            match = re.exec(orders);
+        };
+
+        page.options.createMultiOpt("genre", "Жанр", genre, function(res) {
+            Genre = res;
+        });
+        page.options.createMultiOpt("year", "Год", year, function(res) {
+            Year = res;
+        });
+        page.options.createMultiOpt("sorting", "Сортировка", sorting, function(res) {
+            Sorting = res;
+        });
+        page.options.createMultiOpt("order", "Порядок", order, function(res) {
+            Order = res;
+        });
+        page.options.createAction('apply', 'Выбрать', function() {
+            page.paginator = function dummy() {
+                return true
+            };
+            page.flush();
+            topPart();
+            tryToSearch = true;
+            loader();
+            page.paginator = loader;
+        });
+    });
+
+    plugin.addSearcher(descriptor.id, logo, function(page, query) {
+        if (!login(page, false)) return;
+        scraper(page, BASE_URL, {args:{search:query}});
     });
 })(this);
