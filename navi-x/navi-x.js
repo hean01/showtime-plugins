@@ -163,7 +163,7 @@
 
         page.loading = false;
 
-        showtime.trace(result.message);
+        if (service.verbose) showtime.trace(result.message);
 
         if (result.error)
             page.error(result.message);
@@ -186,7 +186,7 @@
 
         page.loading = false;
 
-        showtime.trace(result.message);
+        if (service.verbose) showtime.trace(result.message);
 
         if (result.error)
             page.error(result.errorMsg);
@@ -1279,7 +1279,7 @@
             }
 			
             //set the background image   
-            if (this.verbose)
+            if (service.verbose)
                 showtime.print("Background: " + this.background);
             if (service.backgroundEnabled == "1" && this.background != "default" && this.background != "previous") {
                 var m = this.background;
@@ -1347,39 +1347,6 @@
                     var cover = m.thumb;
                     if (cover == "default") cover = null;
 
-                    var label2 = '';
-                    if (m.date != '') {
-                        try {
-                            var dt = m.date.split()
-                            var size = dt.length
-                            var dat = dt[0].split('-')
-                            var tim;
-                            if (size > 1)
-                                tim = dt[1].split(':')
-                            else
-                                tim = ['00', '00', '00']
-
-                            var entry_date = new Date(dat[0], dat[1], dat[2], tim[0], tim[1], tim[2])
-                            var days_past = (today.getDate() - entry_date.getDate())
-                            var hours_past = Math(today.getHours() - entry_date.getHours())
-                            if ((size > 1) && (days_past == 0) && (hours_past < 24))
-                                label2 = 'New ' + hours_past + ' hrs ago';
-                            else if (days_past <= 10)
-                                if (days_past == 0)
-                                    label2 = 'New Today'
-                                else if (days_past == 1)
-                                    label2 = 'New Yesterday'
-                                else
-                                    label2 = 'New ' + days_past + ' days ago'
-                            else if (this.playlist.type != 'playlist')
-                                label2 = m.date.slice(0, 10);
-                        }
-                        catch (err) {
-                            e(err);
-                            showtime.trace("ERROR: Playlist contains invalid date at entry:  " + (n + 1));
-                        }
-                    }
-
                     var link = m.URL;
 
                     if (link === 'My Playlists') {
@@ -1409,7 +1376,7 @@
                         name_final_color += " <font color=\"5AD1B5\">[Video Processor]</font>";
 
                     if (m.URL.match(nxserver_URL))
-                        name_final_color += " <font color=\"5AD1B5\">[NAVIXTREME]</font>";
+                        name_final_color += " <font color=\"5AD1B5\">[Playlist]</font>";
 
                     var metadataTitle = new showtime.RichText(name_final_color);
 
@@ -1438,11 +1405,10 @@
                             }
                             else {
                                 if (m.processor != "undefined") {
-                                    m.description = m.description + "\n\nProcessor: " + m.processor;
                                     item = page.appendItem(PREFIX + ':video:' + i + ':' + escape(m.name) + ':' + escape(link) + ":" + escape(m.processor), "video", {
                                         title: metadataTitle,
                                         icon: cover,
-                                        description: m.description,
+                                        description: m.description + "\n\nProcessor: " + m.processor,
                                         url: link,
                                         duration: m.duration,
                                         processor: m.processor
@@ -1623,7 +1589,6 @@
     }
 
     function Processor(mediaitem) {
-        this.verbose = service.verbose;
         this.NIPL = new NIPL(mediaitem);
         this.downloader = new Downloader(this);
         this.haveVideoUrl = false;
@@ -1649,7 +1614,7 @@
             var value = params[3];
             var append = true;
 
-            if (this.verbose) {
+            if (service.verbose) {
                 showtime.trace('Proc debug concat:');
                 showtime.print('old: ' + this.NIPL.vars[key]);
             }
@@ -1663,7 +1628,7 @@
 
             this.NIPL.setValue(key, value, append);
 
-            if (this.verbose) {
+            if (service.verbose) {
                 showtime.print('new: ' + this.NIPL.vars[key]);
             }
         }
@@ -1677,11 +1642,11 @@
             if (time[0] === "'")
                 time = time.slice(1);
 
-            if (this.verbose)
+            if (service.verbose)
                 showtime.print('Loading video...');
             for (var j = 0; j < parseInt(time) ; j++) {
                 page.metadata.title = this.NIPL.vars['countdown_title'] + ' - Waiting ' + (time - j) + ' seconds';
-                if (this.verbose)
+                if (service.verbose)
                     showtime.print('Waiting ' + (time - j) + ' seconds');
                 showtime.sleep(1000);
             }
@@ -1691,7 +1656,7 @@
         this.debug = function(line) { 
             var params = line.split(' ');
 
-            if (this.verbose)
+            if (service.verbose)
                 showtime.print(params[1] + ': ' + this.getVariableValue(params[1]));
         }
 
@@ -1760,7 +1725,7 @@
                 delete this.NIPL.vars['nomatch'];
             }
 
-            if (this.verbose) {
+            if (service.verbose) {
                 if (match)
                     showtime.trace('Processor match ' + key + ':');
                 else {
@@ -1799,7 +1764,7 @@
                     this.NIPL.vars.videoUrl += ' swfVfy='+this.NIPL.vars['swfVfy'];
             }
 
-            if (this.verbose) {
+            if (service.verbose) {
                 showtime.trace('Processor final result:');
                 showtime.print('URL: ' + this.NIPL.vars['videoUrl']);
             }
@@ -1829,7 +1794,7 @@
                 var regex = new RegExp('([^ ]+)[ ](.+)');
                 var params = regex.exec(line);
 
-                if (this.verbose)
+                if (service.verbose)
                     showtime.print(params[2].slice(1));
             }
         }
@@ -1838,7 +1803,7 @@
             var playlist = "";
             for (var i in this.NIPL.vars) {
                 if (i.slice(0, 9) == "playlist.") {
-                    /*if (this.verbose)
+                    /*if (service.verbose)
                         showtime.trace(i + ": " + this.NIPL.vars[i]);*/
                     playlist += i.slice(i.indexOf(".") + 1) + "=" + this.NIPL.vars[i] + "\n";
                 }
@@ -1848,7 +1813,7 @@
                 var item = this.NIPL.vars.playlist.items[i];
                 playlist += "\n";
                 for (var j in item) {
-                    /*if (this.verbose)
+                    /*if (service.verbose)
                         showtime.trace(j + ": " + item[j]);*/
                     playlist += j.slice(j.indexOf(".") + 1) + "=" + item[j];
                     if (j == "item.description")
@@ -1857,7 +1822,7 @@
                 }
             }
 
-            if (this.verbose) {
+            if (service.verbose) {
                 showtime.trace('Processor final result:');
                 showtime.print('Parsed: OK');
             }
@@ -1890,7 +1855,7 @@
 
             var regex_match = new RegExp(this.NIPL.vars['regex'], "g");
 
-            if (this.verbose) {
+            if (service.verbose) {
                 showtime.trace('Proc debug replace src:');
                 showtime.print('key: ' + key + '\nregex: ' + regex_match + '\nvalue: ' + value);
                 showtime.print('old: ' + this.getVariableValue(key));
@@ -1900,7 +1865,7 @@
                 this.NIPL.vars[key]  = "";
             this.NIPL.vars[key] = this.NIPL.vars[key].replace(regex_match, value);
 
-            if (this.verbose) {
+            if (service.verbose) {
                 showtime.print('new: ' + this.getVariableValue(key));
             }
 
@@ -1914,7 +1879,7 @@
                 'phase': this.phase
             };
 
-            if (this.verbose) {
+            if (service.verbose) {
                 showtime.trace('Processor report:');
                 showtime.print('phase: ' + this.phase);
             }
@@ -1932,7 +1897,7 @@
 
             this.phase += 1;
 
-            if (this.verbose == '1') {
+            if (service.verbose) {
                 showtime.trace('Processor: phase ' + this.phase + ' learn');
             }
 
@@ -1953,7 +1918,7 @@
 
             this.NIPL.vars.reports[key] = value;
 
-            if (this.verbose) {
+            if (service.verbose) {
                 showtime.trace('Processor debug report value: ' + key + ' set to string literal');
                 showtime.print(this.NIPL.vars.reports[key]);
             }
@@ -1983,15 +1948,15 @@
             this.NIPL.vars['htmRaw'] = data.response;
 
             if (this.NIPL.vars['s_method'] != 'geturl' && this.NIPL.vars['s_action'] != 'headers') {
-                if (this.verbose == '1')
+                if (service.verbose)
                     showtime.trace('Processor debug headers:');
                 for (var hdr in data.headers) {
-                    if (this.verbose)
+                    if (service.verbose)
                         showtime.print(hdr + ': ' + data.headers[hdr]);
                     this.NIPL.vars.headers[hdr] = data.headers[hdr];
                 }
 
-                if (this.verbose == '1')
+                if (service.verbose)
                     showtime.trace('Processor debug cookies:');
                 if (data.multiheaders['Set-Cookie']) {
                     for (var hdr in data.multiheaders['Set-Cookie']) {
@@ -2004,19 +1969,19 @@
                             var value = params[1];
                             this.NIPL.vars['cookies'][key] = value;
 
-                            if (this.verbose)
+                            if (service.verbose)
                                 showtime.print(key + ': ' + value);
                         }
                     }
                 }
 
                 if (this.NIPL.vars['regex'] != '') {
-                    if (this.verbose)
+                    if (service.verbose)
                         showtime.trace('Processor scrape:');
 
                     this.match('match htmRaw');
 
-                    if (this.NIPL.vars['nomatch'] && this.NIPL.vars['nomatch'] == '1' && this.verbose)
+                    if (this.NIPL.vars['nomatch'] && this.NIPL.vars['nomatch'] == '1' && service.verbose)
                         showtime.print('no match');
                 }
             }
@@ -2032,13 +1997,13 @@
             }
             else if (this.NIPL.vars['s_action'] == 'headers') {
                 for (var hdr in data.headers) {
-                    if (this.verbose)
+                    if (service.verbose)
                         showtime.print(hdr + ': ' + data.headers[hdr]);
 
                     this.NIPL.vars.headers[hdr] = data.headers[hdr];
                 }
 
-                if (this.verbose)
+                if (service.verbose)
                     showtime.trace('Processor debug cookies:');
                 if (data.multiheaders['Set-Cookie']) {
                     for (var hdr in data.multiheaders['Set-Cookie']) {
@@ -2051,7 +2016,7 @@
                             var value = params[1];
                             this.NIPL.vars['cookies'][key] = value;
 
-                            if (this.verbose)
+                            if (service.verbose)
                                 showtime.print(key + ': ' + value);
                         }
                     }
@@ -2075,21 +2040,20 @@
         this.unescape = function(line) { 
             var params = line.split(' ');
 
-            if (this.verbose) {
+            if (service.verbose) {
                 showtime.trace('Proc debug unescape:');
                 showtime.print('old: ' + this.NIPL.vars[params[1]]);
             }
 
             this.NIPL.vars[params[1]] = unescape(this.NIPL.vars[params[1]]);
 
-            if (this.verbose)
+            if (service.verbose)
                 showtime.print('new: ' + this.NIPL.vars[params[1]]);
         }
     
         this.setVerbose = function(line) { 
             var params = line.split(' ');
-
-            this.verbose = parseInt(params[1]);
+            //service.verbose = parseInt(params[1]);
         }
 
         this.ifResult = function(line) { 
@@ -2125,7 +2089,7 @@
                 }
                 catch (ex) { e(ex); result = false; }
 
-                if (this.verbose) {
+                if (service.verbose) {
                     showtime.trace('Proc debug if => ' + result + ':');
                     showtime.print('test: ' + key + ' ' + oper + ' ' + params[3]);
                     if (this.NIPL.vars[key]) {
@@ -2142,7 +2106,7 @@
 
                 result = exist;
 
-                if (this.verbose) {
+                if (service.verbose) {
                     showtime.trace('Proc debug if => ' + result + ':');
                     if (this.NIPL.vars[params[1]])
                         showtime.print(params[1] + " > '': " + this.NIPL.vars[params[1]]);
@@ -2184,19 +2148,19 @@
             if (value[0] == "'") {
                 value = value.slice(1);
 
-                if (this.verbose) {
+                if (service.verbose) {
                     showtime.trace('Proc debug variable: ' + key + ' set to string literal');
                     showtime.print(value);
                 }
             }
             else {
-                if (this.verbose == '1')
+                if (service.verbose)
                     showtime.trace('Proc debug variable: ' + key +' set to ' + value);
 
                 if (!this.NIPL.vars[value])
                     this.NIPL.vars[value] = '';
 
-                if (this.verbose)
+                if (service.verbose)
                     showtime.print(this.NIPL.vars[value]);
 
                 value = this.NIPL.vars[value];
@@ -2242,12 +2206,12 @@
                 if (match_proc) {
                     this.NIPL.vars.s_proc = match_proc[1];
                     if (match_proc[2]) {
-                        showtime.print(match_proc[2]);
+                        if (service.verbose) showtime.print(match_proc[2]);
                         var args_tmp = match_proc[2].split("&");
                         for (var i in args_tmp) {
                             var arg = args_tmp[i].split("=");
                             this.NIPL.setValue(arg[0], arg[1]);
-                            if (this.verbose)
+                            if (service.verbose)
                                 showtime.trace("Adding argument " + arg[0] + ": " + arg[1]);
                         }
                     }
@@ -2269,7 +2233,7 @@
                 }
 
                 link += postdata;
-                showtime.print(link);
+                if (service.verbose) showtime.print(link);
                 this.NIPL.vars['s_postdata'] = postdata;
 
                 if (this.phase > 1)
@@ -2307,19 +2271,23 @@
             if (this.phase == 1) {
                 var version = data.split("\n")[0].trim();
                 //var version = data.slice(0, 2);
-                showtime.print("Version: " + version);
-                showtime.trace('Processor: phase 1 - query');
-                showtime.print('URL: ' + mediaitem.URL);
-                showtime.print('Processor: ' + mediaitem.processor);
+                if (service.verbose) {
+                    showtime.print("Version: " + version);
+                    showtime.trace('Processor: phase 1 - query');
+                    showtime.print('URL: ' + mediaitem.URL);
+                    showtime.print('Processor: ' + mediaitem.processor);
+                }
             }
 
-            showtime.print(version + " - " + (version == "v2"));
+            if (service.verbose)
+                showtime.print(version + " - " + (version == "v2"));
             if (this.phase > 1 || version == "v2") {
                 var lines = data.split('\n');
                 var if_bypass = 0;
 
                 var eof = lines.length;
-                showtime.trace("Number of lines of processor: " + eof);
+                if (service.verbose)
+                    showtime.trace("Number of lines of processor: " + eof);
                 if (eof < 1)
                     this.error("error 'nothing returned from phase " + this.phase);
 
@@ -2329,7 +2297,7 @@
                     var i = linenum;
                     //Note: while loop will need to set linenum to linenum-1 since it is incremented at start of block
                     page.metadata.title = 'Processing... Phase: ' + this.phase + '; Line: ' + (i + 1);
-                    if (this.verbose)
+                    if (service.verbose)
                         showtime.trace("Processing line #" + (i + 1));
                     if (this.haveVideoUrl && !this.error) {
                         break;
@@ -2345,7 +2313,7 @@
                     if (line.slice(0, 1) == '#' || line.slice(0, 2) == '//' || line == '')
                         continue;
 
-                    if (this.verbose) {
+                    if (service.verbose) {
                         showtime.trace('Processor Line #' + (i + 1) + ': ' + line);
 
                         if (if_stacklen > 0 && (if_stack[if_stack.length - 1]["if_next"] || if_stack[if_stack.length - 1]["if_satisfied"] || if_stack[if_stack.length - 1]["if_end"])) {
@@ -2356,13 +2324,13 @@
 
                     if (if_stacklen > 0 && line.slice(0, 3) != 'if ' && line != 'endif' && line != 'endwhile') {
                         if (if_stack[if_stack.length - 1]["if_end"] && line != 'endif' && line != 'endwhile') {
-                            if (this.verbose > 1)
+                            if (service.verbose)
                                 showtime.trace("    ^^^ skipped");
                             continue;
                         }
 
                         if (if_stack[if_stack.length - 1]["if_next"] && line.slice(0, 6) != 'elseif' && line != 'else' && line != 'endif') {
-                            if (this.verbose > 1)
+                            if (service.verbose)
                                 showtime.trace("    ^^^ skipped");
                             continue;
                         }
@@ -2385,7 +2353,7 @@
                         var wresult = this.while_eval(if_stack[if_stack.length - 1]);
                         if (wresult["error"])
                             return this.error("error '" + wresult["message"]);
-                        if (this.verbose > 1)
+                        if (service.verbose)
                             showtime.trace(wresult["message"]);
                         if (wresult["match"])
                             linenum = if_stack[if_stack.length - 1]["loopstart"];
@@ -2470,7 +2438,7 @@
                             else
                                 if_stack[if_stack.length - 1]["if_next"] = true;
 
-                            if (this.verbose > 0)
+                            if (service.verbose)
                                 showtime.trace("Proc debug " + match[1] + " => " + boolObj["data"]);
 
                             continue;
@@ -2523,13 +2491,13 @@
                             var wresult = this.while_eval(if_stack[if_stack.length - 1]);
                             if (wresult["error"])
                                 this.error("error '" + wresult["message"]);
-                            if (this.verbose == '1')
+                            if (service.verbose)
                                 this.print("line " + wresult["message"]);
 
                             continue;
                         }
                         else {
-                            if (this.verbose == '1')
+                            if (service.verbose)
                                 showtime.trace('Processor: Unknown function');
                         }
                     }
@@ -2553,12 +2521,12 @@
                         }
                         else if (command == "item_add") {
                             // Adds new item to playlist
-                            if (this.verbose)
+                            if (service.verbose)
                                 showtime.trace("Adding item to playlist:");
                             var item = {};
                             for (var i in this.NIPL.vars) {
                                 if (i.slice(0, 5) == "item.") {
-                                    if (this.verbose)
+                                    if (service.verbose)
                                         showtime.print(i + ": " + this.NIPL.vars[i]);
                                     item[i] = this.NIPL.vars[i];
                                     delete this.NIPL.vars[i];
@@ -2613,7 +2581,7 @@
                 else
                     cookie='';
 
-                if (this.verbose == '1')
+                if (service.verbose)
                     showtime.trace(report);
 
                 this.NIPL.vars['s_cookie'] = cookie;
@@ -2640,7 +2608,7 @@
                         report = report + "\n v" + i + ": " + val;
                     }
 
-                    if (this.verbose == '1')
+                    if (service.verbose)
                         showtime.trace(report);
                     var htmRaw2 = this.downloader.getRemote(tgt).response;
                     if (htmRaw2<='') {
@@ -2712,7 +2680,7 @@
             var haystack = if_obj['haystack'].slice(if_obj['searchstart']);
             var match = haystack.match(if_obj['regex']);
             var rerep = 'Processor while iteration:';
-            if (this.verbose)
+            if (service.verbose)
                 showtime.print("match: " + match);
             if (!match) {
                 rerep = rerep + ' no match';
@@ -2882,7 +2850,7 @@
             var data = '';
 
             if (processor) {
-                if (this.verbose == '1') {
+                if (service.verbose) {
                     showtime.trace('Processor ' + processor.NIPL.vars['s_method'].toString().toUpperCase() + '.' + processor.NIPL.vars['s_action'] + ': ' + url);
                     showtime.trace('Proc debug remote args:');
                     showtime.trace("{'postdata': \'" + processor.NIPL.vars['s_postdata'] + "\', 'agent': '" + headers['User-Agent'] + "', 'headers': {}, 'cookie': '" + headers['Cookie'] + "', 'action': '" +
@@ -2906,7 +2874,7 @@
                         if (!params_sub[1])
                             params_sub[1] = '';
 
-                        if (this.verbose)
+                        if (service.verbose)
                             showtime.print(params_sub[0] + ': ' + unescape(params_sub[1]));
                         arguments[params_sub[0]] = unescape(params_sub[1]);
                     }
@@ -3682,11 +3650,11 @@
     }
     
     function t(message) {
-        showtime.trace(message, plugin.getDescriptor().id);
+        if (service.verbose) showtime.trace(message, plugin.getDescriptor().id);
     }
     
     function p(message) {
-        showtime.print(message);
+        if (service.verbose) showtime.print(message);
     }
 	
     plugin.addURI(PREFIX + ":start", function(page) {
