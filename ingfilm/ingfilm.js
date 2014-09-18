@@ -20,7 +20,7 @@
 (function(plugin) {
     var PREFIX = 'ingfilm';
     var BASE_URL = 'http://ingfilm.ru';
-    var slogan = 'INGFILM.RU | HD Фильмы Онлайн';
+    var slogan = getDescriptor().synopsis;
     var logo = plugin.path + "logo.png";
 
     function trim(s) {
@@ -34,6 +34,9 @@
         return '<font color="6699CC">' + str + '</font>';
     }
 
+    function checkLink(url) {
+        return url.substr(0, 4) == 'http' ? url : BASE_URL + url;
+    }
     function unicode2win1251(str) {
         if (str == 0) return 0;
         var result = "";
@@ -70,7 +73,7 @@
         page.loading = false;
     }
 
-    var service = plugin.createService("ingfilm.ru", PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(getDescriptor().id, PREFIX + ":start", "video", true, logo);
 
     // Search IMDB ID by title
     function getIMDBid(title) {
@@ -146,7 +149,7 @@
            function addItem(link, title, simpleTitle) {
                page.appendItem(PREFIX + ':play:' + escape(link) + ":" + escape(simpleTitle), 'video', {
                    title: new showtime.RichText(title),
-                   icon: match[1],
+                   icon: checkLink(match[1]),
                    genre: match[3],
                    duration: match[13],
                    year: +match[5],
@@ -194,7 +197,7 @@
             while (match) {
                 page.appendItem(PREFIX + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: match[3],
-                    icon: match[2]
+                    icon: checkLink(match[2])
                 });
                 match = re.exec(htmlBlock[1]);
             }
@@ -247,7 +250,7 @@
             while (match) {
                 page.appendItem(PREFIX + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText(match[3]),
-                    icon: match[2],
+                    icon: checkLink(match[2]),
                     genre: match[5],
                     rating: +match[6],
                     description: new showtime.RichText(trim(match[4]))
@@ -302,7 +305,7 @@
             while (match) {
                 page.appendItem(PREFIX + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText(match[3]),
-                    icon: match[2],
+                    icon: checkLink(match[2]),
                     description: showtime.entityDecode(trim(match[4]))
                 });
                 match = re.exec(htmlBlock[1]);
@@ -330,7 +333,7 @@
         page.paginator = loader;
     });
 
-    plugin.addSearcher("ingfilm.ru", logo, function(page, query) {
+    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
         var credentials = plugin.getAuthCredentials(slogan, "Login required", false);
         if (credentials) {
              v = showtime.httpReq(BASE_URL, {
