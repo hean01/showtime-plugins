@@ -1,7 +1,7 @@
 /**
  * Docu.im plugin for Showtime
  *
- *  Copyright (C) 2013 lprot
+ *  Copyright (C) 2014 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
  */
 
 (function(plugin) {
-
+    var descriptor = getDescriptor();
     var PREFIX = 'docuim';
     var BASE_URL = 'http://docu.im';
     var logo = plugin.path + "logo.png";
@@ -54,9 +54,6 @@
         return dec;
     }
 
-    function blueStr(str) {
-        return '<font color="6699CC">' + str + '</font>';
-    }
 
     function setPageHeader(page, title) {
         if (page.metadata) {
@@ -65,18 +62,26 @@
         }
         page.type = "directory";
         page.contents = "items";
+        page.loading = false;
     }
 
     function trim(s) {
-        s = s.replace(/(\r\n|\n|\r)/gm, "");
-        s = s.replace(/(^\s*)|(\s*$)/gi, "");
-        s = s.replace(/[ ]{2,}/gi, " ");
-        return s;
+        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/g, ' ');
+    }
+
+    var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
+
+    function colorStr(str, color) {
+        return '<font color="' + color + '"> (' + str + ')</font>';
+    }
+
+    function coloredStr(str, color) {
+        return '<font color="' + color + '">' + str + '</font>';
     }
 
     function titleJoin(title1, title2) {
         if ((title1 == title2) || (trim(title2) == '')) return title1;
-        else return title1 + " / " + title2;
+        else return title1 + " | " + title2;
     }
 
     function unhash(hash) {
@@ -92,151 +97,40 @@
         return base64_decode(hash);
     }
 
-    var service = plugin.createService("Docu.im", PREFIX + ":start", "video", true, logo);
-
-    function startPage(page) {
-        setPageHeader(page, 'Docu.im - Документальные фильмы онлайн');
-        page.appendItem(PREFIX + ':indexPage:/movies', 'directory', {
-            title: 'Фильмы',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':indexPage:/serials', 'directory', {
-            title: 'Сериалы',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':best', 'directory', {
-            title: 'Лучшее',
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':nowplay', 'directory', {
-            title: 'Сейчас смотрят',
-            icon: logo
-        });
-
-        page.appendItem("", "separator", {
-            title: 'Сейчас смотрят:'
-        });
-        var response = showtime.httpGet(BASE_URL);
-        page.loading = false;
-        // 1 - poster, 2 - likes, 3 - views, 4 - comments, 5 - link, 6 - title, 7 - altTitle, 8 - year, 9 - description 
-        var re = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/g;
-        var match = re.exec(response);
-        while (match) {
-            page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(titleJoin(match[6], match[7])), 'video', {
-                title: new showtime.RichText(titleJoin(match[6], match[7])),
-                year: +match[8],
-                icon: match[1],
-                description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>\s+/gm, '\n'))
-            });
-            match = re.exec(response);
-        };
-
-        page.appendItem("", "separator", {
-            title: 'Рекомендуемое:'
-        });
-        // 1 - poster, 2 - link, 3 - title, 4 - altTitle
-        re = /<img class='announce-img' src='(.*?)'[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>/g;
-        match = re.exec(response);
-        while (match) {
-            page.appendItem(PREFIX + ':index:' + escape(match[2]) + ':' + escape(titleJoin(match[3], match[4])), 'video', {
-                title: new showtime.RichText(titleJoin(match[3], match[4])),
-                icon: BASE_URL + match[1]
-            });
-            match = re.exec(response);
-        };
-
-        page.appendItem("", "separator", {
-            title: 'Новинки фильмов и сериалов:'
-        });
-        // 1 - poster, 2 - likes, 3 - views, 4 - comments, 5 - link, 6 - title
-        re = /<div class='movie thumb medium'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)' title='([\S\s]*?)'>/g;
-        match = re.exec(response);
-        while (match) {
-            page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(match[6]), 'video', {
-                title: new showtime.RichText(match[6]),
-                icon: match[1],
-                description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])))
-            });
-            match = re.exec(response);
-        };
-        page.appendItem("", "separator", {
-            title: 'Смотрите также:'
-        });
-        re = /<ul id='carousel'>([\S\s]*?)<\/ul>/;
-        response = re.exec(response)[1];
-        // 1 - link, 2 - poster, 3 - title
-        re = /<a href='(.*?)'[\S\s]*?<img src="(.*?)" alt="" \/>([\S\s]*?)<\/a>/g;
-        match = re.exec(response);
-        while (match) {
-            page.appendItem(PREFIX + ':index:' + escape(match[1]) + ':' + escape(trim(match[3])), 'video', {
-                title: new showtime.RichText(trim(match[3])),
-                icon: match[2]
-            });
-            match = re.exec(response);
-        };
-    };
+    var service = plugin.createService(descriptor.title, PREFIX + ":start", "video", true, logo);
 
     // Index best
     plugin.addURI(PREFIX + ":best", function(page) {
-        setPageHeader(page, 'Docu.im - Лучшее');
-        var response = showtime.httpGet(BASE_URL + '/best');
+        setPageHeader(page, descriptor.title + ' - Лучшее');
+        page.loading = true;
+        var response = showtime.httpReq(BASE_URL + '/best');
         page.loading = false;
-        page.appendItem("", "separator", {
-            title: 'Лучшие фильмы:'
-        });
+        addNews(page, response);
+    });
 
-        // 1 - poster, 2 - likes, 3 - views, 4 - comments, 5 - link, 6 - title
-        var re = /<div class='movie thumb medium'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)' title='([\S\s]*?)'>/g;
-        var match = re.exec(response);
-        var counter = 0;
-        while (match) {
-            page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(match[6]), 'video', {
-                title: new showtime.RichText(match[6]),
-                icon: match[1],
-                description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])))
-            });
-            match = re.exec(response);
-            counter++;
-            if (counter == 20) {
-                page.appendItem("", "separator", {
-                    title: 'Лучшие сериалы:'
-                });
-            };
-        };
+    // Index new
+    plugin.addURI(PREFIX + ":latest", function(page) {
+        setPageHeader(page, descriptor.title + ' - Новинки');
+        page.loading = true;
+        var response = showtime.httpReq(BASE_URL + '/latest');
+        page.loading = false;
+        addNews(page, response);
     });
 
     // Index page
     plugin.addURI(PREFIX + ":indexPage:(.*)", function(page, url) {
-        setPageHeader(page, 'Docu.im - Фильмы и сериалы которые смотрят сейчас');
-        var response = showtime.httpGet(BASE_URL + url);
-        var re = /<title>(.*?)<\/title>/;
-        setPageHeader(page, re.exec(response)[1]);
-        page.loading = false;
-        var pageNum = 2,
-            done = false;
+        var response = showtime.httpReq(BASE_URL + url).toString();
+        setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1]);
+
+        var fromPage = 2, tryToSearch = true;
 
         function loader() {
-            if (done) return false;
-            // 1 - poster, 2 - likes, 3 - views, 4 - comments, 5 - link, 6 - title, 7 - altTitle, 8 - year, 9 - description 
-            var re = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/g;
-            var match = re.exec(response);
-            while (match) {
-                page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(titleJoin(match[6], match[7])), 'video', {
-                    title: new showtime.RichText(titleJoin(match[6], match[7])),
-                    year: +match[8],
-                    icon: match[1],
-                    description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>\s+/gm, '\n'))
-                });
-                match = re.exec(response);
-            };
-            re = /<li class="last hidden">/;
-            match = re.exec(response);
-            if (match) {
-                done = true;
-                return false;
-            }
-            response = showtime.httpGet(BASE_URL + url + '/page/' + pageNum);
-            pageNum++;
+            if (!tryToSearch) return false;
+            addItems(page, response);
+            if (response.match(/<li class="last hidden">/)) return tryToSearch = false;
+            page.loading = true;
+            response = showtime.httpReq(BASE_URL + url + '/page/' + fromPage++).toString();
+            page.loading = false;
             return true;
         };
         loader();
@@ -245,8 +139,9 @@
 
     // Index nowplay
     plugin.addURI(PREFIX + ":nowplay", function(page) {
-        setPageHeader(page, 'Docu.im - Фильмы и сериалы которые смотрят сейчас');
-        var response = showtime.httpGet(BASE_URL + '/nowplay');
+        setPageHeader(page, descriptor.title + ' - Фильмы и сериалы которые смотрят сейчас');
+        page.loading = true;
+        var response = showtime.httpReq(BASE_URL + '/nowplay');
         page.loading = false;
         // 1 - poster, 2 - likes, 3 - views, 4 - comments, 5 - link, 6 - title
         var re = /<div class='movie thumb small'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)' title='([\S\s]*?)'>/g;
@@ -255,7 +150,9 @@
             page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(match[6]), 'video', {
                 title: new showtime.RichText(match[6]),
                 icon: match[1],
-                description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])))
+                description: new showtime.RichText(coloredStr('Рейтинг: ', orange) + trim(match[2]) +
+                    coloredStr(' Просмотров: ', orange) + trim(match[3]) +
+                    coloredStr(' Комментариев: ', orange) + trim(match[4]))
             });
             match = re.exec(response);
         };
@@ -264,24 +161,25 @@
     // Index links
     plugin.addURI(PREFIX + ":index:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
-        var response = showtime.httpGet(BASE_URL + unescape(url));
-        // 1 - poster, 2 - likes, 3 - views, 4 - comments, 5 - link, 6 - title, 7 - altTitle, 8 - year, 9 - description 
-        var re = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/;
-        var match = re.exec(response);
+        page.loading = true;
+        var response = showtime.httpReq(BASE_URL + unescape(url)).toString();
+        page.loading = false;
+        var match
+        while (!match) match = getRegex().exec(response);
         var year = +match[8];
         var icon = match[1];
-        var description = new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>\s+/gm, '\n'));
-        var re = /[\S\s]*?([\d+^\?]+)/i;
-        var movieID = re.exec(unescape(url))[1];
-        re = /<div id='season-switch-items'>/;
-        if (re.exec(response)) { // serials
-            re = /<a class='season'>([\S\s]*?)<\/a>/g;
+        var description = new showtime.RichText(getDescription(match));
+        var movieID = unescape(url).match(/[\S\s]*?([\d+^\?]+)/i)[1];
+        if (response.match(/<div id='season-switch-items'>/)) { // serials
+            var re = /<a class='season'>([\S\s]*?)<\/a>/g;
             match = re.exec(response);
 
             var season = 1;
             while (match) {
                 var seasonName = match[1];
-                var json = showtime.JSONDecode(unhash(showtime.httpGet(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=' + season)));
+                page.loading = true;
+                var json = showtime.JSONDecode(unhash(showtime.httpReq(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=' + season)));
+                page.loading = false;
                 var re2 = /audioIndex={(.*?)}/;
                 if (json.playlist[0] == null) {
                     page.error("Видео временно не доступно");
@@ -292,7 +190,7 @@
                 for (i in tracks) {
                     if (trim(tracks[i]) == '') continue;
                     page.appendItem("", "separator", {
-                        title: 'Soundtrack ' + i
+                        title: 'Аудиодорожка ' + i
                     });
                     for (n in json.playlist) {
                         re2 = /\[(.*?)\]/;
@@ -326,7 +224,9 @@
                 season++;
             }
         } else { // movies
-            var json = showtime.JSONDecode(unhash(showtime.httpGet(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=1')));
+            page.loading = true;
+            var json = showtime.JSONDecode(unhash(showtime.httpReq(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=1')));
+            page.loading = false;
             re = /audioIndex={(.*?)}/;
             var tracks = re.exec(json.playlist[0].file)[1].split(';');
             re = /\[(.*?)\]/;
@@ -335,7 +235,7 @@
             for (i in tracks) {
                 if (trim(tracks[i]) == "") continue;
                 page.appendItem("", "separator", {
-                    title: 'Soundtrack ' + i
+                    title: 'Аудиодорожка ' + i
                 });
                 if (trim(links[i]) != '') link = links[i];
                 var videoparams = {
@@ -365,37 +265,136 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":start", startPage);
+    plugin.addURI(PREFIX + ":start", function(page) {
+        page.appendItem(PREFIX + ':latest', 'directory', {
+            title: 'Новинки',
+            icon: logo
+        });
+        setPageHeader(page, descriptor.synopsis);
+        page.appendItem(PREFIX + ':indexPage:/movies', 'directory', {
+            title: 'Фильмы',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':indexPage:/serials', 'directory', {
+            title: 'Сериалы',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':best', 'directory', {
+            title: 'Лучшее',
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':nowplay', 'directory', {
+            title: 'Сейчас смотрят',
+            icon: logo
+        });
 
-    plugin.addSearcher("Docu.im", logo,
+        page.appendItem("", "separator", {
+            title: 'Сейчас смотрят:'
+        });
+        page.loading = true;
+        var response = showtime.httpReq(BASE_URL);
+        page.loading = false;
+        addItems(page, response);
 
-    function(page, query) {
-	    page.entries = 0;
+        page.appendItem("", "separator", {
+            title: 'Рекомендуемое:'
+        });
+        // 1 - poster, 2 - link, 3 - title, 4 - altTitle
+        var re = /<img class='announce-img' src='(.*?)'[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>/g;
+        var match = re.exec(response);
+        while (match) {
+            page.appendItem(PREFIX + ':index:' + escape(match[2]) + ':' + escape(titleJoin(match[3], match[4])), 'video', {
+                title: new showtime.RichText(titleJoin(match[3], match[4])),
+                icon: BASE_URL + match[1]
+            });
+            match = re.exec(response);
+        };
+
+        page.appendItem("", "separator", {
+            title: 'Новинки фильмов и сериалов:'
+        });
+        addNews(page, response);
+
+        page.appendItem("", "separator", {
+            title: 'Смотрите также:'
+        });
+        re = /<ul id='carousel'>([\S\s]*?)<\/ul>/;
+        response = re.exec(response)[1];
+        // 1 - link, 2 - poster, 3 - title
+        re = /<a href='(.*?)'[\S\s]*?<img src="(.*?)" alt="" \/>([\S\s]*?)<\/a>/g;
+        match = re.exec(response);
+        while (match) {
+            page.appendItem(PREFIX + ':index:' + escape(match[1]) + ':' + escape(trim(match[3])), 'video', {
+                title: new showtime.RichText(trim(match[3])),
+                icon: match[2]
+            });
+            match = re.exec(response);
+        };
+    });
+
+    function addNews(page, blob) {
+        // 1 - poster, 2 - likes, 3 - views, 4 - comments, 5 - link, 6 - title
+        var re = /<div class='movie thumb medium'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)' title='([\S\s]*?)'>/g;
+        var match = re.exec(blob);
+        while (match) {
+            page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(match[6]), 'video', {
+                title: new showtime.RichText(match[6]),
+                icon: match[1],
+                description: new showtime.RichText(coloredStr('Рейтинг: ', orange) + trim(match[2]) +
+                    coloredStr(' Просмотров: ', orange) + trim(match[3]) +
+                    coloredStr(' Комментариев: ', orange) + trim(match[4]))
+            });
+            match = re.exec(blob);
+        };
+    };
+
+    function getDescription(match) {
+        return coloredStr('Рейтинг: ', orange) + trim(match[2]) +
+            coloredStr(' Просмотров: ', orange) + trim(match[3]) +
+            coloredStr(' Комментариев: ', orange) + trim(match[4]) + '\n' +
+            trim(showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>/g, '\n'));
+    }
+
+    function getRegex() {
+        // 1-poster, 2-likes, 3-views, 4-comments, 5-link, 6-title, 7-altTitle, 8-year, 9-description
+        return /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/g;
+    }
+
+    function addItems(page, blob) {
+        var re = getRegex();
+        var match = re.exec(blob);
+        while (match) {
+            page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(titleJoin(match[6], match[7])), 'video', {
+                title: new showtime.RichText(titleJoin(match[6], match[7])),
+                icon: match[1],
+                year: +match[8],
+                description: new showtime.RichText(getDescription(match))
+            });
+            match = re.exec(blob);
+            page.entries++;
+        };
+    }
+
+    plugin.addSearcher(descriptor.title, logo, function(page, query) {
+        page.entries = 0;
         var fromPage = 1, tryToSearch = true;
-        // 1-poster, 2-likes, 3-views, 4-comments, 5-link, 6-title, 7-altTitle, 8-year, 9-description 
-        var re = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/;
 
         function loader() {
             if (!tryToSearch) return false;
-            var response = showtime.JSONDecode(showtime.httpPost(BASE_URL + '/search/result', {
-                'viewAs': 'list',
-                'p': fromPage,
-                'f': '{"title":"' + query + '","genres":[],"directors":[],"actors":[],"countries":[],"studios":[]}'
-            }, "", {
-                'X-Requested-With': 'XMLHttpRequest'
+            page.loading = true;
+            var response = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/search/result', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                postdata: {
+                    'viewAs': 'list',
+                    'p': fromPage,
+                    'f': '{"title":"' + query + '","genres":[],"directors":[],"actors":[],"countries":[],"studios":[]}'
+                }
             }));
-            for (var i in response.items) {
-                var match = re.exec(response.items[i].html);
-                if (match) {
-                    page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(titleJoin(match[6], match[7])), 'video', {
-                        title: new showtime.RichText(titleJoin(match[6], match[7])),
-                        icon: match[1],
-                        year: +match[8],
-                        description: new showtime.RichText('Рейтинг: ' + blueStr(trim(match[2])) + ' Просмотров: ' + blueStr(trim(match[3])) + ' Комментариев: ' + blueStr(trim(match[4])) + '\n' + showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>\s+/gm, '\n'))
-                    });
-                    page.entries++;
-                };
-            };
+            page.loading = false;
+            for (var i in response.items)
+                addItems(page, response.items[i].html);
             if (response.pagination.totalPages == fromPage) return tryToSearch = false;
             fromPage++;
             return true;
