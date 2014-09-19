@@ -115,7 +115,6 @@
         }));
         var lnk = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            //canonicalUrl: getDescriptor().id + ":play:" + id + ":" + title,
             sources: [{
                 url: "hls:" + json.stream
             }]
@@ -175,10 +174,10 @@
                 genre: genre,
                 description: new showtime.RichText((+json.limited_sale ? coloredStr('Ограниченная распродажа\n', orange) : '') +
                     (tariffs ? coloredStr('Доступно в пакетах: ', orange) + tariffs + '\n' : '') +
-                    coloredStr('Страна: ', orange) + json.countries[0] +
-                    coloredStr(' Режиссер: ', orange) + json.director +
+                    (json.countries[0] ? coloredStr('Страна: ', orange) + json.countries[0] : '') +
+                    (json.director ? coloredStr(' Режиссер: ', orange) + json.director : '') +
                     (json.actor ? coloredStr('\nВ ролях: ', orange) + json.actor : '') +
-                    coloredStr('\nОписание: ', orange) + json.descr),
+                    (json.descr ? coloredStr('\nОписание: ', orange) + json.descr : '')),
                 year: +json.year
             });
         }
@@ -258,7 +257,6 @@
                 jsonPointer = json;
             if (parser == 'getMovieInfoById')
                 for (i in jsonPointer) {
-
                     page.appendItem(getDescriptor().id + ':' + parser + ':' + jsonPointer[i].id + ':' + escape(jsonPointer[i].title_ru), 'video', {
                         title: jsonPointer[i].title_ru,
                         icon: jsonPointer[i].image,
@@ -434,5 +432,55 @@
         page.appendItem(getDescriptor().id + ':paginator:getFilteredRadioAndNewFilters:getFilteredRadio:getRadioInfoById:'+escape('Радио'), 'directory', {
             title: 'Все ►'
         });
+    });
+    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
+        if (!logged) loginAndGetConfig(page, false);
+        var totalItems, offset = 0, tryToSearch = true;
+        page.entries = 0;
+        function loader() {
+            if (!tryToSearch) return false;
+            page.loading = true;
+            var json = request(page, showtime.JSONEncode({
+                method: "complexSearch",
+                Params: {
+                    phrase:query,
+                    count:30,
+                    offset:offset,
+                    mobile:true,
+                    countryCode:countryCode,
+                    baseClientKey:baseClientKey
+                }
+            }));
+            page.loading = false;
+            for (var i in json.items) {
+                var parser = json.items[i].type;
+                if (parser == 'video')
+                    parser = 'getMovieInfoById';
+                else if (parser == 'radio')
+                    parser = 'getRadioInfoById';
+                else if (parser == 'channel')
+                    parser = 'getChannelInfoById';
+                else showtime.print(showtime.JSONEncode(json.items[i]));
+
+                page.appendItem(getDescriptor().id + ':' + parser + ':' + json.items[i].id + ':' + (json.items[i].title_ru ? escape(json.items[i].title_ru) : escape(json.items[i].name)), 'video', {
+                    title: (json.items[i].title_ru ? json.items[i].title_ru : json.items[i].name),
+                    icon: json.items[i].image,
+                    genre: json.items[i].category_name + (json.items[i].module_name ? ', ' + json.items[i].module_name : ''),
+                    year: (json.items[i].year ? +json.items[i].year : null),
+                    rating: json.items[i].rating * 10,
+                    description: new showtime.RichText((json.items[i].country ? coloredStr('Страна: ', orange) + json.items[i].country : '') +
+                        (json.items[i].director ? coloredStr(' Режиссер: ', orange) + json.items[i].director : '') +
+                        (json.items[i].actor ? coloredStr('\nВ ролях: ', orange) + json.items[i].actor : ''))
+                });
+                page.entries++;
+            }
+
+            if (page.entries >= json.count) return tryToSearch = false;
+            offset += 30;
+            return true;
+        }
+        loader();
+        page.loading = false;
+        page.paginator = loader;
     });
 })(this);
