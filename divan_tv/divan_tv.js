@@ -206,12 +206,11 @@
 
     plugin.addURI(getDescriptor().id + ":paginator:(.*):(.*):(.*):(.*)", function(page, request, scroller, parser, title) {
         setPageHeader(page, unescape(title));
-        var totalItems, counter = 50, offset = 50, tryToSearch = true;
+        var json, jsonPointer, totalItems, counter = 0, offset = 0, tryToSearch = true;
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var json;
-            if (offset == 50) {
+            if (!counter) {
                 json = showtime.JSONDecode(showtime.httpReq(BASE_URL, {
                     postdata: showtime.JSONEncode({
                         method: request,
@@ -227,6 +226,13 @@
                     })
                 }));
                 totalItems = json.count;
+                page.metadata.title += ' (' + totalItems + ')';
+                if (parser == 'getMovieInfoById')
+                    jsonPointer = json.movies;
+                else if (parser == 'getRadioInfoById')
+                    jsonPointer = json.entries;
+                else
+                    jsonPointer = json.channels;
             } else {
                 json = showtime.JSONDecode(showtime.httpReq(BASE_URL, {
                     postdata: showtime.JSONEncode({
@@ -243,39 +249,20 @@
                         }
                     })
                 }));
+                jsonPointer = json;
             }
             page.loading = false;
-            var jsonPointer;
-            if (offset == 50) {
-                if (parser == 'getMovieInfoById')
-                    jsonPointer = json.movies;
-                else if (parser == 'getRadioInfoById')
-                    jsonPointer = json.entries;
-                else
-                    jsonPointer = json.channels;
-            } else
-                jsonPointer = json;
-            if (parser == 'getMovieInfoById')
-                for (i in jsonPointer) {
-                    page.appendItem(getDescriptor().id + ':' + parser + ':' + jsonPointer[i].id + ':' + escape(jsonPointer[i].title_ru), 'video', {
-                        title: jsonPointer[i].title_ru,
-                        icon: jsonPointer[i].image,
-                        genre: jsonPointer[i].category_names,
-                        year: +jsonPointer[i].year,
-                        rating: jsonPointer[i].rating * 10,
-                        description: new showtime.RichText(coloredStr('Страна: ', orange) + jsonPointer[i].country +
-                            coloredStr(' Режиссер: ', orange) + jsonPointer[i].director +
-                            (jsonPointer[i].actor ? coloredStr('\nВ ролях: ', orange) + jsonPointer[i].actor : ''))
-                    });
-                    counter++;
-                }
-            else
-                for (i in jsonPointer) {
-                    page.appendItem(getDescriptor().id + ':' + parser + ':' + jsonPointer[i].id + ':' + escape(jsonPointer[i].name), 'video', {
-                        title: jsonPointer[i].name,
-                        icon: jsonPointer[i].image,
-                        rating: jsonPointer[i].rating * 10,
-                        description: new showtime.RichText(jsonPointer[i].country_name ? coloredStr('Страна: ', orange) + jsonPointer[i].country_name : '')
+            for (i in jsonPointer) {
+                page.appendItem(getDescriptor().id + ':' + parser + ':' + jsonPointer[i].id + ':' + escape(jsonPointer[i].title_ru ? jsonPointer[i].title_ru : jsonPointer[i].name), 'video', {
+                    title: (jsonPointer[i].title_ru ? jsonPointer[i].title_ru : jsonPointer[i].name),
+                    icon: jsonPointer[i].image,
+                    genre: jsonPointer[i].category_names,
+                    year: (jsonPointer[i].year ? +jsonPointer[i].year : null),
+                    rating: jsonPointer[i].rating * 10,
+                    description: new showtime.RichText((jsonPointer[i].country ? coloredStr('Страна: ', orange) + jsonPointer[i].country : '') +
+                        (jsonPointer[i].country_name ? coloredStr('Страна: ', orange) + jsonPointer[i].country_name : '') +
+                        (jsonPointer[i].director ? coloredStr(' Режиссер: ', orange) + jsonPointer[i].director : '') +
+                        (jsonPointer[i].actor ? coloredStr('\nВ ролях: ', orange) + jsonPointer[i].actor : ''))
                     });
                     counter++;
                 }
@@ -294,6 +281,51 @@
         page.loading = false;
         return result;
     }
+
+    plugin.addURI(getDescriptor().id + ":categories", function(page) {
+        setPageHeader(page, getDescriptor().synopsis);
+
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredChannelsAndNewFilters:getFilteredChannels:getChannelInfoById:'+escape('ТВ каналы'), 'directory', {
+            title: 'ТВ каналы'
+        });
+
+        page.appendItem("", "separator", {
+            title: 'Видео'
+        });
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredFilmsAndNewFilters:getFilteredFilms:getMovieInfoById:'+escape('Фильмы'), 'directory', {
+            title: 'Фильмы'
+        });
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredCartoonsAndNewFilters:getFilteredCartoons:getMovieInfoById:'+escape('Мультфильмы'), 'directory', {
+            title: 'Мультфильмы'
+        });
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredVideosAndNewFilters:getFilteredVideos:getMovieInfoById:'+escape('Передачи'), 'directory', {
+            title: 'Передачи'
+        });
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredFestivalFilmsAndNewFilters:getFilteredFestivalFilms:getMovieInfoById:'+escape('Короткометражки'), 'directory', {
+            title: 'Короткометражки'
+        });
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredSportAndNewFilters:getFilteredSport:getMovieInfoById:'+escape('Спорт'), 'directory', {
+            title: 'Спорт'
+        });
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredEducationVideoAndNewFilters:getFilteredEducationVideo:getMovieInfoById:'+escape('Обучающее видео'), 'directory', {
+            title: 'Обучающее видео'
+        });
+
+        page.appendItem("", "separator", {
+            title: 'Музыка'
+        });
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredRadioAndNewFilters:getFilteredRadio:getRadioInfoById:'+escape('Радио'), 'directory', {
+            title: 'Радио'
+        });
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredMusicAlbumsAndNewFilters:getFilteredMusicAlbums:getMovieInfoById:'+escape('Альбомы'), 'directory', {
+            title: 'Альбомы'
+        });
+        page.appendItem(getDescriptor().id + ':paginator:getFilteredMusicVideosAndNewFilters:getFilteredMusicVideos:getMovieInfoById:'+escape('Клипы'), 'directory', {
+            title: 'Клипы'
+        });
+
+
+    });
 
     plugin.addURI(getDescriptor().id + ":start", function(page) {
         setPageHeader(page, getDescriptor().synopsis);
@@ -328,6 +360,10 @@
             page.error("Sorry, can't run plugin on this device :(");
             return;
         }
+
+        page.appendItem(getDescriptor().id + ':categories', 'directory', {
+            title: 'Категории'
+        });
 
         // channels
         var json = request(page, showtime.JSONEncode({
