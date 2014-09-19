@@ -23,8 +23,8 @@
     var logo = plugin.path + "logo.png";
     var PREFIX = 'megogo';
     var BASE_URL = 'http://megogo.net', API = '/api/v4';
-    var logged, credentials, k1 = '_showtime', k2 = 'd661fc50be';
-    var users, config, digest, showPaidContent;
+    var logged = false, credentials, k1 = '_showtime', k2 = 'd661fc50be';
+    var users, config = false, digest, showPaidContent;
 
     function trim(s) {
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/g, '');
@@ -96,7 +96,7 @@
            else showtime.message("Не удалось войти. Проверьте email/пароль...", true, false);
         }
 
-        if (!users) users = getJSON(page, API, '/users?');
+        if (logged && !users) users = getJSON(page, API, '/users?');
         if (!config) config = getJSON(page, API, '/configuration?');
     }
 
@@ -608,7 +608,6 @@
 
     plugin.addURI(PREFIX + ":start", function(page) {
         setPageHeader(page, slogan);
-        loginAndGetConfig(page, logged = false);
         if (logged) {
              page.appendPassiveItem('video', '', {
                  title: new showtime.RichText(coloredStr(users.nickname ? users.nickname : users.email, orange) + ' (' + config.geo + ')'),
@@ -627,8 +626,7 @@
              });
         } else {
              page.appendPassiveItem('file', '', {
-                 title: new showtime.RichText(coloredStr('Авторизация не проведена', orange) + ' (' + config.geo + ')'),
-                 icon: users.avatar
+                 title: new showtime.RichText(coloredStr('Авторизация не проведена', orange) + ' (' + config.geo + ')')
              });
         }
 

@@ -21,7 +21,8 @@
     var BASE_URL = 'http://p.divan.tv/jsonrpc';
     var logo = plugin.path + "logo.png";
     var baseClientKey = '6838b9dca903f24bbe1edc1e12dd795b';
-    var login = null, userKey = null, countryCode = 'UA';
+    var logged = false, credentials, countryCode = 'UA';
+    var login = null, userKey = null, user = null;
 
     function trim(s) {
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/, '');
@@ -40,10 +41,75 @@
         }
         page.type = "directory";
         page.contents = "items";
+        if (!logged) loginAndGetConfig(page, false);
         page.loading = false;
     }
 
+    function loginAndGetConfig(page, showDialog) {
+        var text = '';
+        if (showDialog) {
+           text = 'Введите логин и пароль';
+           logged = false;
+        }
+
+        if (!logged) {
+            credentials = plugin.getAuthCredentials(getDescriptor().synopsis, text, showDialog);
+            if (credentials && credentials.username && credentials.password) {
+                page.loading = true;
+                var reply = showtime.httpReq(BASE_URL, {
+                    postdata: showtime.JSONEncode({
+                        method: "loginUser",
+                        Params: {
+                            login:credentials.username,
+                            password:credentials.password,
+                            platform:'showtime',
+                            baseClientKey:baseClientKey
+                        }
+                    })
+                }).toString().replace(/\"/g, '');
+                page.loading = false;
+                if (reply) {
+                    user = request(page, showtime.JSONEncode({
+                        method: "getBaseUserData",
+                        Params: {
+                            login:credentials.username,
+                            mobile:true,
+                            userKey:reply
+                        }
+                    }));
+                    if (user.login) {
+                        if (credentials.username.indexOf('@') == -1) {
+                            var reply = showtime.httpReq(BASE_URL, {
+                                postdata: showtime.JSONEncode({
+                                    method: "loginUser",
+                                    Params: {
+                                        login:user.login,
+                                        password:credentials.password,
+                                        platform:'showtime',
+                                        baseClientKey:baseClientKey
+                                    }
+                                })
+                            }).toString().replace(/\"/g, '');
+                        }
+                        logged = true;
+                        login = user.login;
+                        userKey = reply;
+                    }
+                }
+            }
+        }
+        if (showDialog) {
+           if (logged) showtime.message("Вход успешно произведен. Параметры входа сохранены.", true, false);
+           else showtime.message("Не удалось войти. Проверьте email/пароль...", true, false);
+        }
+    }
+
     var service = plugin.createService(getDescriptor().id, getDescriptor().id + ":start", "video", true, logo);
+
+    var settings = plugin.createSettings(getDescriptor().id, logo, getDescriptor().synopsis);
+    settings.createAction(getDescriptor().id+'_login', 'Войти в ' + getDescriptor().id, function() {
+        loginAndGetConfig(0, true);
+    });
 
     plugin.addURI(getDescriptor().id + ":getChannelInfoById:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
@@ -244,6 +310,24 @@
 
     plugin.addURI(getDescriptor().id + ":start", function(page) {
         setPageHeader(page, getDescriptor().synopsis);
+        if (logged) {
+             page.appendPassiveItem('video', '', {
+                 title: new showtime.RichText(coloredStr(user.email ? user.email : user.login, orange) + ' (' + countryCode.replace(/\"/, '') + ')'),
+                 description: new showtime.RichText(coloredStr('ID: ', orange) + user.user_id +
+                     coloredStr('\nЛогин: ', orange) + user.login +
+                     coloredStr('\nEmail: ', orange) + user.email +
+                     coloredStr('\nИмя: ', orange) + user.first_name +
+                     coloredStr('\nФамилия: ', orange) + user.last_name +
+                     coloredStr('\nБаланс: ', orange) + user.balance +
+                     coloredStr('\nТестовый период: ', orange) + (user.test_period ? 'Да' : 'Нет'))
+             });
+        } else {
+             page.appendPassiveItem('file', '', {
+                 title: new showtime.RichText(coloredStr('Авторизация не проведена', orange) + ' (' + countryCode.replace(/\"/, '') + ')')
+             });
+        }
+
+
         page.loading = true;
         countryCode = showtime.httpReq(BASE_URL, {
             postdata: showtime.JSONEncode({
