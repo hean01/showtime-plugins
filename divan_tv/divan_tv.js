@@ -77,20 +77,8 @@
                             userKey:reply
                         }
                     }));
+                    //showtime.print(showtime.JSONEncode(user));
                     if (user.login) {
-                        if (credentials.username.indexOf('@') == -1) {
-                            var reply = showtime.httpReq(BASE_URL, {
-                                postdata: showtime.JSONEncode({
-                                    method: "loginUser",
-                                    Params: {
-                                        login:user.login,
-                                        password:credentials.password,
-                                        platform:'showtime',
-                                        baseClientKey:baseClientKey
-                                    }
-                                })
-                            }).toString().replace(/\"/g, '');
-                        }
                         logged = true;
                         login = user.login;
                         userKey = reply;
@@ -262,7 +250,7 @@
             if (offset == 50) {
                 if (parser == 'getMovieInfoById')
                     jsonPointer = json.movies;
-                if (parser == 'getRadioInfoById')
+                else if (parser == 'getRadioInfoById')
                     jsonPointer = json.entries;
                 else
                     jsonPointer = json.channels;
@@ -270,6 +258,7 @@
                 jsonPointer = json;
             if (parser == 'getMovieInfoById')
                 for (i in jsonPointer) {
+
                     page.appendItem(getDescriptor().id + ':' + parser + ':' + jsonPointer[i].id + ':' + escape(jsonPointer[i].title_ru), 'video', {
                         title: jsonPointer[i].title_ru,
                         icon: jsonPointer[i].image,
@@ -323,10 +312,9 @@
              });
         } else {
              page.appendPassiveItem('file', '', {
-                 title: new showtime.RichText(coloredStr('Авторизация не проведена', orange) + ' (' + countryCode.replace(/\"/g, '') + ')')
+                 title: new showtime.RichText(coloredStr('Авторизация не проведена', orange))
              });
         }
-
 
         page.loading = true;
         countryCode = showtime.httpReq(BASE_URL, {
@@ -337,6 +325,11 @@
                 }
             })
         }).toString();
+
+        if (countryCode.match(/error/)) {
+            page.error("Sorry, can't run plugin on this device :(");
+            return;
+        }
 
         // channels
         var json = request(page, showtime.JSONEncode({
