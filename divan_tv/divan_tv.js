@@ -99,6 +99,12 @@
         loginAndGetConfig(0, true);
     });
 
+    function getTime(tStamp) {
+        var a = new Date(tStamp*1000);
+        return (a.getHours() < 10 ? a.getHours() + '0' : a.getHours()) + ':' +
+            (a.getMinutes() < 10 ? a.getMinutes() + '0' : a.getMinutes());
+    }
+
     plugin.addURI(getDescriptor().id + ":getChannelInfoById:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
         var json = request(page, showtime.JSONEncode({
@@ -116,7 +122,7 @@
         var lnk = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             sources: [{
-                url: "hls:" + json.stream
+                url: "hls:" + (json.stream ? json.stream : json.preview_stream)
             }]
         });
 
@@ -136,31 +142,26 @@
               rating: json.rating*10
         });
 
-        function getTime(tStamp) {
-            var a = new Date(tStamp*1000);
-            return (a.getHours() < 10 ? a.getHours() + '0' : a.getHours()) + ':' +
-                (a.getMinutes() < 10 ? a.getMinutes() + '0' : a.getMinutes());
-        }
-
-        var first = true;
-        for (i in json.programs.current_week)
-            for (j in json.programs.current_week[i]) {
-                if (json.programs.current_program.day == json.programs.current_week[i][j].day &&
-                    +json.programs.current_program.start <= json.programs.current_week[i][j].start) {
-                    if (first)
-                        page.appendItem("", "separator", {
-                            title: 'Программа передач'
+        if (json.programs.current_program) {
+            var first = true;
+            for (i in json.programs.current_week)
+                for (j in json.programs.current_week[i]) {
+                    if (json.programs.current_program.day == json.programs.current_week[i][j].day &&
+                        +json.programs.current_program.start == +json.programs.current_week[i][j].start) {
+                        if (first)
+                            page.appendItem("", "separator", {
+                                title: 'Программа передач'
+                            });
+                        page.appendPassiveItem('file', '', {
+                            title: new showtime.RichText(getTime(json.programs.current_week[i][j].start) + ' - ' +
+                                getTime(json.programs.current_week[i][j].stop) + '  ' +
+                                (first ? coloredStr(json.programs.current_week[i][j].title, orange) :
+                                    json.programs.current_week[i][j].title))
                         });
-
-                    page.appendPassiveItem('file', '', {
-                        title: new showtime.RichText(getTime(json.programs.current_week[i][j].start) + ' - ' +
-                            getTime(json.programs.current_week[i][j].stop) + '  ' +
-                            (first ? coloredStr(json.programs.current_week[i][j].title, orange) :
-                                json.programs.current_week[i][j].title))
-                    });
-                    first = false;
+                        first = false;
+                    }
                 }
-            }
+        }
     });
 
     plugin.addURI(getDescriptor().id + ":getMovieInfoById:(.*):(.*)", function(page, id, title) {
@@ -317,12 +318,72 @@
         return result;
     }
 
+    plugin.addURI(getDescriptor().id + ":epg", function(page) {
+        setPageHeader(page, 'ТВ программа');
+        page.loading = true;
+        // As we don't have reliable timestamp locally, let's get it from google.com
+        var date = showtime.httpReq("http://google.com", {
+            method: 'HEAD'
+        }).headers.Date; // Sat, 20 Sep 2014 19:14:29 GMT
+        // Getting the beginning of the day
+        var day = "" + new Date(date.split(" ")[3], new Date(Date.parse(date)).getMonth(), date.split(" ")[1]) / 1000;
+        // We get GMT and convert it to UTC
+        var now = new Date(Date.UTC(date.split(" ")[3], new Date(Date.parse(date)).getMonth(), date.split(" ")[1],
+            date.split(" ")[4].split(":")[0], date.split(" ")[4].split(":")[1], date.split(" ")[4].split(":")[2])).getTime()/1000.0;
+
+        var json = request(page, showtime.JSONEncode({
+            method: 'getFilteredChannelsAndNewFilters',
+            Params: {
+                isFree:null,
+                categoryIDs:null,
+                count:9999,
+                needProgram:false,
+                mobile:true,
+                international:false,
+                baseClientKey:baseClientKey
+            }
+        }));
+
+        var channelIds = [];
+        for (var i in json.channels)
+            channelIds.push(json.channels[i].id);
+
+        var epg = request(page, showtime.JSONEncode({
+            method: 'getEpgByChannelIdsAndDay',
+            Params: {
+                channelIds:channelIds,
+                day:day,
+                baseClientKey:baseClientKey
+            }
+        }));
+
+        for (var i in json.channels) {
+            for (var j in epg) {
+                for (var k in epg[j].morning) {
+                    if (+epg[j].morning[k].start <= +now && +epg[j].morning[k].stop >= +now)
+                        showtime.print(json.channels[i].name + ' ' + getTime(epg[j].morning[k].start) + ' - ' + getTime(epg[j].morning[k].stop) + '  ' + epg[j].morning[k].title_ru);
+                }
+                for (var k in epg[j].evening) {
+                    if (+epg[j].evening[k].start <= +now && +epg[j].evening[k].stop >= +now)
+                        showtime.print(json.channels[i].name + ' ' + getTime(epg[j].evening[k].start) + ' - ' + getTime(epg[j].evening[k].stop) + '  ' + epg[j].evening[k].title_ru);
+                }
+            }
+        }
+        page.loading = false;
+    });
+
     plugin.addURI(getDescriptor().id + ":categories", function(page) {
         setPageHeader(page, getDescriptor().synopsis);
 
+        page.appendItem("", "separator", {
+            title: 'ТВ'
+        });
         page.appendItem(getDescriptor().id + ':paginator:getFilteredChannelsAndNewFilters:getFilteredChannels:getChannelInfoById:'+escape('ТВ каналы'), 'directory', {
             title: 'ТВ каналы'
         });
+        //page.appendItem(getDescriptor().id + ':epg', 'directory', {
+        //    title: 'ТВ программа'
+        //});
 
         page.appendItem("", "separator", {
             title: 'Видео'
