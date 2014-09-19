@@ -312,7 +312,7 @@
         setPageHeader(page, getDescriptor().synopsis);
         if (logged) {
              page.appendPassiveItem('video', '', {
-                 title: new showtime.RichText(coloredStr(user.email ? user.email : user.login, orange) + ' (' + countryCode.replace(/\"/, '') + ')'),
+                 title: new showtime.RichText(coloredStr(user.email ? user.email : user.login, orange) + ' (' + countryCode.replace(/\"/g, '') + ')'),
                  description: new showtime.RichText(coloredStr('ID: ', orange) + user.user_id +
                      coloredStr('\nЛогин: ', orange) + user.login +
                      coloredStr('\nEmail: ', orange) + user.email +
@@ -323,7 +323,7 @@
              });
         } else {
              page.appendPassiveItem('file', '', {
-                 title: new showtime.RichText(coloredStr('Авторизация не проведена', orange) + ' (' + countryCode.replace(/\"/, '') + ')')
+                 title: new showtime.RichText(coloredStr('Авторизация не проведена', orange) + ' (' + countryCode.replace(/\"/g, '') + ')')
              });
         }
 
@@ -336,7 +336,7 @@
                     baseClientKey:baseClientKey
                 }
             })
-        });
+        }).toString();
 
         // channels
         var json = request(page, showtime.JSONEncode({
