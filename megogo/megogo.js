@@ -500,25 +500,28 @@
 	var s1 = json.src.match(/(.*)\/a\/0\//);
 	var s2 = json.src.match(/\/a\/0\/(.*)/);
 	var imdbid = 0;
-        for (var i in json.audio_tracks) {
-	    if (!counter) {
-                setPageHeader(page, unescape(json.title));
-                imdbid = getIMDBid(title);
-            }
-            var link = "videoparams:" + showtime.JSONEncode({
-                title: unescape(json.title) + ' (' + showtime.entityDecode(unescape(json.audio_tracks[i].lang)) + (json.audio_tracks[i].lang_orig ? '/' + showtime.entityDecode(unescape(json.audio_tracks[i].lang_orig)) : '')+')',
-                canonicalUrl: PREFIX + ":video:" + id + ":" + title,
-                imdbid: imdbid,
-                sources: [{
-                   url: "hls:" + s1[1] +"/a/" + json.audio_tracks[i].index + "/" + s2[1]
-                }]	    
-            });
-            page.appendItem(link, "video", {
-                title: unescape(json.title) + ' (' + showtime.entityDecode(unescape(json.audio_tracks[i].lang)) + (json.audio_tracks[i].lang_orig ? '/' + showtime.entityDecode(unescape(json.audio_tracks[i].lang_orig)) : '')+')'
-            });
-	    counter++;
-        };
-	if (counter) return;
+        //showtime.print(showtime.JSONEncode(json));
+        if (json.audio_tracks.length > 1) {
+            for (var i in json.audio_tracks) {
+	        if (!counter) {
+                    setPageHeader(page, unescape(json.title));
+                    imdbid = getIMDBid(title);
+                }
+                var link = "videoparams:" + showtime.JSONEncode({
+                    title: unescape(json.title) + ' (' + showtime.entityDecode(unescape(json.audio_tracks[i].lang)) + (json.audio_tracks[i].lang_orig ? '/' + showtime.entityDecode(unescape(json.audio_tracks[i].lang_orig)) : '')+')',
+                    canonicalUrl: PREFIX + ":video:" + id + ":" + title,
+                    imdbid: imdbid,
+                    sources: [{
+                        url: "hls:" + (s1 ? s1[1] +"/a/" + json.audio_tracks[i].index + "/" + s2[1] : json.src)
+                    }]
+                });
+                page.appendItem(link, "video", {
+                    title: unescape(json.title) + ' (' + showtime.entityDecode(unescape(json.audio_tracks[i].lang)) + (json.audio_tracks[i].lang_orig ? '/' + showtime.entityDecode(unescape(json.audio_tracks[i].lang_orig)) : '')+')'
+                });
+	        counter++;
+            };
+            return;
+        }
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(json.title),
