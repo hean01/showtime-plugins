@@ -290,6 +290,23 @@
                  page.error("Sorry, can't get the link :(");
     });
 
+    plugin.addURI(PREFIX + "vgtrk:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
+        var resp = showtime.httpReq(unescape(url)).toString();
+        page.loading = false;
+        var match = resp.match(/"auto":"([\S\s]*?)"\}/);
+            if (match) {
+                page.type = "video";
+                page.source = "videoparams:" + showtime.JSONEncode({
+                    title: unescape(title),
+                    sources: [{
+                        url: 'hls:' + match[1].replace(/\\/g, '')
+                    }]
+                });
+            } else
+                 page.error("Sorry, can't get the link :(");
+    });
+
     plugin.addURI(PREFIX + "ts:(.*):(.*)", function(page, url, title) {
         var link = "videoparams:" + showtime.JSONEncode({
             sources: [{
@@ -561,7 +578,6 @@
         //addChannel(page, 'Гумор ТВ', 'direct', 'rtmp://212.26.132.86/live/gumor_babai', '');
         addChannel(page, 'Гумор ТВ', 'direct', 'hls:http://212.26.132.86/hls/gumor_babai.m3u8', 'http://upload.wikimedia.org/wikipedia/uk/b/b1/Humor_logo.jpg');
         addChannel(page, 'Вікка', 'ts', 'http://193.254.196.179:8080', 'http://vikka.ua/img/logo.png');
-        addChannel(page, 'ZIK', 'glaz', 'zik', '');
         addChannel(page, 'ZIK', 'direct', 'rtmp://217.20.164.182:80/live/zik392p.stream', '');
         addChannel(page, 'ТВ Голд', 'direct', 'rtmp://77.88.210.226/tvgold.com.ua_live/livestream', 'https://yt3.ggpht.com/-WBTeSleTH8M/AAAAAAAAAAI/AAAAAAAAAAA/3ZWvOO3Pl8I/s100-c-k-no/photo.jpg');
         addChannel(page, 'ТРК Львів', 'direct', 'rtmp://gigaz.wi.com.ua/hallDemoHLS/LVIV', 'http://www.lodtrk.org.ua/inc/getfile.php?i=20111026133818.gif');
@@ -601,13 +617,16 @@
         addChannel(page, 'Euronews', 'euronews', 'http://ru.euronews.com/news/streaming-live/', 'http://ru.euronews.com/media/logo_222.gif');
         //http://tv.life.ru/index.m3u8
         addChannel(page, 'Life News', 'direct', 'hls:http://tv.life.ru/lifetv/720p/index.m3u8', 'http://lifenews.ru/assets/logo-0a3a75be3dcc15b6c6afaef4adab52dd.png');
-        //addChannel(page, 'Россия 24', 'direct', 'hls:http://178.49.132.73/streaming/vesti/tvrec/playlist.m3u8', '');
-        addChannel(page, 'Россия 24', 'direct', 'hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21', '');
-        addChannel(page, 'Россия 1', 'direct', 'hls:http://213.208.179.135/rr2/smil:rtp_r1_rr.smil/playlist.m3u8?auth=vh&cast_id=2961', '');
-        addChannel(page, 'Россия РТР', 'direct', 'hls:http://151.236.123.4/rr2/smil:rtp_rtrp_rr.smil/playlist.m3u8?auth=vh&cast_id=4941', '');
-        //addChannel(page, 'Россия К', 'direct', 'hls:http://178.49.132.73/streaming/kultura/tvrec/playlist.m3u8', '');
+        //addChannel(page, 'Россия 24', 'direct', 'hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21', '');
+        addChannel(page, 'Россия 24', 'vgtrk', 'http://player.rutv.ru/iframe/datalive/id/21/sid/r24', '');
+        //addChannel(page, 'Россия 1', 'direct', 'hls:http://213.208.179.135/rr2/smil:rtp_r1_rr.smil/playlist.m3u8?auth=vh&cast_id=2961', '');
+        addChannel(page, 'Россия 1', 'vgtrk', 'http://player.rutv.ru/iframe/datalive/id/2961/sid/rutv', '');
+        addChannel(page, 'Россия 2', 'vgtrk', 'http://player.rutv.ru/iframe/datalive/id/3465/sid/russia2', '');
+        //addChannel(page, 'Россия РТР', 'direct', 'hls:http://151.236.123.4/rr2/smil:rtp_rtrp_rr.smil/playlist.m3u8?auth=vh&cast_id=4941', '');
+        addChannel(page, 'Россия РТР', 'vgtrk', 'http://player.rutv.ru/iframe/datalive/id/4941/sid/rtrplaneta', '');
         addChannel(page, 'Россия К', 'glaz', 'rossiya-k');
-        addChannel(page, 'Москва 24', 'direct', 'hls:http://testlivestream.rfn.ru/live/smil:m24.smil/playlist.m3u8?auth=vh&cast_id=1661', '');
+        //addChannel(page, 'Москва 24', 'direct', 'hls:http://testlivestream.rfn.ru/live/smil:m24.smil/playlist.m3u8?auth=vh&cast_id=1661', '');
+        addChannel(page, 'Москва 24', 'vgtrk', 'http://player.rutv.ru/iframe/datalive/id/1661/sid/m24', '');
         addChannel(page, 'РИА Новости', 'direct', 'hls:http://rian.cdnvideo.ru:1935/rr/stream20/index.m3u8', '');
         addChannel(page, 'RTД', 'direct', 'hls:http://62.213.85.137/rtdru/rtdru.m3u8', '');
         addChannel(page, 'Дождь', 'direct', 'hls:http://tvrain-video.ngenix.net/mobile/TVRain_1m.stream/playlist.m3u8', 'http://tvrain-st.cdn.ngenix.net/static/css/pub/images/logo-tvrain.png');

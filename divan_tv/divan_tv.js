@@ -28,7 +28,7 @@
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/, '');
     }
 
-    var blue = "6699CC", orange = "FFA500";
+    var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
     function coloredStr(str, color) {
         return '<font color="' + color + '">' + str + '</font>';
@@ -120,12 +120,47 @@
             }]
         });
 
+        var tariffs = '';
+            if (!+json.free)
+                for (j in json.tariffs)
+                    if (tariffs)
+                        tariffs += ', ' + json.tariffs[j];
+                    else
+                        tariffs += json.tariffs[j];
+
         page.appendItem(lnk, 'video', {
-              title: json.name,
-                  description: new showtime.RichText(json.description),
-                  icon: json.image,
-                  rating: json.rating*10
+              title: new showtime.RichText((+json.hd ? coloredStr('HD ', blue) : '') + json.name),
+              description: new showtime.RichText((tariffs ? coloredStr('Доступно в пакетах: ', orange) + tariffs + '\n' : '') +
+                    (json.description ? coloredStr('Описание: ', orange) + json.description : '')),
+              icon: json.image,
+              rating: json.rating*10
         });
+
+        function getTime(tStamp) {
+            var a = new Date(tStamp*1000);
+            return (a.getHours() < 10 ? a.getHours() + '0' : a.getHours()) + ':' +
+                (a.getMinutes() < 10 ? a.getMinutes() + '0' : a.getMinutes());
+        }
+
+        var first = true;
+        for (i in json.programs.current_week)
+            for (j in json.programs.current_week[i]) {
+                if (json.programs.current_program.day == json.programs.current_week[i][j].day &&
+                    +json.programs.current_program.start <= json.programs.current_week[i][j].start) {
+                    if (first)
+                        page.appendItem("", "separator", {
+                            title: 'Программа передач'
+                        });
+
+                    page.appendPassiveItem('file', '', {
+                        title: new showtime.RichText(getTime(json.programs.current_week[i][j].start) + ' - ' +
+                            getTime(json.programs.current_week[i][j].stop) + '  ' +
+                            (first ? coloredStr(json.programs.current_week[i][j].title, orange) :
+                                json.programs.current_week[i][j].title))
+                    });
+                    first = false;
+                }
+            }
     });
 
     plugin.addURI(getDescriptor().id + ":getMovieInfoById:(.*):(.*)", function(page, id, title) {
