@@ -328,37 +328,13 @@
     plugin.addURI(getDescriptor().id + ":epg", function(page) {
         setPageHeader(page, 'ТВ гид');
         page.loading = true;
+
         // As we don't have reliable timestamp locally, let's get it from google.com
-        var date = showtime.httpReq("http://google.com", {
+        var now = new Date(showtime.httpReq("http://google.com", {
             method: 'HEAD'
-        }).headers.Date; // Sat, 20 Sep 2014 19:14:29 GMT
-        var no = new Date(date);
-        showtime.trace(new Date(date).getTime() / 1000);
-        var no1 = new Date(no.getUTCFullYear(), no.getUTCMonth(), no.getUTCDate());
-        showtime.trace(no1);
-        showtime.trace(no1.getTime() / 1000);
-
-        no1 = new Date(no.getFullYear(), no.getMonth(), no.getDate());
-        showtime.trace(no1);
-        showtime.trace(no1.getTime() / 1000);
-
-        // We get GMT and convert it to UTC
-        var now = new Date(Date.UTC(date.split(" ")[3],
-            new Date(Date.parse(date)).getMonth(),
-            date.split(" ")[1],
-            date.split(" ")[4].split(":")[0],
-            date.split(" ")[4].split(":")[1],
-            date.split(" ")[4].split(":")[2]));;
-
-        // Getting the beginning of the day
-        var day = new Date(Date.UTC(date.split(" ")[3],
-            new Date(Date.parse(date)).getMonth(),
-            date.split(" ")[1])).getTime() / 1000;
-
-        now = "" + now.getTime() / 1000;
-//        day = "" + day.getTime() / 1000;
-
-        showtime.trace('Day: '+day + ' Now: '+now);
+        }).headers.Date);
+        var day = "" + new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000;
+        showtime.trace('Now: '+now+' (' +now.getTime() / 1000 + ') Day: '+day);
         var json = request(page, showtime.JSONEncode({
             method: 'getFilteredChannelsAndNewFilters',
             Params: {
@@ -395,25 +371,15 @@
             return name;
         }
 
-        function processEPG(what, id) {
-            var found = false;
-            for (var i in what) {
-                if (what[i].start <= now && what[i].stop >= now) {
-                    var chName = getChNameByID(id);
-                    page.appendItem(getDescriptor().id + ":getChannelInfoById:" + id + ':' + escape(chName), 'file', {
-                        title: new showtime.RichText(chName + ' ' + getTime(what[i].start) + ' - ' +
-                            getTime(what[i].stop) + '  ' +
-                            coloredStr(what[i].title_ru, orange))
-                    });
-                    found = true;
-                }
-            }
-            return found;
-        }
-
         for (var i in epg)
-            if (!processEPG(epg[i].morning, i))
-                processEPG(epg[i].evening, i);
+            if (epg[i].current_program) {
+                var chName = getChNameByID(i);
+                page.appendItem(getDescriptor().id + ":getChannelInfoById:" + i + ':' + escape(chName), 'file', {
+                    title: new showtime.RichText(chName + ' ' + getTime(epg[i].current_program.start) + ' - ' +
+                        getTime(epg[i].current_program.stop) + '  ' +
+                        coloredStr(epg[i].current_program.title_ru, orange))
+                });
+            }
 
         page.loading = false;
     });
