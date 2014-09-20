@@ -99,8 +99,9 @@
         loginAndGetConfig(0, true);
     });
 
-    function getTime(tStamp) {
-        var a = new Date(tStamp*1000);
+    function getTimePeriod(gmt) {
+        var now = new Date(gmt * 1000);
+        var a = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() - 3, now.getMinutes(), now.getSeconds()));
         return (a.getHours() < 10 ? '0' + a.getHours() : a.getHours()) + ':' +
             (a.getMinutes() < 10 ? '0' + a.getMinutes() : a.getMinutes());
     }
@@ -116,8 +117,8 @@
                                 title: 'Программа передач'
                             });
                             page.appendPassiveItem('file', '', {
-                                title: new showtime.RichText(getTime(json[i][j].start) + ' - ' +
-                                    getTime(json[i][j].stop) + '  ' +
+                                title: new showtime.RichText(getTimePeriod(json[i][j].start) + ' - ' +
+                                    getTimePeriod(json[i][j].stop) + '  ' +
                                     (first ? coloredStr(json[i][j].title, orange) :
                                         json[i][j].title))
                             });
@@ -335,7 +336,7 @@
         }).headers.Date);
         // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
         var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - 10800);
-        showtime.trace('Day: '+day);
+        //showtime.trace('Day: '+day);
         var json = request(page, showtime.JSONEncode({
             method: 'getFilteredChannelsAndNewFilters',
             Params: {
@@ -376,8 +377,8 @@
             if (epg[i].current_program) {
                 var chName = getChNameByID(i);
                 page.appendItem(getDescriptor().id + ":getChannelInfoById:" + i + ':' + escape(chName), 'file', {
-                    title: new showtime.RichText(chName + ' ' + getTime(epg[i].current_program.start) + ' - ' +
-                        getTime(epg[i].current_program.stop) + '  ' +
+                    title: new showtime.RichText(chName + ' ' + getTimePeriod(epg[i].current_program.start) + ' - ' +
+                        getTimePeriod(epg[i].current_program.stop) + '  ' +
                         coloredStr(epg[i].current_program.title_ru, orange))
                 });
             }
