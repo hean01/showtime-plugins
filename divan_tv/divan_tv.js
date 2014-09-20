@@ -330,11 +330,13 @@
         page.loading = true;
 
         // As we don't have reliable timestamp locally, let's get it from google.com
-        var now = new Date(showtime.httpReq("http://google.com", {
+        var now = showtime.httpReq("http://google.com", {
             method: 'HEAD'
-        }).headers.Date);
-        var day = "" + new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000;
-        showtime.trace('Now: '+now+' (' +now.getTime() / 1000 + ') Day: '+day);
+        }).headers.Date;
+        now = now.split(" ");
+        var day = new Date(now[0]+' '+now[1]+' '+now[2]+' '+now[3]+' 00:00:00 '+now[5]);
+        day = "" + new Date(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), day.getUTCHours(), day.getUTCMinutes(), day.getUTCSeconds()).getTime() / 1000;
+        showtime.trace('Day: '+day);
         var json = request(page, showtime.JSONEncode({
             method: 'getFilteredChannelsAndNewFilters',
             Params: {
