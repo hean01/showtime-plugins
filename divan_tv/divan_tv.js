@@ -100,10 +100,10 @@
     });
 
     function getTimePeriod(gmt) {
-        var now = new Date(gmt * 1000);
-        var a = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() - 3, now.getMinutes(), now.getSeconds()));
-        return (a.getHours() < 10 ? '0' + a.getHours() : a.getHours()) + ':' +
-            (a.getMinutes() < 10 ? '0' + a.getMinutes() : a.getMinutes());
+        var a = new Date(gmt * 1000);
+        showtime.trace(a);
+        return ((a.getHours() < 10 ? '0' + a.getHours() : a.getHours()) + ':' +
+            (a.getMinutes() < 10 ? '0' + a.getMinutes() : a.getMinutes()));
     }
 
     function showEpg(page, json, day, start) {
@@ -335,8 +335,8 @@
             method: 'HEAD'
         }).headers.Date);
         // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
-        var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - 10800);
-        //showtime.trace('Day: '+day);
+        var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 + new Date().getTimezoneOffset()*60);
+        showtime.trace('Offset: ' + new Date().getTimezoneOffset() + ' Day: ' + day);
         var json = request(page, showtime.JSONEncode({
             method: 'getFilteredChannelsAndNewFilters',
             Params: {
