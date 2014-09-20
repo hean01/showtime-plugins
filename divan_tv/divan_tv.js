@@ -337,7 +337,7 @@
         // We get GMT and convert it to UTC
         var now = new Date(Date.UTC(date.split(" ")[3], new Date(Date.parse(date)).getMonth(), date.split(" ")[1],
             date.split(" ")[4].split(":")[0], date.split(" ")[4].split(":")[1], date.split(" ")[4].split(":")[2])).getTime()/1000.0;
-
+        showtime.trace('Day: '+day + ' Now: '+now);
         var json = request(page, showtime.JSONEncode({
             method: 'getFilteredChannelsAndNewFilters',
             Params: {
@@ -374,12 +374,12 @@
             return name;
         }
 
-        function processEPG(what) {
+        function processEPG(what, id) {
             var found = false;
             for (var i in what) {
                 if (what[i].start <= now && what[i].stop >= now) {
-                    var chName = getChNameByID(j);
-                    page.appendItem(getDescriptor().id + ":getChannelInfoById:" + j + ':' + escape(chName), 'file', {
+                    var chName = getChNameByID(id);
+                    page.appendItem(getDescriptor().id + ":getChannelInfoById:" + id + ':' + escape(chName), 'file', {
                         title: new showtime.RichText(chName + ' ' + getTime(what[i].start) + ' - ' +
                             getTime(what[i].stop) + '  ' +
                             coloredStr(what[i].title_ru, orange))
@@ -390,9 +390,9 @@
             return found;
         }
 
-        for (var j in epg)
-            if (!processEPG(epg[j].morning))
-                processEPG(epg[j].evening);
+        for (var i in epg)
+            if (!processEPG(epg[i].morning, i))
+                processEPG(epg[i].evening, i);
 
         page.loading = false;
     });
