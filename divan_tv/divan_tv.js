@@ -332,17 +332,31 @@
         var date = showtime.httpReq("http://google.com", {
             method: 'HEAD'
         }).headers.Date; // Sat, 20 Sep 2014 19:14:29 GMT
+        var no = new Date(date);
+        showtime.trace(new Date(date).getTime() / 1000);
+        var no1 = new Date(no.getUTCFullYear(), no.getUTCMonth(), no.getUTCDate());
+        showtime.trace(no1);
+        showtime.trace(no1.getTime() / 1000);
+
+        no1 = new Date(no.getFullYear(), no.getMonth(), no.getDate());
+        showtime.trace(no1);
+        showtime.trace(no1.getTime() / 1000);
+
         // We get GMT and convert it to UTC
         var now = new Date(Date.UTC(date.split(" ")[3],
             new Date(Date.parse(date)).getMonth(),
-            date.split(" ")[1], date.split(" ")[4].split(":")[0],
+            date.split(" ")[1],
+            date.split(" ")[4].split(":")[0],
             date.split(" ")[4].split(":")[1],
             date.split(" ")[4].split(":")[2]));;
 
         // Getting the beginning of the day
-        var day = "" + new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()).getTime() / 1000;
+        var day = new Date(Date.UTC(date.split(" ")[3],
+            new Date(Date.parse(date)).getMonth(),
+            date.split(" ")[1])).getTime() / 1000;
 
         now = "" + now.getTime() / 1000;
+//        day = "" + day.getTime() / 1000;
 
         showtime.trace('Day: '+day + ' Now: '+now);
         var json = request(page, showtime.JSONEncode({
