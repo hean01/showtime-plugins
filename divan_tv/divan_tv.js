@@ -333,13 +333,15 @@
             method: 'HEAD'
         }).headers.Date; // Sat, 20 Sep 2014 19:14:29 GMT
         // We get GMT and convert it to UTC
-        var now = new Date(Date.UTC(date.split(" ")[3], new Date(Date.parse(date)).getMonth(), date.split(" ")[1],
-            date.split(" ")[4].split(":")[0], date.split(" ")[4].split(":")[1], date.split(" ")[4].split(":")[2]));
+        var now = new Date(Date.UTC(date.split(" ")[3],
+            new Date(Date.parse(date)).getMonth(),
+            date.split(" ")[1], date.split(" ")[4].split(":")[0],
+            date.split(" ")[4].split(":")[1],
+            date.split(" ")[4].split(":")[2]));;
 
         // Getting the beginning of the day
-        var day = "" + new Date(now.getFullYear(), now.getMonth(), now.getDate()) / 1000;
+        var day = "" + new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()).getTime() / 1000;
 
-        // convert now to timestamp
         now = "" + now.getTime() / 1000;
 
         showtime.trace('Day: '+day + ' Now: '+now);
