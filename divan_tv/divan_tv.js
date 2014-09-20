@@ -332,11 +332,16 @@
         var date = showtime.httpReq("http://google.com", {
             method: 'HEAD'
         }).headers.Date; // Sat, 20 Sep 2014 19:14:29 GMT
-        // Getting the beginning of the day
-        var day = "" + new Date(date.split(" ")[3], new Date(Date.parse(date)).getMonth(), date.split(" ")[1]) / 1000;
         // We get GMT and convert it to UTC
         var now = new Date(Date.UTC(date.split(" ")[3], new Date(Date.parse(date)).getMonth(), date.split(" ")[1],
-            date.split(" ")[4].split(":")[0], date.split(" ")[4].split(":")[1], date.split(" ")[4].split(":")[2])).getTime()/1000.0;
+            date.split(" ")[4].split(":")[0], date.split(" ")[4].split(":")[1], date.split(" ")[4].split(":")[2]));
+
+        // Getting the beginning of the day
+        var day = "" + new Date(now.getFullYear(), now.getMonth(), now.getDate()) / 1000;
+
+        // convert now to timestamp
+        now = "" + now.getTime() / 1000;
+
         showtime.trace('Day: '+day + ' Now: '+now);
         var json = request(page, showtime.JSONEncode({
             method: 'getFilteredChannelsAndNewFilters',
