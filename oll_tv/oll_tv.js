@@ -18,11 +18,10 @@
  */
 
 (function(plugin) {
-
     var PREFIX = 'oll_tv';
     var BASE_URL = 'http://oll.tv/smartAPI';
     var logo = plugin.path + "logo.png";
-    var slogan = 'oll.tv — все видео здесь. Смотри с комфортом и в хорошем качестве.';
+    var slogan = getDescriptor().synopsis;
     var sn = 'serial_number=cc05f1545c376407';
 
     function trim(s) {
@@ -53,7 +52,7 @@
         page.loading = false;
     }
 
-    var service = plugin.createService("oll.tv", PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(getDescriptor().id, PREFIX + ":start", "video", true, logo);
 
     // Shows items of the genre
     plugin.addURI(PREFIX + ":genre:(.*):(.*):(.*)", function(page, cat_id, genre_id, title) {
@@ -65,19 +64,9 @@
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/items?' + sn + '&block_id=cat_' + cat_id + '_genre_'+ genre_id + '&start=' + from + '&limit=20'));
             page.loading = false;
-            for (var j in json.items) {
-                page.appendItem(PREFIX + ':index:' + json.items[j].id + ':' + escape(json.items[j].title), 'video', {
-                    title: new showtime.RichText((json.items[j].hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape(json.items[j].title)),
-                    description: new showtime.RichText(coloredStr('Страна: ', orange) + unescape(json.items[j].country) +
-                        coloredStr('<br>Описание: ', orange) + unescape(json.items[j].descr)),
-                    year: +unescape(json.items[j].release_date),
-                    duration: json.items[j].duration != null ? showtime.durationToString(json.items[j].duration * 60) : '',
-                    icon: unescape(json.items[j].src),
-                    genre: unescape(json.items[j].genre),
-                    rating: unescape(json.items[j].rating)*20
-                });
-                page.entries++;
-            };
+            for (var j in json.items)
+                appendItem(page, json.items[j], ':index:');
+
             if (json.hasMore == 0) return tryToSearch = false;
             from+=20;
             return true;
@@ -113,18 +102,7 @@
                        });
                        for (var j = 0; j < json[i].items_number; j++) {
                            if (!json[i].items[j]) continue;
-                           page.appendItem(PREFIX + ':index:' + json[i].items[j].id + ':' + escape(json[i].items[j].title), 'video', {
-                               title: new showtime.RichText((json[i].items[j].hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape(json[i].items[j].title)),
-                               description: new showtime.RichText(coloredStr('Страна: ', orange) + unescape(json[i].items[j].country) +
-                                   coloredStr('<br>Рейтинг: ', orange) + unescape(json[i].items[j].age_limit_name) +
-                                   (json[i].items[j].subs_type != 'undefined' ? coloredStr('<br>Субтитры: ', orange) + 'есть' : '') +
-                                   coloredStr('<br>Описание: ', orange) + unescape(json[i].items[j].descr)),
-                               year: +unescape(json[i].items[j].release_date),
-                               duration: json[i].items[j].duration != null ? showtime.durationToString(json[i].items[j].duration * 60) : '',
-                               icon: unescape(json[i].items[j].src),
-                               genre: unescape(json[i].items[j].genre),
-                               rating: unescape(json[i].items[j].rating)*20
-                           });
+                           appendItem(page, json[i].items[j], ':index:');
                        };
                        break;
                };
@@ -161,6 +139,7 @@
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/media?id=' + id + '&' +sn));
         page.loading = false;
+        //showtime.print(showtime.JSONEncode(json));
         if (!json.media_url) {
             showtime.message("Error: Video link is empty :(", true, false);
             return;
@@ -182,19 +161,9 @@
         setPageHeader(page, unescape(title));
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/info?' + sn + '&id=' + id));
-        for (var i in json.series) {
-            page.appendItem(PREFIX + ':play:' + json.series[i].series_id + ':' + json.series[i].series_title, 'video', {
-                title: new showtime.RichText(unescape(json.series[i].series_title)),
-                description: new showtime.RichText(coloredStr('Страна: ', orange) + unescape(json.country) +
-                    coloredStr('<br>Описание: ', orange) + unescape(json.descr)),
-                year: +unescape(json.release_date),
-                duration: json.series[i].duration != null ? showtime.durationToString(json.series[i].duration * 60) : '',
-                icon: unescape(json.src),
-                genre: unescape(json.genre),
-                rating: unescape(json.rating)*20
-            });
-        }
         page.loading = false;
+        for (var i in json.series)
+            appendItem(page, json, ':play:', json.series[i].series_id, json.series[i].series_title);
     });
 
     // Index media by id
@@ -202,62 +171,17 @@
         setPageHeader(page, unescape(title));
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/info?' + sn + '&id=' + id + '&showfull=true'));
+        page.loading = false;
+
         if (json.seasons) {
-              for (var i in json.seasons) {
-                   page.appendItem(PREFIX + ':indexSeason:' + json.seasons[i].season_id + ':' + json.seasons[i].season_title, 'video', {
-                       title: new showtime.RichText(unescape(json.seasons[i].season_title)),
-                       description: new showtime.RichText(coloredStr('Страна: ', orange) + unescape(json.country) +
-                       coloredStr('<br>Рейтинг: ', orange) + unescape(json.age_limits[json.age_limit].descr) +
-                       coloredStr('<br>Описание: ', orange) + unescape(json.descr)),
-                       year: +unescape(json.release_date),
-                       duration: json.duration != null ? showtime.durationToString(json.duration * 60) : '',
-                       icon: unescape(json.src),
-                       genre: unescape(json.genre),
-                       rating: unescape(json.rating)*20
-                   });
-              }
-              if (json.trailers) {
-                  page.appendItem(PREFIX + ':play:' + json.trailers[0].id + ':' + json.trailers[0].title, 'video', {
-                      title: 'Трейлер'
-                  });
-              }
-        } else if (json.series) {
-              for (var j in json.series) {
-                  page.appendItem(PREFIX + ':play:' + json.series[j].series_id + ':' + json.series[j].series_title, 'video', {
-                      title: new showtime.RichText(unescape(json.series[j].series_title)),
-                      description: new showtime.RichText(coloredStr('Страна: ', orange) + unescape(json.country) +
-                      coloredStr('<br>Рейтинг: ', orange) + unescape(json.age_limits[json.age_limit].descr) +
-                      coloredStr('<br>Описание: ', orange) + unescape(json.descr)),
-                      year: +unescape(json.release_date),
-                      duration: json.series[j].duration != null ? showtime.durationToString(json.series[j].duration * 60) : '',
-                      icon: unescape(json.src),
-                      genre: unescape(json.genre),
-                      rating: unescape(json.rating)*20
-                  });
-              }
-              if (json.trailers) {
-                  page.appendItem(PREFIX + ':play:' + json.trailers[0].id + ':' + json.trailers[0].title, 'video', {
-                      title: 'Трейлер'
-                  });
-              }
-        } else {
-             page.appendItem(PREFIX + ':play:' + json.id + ':' + json.title, 'video', {
-                 title: new showtime.RichText((json.hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape(json.title)),
-                 description: new showtime.RichText(coloredStr('Страна: ', orange) + unescape(json.country) +
-                     coloredStr('<br>Рейтинг: ', orange) + unescape(json.age_limits[json.age_limit].descr) +
-                     coloredStr('<br>Описание: ', orange) + unescape(json.descr)),
-                 year: +unescape(json.release_date),
-                 duration: json.duration != null ? showtime.durationToString(json.duration * 60) : '',
-                 icon: unescape(json.src),
-                 genre: unescape(json.genre),
-                 rating: unescape(json.rating)*20
-             });
-             if (json.trailers) {
-                 page.appendItem(PREFIX + ':play:' + json.trailers[0].id + ':' + json.trailers[0].title, 'video', {
-                     title: 'Трейлер'
-                 });
-             }
-        }
+            for (var i in json.seasons)
+                appendItem(page, json, ':indexSeason:', json.seasons[i].season_id, json.seasons[i].season_title);
+        } else
+            if (json.series) {
+                for (var j in json.series)
+                    appendItem(page, json, ':play:', json.series[j].series_id, json.series[j].series_title);
+            } else
+                appendItem(page, json, ':play:');
 
         if (json.actors) {
             page.appendItem("", "separator", {
@@ -284,27 +208,57 @@
         }
         //if (json.authors) showtime.print(json.authors);
 
-        var first = 1;
+        var first = true;
         for (var i in json.similar) {
             if (first) {
                 page.appendItem("", "separator", {
                     title: 'Похожие:'
                 });
-                first = 0;
+                first = false;
             }
-            page.appendItem(PREFIX + ':index:' + json.similar[i].id + ':' + json.similar[i].title, 'video', {
-                title: new showtime.RichText((json.similar[i].hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape(json.similar[i].title)),
-                description: new showtime.RichText(coloredStr('Страна: ', orange) + unescape(json.similar[i].country) +
-                    coloredStr('<br>Описание: ', orange) + unescape(json.similar[i].descr)),
-                year: +unescape(json.similar[i].release_date),
-                duration: json.similar[i].duration != null ? showtime.durationToString(json.similar[i].duration * 60) : '',
-                icon: unescape(json.similar[i].src),
-                genre: unescape(json.similar[i].genre),
-                rating: unescape(json.similar[i].rating)*20
-            });
+            appendItem(page, json.similar[i], ':index:');
         }
-        page.loading = false;
+
+        if (json.category_id == "27") {
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/GetTVChannel?item_id='+json.id+'&onlyNextThree=1&' + sn));
+            var first = true;
+            for (var i in json.nextThree) {
+                if (first) {
+                    page.appendItem("", "separator", {
+                        title: 'ТВ программа'
+                    });
+                }
+                page.appendPassiveItem("file", '', {
+                    title: new showtime.RichText(json.nextThree[i].start.substr(11, 5) + ' - ' + json.nextThree[i].stop.substr(11, 5) + '  ' + (first ? coloredStr(json.nextThree[i].name, orange) : json.nextThree[i].name))
+                });
+                first = false;
+            }
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/GetTVChannel?item_id='+id+'&' + sn));
+            for (var i in json.program) {
+                if (first) {
+                    page.appendItem("", "separator", {
+                        title: 'ТВ программа'
+                    });
+                }
+                page.appendPassiveItem("file", '', {
+                    title: new showtime.RichText(json.program[i].start.substr(11, 5) + ' - ' + json.program[i].stop.substr(11, 5) + '  ' + (first ? coloredStr(json.program[i].name, orange) : json.program[i].name))
+                });
+                first = false;
+            }
+        }
     });
+
+    function getReason(json) {
+            switch (json) {
+                case 'svod':
+                    return coloredStr('+', orange);
+                case 'tvod':
+                    return coloredStr('$', orange);
+                default:
+                    return '';
+            }
+        return '';
+    }
 
     plugin.addURI(PREFIX + ":start", function(page) {
         setPageHeader(page, slogan);
@@ -323,20 +277,10 @@
                    page.appendItem("", "separator", {
                        title: unescape(json[i].block_title)
                    });
-                   for (var j = 0; j < json[i].items_number; j++) {
-                       page.appendItem(PREFIX + ':index:' + json[i].items[j].id + ':' + escape(json[i].items[j].title), 'video', {
-                           title: new showtime.RichText((json[i].items[j].hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape(json[i].items[j].title)),
-                           description: new showtime.RichText(coloredStr('Страна: ', orange) + unescape(json[i].items[j].country) +
-                               coloredStr('<br>Рейтинг: ', orange) + unescape(json[i].items[j].age_limit_name) +
-                               (json[i].items[j].subs_type != 'undefined' ? coloredStr('<br>Субтитры: ', orange) + 'есть' : '') +
-                               coloredStr('<br>Описание: ', orange) + unescape(json[i].items[j].descr)),
-                           year: +unescape(json[i].items[j].release_date),
-                           duration: json[i].items[j].duration != null ? showtime.durationToString(json[i].items[j].duration * 60) : '',
-                           icon: unescape(json[i].items[j].src),
-                           genre: unescape(json[i].items[j].genre),
-                           rating: unescape(json[i].items[j].rating)*20
-                       });
-                   };
+                   for (var j = 0; j < json[i].items_number; j++)
+//showtime.print(showtime.JSONEncode(json[i].items[j]));
+                       appendItem(page, json[i].items[j], ':index:');
+
                    break;
            };
         };
@@ -347,6 +291,28 @@
         setPageHeader(page, unescape(query));
         search(page, unescape(query));
     });
+
+    function appendItem(page, json, route, id, title) {
+        page.appendItem(PREFIX + route + (id ? id : json.id) + ':' + escape(title ? title : json.title), 'video', {
+            title: new showtime.RichText(getReason(json.subs_type) +
+                (json.hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape((title ? title : json.title))),
+            description: new showtime.RichText((!json.is_free && +json.cost ? coloredStr('Стоимость: ', orange) + json.cost + ' ' + json.cost_currency + ' ' : '') +
+                coloredStr('Страна: ', orange) + unescape(json.country) +
+                coloredStr('<br>Рейтинг: ', orange) + unescape(json.age_limit_name) +
+                coloredStr('<br>Описание: ', orange) + unescape(json.descr)),
+            year: +unescape(json.release_date),
+            duration: json.duration != null ? showtime.durationToString(json.duration * 60) : '',
+            icon: unescape(json.src),
+            genre: unescape(json.genre),
+            rating: unescape(json.rating)*20
+        });
+        page.entries++;
+        for (var i in json.trailers) {
+            page.appendItem(PREFIX + ':play:' + json.trailers[i].id + ':' + escape(json.trailers[i].title), 'video', {
+                title: 'Трейлер'
+            });
+        }
+    }
 
     function search(page, query) {
         page.entries = 0;
@@ -360,20 +326,10 @@
             else
                 var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/search?' + sn + '&q=' + query.replace(/\s/g, '+') + '&page=' + fromPage));
             page.loading = false;
-            for (var j = 0; j < json.items_number; j++) {
-                page.appendItem(PREFIX + ':index:' + json.items[j].id + ':' + escape(json.items[j].title), 'video', {
-                    title: new showtime.RichText((json.items[j].hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape(json.items[j].title)),
-                    description: new showtime.RichText(coloredStr('Страна: ', orange) + unescape(json.items[j].country) +
-                        coloredStr('<br>Рейтинг: ', orange) + unescape(json.items[j].age_limit_name) +
-                        coloredStr('<br>Описание: ', orange) + unescape(json.items[j].descr)),
-                    year: +unescape(json.items[j].release_date),
-                    duration: json.items[j].duration != null ? showtime.durationToString(json.items[j].duration * 60) : '',
-                    icon: unescape(json.items[j].src),
-                    genre: unescape(json.items[j].genre),
-                    rating: unescape(json.items[j].rating)*20
-                });
-                page.entries++;
-            };
+
+            for (var j = 0; j < json.items_number; j++)
+                appendItem(page, json.items[j], ':index:');
+
             if (json.hasMore == 0) return tryToSearch = false;
             fromPage++;
             return true;
@@ -383,7 +339,7 @@
         page.paginator = loader;
     }
 
-    plugin.addSearcher("oll.tv", logo, function(page, query) {
+    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
         search(page, query);
     });
 })(this);
