@@ -99,9 +99,9 @@
         loginAndGetConfig(0, true);
     });
 
-    function getTimePeriod(gmt) {
-        var a = new Date(gmt * 1000);
-        showtime.trace(a);
+
+    function getTimePeriod(timestamp) {
+        var a = new Date(timestamp * 1000 + 10800 + new Date().getTimezoneOffset() * 60);
         return ((a.getHours() < 10 ? '0' + a.getHours() : a.getHours()) + ':' +
             (a.getMinutes() < 10 ? '0' + a.getMinutes() : a.getMinutes()));
     }
@@ -331,12 +331,13 @@
         page.loading = true;
 
         // As we don't have reliable timestamp locally, let's get it from google.com
-        var now = new Date(showtime.httpReq("http://google.com", {
+        var now = showtime.httpReq("http://google.com", {
             method: 'HEAD'
-        }).headers.Date);
+        }).headers.Date;
+        showtime.trace('Google time: '+now + ', Local time: '+new Date(now));
+        now = new Date(now);
         // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
-        var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 + new Date().getTimezoneOffset()*60);
-        showtime.trace('Offset: ' + new Date().getTimezoneOffset() + ' Day: ' + day);
+        var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - 10800);
         var json = request(page, showtime.JSONEncode({
             method: 'getFilteredChannelsAndNewFilters',
             Params: {
