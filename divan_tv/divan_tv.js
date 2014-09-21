@@ -101,7 +101,7 @@
 
 
     function getTimePeriod(timestamp) {
-        var a = new Date(timestamp * 1000 + 10800 + new Date().getTimezoneOffset() * 60);
+        var a = new Date((+timestamp + 10800 + new Date().getTimezoneOffset() * 60) * 1000);
         return ((a.getHours() < 10 ? '0' + a.getHours() : a.getHours()) + ':' +
             (a.getMinutes() < 10 ? '0' + a.getMinutes() : a.getMinutes()));
     }
