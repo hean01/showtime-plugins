@@ -30,7 +30,8 @@ PLUGINS= \
 	rutor.zip \
         xxx-tracker.zip \
         divan_tv.zip \
-        navi-x.zip
+        navi-x.zip \
+        filmezz.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
