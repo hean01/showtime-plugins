@@ -21,8 +21,8 @@
     var PREFIX = 'oll_tv';
     var BASE_URL = 'http://oll.tv/smartAPI';
     var logo = plugin.path + "logo.png";
-    var slogan = getDescriptor().synopsis;
-    var sn = 'serial_number=cc05f1545c376407';
+    var sn = 'serial_number=' + showtime.deviceId;
+    var logged = false, credentials;
 
     function trim(s) {
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/, '');
@@ -49,26 +49,26 @@
         }
         page.type = "directory";
         page.contents = "items";
+        if (!logged) login(page, false);
         page.loading = false;
     }
 
     var service = plugin.createService(getDescriptor().id, PREFIX + ":start", "video", true, logo);
 
-    // Shows items of the genre
-    plugin.addURI(PREFIX + ":genre:(.*):(.*):(.*)", function(page, cat_id, genre_id, title) {
+    plugin.addURI(PREFIX + ":getItems:(.*):(.*):(.*):(.*)", function(page, block_id, cat_id, filters, title) {
         setPageHeader(page, unescape(title));
 
-        var from = 1, tryToSearch = true;
+        var from = 0, tryToSearch = true;
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/items?' + sn + '&block_id=cat_' + cat_id + '_genre_'+ genre_id + '&start=' + from + '&limit=20'));
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/items?' + sn + '&block_id=' + block_id + '&cat_id=' + cat_id + '&start=' + from + '&filters=' + filters + '&orderBy=create-date&orderDirection=desc&limit=20'));
             page.loading = false;
             for (var j in json.items)
                 appendItem(page, json.items[j], ':index:');
 
-            if (json.hasMore == 0) return tryToSearch = false;
-            from+=20;
+            if (!json.hasMore) return tryToSearch = false;
+            from += 20;
             return true;
         };
         loader();
@@ -76,21 +76,18 @@
         page.paginator = loader;
     });
 
-    // Shows genres of the category
-    plugin.addURI(PREFIX + ":category:(.*):(.*)", function(page, id, title) {
+    // Shows filters for category
+    plugin.addURI(PREFIX + ":showFiltersForCategory:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/getFilters?' + sn + '&cat_id=' + id));
         page.loading = false;
-        if (json[0]) {
-            for (var i=0; json[0][i]; i++) {
-                page.appendItem(PREFIX + ':genre:' + id + ':' + json[0][i].equal + ':' + escape(json[0][i].name), 'directory', {
-                    title: new showtime.RichText(json[0][i].name)
-                });
-            };
-        } else { // Process as a category
+
+        if (id == "27") {
+         // Process as a category
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/category?' + sn + '&id=' + id));
+            //showtime.print(showtime.JSONEncode(json));
             page.loading = false;
             for (i in json) {
                switch (json[i].block_type) {
@@ -100,14 +97,31 @@
                        page.appendItem("", "separator", {
                            title: unescape(json[i].block_title)
                        });
-                       for (var j = 0; j < json[i].items_number; j++) {
-                           if (!json[i].items[j]) continue;
+                       for (var j in json[i].items)
                            appendItem(page, json[i].items[j], ':index:');
-                       };
+                       if (json[i].hasMore) {
+                       }
                        break;
                };
             };
+
+
+        } else {
+        for (var i in json) {
+            var currentGroupName = '';
+            for (var j in json[i]) {
+                if (currentGroupName != json[i][j].groupName) {
+                    page.appendItem("", "separator", {
+                        title: unescape(json[i][j].groupName)
+                    });
+                    currentGroupName = json[i][j].groupName;
+                }
+                page.appendItem(PREFIX + ':getItems:filters:' + id + ':' + json[i][j].filterId + ':' + escape(json[i][j].name), 'directory', {
+                    title: new showtime.RichText(json[i][j].name)
+                });
+            };
         };
+        }
     });
 
     // Search IMDB ID by title
@@ -261,14 +275,49 @@
     }
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, slogan);
+        setPageHeader(page, getDescriptor().synopsis);
+        if (logged) {
+             page.loading = true;
+             var user = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/account/info?'+sn));
+             //var devices = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/account/devices?'+sn));
+             page.loading = false;
+             page.appendPassiveItem('video', '', {
+                 title: new showtime.RichText(coloredStr(user.fullname ? user.fullname : user.email, orange)),
+                 description: new showtime.RichText(coloredStr('Лицевой счет: ', orange) + user.account +
+                     coloredStr('\nПол: ', orange) + user.gender +
+                     coloredStr('\nДень рождения: ', orange) + user.birth_day +
+                     (user.region ? coloredStr('\nГород: ', orange) + user.region : '') +
+                     coloredStr('\nEmail: ', orange) + user.email +
+                     (user.phone ? coloredStr('\nТелефон: ', orange) + user.phone : '') +
+                     coloredStr('\nКоличество устройств: ', orange) + user.devices
+             )});
+        } else
+             page.appendPassiveItem('file', '', {
+                 title: new showtime.RichText(coloredStr('Авторизация не проведена', orange))
+             });
+
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/home?' + sn));
+        var tries = 0;
+        while (tries < 3) {
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/home?' + sn));
+            if (!json.error) break;
+            if (json.error) {
+                var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/auth', {
+                    args:{
+                        serial_number: showtime.deviceId,
+                        device_model: 'showtime_' + showtime.currentVersionString,
+                        device_type: 'android'
+                    }
+                }));
+            } else break;
+            tries++;
+        }
+
         for (i in json) {
            switch (json[i].block_type) {
                case 'navigation':
-                   for (var j = 0; j < json[i].items_count; j++) {
-                       page.appendItem(PREFIX + ':category:' + json[i].items[j].id + ':' + escape(json[i].items[j].title), 'directory', {
+                   for (var j in json[i].items) {
+                       page.appendItem(PREFIX + ':showFiltersForCategory:' + json[i].items[j].id + ':' + escape(json[i].items[j].title), 'directory', {
                            title: new showtime.RichText(unescape(json[i].items[j].title))
                        });
                    };
@@ -277,14 +326,47 @@
                    page.appendItem("", "separator", {
                        title: unescape(json[i].block_title)
                    });
-                   for (var j = 0; j < json[i].items_number; j++)
-//showtime.print(showtime.JSONEncode(json[i].items[j]));
+                   for (var j in json[i].items)
                        appendItem(page, json[i].items[j], ':index:');
 
                    break;
            };
         };
         page.loading = false;
+    });
+
+    function login(page, showDialog) {
+        var text = '';
+        if (showDialog) {
+           text = 'Введите email и пароль';
+           logged = false;
+        }
+
+        if (!logged) {
+            credentials = plugin.getAuthCredentials(getDescriptor().synopsis, text, showDialog);
+            if (credentials && credentials.username && credentials.password) {
+                page.loading = true;
+                var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/login', {
+                    args: {
+                        'email' : credentials.username,
+                        'password': credentials.password,
+                        'serial_number': showtime.deviceId
+                    }
+                }));
+                page.loading = false;
+                if (json && json.status == 'ok') logged = true;
+            }
+        }
+
+        if (showDialog) {
+           if (logged) showtime.message("Вход успешно произведен. Параметры входа сохранены.", true, false);
+           else showtime.message("Не удалось войти. Проверьте email/пароль...", true, false);
+        }
+    }
+
+    var settings = plugin.createSettings(getDescriptor().id, logo, getDescriptor().synopsis);
+    settings.createAction(getDescriptor().id + '_login', 'Войти в ' + getDescriptor().id, function() {
+        login(0, true);
     });
 
     plugin.addURI(PREFIX + ":search:(.*)", function(page, query) {
@@ -340,6 +422,7 @@
     }
 
     plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
+        login(page, false);
         search(page, query);
     });
 })(this);
