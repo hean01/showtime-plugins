@@ -86,8 +86,7 @@
         if (id == "27") {
          // Process as a category
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/category?' + sn + '&id=' + id));
-            //showtime.print(showtime.JSONEncode(json));
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/category?' + sn + '&id=' + id + '&start=-1'));
             page.loading = false;
             for (i in json) {
                switch (json[i].block_type) {
@@ -97,9 +96,18 @@
                        page.appendItem("", "separator", {
                            title: unescape(json[i].block_title)
                        });
-                       for (var j in json[i].items)
+                       var from = 0;
+                       for (var j in json[i].items) {
                            appendItem(page, json[i].items[j], ':index:');
+                           from++;
+                       }
+
                        if (json[i].hasMore) {
+                           page.loading = true;
+                           var json2 = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/items?' + sn + '&block_id=' + json[i].block_id + '&start=' + from));
+                           page.loading = false;
+                           for (var k in json2.items)
+                               appendItem(page, json2.items[k], ':index:');
                        }
                        break;
                };
@@ -155,7 +163,7 @@
         page.loading = false;
         //showtime.print(showtime.JSONEncode(json));
         if (!json.media_url) {
-            showtime.message("Error: Video link is empty :(", true, false);
+            showtime.message("Не могу проиграть видео. Возможно трансляция еще не началась, Вы не вошли в учетную запись, либо закончилась подписка :(", true, false);
             return;
         }
 
@@ -186,7 +194,7 @@
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/info?' + sn + '&id=' + id + '&showfull=true'));
         page.loading = false;
-
+        showtime.print(showtime.JSONEncode(json));
         if (json.seasons) {
             for (var i in json.seasons)
                 appendItem(page, json, ':indexSeason:', json.seasons[i].season_id, json.seasons[i].season_title);
@@ -374,14 +382,36 @@
         search(page, unescape(query));
     });
 
+    function getAudioLanguages(json) {
+        var s = '', first = true;
+        for (var i in json) {
+            if (first) {
+                s += json[i].title
+                first = false
+            } else
+                s += ', ' + json[i].title
+        }
+        return s;
+    }
+
+    function getAgeLimits(id, json, name) {
+        var s = name;
+        for (var i in json) {
+            if (json[i].id == id)
+                s = json[i].descr
+        }
+        return s;
+    }
+
     function appendItem(page, json, route, id, title) {
         page.appendItem(PREFIX + route + (id ? id : json.id) + ':' + escape(title ? title : json.title), 'video', {
             title: new showtime.RichText(getReason(json.subs_type) +
                 (json.hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape((title ? title : json.title))),
             description: new showtime.RichText((!json.is_free && +json.cost ? coloredStr('Стоимость: ', orange) + json.cost + ' ' + json.cost_currency + ' ' : '') +
                 coloredStr('Страна: ', orange) + unescape(json.country) +
-                coloredStr('<br>Рейтинг: ', orange) + unescape(json.age_limit_name) +
-                coloredStr('<br>Описание: ', orange) + unescape(json.descr)),
+                (getAudioLanguages(json.audio_language) ? coloredStr('\nАудиодорожка: ', orange) + getAudioLanguages(json.audio_language) : '') +
+                coloredStr('\nРодительский контроль: ', orange) + getAgeLimits(json.age_limit, json.age_limits, json.age_limit_name) +
+                coloredStr('\nОписание: ', orange) + unescape(json.descr)),
             year: +unescape(json.release_date),
             duration: json.duration != null ? showtime.durationToString(json.duration * 60) : '',
             icon: unescape(json.src),
