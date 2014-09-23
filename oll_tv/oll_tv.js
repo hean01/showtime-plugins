@@ -83,8 +83,8 @@
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/getFilters?' + sn + '&cat_id=' + id));
         page.loading = false;
 
-        if (id == "27") {
-         // Process as a category
+        if (id == "27") { // TV channels
+            var counter = 0;
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/category?' + sn + '&id=' + id + '&start=-1'));
             page.loading = false;
@@ -99,21 +99,27 @@
                        var from = 0;
                        for (var j in json[i].items) {
                            appendItem(page, json[i].items[j], ':index:');
+                           counter++;
                            from++;
                        }
 
                        if (json[i].hasMore) {
-                           page.loading = true;
-                           var json2 = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/items?' + sn + '&block_id=' + json[i].block_id + '&start=' + from));
-                           page.loading = false;
-                           for (var k in json2.items)
-                               appendItem(page, json2.items[k], ':index:');
+                           while (1) {
+                               page.loading = true;
+                               var json2 = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/items?' + sn + '&block_id=' + json[i].block_id + '&start=' + from));
+                               page.loading = false;
+                               for (var k in json2.items) {
+                                   appendItem(page, json2.items[k], ':index:');
+                                   from++;
+                                   counter++;
+                               };
+                               if (!json2.hasMore) break;
+                           }
                        }
                        break;
                };
             };
-
-
+            page.metadata.title += ' (' + counter + ')';
         } else {
         for (var i in json) {
             var currentGroupName = '';
@@ -194,7 +200,7 @@
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/info?' + sn + '&id=' + id + '&showfull=true'));
         page.loading = false;
-        showtime.print(showtime.JSONEncode(json));
+        //showtime.print(showtime.JSONEncode(json));
         if (json.seasons) {
             for (var i in json.seasons)
                 appendItem(page, json, ':indexSeason:', json.seasons[i].season_id, json.seasons[i].season_title);
@@ -297,7 +303,10 @@
                      (user.region ? coloredStr('\nГород: ', orange) + user.region : '') +
                      coloredStr('\nEmail: ', orange) + user.email +
                      (user.phone ? coloredStr('\nТелефон: ', orange) + user.phone : '') +
-                     coloredStr('\nКоличество устройств: ', orange) + user.devices
+                     (+user.receive_news ? coloredStr('\nПолучение рассылок по email: ', orange) + ' Да' : '') +
+                     (+user.FK_sms_news_status != 60 ? coloredStr('\nПолучение рассылок по SMS: ', orange) + ' Да' : '') +
+                     coloredStr('\nКоличество подключенных устройств: ', orange) + user.devices
+
              )});
         } else
              page.appendPassiveItem('file', '', {
