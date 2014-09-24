@@ -293,6 +293,7 @@
         function loader() {
             if (!tryToSearch) return false;
             var json = getJSON(page, API, '/videos?', 'category_id=' + id + '&limit=' + limit + '&offset=' + offset);
+            page.metadata.title = unescape(title + ' (' + json.total_num + ')');
             counter = appendVideosToPage(page, json.video_list, counter);
             offset += limit;
             if (counter == +json.total_num || offset > +json.total_num) return tryToSearch = false;
@@ -312,6 +313,7 @@
             var json = getJSON(page, API, '/videos?', 'category_id=' + category_id + '&genre=' + genre_id + '&limit=' + limit + '&offset=' + offset);
             counter = appendVideosToPage(page, json.video_list, counter);
             offset += limit;
+            page.metadata.title = unescape(title + ' (' + json.total_num + ')');
             if (counter == +json.total_num || offset > +json.total_num) return tryToSearch = false;
             return true;
         };
