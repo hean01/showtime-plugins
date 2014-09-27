@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "filmezz.eu",
 	"synopsis": "filmezz.eu: Várunk téged is a filmezz.eu-n, az online filmek birodalmában!",
-	"version": "0.3.1", "file": "filmezz.js",
+	"version": "0.3.2", "file": "filmezz.js",
 	"showtimeVersion": "4.3.9",
 	"type": "javascript", 
 	"id": "filmezz.eu",

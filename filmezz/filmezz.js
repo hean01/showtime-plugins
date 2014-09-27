@@ -168,14 +168,20 @@
             case 'PutLocker (Firedrive)':
             case 'PutLocker':
                 var path = doc.toString().match(/<p><a href="([\S\s]*?)">/)[1];
-                url = showtime.httpReq(path).toString();
-                url = url.match(/name="confirm" value="([\S\s]*?)"/)[1];
-                url = showtime.httpReq(path, {
-                     postdata: {
-                         confirm:url
-                     }
-                }).toString();
-                url = url.match(/href="(http:\/\/dl\.[\S\s]*?)"/)[1];
+                var tries = 0;
+                while (tries < 10) {
+                    url = showtime.httpReq(path).toString();
+                    url = url.match(/name="confirm" value="([\S\s]*?)"/)[1];
+                    url = showtime.httpReq(path, {
+                        postdata: {
+                            confirm:url
+                        }
+                    }).toString();
+                    tries++;
+                    if (url) break;
+                    showtime.print(tries);
+                }
+                url = url.match(/file: '([\S\s]*?)'/)[1];
                 break;
             case 'Played.To':
                 var path = doc.toString().match(/<p><a href="([\S\s]*?)">/)[1];
