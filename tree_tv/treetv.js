@@ -21,7 +21,7 @@
     var PREFIX = 'treetv';
     var BASE_URL = 'http://tree.tv';
     var logo = plugin.path + "logo.png";
-    var slogan = "Tree.tv - online фильмы - новинки кино в хорошем качестве смотреть бесплатно без регистрации онлайн"
+    var logged = false, credentials;
 
     function setPageHeader(page, title) {
         page.loading = false;
@@ -31,11 +31,44 @@
         }
         page.type = "directory";
         page.contents = "items";
+        if (!logged) login(page, false);
+    }
+
+    function login(page, showDialog) {
+        var text = '';
+        if (showDialog) {
+           text = 'Введите email и пароль';
+           logged = false;
+        }
+
+        if (!logged) {
+            credentials = plugin.getAuthCredentials(getDescriptor().synopsis, text, showDialog);
+            if (credentials && credentials.username && credentials.password) {
+                var params = 'login=' + credentials.username + '&password=' + credentials.password + '&remember=1';
+                page.loading = true;
+                var resp = showtime.httpReq(BASE_URL+ '/users/index/auth', {
+                    args: {
+                        mail: credentials.username,
+                        pass: credentials.password,
+                        social: 0
+                    }
+                });
+                page.loading = false;
+                if (resp == '"ok"') logged = true;
+            }
+        }
+
+        if (showDialog) {
+           if (logged) showtime.message("Вход успешно произведен. Параметры входа сохранены.", true, false);
+           else showtime.message("Не удалось войти. Проверьте email/пароль...", true, false);
+        }
     }
 
     var service = plugin.createService("Tree.tv", PREFIX + ":start", "video", true, logo);
-
-    var settings = plugin.createSettings("Tree.tv", logo, slogan);
+    var settings = plugin.createSettings(getDescriptor().id, logo, getDescriptor().synopsis);
+    settings.createAction('treetv_login', 'Войти в tree.tv', function() {
+        login(0, true);
+    });
 
     function trim(s) {
         if (s) return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/g,'');
@@ -517,7 +550,16 @@
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, slogan);
+        setPageHeader(page, getDescriptor().synopsis);
+
+        if (logged) {
+             page.appendPassiveItem('file', '', {
+                 title: new showtime.RichText(coloredStr(credentials.username, orange)
+             )});
+        } else
+             page.appendPassiveItem('file', '', {
+                 title: new showtime.RichText(coloredStr('Авторизируйтесь в настройках', orange))
+             });
 
         page.loading = true;
         var doc = showtime.httpReq(BASE_URL).toString();
@@ -567,10 +609,11 @@
 
         // Building list
         page.appendItem("", "separator");
-        scrape(page, '?', escape(slogan));
+        scrape(page, '?', escape(getDescriptor().synopsis));
     });
 
     plugin.addSearcher("Tree.tv", logo, function(page, query) {
-        scrapeSmall(page, escape(BASE_URL + '/search/index/index/usersearch/' + query+'/page/'), slogan, 1);
+        login(page, false);
+        scrapeSmall(page, escape(BASE_URL + '/search/index/index/usersearch/' + query+'/page/'), getDescriptor().synopsis, 1);
     });
 })(this);
