@@ -219,7 +219,7 @@
                 }
                 url = showtime.httpReq(url.match(/method="post" action="([\S\s]*?)"/)[1], {
                      postdata: {
-                         op:1
+                         o:1
                      },
                      noFollow: true
                 });
