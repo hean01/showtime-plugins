@@ -89,7 +89,6 @@
 	var fromPage = 1, tryToSearch = true;
         // 1-link, 2-title, 3-icon, 4-num of videos
         var re = /<a href="([^"]+)" title="([^"]+)[\S\s]*?onclick="trackByCookie[\S\s]*?src="([^"]+)[\S\s]*?class="pornstar-stats">([\d^]+)\s/g;
-        var re2 = /"Next Page"/;
 
         function loader() {
             if (!tryToSearch) return false;
@@ -109,7 +108,7 @@
                 });
                 match = re.exec(response);
             }
-            if (!re2.exec(response)) return tryToSearch = false;
+            if (!response.match(/"Next Page"/)) return tryToSearch = false;
             fromPage++;
             return true;
         }
@@ -118,7 +117,6 @@
     }
 
     function index(page, url, title) {
-showtime.print('www');
         setPageHeader(page, title);
 	var fromPage = 1, tryToSearch = true;
         //1-link, 2-title, 3-duration, 4-icon, 5-hd flag, 6-rating, 7-views
@@ -129,6 +127,7 @@ showtime.print('www');
             if (!tryToSearch) return false;
             page.loading = true;
             var response = showtime.httpReq(url + "page=" + fromPage).toString();
+            var next = response.match(/"Next Page/);
             response = response.match(/<ul class="video-listing([\S\s]*?)<div class="pages">/)[1].replace(/<\/li><li >/g, '<li class="first-in-row">');
             if (fromPage == 1) {
                 var details = response.match(/<ul class="pornstar-details">([\S\s]*?)<\/ul>/);
@@ -154,7 +153,8 @@ showtime.print('www');
                 });
                 match = re.exec(response);
             }
-            if (!response.match(/"Next Page/)) return tryToSearch = false;
+
+            if (!next) return tryToSearch = false;
             fromPage++;
             return true;
         }
