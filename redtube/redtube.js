@@ -118,17 +118,18 @@
     }
 
     function index(page, url, title) {
+showtime.print('www');
         setPageHeader(page, title);
 	var fromPage = 1, tryToSearch = true;
-        //1-link, 2-title, 3-icon, 4-hd flag, 5-duration, 6-rating, 7-date added
-        var re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?<\/a>([\S\s]*?)<\/div>[\S\s]*?class="d">([^\<]+)[\S\s]*?">([\S\s]*?)<\/[\S\s]*?">[\S\s]*?">([\S\s]*?)<\//g;
-        var re2 = /"Next Page/;
+        //1-link, 2-title, 3-duration, 4-icon, 5-hd flag, 6-rating, 7-views
+        var re = /first-in-row">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?\'">([\S\s]*?)<\/span>[\S\s]*?data-src="([\S\s]*?)"([\S\s]*?)video-percent">([\S\s]*?)\%[\S\s]*?video-views">([\S\s]*?)<\/span>/g;
         var profile = "";
 
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
             var response = showtime.httpReq(url + "page=" + fromPage).toString();
+            response = response.match(/<ul class="video-listing([\S\s]*?)<div class="pages">/)[1].replace(/<\/li><li >/g, '<li class="first-in-row">');
             if (fromPage == 1) {
                 var details = response.match(/<ul class="pornstar-details">([\S\s]*?)<\/ul>/);
                 if (details) {
@@ -144,16 +145,16 @@
             var match = re.exec(response);
             while (match) {
                 page.appendItem(PREFIX + ":play:" + escape(match[1]) + ":" + escape(match[2]), "video", {
-                    title: new showtime.RichText((trim(match[4]) ? coloredStr('HD ', orange) : '') + match[2] + coloredStr(' (' + match[5] + ')', orange)),
-                    icon: match[3],
+                    title: new showtime.RichText((match[5].match(/hd-video/) ? coloredStr('HD ', orange) : '') + match[2] + coloredStr(' (' + match[3] + ')', orange)),
+                    icon: match[4],
                     description: new showtime.RichText(trim(match[7])+ profile),
                     genre: 'Adult',
-                    duration: match[5],
-                    rating: +(match[6]) * 20
+                    duration: match[3],
+                    rating: +match[6]
                 });
                 match = re.exec(response);
             }
-            if (!re2.exec(response)) return tryToSearch = false;
+            if (!response.match(/"Next Page/)) return tryToSearch = false;
             fromPage++;
             return true;
         }
