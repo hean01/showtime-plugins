@@ -237,7 +237,7 @@
     plugin.addURI(getDescriptor().id + ":index:(.*)", function(page, url) {
         var doc = showtime.httpReq(checkLink(unescape(url))).toString();
         var info = doc.match(/<img id="kep" alt="([\S\s]*?)" src="([\S\s]*?)"/);
-        setPageHeader(page, trim(info[1]));
+        setPageHeader(page, trim(doc.match(/<div class="boxup">([\S\s]*?)<\/div>/)[1]));
         var genres = doc.match(/<b>Kategóriák:<\/b>([\S\s]*?)<\/span>/)[1];
         var genre = '';
         var re = /<a href='[\S\s]*?'>([\S\s]*?)<\/a>/g;
