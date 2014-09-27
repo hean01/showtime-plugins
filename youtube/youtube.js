@@ -1221,9 +1221,7 @@
 
         page.metadata.background = plugin.path + "views/img/background.png";
         page.metadata.backgroundAlpha = 0.5;
-
         page.metadata.glwview = plugin.path + "views/user2.view";
-
         page.type = "directory";
 
         var args = {
@@ -1331,7 +1329,7 @@
                     newSubscriptionVideos.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/newsubscriptionvideos')+':'+escape('See More')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/newsubscriptionvideos')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", newSubscriptionVideos, { title: "New Subscription Videos" });
@@ -1353,12 +1351,11 @@
                 data = data.response;
 
                 var favorites = getItems(data.items);
-
                 if (favorites.length > 0) {
                     favorites.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/favorites')+':'+escape('See More')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/favorites')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", favorites, { title: "Favorites" });
@@ -1390,7 +1387,7 @@
                     watchLater.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_later')+':'+escape('See More')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_later')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", watchLater, { title: "Watch Later" });
@@ -1415,7 +1412,7 @@
                     watchHistory.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_history')+':'+escape('See More')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_history')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", watchHistory, { title: "Watch History" });
@@ -1440,7 +1437,7 @@
                     likes.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/" + likesPlaylistId)+':'+escape('See More')
+                        url: PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/" + likesPlaylistId)+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", watchLater, { title: "Likes" });
@@ -1466,7 +1463,7 @@
                     subscriptions.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/subscriptions')+':'+escape('See More')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/subscriptions')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", subscriptions, { title: "Subscriptions" });
@@ -1493,7 +1490,7 @@
                     playlists.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/playlists')+':'+escape('See More')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/playlists')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", playlists, { title: "Playlists" });
@@ -1554,7 +1551,7 @@
                     videoRecommendations.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/recommendations')+':'+escape('See More')
+                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/recommendations')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", videoRecommendations, { title: "Video Recommendations" });
@@ -1580,7 +1577,7 @@
                 uploads.push({
                     title: "See More",
                     image: plugin.path + "views/img/add.png",
-                    url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/uploads')+':'+escape('See More')
+                    url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/uploads')+':'+escape(page.metadata.title)
                 });
 
                 if (user == "default") page.appendPassiveItem("list", uploads, { title: "Uploads" });
