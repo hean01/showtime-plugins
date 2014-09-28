@@ -18,16 +18,12 @@
  */
 
 (function(plugin) {
-
-    var PREFIX = 'brb_to';
     var BASE_URL = 'http://brb.to';
-    var slogan = 'brb.to - Рекомендательная видеосеть';
     var logo = plugin.path + "logo.jpg";
 
-    var sURL = {};
-    var sTitle = {};
+    var sURL = {}, sTitle = {};
 
-    var service = plugin.createService("brb.to", PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(getDescriptor().id, getDescriptor().id + ":start", "video", true, logo);
 
     function setPageHeader(page, title) {
         if (page.metadata) {
@@ -110,6 +106,7 @@
             case "ape":
             case "dts":
             case "ac3":
+            case "opus":
                 return "audio";
             default:
                 return "file";
@@ -117,7 +114,7 @@
     }
 
     // Appends the item and lists it's root folder
-    plugin.addURI(PREFIX + ":screens:(.*):(.*)", function(page, screens, title) {
+    plugin.addURI(getDescriptor().id + ":screens:(.*):(.*)", function(page, screens, title) {
         setPageHeader(page, unescape(title));
         screens = unescape(screens);
         var re = /rel="([\S\s]*?)"/g;
@@ -133,7 +130,7 @@
     });
 
     // Appends the item and lists it's root folder
-    plugin.addURI(PREFIX + ":listRoot:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(getDescriptor().id + ":listRoot:(.*):(.*)", function(page, url, title) {
         title = unescape(title).replace(/(<([^>]+)>)/ig).replace(/undefined/g,'');
         setPageHeader(page, title);
         page.loading = true;
@@ -200,7 +197,7 @@
         }
 
         page.loading = false;
-        page.appendItem(PREFIX + ":playOnline:" + url + ":" + escape(title), "video", {
+        page.appendItem(getDescriptor().id + ":playOnline:" + url + ":" + escape(title), "video", {
             title: new showtime.RichText(title),
             duration: duration,
             icon: icon,
@@ -222,7 +219,7 @@
         htmlBlock = response.match(/<div class="items">([\S\s]*?)<\/div>/);
         if (htmlBlock) {
             if (trim(htmlBlock[1])) {
-                page.appendItem(PREFIX + ':screens:' + escape(htmlBlock[1])+':'+escape(title), "directory", {
+                page.appendItem(getDescriptor().id + ':screens:' + escape(htmlBlock[1])+':'+escape(title), "directory", {
                     title: 'Скриншоты'
                 });
             }
@@ -255,7 +252,7 @@
             m[4] = m[4].replace(/<\/span>/g, "");
             m[4] = trim(m[4]);
             if (m[1] == "folder") {
-                page.appendItem(PREFIX + ":listFolder:" + escape(url) + ":" + m[2].replace("\'", "") + ":" + escape(title), "directory", {
+                page.appendItem(getDescriptor().id + ":listFolder:" + escape(url) + ":" + m[2].replace("\'", "") + ":" + escape(title), "directory", {
                     title: new showtime.RichText(m[3] + '<font color="6699CC"> (' + m[4] + ')</font> ' + m[5] + " " + m[6])
                 });
             };
@@ -271,7 +268,7 @@
                 page.appendItem("", "separator", {
                     title: 'Год'
                 });
-                page.appendItem(PREFIX + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + ':no:&sort=rating', "directory", {
+                page.appendItem(getDescriptor().id + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + ':no:&sort=rating', "directory", {
                     title: year[2]
                 });
             } else { // handle as serials
@@ -280,7 +277,7 @@
                     page.appendItem("", "separator", {
                         title: 'Год'
                     });
-                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + ':no:&sort=rating', "directory", {
+                    page.appendItem(getDescriptor().id + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + ':no:&sort=rating', "directory", {
                         title: year[2]
                     });
                 }
@@ -297,7 +294,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по жанру: '+m[2]) + ':no:&sort=year', "directory", {
+                    page.appendItem(getDescriptor().id + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по жанру: '+m[2]) + ':no:&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -313,7 +310,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<\/span>([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по стране: '+trim(showtime.entityDecode(m[2]))) + ':no:&sort=year', "directory", {
+                    page.appendItem(getDescriptor().id + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по стране: '+trim(showtime.entityDecode(m[2]))) + ':no:&sort=year', "directory", {
                         title: trim(showtime.entityDecode(m[2]))
                     });
                     m = re.exec(htmlBlock[1]);
@@ -330,7 +327,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по режиссеру: '+m[2]) + ':no:&sort=year', "directory", {
+                    page.appendItem(getDescriptor().id + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по режиссеру: '+m[2]) + ':no:&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -346,7 +343,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по актеру: '+m[2]) + ':no:&sort=year', "directory", {
+                    page.appendItem(getDescriptor().id + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по актеру: '+m[2]) + ':no:&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -361,7 +358,7 @@
                     var re = /<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/g;
                     var m = re.exec(htmlBlock[1]);
                     while (m) {
-                        page.appendItem(PREFIX + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по ведущему: '+m[2]) + ':no:&sort=year', "directory", {
+                        page.appendItem(getDescriptor().id + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по ведущему: '+m[2]) + ':no:&sort=year', "directory", {
                             title: m[2]
                         });
                         m = re.exec(htmlBlock[1]);
@@ -381,7 +378,7 @@
             m = re.exec(what_else);
             while (m) {
                 title = m[3].replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', "");
-                page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(title), "video", {
+                page.appendItem(getDescriptor().id + ":listRoot:" + m[1] + ":" + escape(title), "video", {
                     title: new showtime.RichText(title),
                     icon: m[2].replace('/9/', '/2/')
                 });
@@ -410,7 +407,7 @@
         }
     });
 
-    plugin.addURI(PREFIX + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
+    plugin.addURI(getDescriptor().id + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
         title = unescape(title);
         setPageHeader(page, title);
         page.loading = true;
@@ -428,7 +425,7 @@
                 if (getType(direct_link.split('.').pop()) == 'video') {
                     sURL[direct_link] = flv_link;
                     sTitle[direct_link] = name;
-                    page.appendItem(PREFIX + ":play:" + direct_link, getType(direct_link.split('.').pop()), {
+                    page.appendItem(getDescriptor().id + ":play:" + direct_link, getType(direct_link.split('.').pop()), {
                         title: new showtime.RichText(name + '<font color="6699CC"> (' + size + ')</font>')
                     });
                 } else {
@@ -450,7 +447,7 @@
                         var re2 = /rel="\{parent_id: ([^}]+)\}">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
                         var n = re2.exec(m[2]);
                         n[2] = trim(n[2]);
-                        page.appendItem(PREFIX + ":listFolder:" + escape(url) + ":" + n[1].replace("'", "") + ":" + escape(title), "directory", {
+                        page.appendItem(getDescriptor().id + ":listFolder:" + escape(url) + ":" + n[1].replace("'", "") + ":" + escape(title), "directory", {
                             title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font> ' + n[4] + " " + n[5])
                         });
                     }
@@ -460,32 +457,37 @@
         }
     });
 
+    // Search IMDB ID by title
+    function getIMDBid(title) {
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        if (imdbid) return imdbid[1];
+        return imdbid;
+    };
+
     // Processes "Play online" button 
-    plugin.addURI(PREFIX + ":playOnline:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(getDescriptor().id + ":playOnline:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         var response = showtime.httpReq(BASE_URL + url).toString();
         page.loading = false;
-        var re = /playlist: \[[\S\s]*?url: '([^']+)/;
-        url = re.exec(response) // Some clips autoplay
+        url = response.match(/playlist: \[[\S\s]*?url: '([^']+)/) // Some clips autoplay
         if (!url) {
-            re = /<div id="page-item-viewonline"[\S\s]*?<a href="([^"]+)/;
             page.loading = true;
-            response = showtime.httpReq(BASE_URL + re.exec(response)[1]).toString();
+            response = showtime.httpReq(BASE_URL + response.match(/<div id="page-item-viewonline"[\S\s]*?<a href="([^"]+)/)[1]).toString();
             page.loading = false;
-            re = /<a id="[\S\s]*?" href="([\S\s]*?)" title="([\S\s]*?)"/;
-            response = re.exec(response);
+            response = response.match(/<a id="[\S\s]*?" href="([\S\s]*?)" title="([\S\s]*?)"/);
             if (!response) {
                 page.error("Линк на проигрывание отсутствует :(");
                 return;
             }
-            re = /playlist: \[[\S\s]*?url: '([^']+)/;
             page.loading = true;
-            url = re.exec(showtime.httpReq(BASE_URL + response[1]));
+            url = showtime.httpReq(BASE_URL + response[1]).toString().match(/playlist: \[[\S\s]*?url: '([^']+)/);
             page.loading = false;
         }
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
+            imdbid: getIMDBid(title),
             sources: [{
                 url: BASE_URL + url[1]
             }]
@@ -493,13 +495,13 @@
     });
 
     // Play URL
-    plugin.addURI(PREFIX + ":play:(.*)", function(page, url) {
+    plugin.addURI(getDescriptor().id + ":play:(.*)", function(page, url) {
         page.type = "video";
         page.loading = true;
         if (showtime.probe(BASE_URL + url).result == 0) {
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: sTitle[url],
-                canonicalUrl: PREFIX + ":play:" + url,
+                canonicalUrl: getDescriptor().id + ":play:" + url,
                 sources: [{
                     url: BASE_URL + url
                 }]
@@ -512,12 +514,11 @@
         page.loading = true;
         var response = showtime.httpReq(BASE_URL + url).toString();
         page.loading = false;
-        var start = 0,
-            end = 0;
+        var start = 0, end = 0;
         start = response.indexOf('<title>', start + 1);
         end = response.indexOf('</title>', start + 1);
         var re = /<title>([\S\s]+)/;
-        var title = re.exec(response.substring(start, end))[1]; // problem lives here
+        var title = re.exec(response.substring(start, end))[1];
         start = response.indexOf('class="b-view-material"', start + 1);
         end = response.indexOf('</div>', start + 1);
         re = /<a href="([^"]+)/;
@@ -542,7 +543,7 @@
         if (m) {
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: unescape(title),
-                canonicalUrl: PREFIX + ":play:" + origURL,
+                canonicalUrl: getDescriptor().id + ":play:" + origURL,
                 sources: [{
                     url: BASE_URL + m[1]
                 }]
@@ -551,7 +552,7 @@
     });
 
     // Index page
-    plugin.addURI(PREFIX + ":index:(.*):(.*):(.*):(.*)", function(page, url, title, populars, param) {
+    plugin.addURI(getDescriptor().id + ":index:(.*):(.*):(.*):(.*)", function(page, url, title, populars, param) {
         if (param == 'noparam') param = ''; // workaround for ps3 regex quirks
         setPageHeader(page, unescape(title));
         page.loading = true;
@@ -597,7 +598,7 @@
         var re = /<div class="b-poster-[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?url\('([\S\s]*?)'\)[\S\s]*?<span class=".-poster-[\S\s]*?title">([\S\s]*?)<\/span>/g;
         var m = re.exec(match);
         while (m) {
-            page.appendItem(PREFIX + ":listRoot:" + m[1] + ":" + escape(trim(m[3])), "video", {
+            page.appendItem(getDescriptor().id + ":listRoot:" + m[1] + ":" + escape(trim(m[3])), "video", {
                 title: new showtime.RichText(trim(m[3]).replace(/(<([^>]+)>)/ig, "")),
                 icon: m[2].replace('/9/', '/2/')
             });
@@ -607,7 +608,7 @@
 
     // shows last commented
     var comments;
-    plugin.addURI(PREFIX + ":comments", function(page) {
+    plugin.addURI(getDescriptor().id + ":comments", function(page) {
         setPageHeader(page, 'Обcуждаемые материалы');
         //1-link, 2-title, 3-icon, 4-type, 5-year, 6-country, 7-genres list,
         //8-directors, 9-actors,
@@ -616,7 +617,7 @@
         var re = /<a href="([\S\s]*?)"[\S\s]*?<span class="b-main__top-commentable-item-title-value">([\S\s]*?)<\/span>[\S\s]*?url\(([\S\s]*?)\);[\S\s]*?<span class="b-main__top-commentable-item-subsection">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-year-country">([\S\s]*?)<span class="b-main__new-item-attributes-delimiter"><\/span>([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-genre">([\S\s]*?)<span class="b-main__top-commentable-item-director">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-cast">([\S\s]*?)<\/span>[\S\s]*?class="b-main__top-commentable-item-comment m-main__top-commentable-item-comment_bg_([\S\s]*?)">[\S\s]*?<span class="b-main__top-commentable-item-comment-content-rating">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-text">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-name m-main__top-commentable-item-comment-content-name_">([\S\s]*?)<\/span>[\S\s]*?class="b-main__top-commentable-item-comment m-main__top-commentable-item-comment_bg_([\S\s]*?)">[\S\s]*?<span class="b-main__top-commentable-item-comment-content-rating">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-text">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-name m-main__top-commentable-item-comment-content-name_">([\S\s]*?)<\/span>/g;
         var match = re.exec(comments);
         while (match) {
-            page.appendItem(PREFIX + ":listRoot:" + match[1]+ ':' + escape(trim(match[2])), 'video', {
+            page.appendItem(getDescriptor().id + ":listRoot:" + match[1]+ ':' + escape(trim(match[2])), 'video', {
                 title: trim(match[2]),
                 icon: match[3].replace('/9/', '/2/'),
                 year: +(trim(match[5].replace(/\D+/, '')).substr(0,4)),
@@ -650,7 +651,7 @@
             } else {
                 genre = match[8];
             }
-            page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[3].replace(/\\\'/g, "'").replace(/\\\"/g, '"')), "video", {
+            page.appendItem(getDescriptor().id + ":listRoot:" + escape(match[1]) + ":" + escape(match[3].replace(/\\\'/g, "'").replace(/\\\"/g, '"')), "video", {
                 title: new showtime.RichText(quality + match[3].replace(/\\\'/g, "'").replace(/\\\"/g, '"')),
                 icon: match[2].replace('/6/', '/2/'),
                 genre: genre,
@@ -691,14 +692,14 @@
     }
 
     // lists submenu
-    plugin.addURI(PREFIX + ":submenu:(.*):(.*):(.*)", function(page, url, title, menu) {
+    plugin.addURI(getDescriptor().id + ":submenu:(.*):(.*):(.*)", function(page, url, title, menu) {
         setPageHeader(page, unescape(title));
         menu = unescape(menu);
         //1-url, 2-title
         var re = /<a class="b-header__menu-subsections-item" href="([\S\s]*?)">[\S\s]*?<span class="b-header__menu-subsections-item-title m-header__menu-subsections-item-title_type_[\S\s]*?">([\S\s]*?)<\/span>/g;
         var match = re.exec(menu);
         while (match) {
-            page.appendItem(PREFIX + ":index:" + escape(BASE_URL + match[1]) + ':' + trim(match[2]) + ':yes:noparam', 'directory', {
+            page.appendItem(getDescriptor().id + ":index:" + escape(BASE_URL + match[1]) + ':' + trim(match[2]) + ':yes:noparam', 'directory', {
                 title: trim(match[2])
             });
             match = re.exec(menu);
@@ -706,8 +707,8 @@
         processScroller(page, url);
     });
 
-    plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, slogan);
+    plugin.addURI(getDescriptor().id + ":start", function(page) {
+        setPageHeader(page, getDescriptor().synopsis);
         page.loading = true;
         response = showtime.httpReq(BASE_URL).toString();
         page.loading = false;
@@ -718,7 +719,7 @@
             var re = /<div class="b-header__menu-section[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?">([\S\s]*?)<\/a>/g;
             var match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ":index:" + match[1]+ ':' + escape(trim(match[2])) + ':no:noparam', 'directory', {
+                page.appendItem(getDescriptor().id + ":index:" + match[1]+ ':' + escape(trim(match[2])) + ':no:noparam', 'directory', {
                     title: trim(match[2])
                 });
                 match = re.exec(response);
@@ -728,7 +729,7 @@
             var re = /<div class="b-header__menu-section[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?">([\S\s]*?)<\/a>([\S\s]*?)<div class="b-clear">/g;
             var match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ":submenu:" + match[1]+ ':' + escape(trim(match[2])) + ':' + escape(match[3]), 'directory', {
+                page.appendItem(getDescriptor().id + ":submenu:" + match[1]+ ':' + escape(trim(match[2])) + ':' + escape(match[3]), 'directory', {
                     title: trim(match[2])
                 });
                 match = re.exec(response);
@@ -739,7 +740,7 @@
         comments = response.match(/<div class="b-main__top-commentable-inner">([\S\s]*?)<div class="b-clear">/);
         if (comments) {
             comments = comments[1];
-            page.appendItem(PREFIX + ':comments', "directory", {
+            page.appendItem(getDescriptor().id + ':comments', "directory", {
                 title: 'Обcуждаемые материалы'
             });
         }
@@ -763,7 +764,7 @@
             var match = re.exec(doc[1]);
             while (match) {
                 var description = trim(match[7].replace(/<[^>]*>/g, '').replace('.......',''))
-                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[4])), "video", {
+                page.appendItem(getDescriptor().id + ":listRoot:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[4])), "video", {
                     title: new showtime.RichText(match[4]),
                     icon: match[2].replace('/9/','/2/'),
                     genre: new showtime.RichText(match[3] + ' ' + (trim(match[5].replace(/<[^>]*>/g, '')) ? colorStr(trim(match[5]), orange) : '')),
@@ -781,7 +782,7 @@
         }
     });
 
-    plugin.addSearcher("brb.to", logo, function(page, query) {
+    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
         page.entries = 0;
 	var fromPage = 0, tryToSearch = true;
 
@@ -801,7 +802,7 @@
                 if (rate)
                     (rate[1] == 'positive' ? rate = colorStr(rate[2], green)+' ' : rate = colorStr(rate[2], red)+' ');
                 else rate = '';
-                page.appendItem(PREFIX + ":listRoot:" + escape(match[1]) + ":" + escape(match[2]), "video", {
+                page.appendItem(getDescriptor().id + ":listRoot:" + escape(match[1]) + ":" + escape(match[2]), "video", {
                     title: new showtime.RichText(match[2]),
                     icon: match[3].replace('/5/', '/2/'),
                     genre: new showtime.RichText(match[6] + ' ' + (genre ? colorStr(genre, orange) : '')),
