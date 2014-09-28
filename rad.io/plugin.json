@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "rad.io",
 	"synopsis": "Listen to Radio, Webradio and Internet Radio online: rad.io - simply listen.",
-	"version": "0.3.3",
+	"version": "0.3.4",
 	"file": "rad.io.js",
 	"showtimeVersion": "4.5.28",
 	"type": "javascript",

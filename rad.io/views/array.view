@@ -165,7 +165,7 @@ widget(container_y, {
 				});
 
 				widget(label, {
-					  .caption = "'" +$clone.focused.metadata.onair + "'";
+					  .caption = $clone.focused.metadata.onair;
 					  .align = left;
 					  .shadow = true;
 					  .color = 1.0;
