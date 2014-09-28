@@ -17,13 +17,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 (function(plugin) {
-
     var BASE_URL = "http://dir.xiph.org";
-    var PREFIX = "icecast:";
     var logo = plugin.path + "icecast_square.png";
-    var slogan = "Streaming directory -- streams & radios";
 
     function setPageHeader(page, title) {
         if (page.metadata) {
@@ -45,6 +41,16 @@
 	page.loading = false;
     }
 
+    function setStdPageHeader(page, title) {
+        if (page.metadata) {
+	    page.metadata.title = title;
+	    page.metadata.logo = logo;
+        }
+        page.type = "directory";
+	page.contents = "items";
+	page.loading = false;
+    }
+
     // create plugin favorites store
     var store = plugin.createStore('favorites', true)
     if (!store.list) {
@@ -55,19 +61,19 @@
     }
 
     // create plugin service
-    plugin.createService("icecast", PREFIX + "start", "audio", true, logo);
+    plugin.createService("icecast", getDescriptor().id + ":start", "audio", true, logo);
 
     // create settins
-    var settings = plugin.createSettings("icecast", logo, slogan);
+    var settings = plugin.createSettings("icecast", logo, getDescriptor().synopsis);
 
-    settings.createAction("cleanFavorites", "Clean My Favorites",
-			  function () {
+    settings.createAction("cleanFavorites", "Clean My Favorites", function () {
         store.list = "[]";
         showtime.notify('My Favorites has been cleaned succesfully', 2);
     });
 
     function trim(str) {
-        return str.replace(/^\s+|\s+$/g,"");
+        if (!str) return '';
+        return showtime.entityDecode(str).replace(/^\s+|\s+$/g,"");
     }
 
     const blue = "6699CC", orange = "FFA500";
@@ -76,63 +82,91 @@
         return '<font color="' + color + '"> (' + str + ')</font>';
     }
 
-    function scrape_page(page, doc) {
-	var itemmd = {};
+    function scrape_page(page, url, noReq) {
+        page.entries = 0;
+        var nextPage = '';
+	var tryToSearch = true;
 
-        var re = /<tr class="row([\S\s]*?)<\/tr>/g;
-        var match = re.exec(doc);
-	while(match) {
-            var title = match[1].match(/<span class="name"><a href="[\S\s]*?;">([\S\s]*?)<\/a>/);
-            if (title)
-                itemmd.station = title[1];
-            else
-                itemmd.station = itemmd.title = match[1].match(/<span class="name">([\S\s]*?)<\/span>/)[1];
-	    itemmd.listeners = match[1].match(/<span class="listeners">\[([\S\s]*?)\]<\/span>/)[1];
-            var description = match[1].match(/<p class="stream-description">([\S\s]*?)<\/p>/);
-            if (description) itemmd.description = description[1];
-            var onair = match[1].match(/<p class="stream-onair"><strong>On Air:<\/strong>([\S\s]*?)<\/p>/);
-            if (onair) itemmd.current_track = onair[1];
-            itemmd.url = match[1].match(/<td class="tune-in">[\S\s]*?<a href="([\S\s]*?)"/)[1];
-            itemmd.bitrate = match[1].match(/<p class="format" title="([\S\s]*?)">/)[1];
-            itemmd.format = match[1].match(/<p class="format"[\S\s]*?class="no-link" title="[\S\s]*?">([\S\s]*?)<span/)[1];
+        function loader() {
+            var doc;
+            if (!tryToSearch) return false;
+            if (noReq)
+                doc = url;
+            else {
+                page.loading = true;
+                doc = showtime.entityDecode(showtime.httpReq(url + nextPage)).toString();
+                page.loading = false;
+            }
+	    var itemmd = {};
+            var re = /<tr class="row([\S\s]*?)<\/tr>/g;
+            var match = re.exec(doc);
+	    while (match) {
+                var title = match[1].match(/<span class="name"><a href="[\S\s]*?;">([\S\s]*?)<\/a>/);
+                if (title)
+                    itemmd.station = title[1];
+                else
+                    itemmd.station = itemmd.title = match[1].match(/<span class="name">([\S\s]*?)<\/span>/)[1];
+	        itemmd.listeners = match[1].match(/<span class="listeners">\[([\S\s]*?)\]<\/span>/)[1];
+                var description = match[1].match(/<p class="stream-description">([\S\s]*?)<\/p>/);
+                if (description) itemmd.description = description[1];
+                var onair = match[1].match(/<p class="stream-onair"><strong>On Air:<\/strong>([\S\s]*?)<\/p>/);
+                if (onair) itemmd.current_track = onair[1];
+                itemmd.url = match[1].match(/<td class="tune-in">[\S\s]*?<a href="([\S\s]*?)"/)[1];
+                itemmd.bitrate = match[1].match(/<p class="format" title="([\S\s]*?)">/)[1];
+                itemmd.format = match[1].match(/<p class="format"[\S\s]*?class="no-link" title="[\S\s]*?">([\S\s]*?)<span/)[1];
 
-	    // add item to showtime page
-	    var item = page.appendItem("icecast:" + BASE_URL + itemmd.url, "station", {
-		title: new showtime.RichText(itemmd.station + colorStr(itemmd.format + " " + itemmd.bitrate, orange)),
-		station: itemmd.station,
-                onair: itemmd.current_track,
-		description: itemmd.description,
-		bitrate: itemmd.bitrate,
-		format: itemmd.format,
-		listeners: itemmd.listeners
-	    });
-            match = re.exec(doc);
-            page.entries++;
+	        // add item to showtime page
+	        var item = page.appendItem("icecast:" + BASE_URL + itemmd.url, "station", {
+		    title: new showtime.RichText(itemmd.station + colorStr(itemmd.format + " " + itemmd.bitrate, orange)),
+		    station: itemmd.station,
+                    onair: trim(itemmd.current_track),
+		    description: trim(itemmd.description),
+		    bitrate: itemmd.bitrate,
+		    format: itemmd.format,
+		    listeners: trim(itemmd.listeners)
+	        });
+                match = re.exec(doc);
+                page.entries++;
 
-	    item.url = "icecast:" + BASE_URL + itemmd.url;
-	    item.title = itemmd.title;
-	    item.station = itemmd.station;
-	    item.description = itemmd.description;
-	    item.bitrate = itemmd.bitrate;
-	    item.format = itemmd.format;
+	        item.url = "icecast:" + BASE_URL + itemmd.url;
+	        item.title = itemmd.title;
+	        item.station = itemmd.station;
+	        item.description = itemmd.description;
+	        item.bitrate = itemmd.bitrate;
+	        item.format = itemmd.format;
 
-	    item.addOptAction("Add '" + itemmd.station + "' to My Favorites", "addFavorite");
+	        item.addOptAction("Add '" + itemmd.station + "' to My Favorites", "addFavorite");
 	    
-	    item.onEvent("addFavorite", function(item) {
-		var entry = {
-		    url: this.url,
-		    title: this.station,
-		    station: this.station,
-		    description: this.description,
-		    format: this.format,
-		    bitrate: this.bitrate
-		};
-		var list = eval(store.list);
-                var array = [showtime.JSONEncode(entry)].concat(list);
-                store.list = showtime.JSONEncode(array);
-		showtime.notify("'" + this.station+ "' has been added to My Favorites.", 2);
-	    });
-	}
+	        item.onEvent("addFavorite", function(item) {
+		    var entry = {
+		        url: this.url,
+		        title: this.station,
+		        station: this.station,
+		        description: this.description,
+		        format: this.format,
+		        bitrate: this.bitrate
+		    };
+		    var list = eval(store.list);
+                    var array = [showtime.JSONEncode(entry)].concat(list);
+                    store.list = showtime.JSONEncode(array);
+		    showtime.notify("'" + this.station+ "' has been added to My Favorites.", 2);
+	        });
+	    }
+
+            var next = doc.match(/<ul class="pager">([\S\s]*?)<\/ul>/);
+            if (next)
+                next = next[1].substr(next[1].lastIndexOf('<a href='));
+            else
+                return tryToSearch = false;
+            next = next.match(/<a href="([\S\s]*?)">»<\/a>/);
+            if (!next)
+                return tryToSearch = false;
+            nextPage = next[1];
+            return true;
+        }
+        loader();
+        page.paginator = loader;
+        page.loading = false;
     }
 
     function fill_fav(page) {
@@ -171,24 +205,61 @@
     }
 
     // Favorites
-    plugin.addURI(PREFIX + "favorites", function(page) {
+    plugin.addURI(getDescriptor().id + ":favorites", function(page) {
         setPageHeader(page, "My Favorites");
         fill_fav(page);
     });
 
     // Filter
-    plugin.addURI(PREFIX + "filter:(.*):(.*)", function(page, url, title) {
-        setPageHeader(page, slogan + " - " + title);
-        page.loading = true;
-	var doc = showtime.entityDecode(showtime.httpReq(BASE_URL + url));
-	scrape_page(page, doc);
-	page.loading = false;
+    plugin.addURI(getDescriptor().id + ":filter:(.*):(.*)", function(page, url, title) {
+        setPageHeader(page, getDescriptor().synopsis + " - " + title);
+	scrape_page(page, BASE_URL + url);
+    });
+
+    // Genres
+    var genres;
+    plugin.addURI(getDescriptor().id + ":genres", function(page) {
+        setStdPageHeader(page, "Genres");
+        // 1-link, 2-title
+        var re = /<span class="context">[\S\s]*?<\/span><a href="([\S\s]*?)"[\S\s]*?title="[\S\s]*?">([\S\s]*?)<\/a>/g;
+        if (genres) {
+            page.appendItem("", "separator", {
+                title: "Genres"
+            });
+            var rec = re.exec(genres[1])
+            while (rec) {
+	        page.appendItem(getDescriptor().id + ":filter:" + rec[1] + ":" + rec[2], "directory", {
+		    title: rec[2]
+	        });
+                rec = re.exec(genres[1]);
+            };
+        };
+    });
+
+    // Formats
+    var formats;
+    plugin.addURI(getDescriptor().id + ":formats", function(page) {
+        setStdPageHeader(page, "Formats");
+        // 1-link, 2-title
+        var re = /<li><a href="([\S\s]*?)">([\S\s]*?)<\/a>/g;
+        if (formats) {
+            page.appendItem("", "separator", {
+                title: "Formats"
+            });
+            var rec = re.exec(formats[1])
+            while (rec) {
+	        page.appendItem(getDescriptor().id + ":filter:" + rec[1] + ":" + rec[2], "directory", {
+		    title: rec[2]
+	        });
+                rec = re.exec(formats[1]);
+            };
+        };
     });
 
     // Start page
-    plugin.addURI(PREFIX + "start", function(page) {
+    plugin.addURI(getDescriptor().id + ":start", function(page) {
 	page.metadata.logo = logo;
-	page.metadata.title = slogan;
+	page.metadata.title = getDescriptor().synopsis;
 	page.type = "directory";
 	page.contents = "items";
 	page.loading = false;
@@ -213,7 +284,19 @@
             });
         }
 
-	page.appendItem(PREFIX + "favorites", "directory", {
+        // Genres
+        genres = resp.match(/<div id="search-genre">([\S\s]*?)<\/ul>/);
+	page.appendItem(getDescriptor().id + ":genres", "directory", {
+	    title: "Genres"
+	});
+
+        // Formats
+        formats = resp.match(/<div id="search-format">([\S\s]*?)<\/ul>/);
+	page.appendItem(getDescriptor().id + ":formats", "directory", {
+	    title: "Formats"
+	});
+
+	page.appendItem(getDescriptor().id + ":favorites", "directory", {
 	    title: "My Favorites"
 	});
 
@@ -221,49 +304,11 @@
         page.appendItem("", "separator", {
             title: "Random selection"
         });
-        scrape_page(page, resp);
-
-        // Genres
-        match = resp.match(/<div id="search-genre">([\S\s]*?)<\/ul>/);
-        // 1-link, 2-title
-        re = /<span class="context">[\S\s]*?<\/span><a href="([\S\s]*?)"[\S\s]*?title="[\S\s]*?">([\S\s]*?)<\/a>/g;
-        if (match) {
-            page.appendItem("", "separator", {
-                title: "Genres"
-            });
-            var rec = re.exec(match[1])
-            while (rec) {
-	        page.appendItem(PREFIX + "filter:" + rec[1] + ":" + rec[2], "directory", {
-		    title: rec[2]
-	        });
-                rec = re.exec(match[1]);
-            };
-        };
-
-        // Formats
-        match = resp.match(/<div id="search-format">([\S\s]*?)<\/ul>/);
-        // 1-link, 2-title
-        re = /<li><a href="([\S\s]*?)">([\S\s]*?)<\/a>/g;
-        if (match) {
-            page.appendItem("", "separator", {
-                title: "Formats"
-            });
-            var rec = re.exec(match[1])
-            while (rec) {
-	        page.appendItem(PREFIX + "filter:" + rec[1] + ":" + rec[2], "directory", {
-		    title: rec[2]
-	        });
-                rec = re.exec(match[1]);
-            };
-        };
+        scrape_page(page, resp, 1);
     });
 
     plugin.addSearcher("icecast", logo, function(page, query) {
         setPageHeader(page, '');
-        page.entries = 0;
-	page.loading = true;
-	var doc = showtime.entityDecode(showtime.httpReq(BASE_URL + "/search?search=" + query.replace(' ', '+')));
-	scrape_page(page, doc);
-	page.loading = false;
+	scrape_page(page, BASE_URL + "/search?search=" + query.replace(' ', '+'));
     });
 })(this);
