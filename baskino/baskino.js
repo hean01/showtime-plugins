@@ -631,14 +631,15 @@
         var tryToSearch = true, first = true;
         function loader() {
             if (!tryToSearch) return false;
-            html = response.match(/<div class="listcomments">([\S\s]*?)<\/form>/)[1];
+            html = response.match(/<div id="dle-ajax-comments">([\S\s]*?)<\/form>/);
+            if (!html) return tryToSearch = false;
             // 1-user+added, 2-icon, 3-comment
             re = /<div class="linline author">([\S\s]*?)<div class="rinline acts">[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?<div id='[\S\s]*?'>([\S\s]*?)<\/div>/g;
-            match = re.exec(html);
+            match = re.exec(html[1]);
             while (match) {
                 if (first) {
                    page.appendItem("", "separator", {
-                       title: html.match(/<div class="mbastitle">([\S\s]*?)<\/div>/)[1]
+                       title: response.match(/<div class="listcomments">[\S\s]*?<div class="mbastitle">([\S\s]*?)<\/div>/)[1]
                    });
                    first = false;
                 }
@@ -655,10 +656,13 @@
                     icon: match[2].substr(0, 4) == 'http' ? match[2] : BASE_URL + match[2],
                     description: new showtime.RichText(trim(match[3]))
                     });
-                    match = re.exec(html);
+                    match = re.exec(html[1]);
             };
-            var next = response.match(/<div class="dle-comments-navigation">[\S\s]*?<\/span> <a href="([\S\s]*?)">/);
+            var next = response.match(/<div class="dle-comments-navigation">([\S\s]*?)<\/div>/);
             if (!next) return tryToSearch = false;
+            next = next[1];
+            if (next.match(/<span>Вперед<\/span>/)) return tryToSearch = false;
+            next = next.substr(next.lastIndexOf('<a href=')).match(/<a href="([\S\s]*?)"/);
             response = showtime.httpReq(next[1]).toString();
             return true;
         };
