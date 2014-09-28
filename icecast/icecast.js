@@ -82,7 +82,7 @@
         return '<font color="' + color + '"> (' + str + ')</font>';
     }
 
-    function scrape_page(page, url, noReq) {
+    function scrape_page(page, url, noReq, searcher) {
         page.entries = 0;
         var nextPage = '';
 	var tryToSearch = true;
@@ -94,7 +94,10 @@
                 doc = url;
             else {
                 page.loading = true;
-                doc = showtime.entityDecode(showtime.httpReq(url + nextPage)).toString();
+                if (searcher && page.entries)
+                    doc = showtime.entityDecode(showtime.httpReq(BASE_URL + '/search' + nextPage)).toString();
+                else
+                    doc = showtime.entityDecode(showtime.httpReq(url + nextPage)).toString();
                 page.loading = false;
             }
 	    var itemmd = {};
@@ -309,6 +312,6 @@
 
     plugin.addSearcher("icecast", logo, function(page, query) {
         setPageHeader(page, '');
-	scrape_page(page, BASE_URL + "/search?search=" + query.replace(' ', '+'));
+	scrape_page(page, BASE_URL + "/search?search=" + query.replace(' ', '+'), 0 , 1);
     });
 })(this);
