@@ -126,6 +126,8 @@
 	        });
             } else {
                 var url = "https://api-content.dropbox.com/1/files/dropbox" + showtime.pathEscape(item.path) + '?access_token='+store.access_token;
+                if (item.path.split('.').pop().toUpperCase() == 'PLX')
+                    url = 'navi-x:playlist:playlist:' + escape(url)
                 var type = item.mime_type.split('/')[0];
 	        page.appendItem(url, type, {
 	            title: new showtime.RichText(title + colorStr(item.size, blue) + ' ' + item.modified.replace( /\+0000/, ''))
