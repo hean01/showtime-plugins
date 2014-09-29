@@ -143,7 +143,7 @@
 
         // Scrape description
 	var description = response.match(/<p class="item-decription [^"]+">([\S\s]*?)<\/p>/);
-	if (description) description = coloredStr("Описание: ", orange) + description[1]; else description = '';
+	if (description) description = coloredStr("\nОписание: ", orange) + description[1]; else description = '';
 
         // Scrape duration
         var duration = response.match(/itemprop="duration"[\S\s]*?>([\S\s]*?)<\/span>/);
@@ -179,7 +179,7 @@
            }; // Scrape genres
 
            // Try to get status
-           htmlBlock = iteminfo.match(/Статус:[\S\s]*?<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>/);
+           htmlBlock = iteminfo.match(/Статус:[\S\s]*?<\/td>[\S\s]*?>([\S\s]*?)<\/td>/);
            if (htmlBlock)
               description = coloredStr("Статус: ", orange) + trim(htmlBlock[1]) + " " + description;
         };
@@ -232,36 +232,8 @@
         // list files/folders
         page.loading = true;
         try {
-            response = showtime.httpReq(BASE_URL + url + '?ajax&blocked=0&folder=0');
+            processAjax(page, url, 0, title);
         } catch(err) {}
-        page.loading = false;
-        var re = /<ul class="filelist[^"]+[\S\s]*?<\/ul>/;
-        response = re.exec(response);
-        var start = 0, end = 0;
-        if (response) {
-            response = response[0].replace(/(class="b-transparent-area")/g, "");
-            start = response.indexOf('<li class="', start + 1);
-            end = response.indexOf('</li>', start + 1);
-            // 1 - type, 2 - folder_id, 3 - name, 4 - size, 5 - details, 6 - date
-            re = /<li class="([^"]+)[\S\s]*?rel="\{parent_id: ([^}]+)\}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
-            var m = re.exec(response.substring(start, end));
-        }
-        while (m && (start > 0)) {
-            m[3] = trim(m[3]);
-            // Material size clean & join
-            m[4] = m[4].replace(/<span class="material-size">/g, "");
-            m[4] = m[4].replace(/<\/span>/g, "");
-            m[4] = trim(m[4]);
-            if (m[1] == "folder") {
-                page.appendItem(getDescriptor().id + ":listFolder:" + escape(url) + ":" + m[2].replace("\'", "") + ":" + escape(title), "directory", {
-                    title: new showtime.RichText(m[3] + '<font color="6699CC"> (' + m[4] + ')</font> ' + m[5] + " " + m[6])
-                });
-            };
-            start = response.indexOf('<li class="', start + 1);
-            end = response.indexOf('</li>', start + 1);
-            m = re.exec(response.substring(start, end));
-        }
-
         if (iteminfo) {
             // Show year
             var year = iteminfo.match(/Год:[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/);
@@ -408,10 +380,12 @@
         }
     });
 
-    plugin.addURI(getDescriptor().id + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
-        setPageHeader(page, unescape(title));
+    function processAjax(page, url, folder, title) {
         page.loading = true;
-        var response = showtime.httpReq(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
+        //showtime.print(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
+        var response = showtime.httpReq(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder).toString();
+        response = response.substr(response.indexOf('class="filelist'), response.lastIndexOf('</ul>'));
+        response = response.replace(/<ul class="filelist([\s\S]*?)<\/ul>/g, '');
         page.loading = false;
         var re = /<li class="([^"]+)([\S\s]*?)(<\/li>|"  >)/g;
         var m = re.exec(response);
@@ -441,26 +415,27 @@
                 }
             } else {
                 if (m[1] == "folder" && m[2].indexOf("m-current") == -1) {
-                    var re2 = /<li class="([^"]+)[\S\s]*?href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
-                    var n = re2.exec(m[2]);
-                    if (n) { // checking for opened folder
-                        re2 = /<li class="([^"]+)[\S\s]*?" href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
-                        n = re2.exec(m[2]);
-                        page.appendItem(n[2], getType(n[1]), {
-                            title: new showtime.RichText(n[3] + '<font color="6699CC"> (' + n[4] + ')</font>')
+                    // 1-lang/type, 2-folderID
+                    var n = m[2].match(/class="link-([\S\s]*?)title" rel="\{parent_id: (.*)\}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)<\/span>/);
+                    if (n) {
+                        page.appendItem(getDescriptor().id + ":listFolder:" + escape(url) + ":" + n[2].replace(/\'/g, '') + ":" + escape(unescape(title)), "directory", {
+                            title: new showtime.RichText(coloredStr(n[1].replace('simple ', '').replace('subtype ', '').replace('m-', ''), orange) + trim(n[3]) + ' (' + n[4] +'<font color="6699CC"> (' + n[5] + ')</font> ' + n[6] + " " + n[7])
                         });
                     } else {
-                        var re2 = /rel="\{parent_id: ([^}]+)\}">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
-                        var n = re2.exec(m[2]);
-                        n[2] = trim(n[2]);
-                        page.appendItem(getDescriptor().id + ":listFolder:" + escape(url) + ":" + n[1].replace("'", "") + ":" + escape(unescape(title)), "directory", {
-                            title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font> ' + n[4] + " " + n[5])
+                        n = m[2].match(/link-([\S\s]*?)title" rel="\{parent_id: (.*)\}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)<\/span>/);
+                        page.appendItem(getDescriptor().id + ":listFolder:" + escape(url) + ":" + n[2].replace(/\'/g, '') + ":" + escape(unescape(title)), "directory", {
+                            title: new showtime.RichText(coloredStr(n[1].replace('simple ', '').replace('subtype ', '').replace('m-', ''), orange) + trim(n[3]) + '<font color="6699CC"> (' + n[4] + ')</font> ' + n[5] + " " + n[6])
                         });
                     }
                 }
             }
             m = re.exec(response);
         }
+    }
+
+    plugin.addURI(getDescriptor().id + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
+        setPageHeader(page, unescape(title));
+        processAjax(page, url, folder, title);
     });
 
     // Search IMDB ID by title
@@ -654,7 +629,7 @@
                 icon: match[2].replace('/6/', '/2/'),
                 genre: genre,
                 year: +match[7].substr(0,4),
-                description: new showtime.RichText('('+coloredStr(match[5], green)+'/'+coloredStr(match[5], red) + ') ' + actors + coloredStr("Производство: ", orange) + ' ' +
+                description: new showtime.RichText('('+coloredStr(match[5], green)+'/'+coloredStr(match[6], red) + ') ' + actors + coloredStr("Производство: ", orange) + ' ' +
                     trim(match[7].split('●')[1]) + ' ' + (match[9] ? coloredStr("<br>Описание: ", orange) + trim(match[9]) : ''))
             });
             match = re.exec(response);
