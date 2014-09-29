@@ -141,6 +141,7 @@
                             international:false
                         }
         }));
+        //showtime.print(showtime.JSONEncode(json));
         var lnk = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             sources: [{
@@ -155,15 +156,14 @@
                         tariffs += ', ' + json.tariffs[j];
                     else
                         tariffs += json.tariffs[j];
-
+        //showtime.print(showtime.JSONEncode(json));
         page.appendItem(lnk, 'video', {
-              title: new showtime.RichText((+json.hd ? coloredStr('HD ', blue) : '') + json.name),
+              title: new showtime.RichText((json.stream ? '' : coloredStr('$', orange)) + (+json.hd ? coloredStr('HD ', blue) : '') + json.name),
               description: new showtime.RichText((tariffs ? coloredStr('Доступно в пакетах: ', orange) + tariffs + '\n' : '') +
                     (json.description ? coloredStr('Описание: ', orange) + json.description : '')),
               icon: json.image,
               rating: json.rating*10
         });
-        //showtime.print(showtime.JSONEncode(json));
 
         if (json.programs.current_program) {
             showEpg(page, json.programs.current_week, json.programs.current_program.day, json.programs.current_program.start);
@@ -187,7 +187,7 @@
                             countryCode: countryCode
                         }
         }));
-
+        //showtime.print(showtime.JSONEncode(json));
         for (var i in json.named_streams) {
             var lnk = "videoparams:" + showtime.JSONEncode({
                 title: json.title_ru + (json.title_orig ? ' | ' + json.title_orig : '') + (json.named_streams[i].name && json.named_streams[i].name != json.title_ru ? ' - ' + json.named_streams[i].name : ''),
@@ -212,7 +212,7 @@
                         tariffs += json.tariffs[j];
 
             page.appendItem(lnk, 'video', {
-                title: new showtime.RichText((+json.hd ? coloredStr('HD ', blue) : '') + json.title_ru + (json.title_orig ? ' | ' + json.title_orig : '') + (json.named_streams[i].name && json.named_streams[i].name != json.title_ru ? ' - ' + json.named_streams[i].name : '') + coloredStr(' (' + json.language + ')', orange)),
+                title: new showtime.RichText((json.preview ? coloredStr('$', orange) : '') + (+json.hd ? coloredStr('HD ', blue) : '') + json.title_ru + (json.title_orig ? ' | ' + json.title_orig : '') + (json.named_streams[i].name && json.named_streams[i].name != json.title_ru ? ' - ' + json.named_streams[i].name : '') + coloredStr(' (' + json.language + ')', orange)),
                 icon: json.image,
                 rating: json.rating*10,
                 genre: genre,
@@ -296,9 +296,10 @@
                 jsonPointer = json;
             }
             page.loading = false;
+
             for (i in jsonPointer) {
                 page.appendItem(getDescriptor().id + ':' + parser + ':' + jsonPointer[i].id + ':' + escape(jsonPointer[i].title_ru ? jsonPointer[i].title_ru : jsonPointer[i].name), 'video', {
-                    title: (jsonPointer[i].title_ru ? jsonPointer[i].title_ru : jsonPointer[i].name),
+                    title: new showtime.RichText((jsonPointer[i].free ? coloredStr('►', green) : '') + (jsonPointer[i].title_ru ? jsonPointer[i].title_ru : jsonPointer[i].name)),
                     icon: jsonPointer[i].image,
                     genre: jsonPointer[i].category_names,
                     year: (jsonPointer[i].year ? +jsonPointer[i].year : null),
