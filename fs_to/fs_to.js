@@ -21,7 +21,7 @@
     var BASE_URL = 'http://brb.to';
     var logo = plugin.path + "logo.jpg";
 
-    var sURL = {}, sTitle = {};
+    var folderList = [];
 
     var service = plugin.createService(getDescriptor().id, getDescriptor().id + ":start", "video", true, logo);
 
@@ -197,7 +197,8 @@
         }
 
         page.loading = false;
-        page.appendItem(getDescriptor().id + ":playOnline:" + url + ":" + escape(title), "video", {
+        playOnlineUrl = url;
+        page.appendItem(getDescriptor().id + ":playOnline:" + escape(title), "video", {
             title: new showtime.RichText(title),
             duration: duration,
             icon: icon,
@@ -408,13 +409,14 @@
     });
 
     plugin.addURI(getDescriptor().id + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
-        title = unescape(title);
-        setPageHeader(page, title);
+        setPageHeader(page, unescape(title));
         page.loading = true;
         var response = showtime.httpReq(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
         page.loading = false;
-        var re = /<li class="([^"]+)([\S\s]*?)<\/li>/g;
-        var m = re.exec(response); // parsed list will live here
+        var re = /<li class="([^"]+)([\S\s]*?)(<\/li>|"  >)/g;
+        var m = re.exec(response);
+        folderList = [];
+        var pos = 0;
         while (m) {
             if (m[1].indexOf("file") > -1) {
                 var flv_link = "";
@@ -423,18 +425,22 @@
                 var size = m[2].match(/span class="[\S\s]*?material-size">([\S\s]*?)<\/span>/)[1];
                 var direct_link = m[2].match(/" href="([^"]+)/)[1];
                 if (getType(direct_link.split('.').pop()) == 'video') {
-                    sURL[direct_link] = flv_link;
-                    sTitle[direct_link] = name;
-                    page.appendItem(getDescriptor().id + ":play:" + direct_link, getType(direct_link.split('.').pop()), {
+                    folderList.push({
+                        title: page.metadata.title,
+                        flvlink: flv_link,
+                        directlink: direct_link
+                    });
+                    page.appendItem(getDescriptor().id + ":play:" + escape(name) + ':' + pos, 'video', {
                         title: new showtime.RichText(name + '<font color="6699CC"> (' + size + ')</font>')
                     });
+                    pos++;
                 } else {
                     page.appendItem(BASE_URL + direct_link, getType(direct_link.split('.').pop()), {
                         title: new showtime.RichText(name + '<font color="6699CC"> (' + size + ')</font>')
                     });
                 }
             } else {
-                if (m[1] == "folder") {
+                if (m[1] == "folder" && m[2].indexOf("m-current") == -1) {
                     var re2 = /<li class="([^"]+)[\S\s]*?href="([^"]+)[\S\s]*?class="link-material" ><span style="">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>/;
                     var n = re2.exec(m[2]);
                     if (n) { // checking for opened folder
@@ -447,7 +453,7 @@
                         var re2 = /rel="\{parent_id: ([^}]+)\}">([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)/;
                         var n = re2.exec(m[2]);
                         n[2] = trim(n[2]);
-                        page.appendItem(getDescriptor().id + ":listFolder:" + escape(url) + ":" + n[1].replace("'", "") + ":" + escape(title), "directory", {
+                        page.appendItem(getDescriptor().id + ":listFolder:" + escape(url) + ":" + n[1].replace("'", "") + ":" + escape(unescape(title)), "directory", {
                             title: new showtime.RichText(n[2] + '<font color="6699CC"> (' + n[3] + ')</font> ' + n[4] + " " + n[5])
                         });
                     }
@@ -465,12 +471,13 @@
         return imdbid;
     };
 
-    // Processes "Play online" button 
-    plugin.addURI(getDescriptor().id + ":playOnline:(.*):(.*)", function(page, url, title) {
+    // Processes "Play online" button
+    var playOnlineUrl;
+    plugin.addURI(getDescriptor().id + ":playOnline:(.*)", function(page, title) {
         page.loading = true;
-        var response = showtime.httpReq(BASE_URL + url).toString();
+        var response = showtime.httpReq(BASE_URL + playOnlineUrl).toString();
         page.loading = false;
-        url = response.match(/playlist: \[[\S\s]*?url: '([^']+)/) // Some clips autoplay
+        var url = response.match(/playlist: \[[\S\s]*?url: '([^']+)/) // Some clips autoplay
         if (!url) {
             page.loading = true;
             response = showtime.httpReq(BASE_URL + response.match(/<div id="page-item-viewonline"[\S\s]*?<a href="([^"]+)/)[1]).toString();
@@ -488,6 +495,7 @@
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(title),
+            canonicalUrl: getDescriptor().id + ":playOnline:" + title,
             sources: [{
                 url: BASE_URL + url[1]
             }]
@@ -495,55 +503,45 @@
     });
 
     // Play URL
-    plugin.addURI(getDescriptor().id + ":play:(.*)", function(page, url) {
+    plugin.addURI(getDescriptor().id + ":play:(.*):(.*)", function(page, title, pos) {
         page.type = "video";
         page.loading = true;
-        if (showtime.probe(BASE_URL + url).result == 0) {
+        if (showtime.probe(BASE_URL + folderList[pos].directlink).result == 0) {
             page.source = "videoparams:" + showtime.JSONEncode({
-                title: sTitle[url],
-                canonicalUrl: getDescriptor().id + ":play:" + url,
+                title: unescape(title),
+                canonicalUrl: getDescriptor().id + ":play:" + title + ':' + pos,
+                imdbid: getIMDBid(folderList[pos].title),
                 sources: [{
-                    url: BASE_URL + url
+                    url: BASE_URL + folderList[pos].directlink
                 }]
             });
             page.loading = false;
             return;
         }
-        var origURL = url;
-        if (sURL[url]) url = sURL[url];
         page.loading = true;
-        var response = showtime.httpReq(BASE_URL + url).toString();
+        var response = showtime.httpReq(BASE_URL + folderList[pos].flvlink).toString();
         page.loading = false;
-        var start = 0, end = 0;
-        start = response.indexOf('<title>', start + 1);
-        end = response.indexOf('</title>', start + 1);
-        var re = /<title>([\S\s]+)/;
-        var title = re.exec(response.substring(start, end))[1];
-        start = response.indexOf('class="b-view-material"', start + 1);
-        end = response.indexOf('</div>', start + 1);
-        re = /<a href="([^"]+)/;
-        if (start > 0) {
-            var link = re.exec(response.substring(start, end))[1];
-        }
-        if (!link) {
-            re = /playlist: \[[\S\s]*?url: '([^']+)/;
-            m = re.exec(response);
-        } else {
-            re = /playlist: \[[\S\s]*?url: '([^']+)/;
+        title = response.match(/<title>([\S\s]*?)<\/title>/)[1];
+        var blob = response.match(/class="b-view-material"([\S\s]*?)<\/div>/);
+        if (blob)
+            var link = blob[1].match(/<a href="([^"]+)/)[1];
+        if (!link)
+            var m = response.match(/playlist: \[[\S\s]*?url: '([^']+)/);
+        else {
             page.loading = true;
-            var m = re.exec(showtime.httpReq(BASE_URL + link));
+            var m = showtime.httpReq(BASE_URL + folderList[pos].flvlink).toString().match(/playlist: \[[\S\s]*?url: '([^']+)/);
             page.loading = false;
         }
         if (!m) { // first file from the first folder
-            re = /class="filelist m-current"[\S\s]*?" href="([^"]+)/;
             page.loading = true;
-            m = re.exec(showtime.httpReq(BASE_URL + url + '?ajax&blocked=0&folder=0'));
+            m = showtime.httpReq(BASE_URL + folderList[pos].flvlink + '?ajax&blocked=0&folder=0').toString().match(/class="filelist m-current"[\S\s]*?" href="([^"]+)/);
             page.loading = false;
         }
         if (m) {
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: unescape(title),
-                canonicalUrl: getDescriptor().id + ":play:" + origURL,
+                canonicalUrl: getDescriptor().id + ":play:" + title + ':' + pos,
+                imdbid: getIMDBid(folderList[pos].title),
                 sources: [{
                     url: BASE_URL + m[1]
                 }]
@@ -680,14 +678,29 @@
             }
 
             //show populars
-            response = doc.match(/<div class="b-section-list([\S\s]*?)<script type="text\/javascript">/);
-            if (response) {
-                response = response[1];
-                page.appendItem("", "separator", {
-                    title: 'Популярные материалы'
-                });
-                indexer(page);
+            var tryToSearch = true, counter = 0;
+            function loader() {
+                if (!tryToSearch) return false;
+                response = doc.match(/<div class="b-section-list([\S\s]*?)<script type="text\/javascript">/);
+                if (response) {
+                    response = response[1];
+                    if (!counter)
+                        page.appendItem("", "separator", {
+                            title: 'Популярные материалы'
+                        });
+                    indexer(page);
+                    counter++;
+                }
+                var next = response.match(/<a class="next-link"href="([\S\s]*?)">/);
+                if (!next) return tryToSearch = false;
+                page.loading = true;
+                doc = showtime.httpReq(BASE_URL + next[1]).toString();
+                page.loading = false;
+                return true;
             }
+            loader();
+            page.paginator = loader;
+            page.loading = false;
         }
     }
 
