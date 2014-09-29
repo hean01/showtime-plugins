@@ -60,12 +60,41 @@
             service.proto = v;
     });
 
-    settings.createMultiOpt("baseurl", "Base URL", [
+    settings.createMultiOpt('baseurl', "Base URL", [
         ['://yts.re/api/', 'yts.re', true],
         ['://yify.unlocktorrent.com/api/', 'yify.unlocktorrent.com'],
         ['://yts.im/api/', 'yts.im']
         ], function(v) {
             service.baseurl = v;
+    });
+
+    settings.createMultiOpt('filter', "Filter quality by", [
+        ['ALL', 'All', true],
+        ['1080p', '1080p'],
+        ['720p', '720p'],
+        ['3D', '3D']
+        ], function(v) {
+            service.quality = v;
+    });
+
+    settings.createMultiOpt('sorting', "Sort results by", [
+        ['seeds', 'Seeds', true],
+        ['peers', 'Peers'],
+        ['date', 'Date'],
+        ['size', 'Size'],
+        ['alphabet', 'Alphabet'],
+        ['rating', 'Rating'],
+        ['downloaded', 'Downloaded'],
+        ['year', 'Year']
+        ], function(v) {
+            service.sorting = v;
+    });
+
+    settings.createMultiOpt('order', "Order by", [
+        ['desc', 'Descending', true],
+        ['asc', 'Ascending']
+        ], function(v) {
+            service.order = v;
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
@@ -167,10 +196,11 @@
         function loader() {
             var c = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'list.json', {
                 args: [{
-                    quality: '1080p',
+                    quality: service.quality,
                     limit: 40,
                     set: offset,
-                    sort: 'seeds'
+                    sort: service.sorting,
+                    order: service.order
                 }, query]
             }));
 
