@@ -19,7 +19,7 @@
     var OAUTH_CONSUMER_KEY='wuqod6evftbfe5k';
     var OAUTH_CONSUMER_SECRET='mg4qqagy2ingdue';
     var logo = plugin.path + 'logo.png';
-    var doc, slogan = 'Your stuff, anywhere';
+    var doc, API = 'https://api.dropbox.com/1/';
 
     var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
@@ -27,11 +27,11 @@
         return '<font color="' + color + '"> (' + str + ')</font>';
     }
 
-    plugin.createService('Dropbox', 'dropbox:browse:/', 'other', true, logo);
+    plugin.createService(getDescriptor().title, 'dropbox:browse:/', 'other', true, logo);
   
     var store = plugin.createStore('authinfo', true);
 
-    var settings = plugin.createSettings("Dropbox", logo, slogan);
+    var settings = plugin.createSettings(getDescriptor().title, logo, getDescriptor().synopsis);
     settings.createAction('clearAuth', 'Unlink from Dropbox...', function() {
         store.access_token = '';
         showtime.notify('Showtime is unlinked from Dropbox', 3, '');
@@ -41,7 +41,7 @@
         page.loading = false;
         try {
             page.loading = true;
-            doc = showtime.httpReq("https://api.dropbox.com/1/oauth2/token", {
+            doc = showtime.httpReq(API + 'oauth2/token', {
                 postdata: {
                     'grant_type': 'authorization_code',
                     'code': code,
@@ -84,7 +84,7 @@
                 }
                 try {
                     page.loading = true;
-                    doc = showtime.httpReq("https://api.dropbox.com/1/oauth2/token", {
+                    doc = showtime.httpReq(API + 'oauth2/token', {
                         postdata: {
                             'grant_type': 'authorization_code',
                             'code': result.input,
@@ -106,7 +106,7 @@
         }
 
         page.loading = true;
-        var doc = showtime.JSONDecode(showtime.httpReq("https://api.dropbox.com/1/metadata/dropbox" + path + '?access_token='+store.access_token));
+        var doc = showtime.JSONDecode(showtime.httpReq(API + 'metadata/dropbox' + path + '?access_token=' + store.access_token));
         page.loading = false;
 
         if (!doc.is_dir) {
@@ -115,24 +115,50 @@
         }
         var title = doc.path.split('/')
         page.metadata.title = doc.path != '/' ? title[title.length-1] : "Dropbox Root";
+        ls(page, doc.contents);
+    });
 
-        for (var i = 0; i < doc.contents.length; i++) {
-            var item = doc.contents[i];
-            var title = item.path.split('/');
-            title = title[title.length-1];
-            if (item.is_dir) {
-                page.appendItem("dropbox:browse:" + showtime.pathEscape(item.path), "directory", {
-                    title: new showtime.RichText(title + colorStr(item.modified.replace(/ \+0000/, ''), orange))
+    function ls(page, json) {
+        // folders first
+        for (var i in json) {
+            if (json[i].is_dir) {
+                var title = json[i].path.split('/');
+                title = title[title.length-1]
+                page.appendItem("dropbox:browse:" + showtime.pathEscape(json[i].path), "directory", {
+                    title: new showtime.RichText(title + colorStr(json[i].modified.replace(/ \+0000/, ''), orange))
 	        });
-            } else {
-                var url = "https://api-content.dropbox.com/1/files/dropbox" + showtime.pathEscape(item.path) + '?access_token='+store.access_token;
-                if (item.path.split('.').pop().toUpperCase() == 'PLX')
+                page.entries++;
+            }
+
+        }
+
+        // then files
+        for (var i in json) {
+            if (!json[i].is_dir) {
+                var title = json[i].path.split('/');
+                title = title[title.length-1]
+                var url = 'https://api-content.dropbox.com/1/files/dropbox' + showtime.pathEscape(json[i].path) + '?access_token=' + store.access_token;
+                if (json[i].path.split('.').pop().toUpperCase() == 'PLX')
                     url = 'navi-x:playlist:playlist:' + escape(url)
-                var type = item.mime_type.split('/')[0];
+                var type = json[i].mime_type.split('/')[0];
 	        page.appendItem(url, type, {
-	            title: new showtime.RichText(title + colorStr(item.size, blue) + ' ' + item.modified.replace( /\+0000/, ''))
+	            title: new showtime.RichText(title + colorStr(json[i].size, blue) + ' ' + json[i].modified.replace( /\+0000/, ''))
 	        });
+                page.entries++;
             }
         }
+    }
+
+    plugin.addSearcher(getDescriptor().title, logo, function(page, query) {
+        page.entries = 0;
+        page.loading = true;
+        var json = showtime.JSONDecode(showtime.httpReq(API + 'search/auto/', {
+            args: {
+                access_token: store.access_token,
+                query: query
+            }
+        }));
+        page.loading = false;
+        ls(page, json);
     });
 })(this);
