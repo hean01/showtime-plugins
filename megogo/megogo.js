@@ -18,8 +18,6 @@
  */
 
 (function(plugin) {
-    var descriptor = getDescriptor();
-    var slogan = descriptor.synopsis;
     var logo = plugin.path + "logo.png";
     var PREFIX = 'megogo';
     var BASE_URL = 'http://megogo.net', API = '/api/v4';
@@ -56,8 +54,8 @@
         if (!params) params = '';
         var numOfTries = 0;
         while (numOfTries < 10) {
-            //showtime.print(BASE_URL + api + url + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1);
-            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + api + url + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
+            showtime.print(BASE_URL + api + url + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1);
+            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + api + url + encodeURI(params) + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
             //showtime.print(showtime.JSONEncode(json));
             if (json.result == 'ok') break;
             numOfTries++;
@@ -74,7 +72,7 @@
         }
 
         if (!logged) {
-            credentials = plugin.getAuthCredentials(slogan, text, showDialog);
+            credentials = plugin.getAuthCredentials(getDescriptor().synopsis, text, showDialog);
             if (credentials && credentials.username && credentials.password) {
                 var params = 'login=' + credentials.username + '&password=' + credentials.password + '&remember=1';
                 page.loading = true;
@@ -265,9 +263,9 @@
         }
     }
 
-    var service = plugin.createService(descriptor.id, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(getDescriptor().id, PREFIX + ":start", "video", true, logo);
 
-    var settings = plugin.createSettings(descriptor.id, logo, slogan);
+    var settings = plugin.createSettings(getDescriptor().id, logo, getDescriptor().synopsis);
     settings.createAction('megogo_login', 'Войти в megogo.net', function() {
         loginAndGetConfig(0, true);
     });
@@ -612,7 +610,7 @@
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, slogan);
+        setPageHeader(page, getDescriptor().synopsis);
         if (logged) {
              page.appendPassiveItem('video', '', {
                  title: new showtime.RichText(coloredStr(users.nickname ? users.nickname : users.email, orange) + ' (' + config.geo + ')'),
@@ -685,7 +683,7 @@
         page.loading = false;
     });
 
-    plugin.addSearcher(descriptor.id, logo, function(page, query) {
+    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
         getVideosList(page, API, '/search?', 'text=' + query, 20);
     });
 })(this);
