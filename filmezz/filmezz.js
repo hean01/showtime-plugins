@@ -211,6 +211,24 @@
                 }
                 page.error("Video was deleted. Sorry :(");
                 return;
+            case '1fichier (Letöltés)':
+                url = showtime.httpReq(checkLink(doc.headers.Location)).toString();
+                if (url.match(/red">([\S\s]*?)<\/div>/)) {
+                    page.error(url.match(/red">([\S\s]*?)<\/div>/)[1].replace(/<br\/>/g, '. '));
+                    return;
+                }
+                url = showtime.httpReq(url.match(/method="post" action="([\S\s]*?)"/)[1], {
+                     postdata: {
+                         op:1
+                     },
+                     noFollow: true
+                });
+                url = url.headers.Location;
+                break;
+            case 'Videoget (Divx+Letöltés)':
+                url = showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/class='btn btn-free' href='([\S\s]*?)'/);
+                url = showtime.httpReq(checkLink(url[1])).toString().match(/name="src" value="([\S\s]*?)"/)[1];
+                break;
             default:
                 page.error("Can't get the link. Sorry :(");
                 return;
