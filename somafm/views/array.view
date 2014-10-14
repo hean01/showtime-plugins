@@ -75,7 +75,7 @@ widget(container_y, {
 											.alpha = 0.7 + 0.3 * isFocused();
 										});
 
-										widget(icon, {
+										widget(image, {
 											     .alpha = 0.5;
       								     			     align: center;
 								     			     color: 1.0;			     
