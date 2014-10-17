@@ -114,7 +114,7 @@
                 }, query]
             }));
 
-            if (offset == 1)
+            if (offset == 1 && page.metadata)
                page.metadata.title += ' (' + c.MovieCount + ')';
 
             for (var i in c.MovieList) {
