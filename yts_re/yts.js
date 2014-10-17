@@ -18,10 +18,8 @@
  */
 
 (function(plugin) {
-    var pluginInfo = getDescriptor();
     var PREFIX = 'yts';
     var logo = plugin.path + "logo.png";
-    var slogan = pluginInfo.synopsis;
 
     var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
@@ -49,9 +47,13 @@
         "Horror", "Music", "Musical", "Mystery", "Romance", "Sci-Fi", "Short",
         "Sport", "Thriller", "War", "Western"];
 
-    var service = plugin.createService(pluginInfo.id, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(getDescriptor().id, PREFIX + ":start", "video", true, logo);
 
-    var settings = plugin.createSettings(pluginInfo.id, logo, pluginInfo.synopsis);
+    var settings = plugin.createSettings(getDescriptor().id, logo, getDescriptor().synopsis);
+
+    settings.createBool('enableMetadata', 'Enable metadata fetching', false, function(v) {
+        service.enableMetadata = v;
+    });
 
     settings.createMultiOpt("protocol", "Protocol", [
         ['https', 'https', true],
@@ -97,13 +99,111 @@
             service.order = v;
     });
 
-    plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, service.proto + service.baseurl + 'Genres');
+    function browseItems(page, query, count) {
+        var offset = 1;
+        page.entries = 0;
+
+        function loader() {
+            if (!offset) return false;
+            var c = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'list.json', {
+                args: [{
+                    quality: service.quality,
+                    limit: 40,
+                    set: offset,
+                    order: service.order
+                }, query]
+            }));
+
+            if (offset == 1)
+               page.metadata.title += ' (' + c.MovieCount + ')';
+
+            for (var i in c.MovieList) {
+                var mov = c.MovieList[i];
+                var item = page.appendItem(PREFIX + ':movie:' + mov.MovieID, "video", {
+                    title: new showtime.RichText(mov.MovieTitleClean + ' ' + coloredStr(mov.Quality, orange)),
+                    icon: mov.CoverImage,
+                    year: +mov.MovieYear,
+                    rating: mov.MovieRating * 10,
+                    genre: mov.Genre,
+                    description: new showtime.RichText(coloredStr('Seeds: ', orange) + coloredStr(mov.TorrentSeeds, green) + coloredStr(' Peers: ', orange) + coloredStr(mov.TorrentPeers, red) + ' ' +
+                        coloredStr('Uploaded: ', orange) + mov.DateUploaded +
+                        coloredStr(' By: ', orange) + mov.Uploader +
+                        coloredStr('\nAge rating: ', orange) + mov.AgeRating +
+                        coloredStr(' Downloaded: ', orange) + mov.Downloaded +
+                        coloredStr(' Size: ', orange) + mov.Size
+                    )
+
+                });
+                page.entries++;
+                if (count && page.entries > count) return offset = false;
+
+                if (service.enableMetadata) {
+                   item.bindVideoMetadata({
+                       imdb: mov.ImdbCode
+                   });
+                }
+            }
+            offset++;
+            return c.MovieList && c.MovieList.length > 0;
+        }
+        page.loading = true;
+        loader();
+        page.loading = false;
+        page.paginator = loader;
+    }
+
+    plugin.addURI(PREFIX + ":genre:(.*)", function(page, genre) {
+        setPageHeader(page, genre);
+        browseItems(page, {
+            genre: genre
+        });
+    });
+
+    plugin.addURI(PREFIX + ":genres", function(page, genre) {
+        setPageHeader(page, 'Genres');
         for(var i in genres) {
             var item = page.appendItem(PREFIX + ":genre:" + genres[i], "directory", {
                title: genres[i]
             });
         }
+    });
+
+    plugin.addURI(PREFIX + ":newest", function(page) {
+        setPageHeader(page, 'Newest');
+        browseItems(page, {
+            sort: 'peers'
+        });
+    });
+
+    plugin.addURI(PREFIX + ":start", function(page) {
+        setPageHeader(page, getDescriptor().synopsis);
+        page.appendItem(PREFIX + ":genres", "directory", {
+            title: 'Genres'
+        });
+
+        page.appendItem("", "separator", {
+            title: 'Newest'
+        });
+        browseItems(page, {
+            sort: 'date'
+        }, 7);
+        page.appendItem(PREFIX + ':newest', 'directory', {
+            title: 'More ►'
+        });
+
+        page.appendItem("", "separator", {
+            title: 'The most popular'
+        });
+        browseItems(page, {
+            sort: 'peers'
+        });
+    });
+
+    plugin.addURI(PREFIX + ":list:(.*)", function(page, query) {
+        setPageHeader(page, 'Filter by: ' + unescape(query));
+        browseItems(page, {
+            keywords: query
+        });
     });
 
     plugin.addURI(PREFIX + ":movie:(.*)", function(page, id) {
@@ -185,62 +285,9 @@
                 description: new showtime.RichText(json[i].CommentText)
             });
         }
-
-
-     });
-
-    function browseItems(page, query) {
-        var offset = 1;
-        page.entries = 0;
-
-        function loader() {
-            var c = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'list.json', {
-                args: [{
-                    quality: service.quality,
-                    limit: 40,
-                    set: offset,
-                    sort: service.sorting,
-                    order: service.order
-                }, query]
-            }));
-
-            for (var i in c.MovieList) {
-                var mov = c.MovieList[i];
-                var item = page.appendItem(PREFIX + ':movie:' + mov.MovieID, "video", {
-                    title: mov.MovieTitleClean,
-                    icon: mov.CoverImage
-                });
-                page.entries++;
-                item.bindVideoMetadata({
-                    imdb: mov.ImdbCode
-                });
-            }
-            offset++;
-            return c.MovieList && c.MovieList.length > 0;
-        }
-
-        page.loading = true;
-        loader();
-        page.loading = false;
-        page.paginator = loader;
-    }
-
-
-    plugin.addURI(PREFIX + ":list:(.*)", function(page, query) {
-        setPageHeader(page, 'Filter by: ' + unescape(query));
-        browseItems(page, {
-            keywords: query
-        });
     });
 
-    plugin.addURI(PREFIX + ":genre:(.*)", function(page, genre) {
-        setPageHeader(page, genre);
-        browseItems(page, {
-            genre: genre
-        });
-    });
-
-    plugin.addSearcher("yts.re", logo, function(page, query) {
+    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
         browseItems(page, {
             keywords: query
         });
