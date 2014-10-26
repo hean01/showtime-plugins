@@ -172,6 +172,14 @@
         }
     });
 
+    // Search IMDB ID by title
+    function getIMDBid(title) {
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        if (imdbid) return imdbid[1];
+        return imdbid;
+    };
+
     plugin.addURI(getDescriptor().id + ":getMovieInfoById:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
         var json = request(page, showtime.JSONEncode({
@@ -192,6 +200,7 @@
             var lnk = "videoparams:" + showtime.JSONEncode({
                 title: json.title_ru + (json.title_orig ? ' | ' + json.title_orig : '') + (json.named_streams[i].name && json.named_streams[i].name != json.title_ru ? ' - ' + json.named_streams[i].name : ''),
                 canonicalUrl: getDescriptor().id + ':getMovieInfoById:' + i + ":" + title,
+                imdbid: getIMDBid(title),
                 sources: [{
                     url: json.named_streams[i].url
                 }]

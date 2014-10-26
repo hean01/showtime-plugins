@@ -206,6 +206,14 @@
         });
     });
 
+    // Search IMDB ID by title
+    function getIMDBid(title) {
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        if (imdbid) return imdbid[1];
+        return imdbid;
+    };
+
     plugin.addURI(PREFIX + ":movie:(.*)", function(page, id) {
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'movie.json?id=' + id));
@@ -215,7 +223,18 @@
             link = service.proto + service.baseurl.replace('/api', '') + link[1];
         else
             link = json.TorrentUrl;
-        page.appendItem('torrent:video:' + link, "video", {
+
+        var vparams = "videoparams:" + showtime.JSONEncode({
+	    title: json.MovieTitle,
+	    canonicalUrl: PREFIX + ":movie:" + id,
+	    imdbid: getIMDBid(json.MovieTitle),
+	    no_fs_scan: true,
+	    sources: [{
+	        url: 'torrent:video:' + link
+	    }]
+	});
+
+        page.appendItem(vparams, "video", {
                title: new showtime.RichText(json.MovieTitleClean + colorStr(json.Size, blue)),
                year: +json.MovieYear,
                duration: json.MovieRuntime * 60,

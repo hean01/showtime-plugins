@@ -77,11 +77,10 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var origTitle = unescape(title).split(' | ');
-        origTitle[1] ? origTitle = origTitle[1] : origTitle = origTitle[0];
-        var resp = showtime.httpReq('http://www.imdb.com/find?q=' + encodeURIComponent(showtime.entityDecode(origTitle.replace(/ (HD)/,''))).toString()).toString();
-        var imdbid = resp.match(/class="findResult[\S\s]*?<a href="\/title\/([\S\s]*?)\/\?/);
-        return imdbid ? imdbid[1] : '';
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        if (imdbid) return imdbid[1];
+        return imdbid;
     };
 
     // Play links

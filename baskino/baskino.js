@@ -178,15 +178,9 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var resp = showtime.httpReq('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
-        var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
-        var imdbid = re.exec(resp);
-        if (imdbid) imdbid = imdbid[1];
-        else {
-            re = /http:\/\/<b>imdb<\/b>.com\/title\/(tt\d+).*?\//;
-            imdbid = re.exec(resp);
-            if (imdbid) imdbid = imdbid[1];
-        }
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        if (imdbid) return imdbid[1];
         return imdbid;
     };
 

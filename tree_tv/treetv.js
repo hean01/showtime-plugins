@@ -85,6 +85,14 @@
         return '<font color="' + color + '">' + str + '</font>';
     }
 
+    // Search IMDB ID by title
+    function getIMDBid(title) {
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        if (imdbid) return imdbid[1];
+        return imdbid;
+    };
+
     function videoparams(url, title) {
         var videoparams = {
             title: unescape(title),
@@ -92,6 +100,7 @@
                url: url,
                mimetype: 'video/quicktime'
             }],
+            imdbid: getIMDBid(title),
             canonicalUrl: PREFIX + ':' + unescape(title),
             no_fs_scan: true
         };
