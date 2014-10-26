@@ -93,14 +93,14 @@
         return imdbid;
     };
 
-    function videoparams(url, title) {
+    function videoparams(url, title, full_title) {
         var videoparams = {
             title: unescape(title),
             sources: [{
                url: url,
                mimetype: 'video/quicktime'
             }],
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(full_title),
             canonicalUrl: PREFIX + ':' + unescape(title),
             no_fs_scan: true
         };
@@ -134,7 +134,7 @@
            //    var regex = new RegExp(trim(match[2])+'[\\s\\S]*?class="downloads_link">([\\s\\S]*?)</a>');
            //    fileLink = links.match(regex)[1];
            //}
-           page.appendItem(videoparams(fileLink, escape(trim(match[2]))), 'video', {
+           page.appendItem(videoparams(fileLink, escape(trim(match[2])), title), 'video', {
                title: new showtime.RichText(trim(match[2]) + (trim(match[6]) ? colorStr(trim(match[6]), blue): '')),
                description: match[3]
            });
