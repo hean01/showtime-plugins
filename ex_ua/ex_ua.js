@@ -80,6 +80,10 @@
         }
     }
 
+    function checkLink(url) {
+        return url.substr(0, 4) == 'http' ? url : BASE_URL + url;
+    }
+
     function setPageHeader(page, title) {
         if (page.metadata) {
             page.metadata.title = title;
@@ -89,6 +93,14 @@
         page.contents = "items";
         page.loading = false;
     }
+
+    // Search IMDB ID by title
+    function getIMDBid(title) {
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        if (imdbid) return imdbid[1];
+        return imdbid;
+    };
 
     // Index page at URL
     plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
@@ -175,15 +187,19 @@
                 match = re.exec(doc);
                 if (match) {
                     while (match) {
-                        var v = "videoparams:" + showtime.JSONEncode({
-                            sources: [{
-                                url: BASE_URL + match[1]
-                            }],
-                            title: showtime.entityDecode(match[2]),
-			    canonicalUrl: match[1]
-                        });
-                        if (getType(match[2].split('.').pop()) != "video") v = BASE_URL + match[1];
-                        page.appendItem(v, getType(match[2].split('.').pop()), {
+                        var type = getType(match[2].split('.').pop());
+                        var v = BASE_URL + match[1];
+                        if (type == "video") {
+                            v = "videoparams:" + showtime.JSONEncode({
+                                sources: [{
+                                    url: BASE_URL + match[1]
+                                }],
+                                title: showtime.entityDecode(match[2]),
+			        canonicalUrl: match[1],
+                                imdbid: getIMDBid(page.metadata.title)
+                            });
+                        }
+                        page.appendItem(v, type, {
                             title: showtime.entityDecode(match[2]),
                             icon: logo
                         });
@@ -261,30 +277,30 @@
     plugin.addURI(PREFIX + ":start", function(page) {
         getDoc(page, BASE_URL);
         setPageHeader(page, doc.match(/<title>([\S\s]*?)<\/title>/)[1]);
-        var match = doc.match(/alt='EX'>[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)/);
+        var match = doc.match(/alt='EX'>[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)/);
 
         page.appendItem(PREFIX + ':index:/view/81708', 'directory', {
-            title: match[1],
-            icon: logo
-        });
-        page.appendItem(PREFIX + ':index:/view/81709', 'directory', {
             title: match[2],
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/view/81710', 'directory', {
+        page.appendItem(PREFIX + ':index:/view/81709', 'directory', {
             title: match[3],
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/view/81711', 'directory', {
+        page.appendItem(PREFIX + ':index:/view/81710', 'directory', {
             title: match[4],
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/view/81712', 'directory', {
+        page.appendItem(PREFIX + ':index:/view/81711', 'directory', {
             title: match[5],
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/view/81713', 'directory', {
+        page.appendItem(PREFIX + ':index:/view/81712', 'directory', {
             title: match[6],
+            icon: logo
+        });
+        page.appendItem(PREFIX + ':index:/view/81713', 'directory', {
+            title: match[7],
             icon: logo
         });
         page.appendItem(PREFIX + ':index:/top', 'directory', {
