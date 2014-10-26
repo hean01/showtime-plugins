@@ -18,7 +18,6 @@
  */
 
 (function(plugin) {
-    var plugin_info = plugin.getDescriptor();
     var PREFIX = 'baskino';
     var BASE_URL = 'http://baskino.com';
     var logo = plugin.path + "logo.png";
@@ -65,7 +64,7 @@
         return base64_decode(hash);
     }
 
-    const blue = "6699CC", orange = "FFA500";
+    var blue = "6699CC", orange = "FFA500";
 
     function colorStr(str, color) {
         return '<font color="' + color + '">(' + str + ')</font>';
@@ -667,7 +666,7 @@
 
     plugin.addURI(PREFIX + ":start", function(page) {
         var response = showtime.httpReq(BASE_URL).toString();
-        setPageHeader(page, plugin_info.synopsis);
+        setPageHeader(page, plugin.getDescriptor().synopsis);
 
         page.appendItem(PREFIX + ':movies', 'directory', {
             title: 'Фильмы',
