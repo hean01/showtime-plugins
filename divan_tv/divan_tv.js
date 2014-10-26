@@ -53,10 +53,10 @@
         }
 
         if (!logged) {
-            credentials = plugin.getAuthCredentials(getDescriptor().synopsis, text, showDialog);
+            credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, text, showDialog);
             if (credentials && credentials.username && credentials.password) {
                 page.loading = true;
-                var reply = showtime.httpReq(BASE_URL, {
+                var reply = '' + showtime.httpReq(BASE_URL, {
                     postdata: showtime.JSONEncode({
                         method: "loginUser",
                         Params: {
@@ -66,7 +66,7 @@
                             baseClientKey:baseClientKey
                         }
                     })
-                }).toString().replace(/\"/g, '');
+                }).replace(/\"/g, '');
                 page.loading = false;
                 if (reply) {
                     user = request(page, showtime.JSONEncode({
@@ -92,10 +92,10 @@
         }
     }
 
-    var service = plugin.createService(getDescriptor().id, getDescriptor().id + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "video", true, logo);
 
-    var settings = plugin.createSettings(getDescriptor().id, logo, getDescriptor().synopsis);
-    settings.createAction(getDescriptor().id+'_login', 'Войти в ' + getDescriptor().id, function() {
+    var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
+    settings.createAction(plugin.getDescriptor().id+'_login', 'Войти в ' + plugin.getDescriptor().id, function() {
         loginAndGetConfig(0, true);
     });
 
@@ -127,7 +127,7 @@
                     }
     }
 
-    plugin.addURI(getDescriptor().id + ":getChannelInfoById:(.*):(.*)", function(page, id, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":getChannelInfoById:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
         var json = request(page, showtime.JSONEncode({
                         method: "getChannelInfoById",
@@ -174,13 +174,13 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title)))+'')+'';
         var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
         if (imdbid) return imdbid[1];
         return imdbid;
     };
 
-    plugin.addURI(getDescriptor().id + ":getMovieInfoById:(.*):(.*)", function(page, id, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":getMovieInfoById:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
         var json = request(page, showtime.JSONEncode({
                         method: "getMovieInfoById",
@@ -199,7 +199,7 @@
         for (var i in json.named_streams) {
             var lnk = "videoparams:" + showtime.JSONEncode({
                 title: json.title_ru + (json.title_orig ? ' | ' + json.title_orig : '') + (json.named_streams[i].name && json.named_streams[i].name != json.title_ru ? ' - ' + json.named_streams[i].name : ''),
-                canonicalUrl: getDescriptor().id + ':getMovieInfoById:' + i + ":" + title,
+                canonicalUrl: plugin.getDescriptor().id + ':getMovieInfoById:' + i + ":" + title,
                 imdbid: getIMDBid(title),
                 sources: [{
                     url: json.named_streams[i].url
@@ -236,7 +236,7 @@
         }
     });
 
-    plugin.addURI(getDescriptor().id + ":getRadioInfoById:(.*):(.*)", function(page, id, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":getRadioInfoById:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, unescape(title));
         var json = request(page, showtime.JSONEncode({
                         method: "getRadioInfoById",
@@ -257,7 +257,7 @@
         }
     });
 
-    plugin.addURI(getDescriptor().id + ":paginator:(.*):(.*):(.*):(.*)", function(page, request, scroller, parser, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":paginator:(.*):(.*):(.*):(.*)", function(page, request, scroller, parser, title) {
         setPageHeader(page, unescape(title));
         var json, jsonPointer, totalItems, counter = 0, offset = 0, tryToSearch = true;
         function loader() {
@@ -307,7 +307,7 @@
             page.loading = false;
 
             for (i in jsonPointer) {
-                page.appendItem(getDescriptor().id + ':' + parser + ':' + jsonPointer[i].id + ':' + escape(jsonPointer[i].title_ru ? jsonPointer[i].title_ru : jsonPointer[i].name), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ':' + parser + ':' + jsonPointer[i].id + ':' + escape(jsonPointer[i].title_ru ? jsonPointer[i].title_ru : jsonPointer[i].name), 'video', {
                     title: new showtime.RichText((jsonPointer[i].free ? coloredStr('►', green) : '') + (jsonPointer[i].title_ru ? jsonPointer[i].title_ru : jsonPointer[i].name)),
                     icon: jsonPointer[i].image,
                     genre: jsonPointer[i].category_names,
@@ -336,7 +336,7 @@
         return result;
     }
 
-    plugin.addURI(getDescriptor().id + ":epg", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":epg", function(page) {
         setPageHeader(page, 'ТВ гид');
         page.loading = true;
 
@@ -344,6 +344,8 @@
         var now = showtime.httpReq("http://google.com", {
             method: 'HEAD'
         }).headers.Date;
+showtime.print(now);
+showtime.print(new Date(now));
         showtime.trace('Google time: '+now + ', Local time: '+new Date(now));
         now = new Date(now);
         // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
@@ -387,7 +389,7 @@
         for (var i in epg)
             if (epg[i].current_program) {
                 var chName = getChNameByID(i);
-                page.appendItem(getDescriptor().id + ":getChannelInfoById:" + i + ':' + escape(chName), 'file', {
+                page.appendItem(plugin.getDescriptor().id + ":getChannelInfoById:" + i + ':' + escape(chName), 'file', {
                     title: new showtime.RichText(chName + ' ' + getTimePeriod(epg[i].current_program.start) + ' - ' +
                         getTimePeriod(epg[i].current_program.stop) + '  ' +
                         coloredStr(epg[i].current_program.title_ru, orange))
@@ -397,56 +399,56 @@
         page.loading = false;
     });
 
-    plugin.addURI(getDescriptor().id + ":categories", function(page) {
-        setPageHeader(page, getDescriptor().synopsis);
+    plugin.addURI(plugin.getDescriptor().id + ":categories", function(page) {
+        setPageHeader(page, plugin.getDescriptor().synopsis);
 
         page.appendItem("", "separator", {
             title: 'ТВ'
         });
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredChannelsAndNewFilters:getFilteredChannels:getChannelInfoById:'+escape('ТВ каналы'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredChannelsAndNewFilters:getFilteredChannels:getChannelInfoById:'+escape('ТВ каналы'), 'directory', {
             title: 'ТВ каналы'
         });
 
         page.appendItem("", "separator", {
             title: 'Видео'
         });
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredFilmsAndNewFilters:getFilteredFilms:getMovieInfoById:'+escape('Фильмы'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredFilmsAndNewFilters:getFilteredFilms:getMovieInfoById:'+escape('Фильмы'), 'directory', {
             title: 'Фильмы'
         });
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredCartoonsAndNewFilters:getFilteredCartoons:getMovieInfoById:'+escape('Мультфильмы'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredCartoonsAndNewFilters:getFilteredCartoons:getMovieInfoById:'+escape('Мультфильмы'), 'directory', {
             title: 'Мультфильмы'
         });
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredVideosAndNewFilters:getFilteredVideos:getMovieInfoById:'+escape('Передачи'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredVideosAndNewFilters:getFilteredVideos:getMovieInfoById:'+escape('Передачи'), 'directory', {
             title: 'Передачи'
         });
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredFestivalFilmsAndNewFilters:getFilteredFestivalFilms:getMovieInfoById:'+escape('Короткометражки'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredFestivalFilmsAndNewFilters:getFilteredFestivalFilms:getMovieInfoById:'+escape('Короткометражки'), 'directory', {
             title: 'Короткометражки'
         });
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredSportAndNewFilters:getFilteredSport:getMovieInfoById:'+escape('Спорт'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredSportAndNewFilters:getFilteredSport:getMovieInfoById:'+escape('Спорт'), 'directory', {
             title: 'Спорт'
         });
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredEducationVideoAndNewFilters:getFilteredEducationVideo:getMovieInfoById:'+escape('Обучающее видео'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredEducationVideoAndNewFilters:getFilteredEducationVideo:getMovieInfoById:'+escape('Обучающее видео'), 'directory', {
             title: 'Обучающее видео'
         });
 
         page.appendItem("", "separator", {
             title: 'Музыка'
         });
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredRadioAndNewFilters:getFilteredRadio:getRadioInfoById:'+escape('Радио'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredRadioAndNewFilters:getFilteredRadio:getRadioInfoById:'+escape('Радио'), 'directory', {
             title: 'Радио'
         });
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredMusicAlbumsAndNewFilters:getFilteredMusicAlbums:getMovieInfoById:'+escape('Альбомы'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredMusicAlbumsAndNewFilters:getFilteredMusicAlbums:getMovieInfoById:'+escape('Альбомы'), 'directory', {
             title: 'Альбомы'
         });
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredMusicVideosAndNewFilters:getFilteredMusicVideos:getMovieInfoById:'+escape('Клипы'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredMusicVideosAndNewFilters:getFilteredMusicVideos:getMovieInfoById:'+escape('Клипы'), 'directory', {
             title: 'Клипы'
         });
 
 
     });
 
-    plugin.addURI(getDescriptor().id + ":start", function(page) {
-        setPageHeader(page, getDescriptor().synopsis);
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
+        setPageHeader(page, plugin.getDescriptor().synopsis);
         if (logged) {
              page.appendPassiveItem('video', '', {
                  title: new showtime.RichText(coloredStr(user.email ? user.email : user.login, orange) + ' (' + countryCode.replace(/\"/g, '') + ')'),
@@ -472,17 +474,17 @@
                     baseClientKey:baseClientKey
                 }
             })
-        }).toString();
+        }) + '';
 
         if (countryCode.match(/error/)) {
             page.error("Sorry, can't run plugin on this device :(");
             return;
         }
 
-        page.appendItem(getDescriptor().id + ':epg', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':epg', 'directory', {
             title: 'ТВ гид'
         });
-        page.appendItem(getDescriptor().id + ':categories', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':categories', 'directory', {
             title: 'Категории'
         });
 
@@ -502,12 +504,12 @@
             title: 'Популярные ТВ каналы'
         });
         for (var i in json) {
-            page.appendItem(getDescriptor().id + ':getChannelInfoById:' + json[i].id + ':' + escape(json[i].name), 'video', {
+            page.appendItem(plugin.getDescriptor().id + ':getChannelInfoById:' + json[i].id + ':' + escape(json[i].name), 'video', {
                 title: json[i].name,
                 icon: json[i].image
             });
         }
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredChannelsAndNewFilters:getFilteredChannels:getChannelInfoById:'+escape('ТВ каналы'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredChannelsAndNewFilters:getFilteredChannels:getChannelInfoById:'+escape('ТВ каналы'), 'directory', {
             title: 'Все ►'
         });
 
@@ -526,7 +528,7 @@
             title: 'Новые фильмы'
         });
         for (var i in json) {
-            page.appendItem(getDescriptor().id + ':getMovieInfoById:' + json[i].id + ':' + escape(json[i].title_ru), 'video', {
+            page.appendItem(plugin.getDescriptor().id + ':getMovieInfoById:' + json[i].id + ':' + escape(json[i].title_ru), 'video', {
                 title: json[i].title_ru,
                 year: +json[i].year,
                 genre: json[i].category_name,
@@ -535,7 +537,7 @@
                 description: new showtime.RichText(coloredStr('Страна: ', orange) + json[i].country)
             });
         }
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredFilmsAndNewFilters:getFilteredFilms:getMovieInfoById:'+escape('Фильмы'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredFilmsAndNewFilters:getFilteredFilms:getMovieInfoById:'+escape('Фильмы'), 'directory', {
             title: 'Все ►'
         });
 
@@ -553,7 +555,7 @@
             title: 'Популярные мультфильмы'
         });
         for (var i in json) {
-            page.appendItem(getDescriptor().id + ':getMovieInfoById:' + json[i].id + ':' + escape(json[i].title_ru), 'video', {
+            page.appendItem(plugin.getDescriptor().id + ':getMovieInfoById:' + json[i].id + ':' + escape(json[i].title_ru), 'video', {
                 title: json[i].title_ru,
                 year: +json[i].year,
                 genre: json[i].category_name,
@@ -562,7 +564,7 @@
                 description: new showtime.RichText(coloredStr('Страна: ', orange) + json[i].country)
             });
         }
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredCartoonsAndNewFilters:getFilteredCartoons:getMovieInfoById:'+escape('Мультфильмы'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredCartoonsAndNewFilters:getFilteredCartoons:getMovieInfoById:'+escape('Мультфильмы'), 'directory', {
             title: 'Все ►'
         });
 
@@ -579,18 +581,18 @@
             title: 'Популярные радиостанции'
         });
         for (var i in json) {
-            page.appendItem(getDescriptor().id + ':getRadioInfoById:' + json[i].id + ':' + escape(json[i].name), 'video', {
+            page.appendItem(plugin.getDescriptor().id + ':getRadioInfoById:' + json[i].id + ':' + escape(json[i].name), 'video', {
                 title: json[i].name,
                 genre: json[i].category_name,
                 rating: json[i].rating * 10,
                 icon: json[i].image
             });
         }
-        page.appendItem(getDescriptor().id + ':paginator:getFilteredRadioAndNewFilters:getFilteredRadio:getRadioInfoById:'+escape('Радио'), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':paginator:getFilteredRadioAndNewFilters:getFilteredRadio:getRadioInfoById:'+escape('Радио'), 'directory', {
             title: 'Все ►'
         });
     });
-    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
         if (!logged) loginAndGetConfig(page, false);
         var totalItems, offset = 0, tryToSearch = true;
         page.entries = 0;
@@ -619,7 +621,7 @@
                     parser = 'getChannelInfoById';
                 else showtime.print(showtime.JSONEncode(json.items[i]));
 
-                page.appendItem(getDescriptor().id + ':' + parser + ':' + json.items[i].id + ':' + (json.items[i].title_ru ? escape(json.items[i].title_ru) : escape(json.items[i].name)), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ':' + parser + ':' + json.items[i].id + ':' + (json.items[i].title_ru ? escape(json.items[i].title_ru) : escape(json.items[i].name)), 'video', {
                     title: (json.items[i].title_ru ? json.items[i].title_ru : json.items[i].name),
                     icon: json.items[i].image,
                     genre: json.items[i].category_name + (json.items[i].module_name ? ', ' + json.items[i].module_name : ''),

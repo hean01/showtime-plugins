@@ -18,7 +18,6 @@
  */
 
 (function(plugin) {
-    var descriptor = getDescriptor();
     var PREFIX = 'docuim';
     var BASE_URL = 'http://docu.im';
     var logo = plugin.path + "logo.png";
@@ -97,11 +96,11 @@
         return base64_decode(hash);
     }
 
-    var service = plugin.createService(descriptor.title, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().title, PREFIX + ":start", "video", true, logo);
 
     // Index best
     plugin.addURI(PREFIX + ":best", function(page) {
-        setPageHeader(page, descriptor.title + ' - Лучшее');
+        setPageHeader(page, plugin.getDescriptor().title + ' - Лучшее');
         page.loading = true;
         var response = showtime.httpReq(BASE_URL + '/best');
         page.loading = false;
@@ -110,7 +109,7 @@
 
     // Index new
     plugin.addURI(PREFIX + ":latest", function(page) {
-        setPageHeader(page, descriptor.title + ' - Новинки');
+        setPageHeader(page, plugin.getDescriptor().title + ' - Новинки');
         page.loading = true;
         var response = showtime.httpReq(BASE_URL + '/latest');
         page.loading = false;
@@ -119,7 +118,7 @@
 
     // Index page
     plugin.addURI(PREFIX + ":indexPage:(.*)", function(page, url) {
-        var response = showtime.httpReq(BASE_URL + url).toString();
+        var response = showtime.httpReq(BASE_URL + url) + '';
         setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1]);
 
         var fromPage = 2, tryToSearch = true;
@@ -129,7 +128,7 @@
             addItems(page, response);
             if (response.match(/<li class="last hidden">/)) return tryToSearch = false;
             page.loading = true;
-            response = showtime.httpReq(BASE_URL + url + '/page/' + fromPage++).toString();
+            response = showtime.httpReq(BASE_URL + url + '/page/' + fromPage++) + '';
             page.loading = false;
             return true;
         };
@@ -139,7 +138,7 @@
 
     // Index nowplay
     plugin.addURI(PREFIX + ":nowplay", function(page) {
-        setPageHeader(page, descriptor.title + ' - Фильмы и сериалы которые смотрят сейчас');
+        setPageHeader(page, plugin.getDescriptor().title + ' - Фильмы и сериалы которые смотрят сейчас');
         page.loading = true;
         var response = showtime.httpReq(BASE_URL + '/nowplay');
         page.loading = false;
@@ -162,7 +161,7 @@
     plugin.addURI(PREFIX + ":index:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
-        var response = showtime.httpReq(BASE_URL + unescape(url)).toString();
+        var response = showtime.httpReq(BASE_URL + unescape(url)) + '';
         page.loading = false;
         var match
         while (!match) match = getRegex().exec(response);
@@ -170,7 +169,8 @@
         var icon = match[1];
         var description = new showtime.RichText(getDescription(match));
         var movieID = unescape(url).match(/[\S\s]*?([\d+^\?]+)/i)[1];
-        if (response.match(/<div id='season-switch-items'>/)) { // serials
+//print(Duktape.info(response));
+        if (showtime.entityDecode(response).match(/<div id='season-switch-items'>/)) { // serials
             var re = /<a class='season'>([\S\s]*?)<\/a>/g;
             match = re.exec(response);
 
@@ -180,7 +180,7 @@
                 page.loading = true;
                 var json = showtime.JSONDecode(unhash(showtime.httpReq(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=' + season)));
                 page.loading = false;
-                var re2 = /audioIndex={(.*?)}/;
+                var re2 = /audioIndex=\{(.*?)\}/;
                 if (json.playlist[0] == null) {
                     page.error("Видео временно не доступно");
                     return;
@@ -199,7 +199,7 @@
                         if (trim(links[i]) != '') link = links[i];
                         var videoparams = {
                             sources: [{
-                                url: json.playlist[n].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
+                                url: json.playlist[n].file.replace(/\[(.*?)\]/, link).replace(/audioIndex=\{(.*?)\}/, "audioIndex=" + tracks[i])
                             }],
                             title: seasonName + ' - ' + json.playlist[n].comment,
                             canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[n].id + ':' + i,
@@ -227,7 +227,7 @@
             page.loading = true;
             var json = showtime.JSONDecode(unhash(showtime.httpReq(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=1')));
             page.loading = false;
-            re = /audioIndex={(.*?)}/;
+            re = /audioIndex=\{(.*?)\}/;
             var tracks = re.exec(json.playlist[0].file)[1].split(';');
             re = /\[(.*?)\]/;
             var links = re.exec(json.playlist[0].file)[1].split(',');
@@ -240,7 +240,7 @@
                 if (trim(links[i]) != '') link = links[i];
                 var videoparams = {
                     sources: [{
-                        url: json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/audioIndex={(.*?)}/, "audioIndex=" + tracks[i])
+                        url: json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/audioIndex=\{(.*?)\}/, "audioIndex=" + tracks[i])
                     }],
                     title: unescape(title),
                     canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[0].id + ':' + i,
@@ -270,7 +270,7 @@
             title: 'Новинки',
             icon: logo
         });
-        setPageHeader(page, descriptor.synopsis);
+        setPageHeader(page, plugin.getDescriptor().synopsis);
         page.appendItem(PREFIX + ':indexPage:/movies', 'directory', {
             title: 'Фильмы',
             icon: logo
@@ -375,7 +375,7 @@
         };
     }
 
-    plugin.addSearcher(descriptor.title, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
         page.entries = 0;
         var fromPage = 1, tryToSearch = true;
 

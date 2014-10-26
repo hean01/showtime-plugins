@@ -7,7 +7,7 @@
 	"version": "0.5.14",
         "file": "divan_tv.js",
 	"showtimeVersion": "4.1.397",
-	"type": "javascript", 
+	"type": "ecmascript",
 	"id": "divan.tv",
 	"icon": "logo.png",
 	"category": "video"
