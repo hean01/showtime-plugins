@@ -127,7 +127,11 @@
                 var response = showtime.httpReq((url.substr(0, 4) == 'http' ? '' : BASE_URL) + unescape(url) + "/page/" + p + "/").toString();
             page.loading = false;
             if (!titleIsSet) {
-                setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1].replace(' - смотреть онлайн бесплатно в хорошем качестве', ''));
+                var title = response.match(/найдено(.*?)ответов/);
+                if (title && page.metadata)
+                    setPageHeader(page, page.metadata.title + ' (' + trim(title[1]) + ')');
+                else
+                    setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1].replace(' - смотреть онлайн бесплатно в хорошем качестве', ''));
                 titleIsSet = true;
             }
             // 1-link, 2-title, 3-icon, 4-quality, 5-full title,

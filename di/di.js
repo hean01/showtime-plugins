@@ -33,7 +33,7 @@
 	page.metadata.logo = logo;
 	page.metadata.title = pInfo.title;
         page.loading = true;
-	var doc = showtime.httpReq(BASE_URL).toString().match(/\.Channels = ([\S\s]*?)<\/script>/)[1];
+	var doc = showtime.httpReq(BASE_URL).toString().match(/\.Channels = ([\S\s]*?);/)[1];
         page.loading = false;
         var json = showtime.JSONDecode(doc);
         for (var i in json) {
