@@ -56,7 +56,7 @@
             credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, text, showDialog);
             if (credentials && credentials.username && credentials.password) {
                 page.loading = true;
-                var reply = '' + showtime.httpReq(BASE_URL, {
+                var reply = showtime.httpReq(BASE_URL, {
                     postdata: showtime.JSONEncode({
                         method: "loginUser",
                         Params: {
@@ -66,7 +66,7 @@
                             baseClientKey:baseClientKey
                         }
                     })
-                }).replace(/\"/g, '');
+                }).toString().replace(/\"/g, '');
                 page.loading = false;
                 if (reply) {
                     user = request(page, showtime.JSONEncode({

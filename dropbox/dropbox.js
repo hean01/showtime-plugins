@@ -27,11 +27,11 @@
         return '<font color="' + color + '"> (' + str + ')</font>';
     }
 
-    plugin.createService(getDescriptor().title, 'dropbox:browse:/', 'other', true, logo);
+    plugin.createService(plugin.getDescriptor().title, 'dropbox:browse:/', 'other', true, logo);
   
     var store = plugin.createStore('authinfo', true);
 
-    var settings = plugin.createSettings(getDescriptor().title, logo, getDescriptor().synopsis);
+    var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().synopsis);
     settings.createAction('clearAuth', 'Unlink from Dropbox...', function() {
         store.access_token = '';
         showtime.notify('Showtime is unlinked from Dropbox', 3, '');
@@ -149,7 +149,7 @@
         }
     }
 
-    plugin.addSearcher(getDescriptor().title, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
         page.entries = 0;
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(API + 'search/auto/', {

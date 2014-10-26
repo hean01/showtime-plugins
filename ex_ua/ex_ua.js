@@ -22,9 +22,9 @@
     var BASE_URL = 'http://ex.ua';
     var logo = plugin.path + "logo.png";
     var doc;
-    var service = plugin.createService(getDescriptor().id, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().id, PREFIX + ":start", "video", true, logo);
 
-    var settings = plugin.createSettings(getDescriptor().id, logo, getDescriptor().synopsis);
+    var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
     settings.createDivider('Settings');
     settings.createMultiOpt("lang", "Language", [
         ['en', 'english', true],
@@ -328,7 +328,7 @@
         page.loading = false;
     }
 
-    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
         page.entries = 0;
         var tryToSearch = true;
         var url = '/search?s=' + query.replace(/\s/g, '\+');
