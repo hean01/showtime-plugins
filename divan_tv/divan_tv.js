@@ -344,12 +344,11 @@
         var now = showtime.httpReq("http://google.com", {
             method: 'HEAD'
         }).headers.Date;
-showtime.print(now);
-showtime.print(new Date(now));
-        showtime.trace('Google time: '+now + ', Local time: '+new Date(now));
+        showtime.trace('Google time: ' + now + ', Local time: ' + new Date(now) + ', Offset: ' + now.getTimezoneOffset());
         now = new Date(now);
+
         // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
-        var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - 10800);
+        var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 + now.getTimezoneOffset() * 60);
         var json = request(page, showtime.JSONEncode({
             method: 'getFilteredChannelsAndNewFilters',
             Params: {

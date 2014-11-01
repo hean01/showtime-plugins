@@ -38,7 +38,7 @@
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
     }
 
-    const blue = "6699CC", orange = "FFA500";
+    var blue = "6699CC", orange = "FFA500";
 
     function colorStr(str, color) {
         return '<font color="' + color + '"> (' + str + ')</font>';

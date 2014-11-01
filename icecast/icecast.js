@@ -61,10 +61,10 @@
     }
 
     // create plugin service
-    plugin.createService("icecast", getDescriptor().id + ":start", "audio", true, logo);
+    plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "audio", true, logo);
 
     // create settins
-    var settings = plugin.createSettings("icecast", logo, getDescriptor().synopsis);
+    var settings = plugin.createSettings("icecast", logo, plugin.getDescriptor().synopsis);
 
     settings.createAction("cleanFavorites", "Clean My Favorites", function () {
         store.list = "[]";
@@ -76,7 +76,7 @@
         return showtime.entityDecode(str).replace(/^\s+|\s+$/g,"");
     }
 
-    const blue = "6699CC", orange = "FFA500";
+    var blue = "6699CC", orange = "FFA500";
 
     function colorStr(str, color) {
         return '<font color="' + color + '"> (' + str + ')</font>';
@@ -181,7 +181,7 @@
         }
 
         var pos = 0;
-	for each (item in list) {
+	for (var item in list) {
 	    var itemmd = showtime.JSONDecode(item);
 
 	    var item = page.appendItem("icecast:"+itemmd.url, "station", {
@@ -208,20 +208,20 @@
     }
 
     // Favorites
-    plugin.addURI(getDescriptor().id + ":favorites", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":favorites", function(page) {
         setPageHeader(page, "My Favorites");
         fill_fav(page);
     });
 
     // Filter
-    plugin.addURI(getDescriptor().id + ":filter:(.*):(.*)", function(page, url, title) {
-        setPageHeader(page, getDescriptor().synopsis + " - " + title);
+    plugin.addURI(plugin.getDescriptor().id + ":filter:(.*):(.*)", function(page, url, title) {
+        setPageHeader(page, plugin.getDescriptor().synopsis + " - " + title);
 	scrape_page(page, BASE_URL + url);
     });
 
     // Genres
     var genres;
-    plugin.addURI(getDescriptor().id + ":genres", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":genres", function(page) {
         setStdPageHeader(page, "Genres");
         // 1-link, 2-title
         var re = /<span class="context">[\S\s]*?<\/span><a href="([\S\s]*?)"[\S\s]*?title="[\S\s]*?">([\S\s]*?)<\/a>/g;
@@ -231,7 +231,7 @@
             });
             var rec = re.exec(genres[1])
             while (rec) {
-	        page.appendItem(getDescriptor().id + ":filter:" + rec[1] + ":" + rec[2], "directory", {
+	        page.appendItem(plugin.getDescriptor().id + ":filter:" + rec[1] + ":" + rec[2], "directory", {
 		    title: rec[2]
 	        });
                 rec = re.exec(genres[1]);
@@ -241,7 +241,7 @@
 
     // Formats
     var formats;
-    plugin.addURI(getDescriptor().id + ":formats", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":formats", function(page) {
         setStdPageHeader(page, "Formats");
         // 1-link, 2-title
         var re = /<li><a href="([\S\s]*?)">([\S\s]*?)<\/a>/g;
@@ -251,7 +251,7 @@
             });
             var rec = re.exec(formats[1])
             while (rec) {
-	        page.appendItem(getDescriptor().id + ":filter:" + rec[1] + ":" + rec[2], "directory", {
+	        page.appendItem(plugin.getDescriptor().id + ":filter:" + rec[1] + ":" + rec[2], "directory", {
 		    title: rec[2]
 	        });
                 rec = re.exec(formats[1]);
@@ -260,9 +260,9 @@
     });
 
     // Start page
-    plugin.addURI(getDescriptor().id + ":start", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
 	page.metadata.logo = logo;
-	page.metadata.title = getDescriptor().synopsis;
+	page.metadata.title = plugin.getDescriptor().synopsis;
 	page.type = "directory";
 	page.contents = "items";
 	page.loading = false;
@@ -289,17 +289,17 @@
 
         // Genres
         genres = resp.match(/<div id="search-genre">([\S\s]*?)<\/ul>/);
-	page.appendItem(getDescriptor().id + ":genres", "directory", {
+	page.appendItem(plugin.getDescriptor().id + ":genres", "directory", {
 	    title: "Genres"
 	});
 
         // Formats
         formats = resp.match(/<div id="search-format">([\S\s]*?)<\/ul>/);
-	page.appendItem(getDescriptor().id + ":formats", "directory", {
+	page.appendItem(plugin.getDescriptor().id + ":formats", "directory", {
 	    title: "Formats"
 	});
 
-	page.appendItem(getDescriptor().id + ":favorites", "directory", {
+	page.appendItem(plugin.getDescriptor().id + ":favorites", "directory", {
 	    title: "My Favorites"
 	});
 

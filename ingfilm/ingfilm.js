@@ -20,7 +20,6 @@
 (function(plugin) {
     var PREFIX = 'ingfilm';
     var BASE_URL = 'http://ingfilm.ru';
-    var slogan = getDescriptor().synopsis;
     var logo = plugin.path + "logo.png";
 
     function trim(s) {
@@ -73,7 +72,7 @@
         page.loading = false;
     }
 
-    var service = plugin.createService(getDescriptor().id, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().id, PREFIX + ":start", "video", true, logo);
 
     // Search IMDB ID by title
     function getIMDBid(title) {
@@ -205,7 +204,7 @@
     });
 
     plugin.addURI(PREFIX + ":showGenres:(.*)", function(page, htmlBlock) {
-        setPageHeader(page, slogan);
+        setPageHeader(page, plugin.getDescriptor().synopsis);
         htmlBlock = unescape(htmlBlock);
 	var re = /<a href="([\s\S]*?)">([\s\S]*?)<\/a>/g;
         var match = re.exec(htmlBlock);
@@ -261,10 +260,10 @@
     }
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, slogan);
+        setPageHeader(page, plugin.getDescriptor().synopsis);
         var showAuthCredentials = false;
         while (1) {
-            var credentials = plugin.getAuthCredentials(slogan, "Login required", showAuthCredentials);
+            var credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, "Login required", showAuthCredentials);
             if (credentials.rejected) return; //rejected by user
             if (credentials) {
                 page.loading = true;
@@ -332,8 +331,8 @@
         page.paginator = loader;
     });
 
-    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
-        var credentials = plugin.getAuthCredentials(slogan, "Login required", false);
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
+        var credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, "Login required", false);
         if (credentials) {
              v = showtime.httpReq(BASE_URL, {
                  postdata: {

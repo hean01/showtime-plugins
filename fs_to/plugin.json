@@ -6,7 +6,7 @@
 	"synopsis": "FS.TO: Рекомендательная медиа сеть",
 	"version": "1.1.1", "file": "fs_to.js",
 	"showtimeVersion": "4.1.273",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "fs.to",
 	"icon": "logo.jpg",
 	"category": "video"
