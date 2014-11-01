@@ -344,7 +344,7 @@
         var now = showtime.httpReq("http://google.com", {
             method: 'HEAD'
         }).headers.Date;
-        showtime.trace('Google time: ' + now + ', Local time: ' + new Date(now) + ', Offset: ' + now.getTimezoneOffset());
+        showtime.trace('Google time: ' + now + ', Local time: ' + new Date(now) + ', Offset: ' + new Date(now).getTimezoneOffset());
         now = new Date(now);
 
         // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
