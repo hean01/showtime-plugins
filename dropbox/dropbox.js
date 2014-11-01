@@ -27,6 +27,10 @@
         return '<font color="' + color + '"> (' + str + ')</font>';
     }
 
+    function coloredStr(str, color) {
+        return '<font color="' + color + '">' + str + '</font>';
+    }
+
     plugin.createService(plugin.getDescriptor().title, 'dropbox:browse:/', 'other', true, logo);
   
     var store = plugin.createStore('authinfo', true);
@@ -63,6 +67,13 @@
         }
         page.redirect('dropbox:browse:/');
     });
+
+    function bytesToSize(bytes) {
+        var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        if (bytes == 0) return '0 Byte';
+        var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+        return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+    };
 
     plugin.addURI("dropbox:browse:(.*)", function(page, path) {
         page.type = "directory";
@@ -113,8 +124,25 @@
             page.error("Browsing non directory item");
             return;
         }
-        var title = doc.path.split('/')
-        page.metadata.title = doc.path != '/' ? title[title.length-1] : "Dropbox Root";
+        var title = doc.path.split('/');
+        if (doc.path == '/') {
+            page.metadata.title = 'Dropbox Root';
+            var json = showtime.JSONDecode(showtime.httpReq(API + 'account/info?access_token=' + store.access_token));
+            page.appendPassiveItem('video', '', {
+                title: new showtime.RichText(coloredStr('Account info', orange)),
+                description: new showtime.RichText(
+                    coloredStr('\nDisplay name: ', orange) + json.display_name +
+                    coloredStr('\nEmail: ', orange) + json.email +
+                    coloredStr('\nCountry: ', orange) + json.country +
+                    coloredStr('\nQuota: ', orange) + bytesToSize(json.quota_info.quota) +
+                    coloredStr('\nUsed: ', orange) + bytesToSize(json.quota_info.normal) +
+                    coloredStr('\nShared: ', orange) + bytesToSize(json.quota_info.shared) +
+                    coloredStr('\nUID: ', orange) + json.uid +
+                    coloredStr('\nReferral link: ', orange) + json.referral_link
+                )
+            });
+        } else
+            page.metadata.title = title[title.length-1];
         ls(page, doc.contents);
     });
 
