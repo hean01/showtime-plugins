@@ -340,15 +340,6 @@
         setPageHeader(page, 'ТВ гид');
         page.loading = true;
 
-        // As we don't have reliable timestamp locally, let's get it from google.com
-        var now = showtime.httpReq("http://google.com", {
-            method: 'HEAD'
-        }).headers.Date;
-        showtime.trace('Google time: ' + now + ', Local time: ' + new Date(now) + ', Offset: ' + new Date(now).getTimezoneOffset());
-        now = new Date(now);
-
-        // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
-        var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 + now.getTimezoneOffset() * 60);
         var json = request(page, showtime.JSONEncode({
             method: 'getFilteredChannelsAndNewFilters',
             Params: {
@@ -366,6 +357,17 @@
         for (var i in json.channels)
             channelIds.push(json.channels[i].id);
 
+        // As we don't have reliable timestamp locally, let's get it from google.com
+        var now = showtime.httpReq("http://google.com", {
+            method: 'HEAD'
+        }).headers.Date;
+        showtime.trace('Google time: ' + now + ', Local time: ' + new Date(now));
+        now = new Date(now);
+
+        // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
+        if (!service.offset) service.offset = 10800;
+        var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - service.offset);
+
         var epg = request(page, showtime.JSONEncode({
             method: 'getEpgByChannelIdsAndDay',
             Params: {
@@ -374,6 +376,18 @@
                 baseClientKey:baseClientKey
             }
         }));
+        if (!showtime.JSONEncode(epg)) {
+            service.offset = 7200;
+            day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - service.offset);
+            var epg = request(page, showtime.JSONEncode({
+                method: 'getEpgByChannelIdsAndDay',
+                Params: {
+                    channelIds:channelIds,
+                    day:day,
+                    baseClientKey:baseClientKey
+                }
+            }));
+        }
 
         function getChNameByID(id) {
             var name = '';
