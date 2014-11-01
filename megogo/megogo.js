@@ -54,7 +54,7 @@
         if (!params) params = '';
         var numOfTries = 0;
         while (numOfTries < 10) {
-            showtime.print(BASE_URL + api + url + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1);
+            //showtime.print(BASE_URL + api + url + params + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1);
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + api + url + encodeURI(params) + '&sign=' + showtime.md5digest(params.replace(/\&/g, '') + k2) + k1));
             //showtime.print(showtime.JSONEncode(json));
             if (json.result == 'ok') break;
@@ -72,7 +72,7 @@
         }
 
         if (!logged) {
-            credentials = plugin.getAuthCredentials(getDescriptor().synopsis, text, showDialog);
+            credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, text, showDialog);
             if (credentials && credentials.username && credentials.password) {
                 var params = 'login=' + credentials.username + '&password=' + credentials.password + '&remember=1';
                 page.loading = true;
@@ -263,9 +263,9 @@
         }
     }
 
-    var service = plugin.createService(getDescriptor().id, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().id, PREFIX + ":start", "video", true, logo);
 
-    var settings = plugin.createSettings(getDescriptor().id, logo, getDescriptor().synopsis);
+    var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
     settings.createAction('megogo_login', 'Войти в megogo.net', function() {
         loginAndGetConfig(0, true);
     });
@@ -355,7 +355,10 @@
     plugin.addURI(PREFIX + ':indexByID:(.*):(.*)', function(page, id, title) {
         setPageHeader(page, unescape(title));
         var json = getJSON(page, API, '/videos/info?', 'id=' + id);
-
+        if (json.result == 'error') {
+            page.error('Извините, видео не доступно / Sorry, video is not available :(');
+            return;
+        }
         var genres = getGenre(json.video.category, json.video.genre_list);
         if (json.video.season_list[0])
             processVideoItem(page, json, json.video.season_list, genres);
@@ -594,7 +597,7 @@
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, getDescriptor().synopsis);
+        setPageHeader(page, plugin.getDescriptor().synopsis);
         if (logged) {
              page.appendPassiveItem('video', '', {
                  title: new showtime.RichText(coloredStr(users.nickname ? users.nickname : users.email, orange) + ' (' + config.geo + ')'),
@@ -667,7 +670,7 @@
         page.loading = false;
     });
 
-    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
         getVideosList(page, API, '/search?', 'text=' + query, 20);
     });
 })(this);
