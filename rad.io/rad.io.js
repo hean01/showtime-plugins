@@ -19,8 +19,7 @@
 
 
 (function(plugin) {
-    var BASE_URL = "http://www.rad.io";
-    var PREFIX = "rad.io:";
+    var BASE_URL = "http://www.rad.io/info/";
     var STREAMURL_STASH = "streamurl";
     var logo = plugin.path + "rad.io.png";
 
@@ -44,76 +43,31 @@
         page.loading = false;
     }
 
-    var items = {};
-    //items['rs'] = { title: "Recommended stations",
-    //                path: "broadcast/editorialreccomendationsembedded",
-    //                gets: {'sizeoflists': 40}
-    //		    };
-    items['mw'] = { title: "Most wanted",
-		    path: "account/getmostwantedbroadcastlists",
-		    gets: {'sizeoflists': 40}
-		  };
+    var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "audio", true, logo);
 
-    var service = plugin.createService("rad.io", PREFIX + "start", "audio", true, logo);
-
-    var settings = plugin.createSettings("rad.io", logo,
-			 "rad.io: radio stream directory");
-
+    var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
     var store = plugin.createStore('favorites', true)
     if (!store.list) {
-        store.version = "1";
-        store.background = "";
-        store.title = "rad.io » My Favorites";
         store.list = "[]";
     }
-
     function trim(s) {
         return s.replace(/^\s+|\s+$/g, '').replace("mms://","http://");
     }
-
     // populate countries
+    var data = getJSON(null, 'menu/valuesofcategory?category=_country');
     var options = [];
-    var data = get_data("menu/valuesofcategory", {'category':'_country'});
-    for (var country in data) {
-	options.push([country,country]);
-    }
+    for (var i in data)
+	options.push([data[i], data[i]]);
 
     settings.createMultiOpt("country", "Country for the nearest stations", options, function(v) {
 	service.country = v;
     });
 
     // discard favorites
-    settings.createAction("cleanFavorites", "Clean My Favorites",
-			  function () {
+    settings.createAction("cleanFavorites", "Clean My Favorites", function() {
         store.list = "[]";
         showtime.notify('Favorites has been cleaned successfully', 2);
     });
-
-    function make_args(gets) {
-	var i=1, length = 0;
-	var str="?";
-	for(var dummy in gets) length++;
-
-	for(var key in gets) {
-	    str += key + "=" + gets[key];
-	    if(i < length)
-		str += "&";
-	    i++;
-	}
-	return str;
-    }
-
-    function get_data(path, gets) {
-	var query = BASE_URL + "/info/" + path + make_args(gets);
-	//showtime.trace("url query: " + query);
-	try {
-	    var res = showtime.httpReq(query, {}, {
-		'User-Agent':'radio.de 1.9.1 rv:37 (iPhone; iPhone OS 5.0; de_DE)'});
-	    return showtime.JSONDecode(res.toString());
-	} catch(e) {
-	    return {};
-	}
-    }
 
     var cp1252 = 'ÀÁÂÃÄÅ¨ÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕ×ÖØÙÜÚÛÝÞßàáâãäå¸æçèéêëìíîïðñòóôõ÷öøùüúûýþÿ³²ºª¿¯´¥';
     var cp1251 = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЧЦШЩЬЪЫЭЮЯабвгдеёжзийклмнопрстуфхчцшщьъыэюяіІєЄїЇґҐ';
@@ -129,13 +83,12 @@
 	return s;
     };
 
-    function populate_stations(page, station) {
+    function appendStation(page, station) {
 	    var bce = {}
 	    try {
 		bce = plugin.cacheGet(STREAMURL_STASH, station.id);
 		if (bce == null) {
-		    bce =  get_data("broadcast/getbroadcastembedded",
-				    {'broadcast': station.id});
+		    bce = getJSON(page, 'broadcast/getbroadcastembedded?broadcast='+ station.id);
 		    plugin.cachePut(STREAMURL_STASH, station.id, bce, 84600);
 		}
 	    } catch(e) {}
@@ -174,7 +127,6 @@
 		    bitrate: this.bitrate,
                     format: this.format
 		};
-		showtime.trace("item: "+showtime.JSONEncode(entry));
 		var list = eval(store.list);
                 var array = [showtime.JSONEncode(entry)].concat(list);
                 store.list = showtime.JSONEncode(array);
@@ -185,15 +137,14 @@
 
     function fill_fav(page) {
 	var list = eval(store.list);
-
         if (!list || !list.toString()) {
            page.error("My Favorites list is empty");
            return;
         }
         var pos = 0;
-	for (var item in list) {
-	    var itemmd = showtime.JSONDecode(item);
-	    var item = page.appendItem(itemmd.url, "station", {
+	for (var i in list) {
+	    var itemmd = showtime.JSONDecode(list[i]);
+            var item = page.appendItem(itemmd.url, "station", {
 		station: itemmd.station,
 		icon: itemmd.icon,
 		album_art: itemmd.icon,
@@ -218,127 +169,124 @@
     }
 
     // Favorites
-    plugin.addURI(PREFIX + "favorites", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":favorites", function(page) {
         setPageHeader(page, "My Favorites");
         fill_fav(page);
     });
 
-    // Handle hardcoded lists
-    plugin.addURI(PREFIX + "list:(.*)", function(page, key) {
-        setPageHeader(page, "rad.io - " + items[key].title);
+    function getJSON(page, url) {
+        if (page) page.loading = true;
+        var result = showtime.JSONDecode(showtime.httpReq(BASE_URL + url));
+        if (page) page.loading = false;
+        return result;
+    }
 
-        // Populate Most Wanted
-	var result = get_data(items[key].path, items[key].gets);
-	for (var category in result) {
-            for (var station in category) {
-                populate_stations(page, station);
-            }
-	}
+    // Handle hardcoded lists
+    plugin.addURI(plugin.getDescriptor().id + ":list:(.*):(.*)", function(page, title, url) {
+        setPageHeader(page, plugin.getDescriptor().id + " - " + unescape(title));
+	var json = getJSON(page, url);
+	for (var i in json)
+            appendStation(page, json[i]);
     });
 
     // Nearest
-    plugin.addURI(PREFIX + "getByCategory:(.*):(.*)", function(page, category, value) {
+    plugin.addURI(plugin.getDescriptor().id + ":getByCategory:(.*):(.*)", function(page, category, value) {
         setPageHeader(page, "rad.io - " + "Nearest stations");
-
-	var result = get_data('menu/broadcastsofcategory', {
-	    'category': '_'+category,
-	    'value': value
-	});
-
-    	for (var station in result) {
-            populate_stations(page, station);
+	var json = getJSON(page, 'menu/broadcastsofcategory?category=_' + unescape(category) + '&value=' + encodeURIComponent(unescape(value)));
+    	for (var i in json) {
+            appendStation(page, json[i]);
 	}
     });
 
     // List by category
-    plugin.addURI(PREFIX + "category:(.*)", function(page, category) {
+    plugin.addURI(plugin.getDescriptor().id + ":category:(.*)", function(page, category) {
         page.metadata.title = "Stations by (" + category + ")";
         page.metadata.logo = logo;
 	page.type = "directory";
 	page.contents = "items";
         page.loading = false;
 
-        var data = get_data("menu/valuesofcategory", {'category':'_'+category});
-        for (var item in data) {
-            page.appendItem(PREFIX + "getByCategory:" + category + ":" + item, "directory", {
-                title: item
+        var json = getJSON(page, 'menu/valuesofcategory?category=_' + category);
+        for (var i in json) {
+            page.appendItem(plugin.getDescriptor().id + ":getByCategory:" + escape(category) + ":" + escape(json[i]), "directory", {
+                title: json[i]
             });
         };
     });
 
-
     // Start page
-    plugin.addURI(PREFIX + "start", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
 	page.type = "directory";
 	page.contents = "items";
 	page.metadata.logo = logo;
-	page.metadata.title = "rad.io";
+	page.metadata.title = plugin.getDescriptor().id;
      	page.loading = false;
 
+	page.appendItem(plugin.getDescriptor().id + ":favorites", "directory", {
+	    title: "My Favorites"
+	});
+
         if (!service.country) service.country = "Ukraine";
-
-	for (var key in items) {
-	    page.appendItem(PREFIX + "list:" + key, "directory", {
-		title: items[key].title
-	    });
-	}
-
-        page.appendItem(PREFIX + "getByCategory:country:" + service.country, "directory", {
+        page.appendItem(plugin.getDescriptor().id + ":getByCategory:country:" + service.country, "directory", {
 	    title: "Nearest stations (by settings)"
 	});
 
         page.appendItem("", "separator", {
         });
 
-	page.appendItem(PREFIX + "favorites", "directory", {
-	    title: "My Favorites"
+        page.appendItem(plugin.getDescriptor().id + ':list:Highlights:broadcast/gethighlights', "directory", {
+            title: 'Highlights'
+	});
+
+        page.appendItem(plugin.getDescriptor().id + ':list:Recommendations:broadcast/editorialreccomendationsembedded', "directory", {
+            title: 'Recommendations'
+	});
+
+        page.appendItem(plugin.getDescriptor().id + ':list:Top 100:menu/broadcastsofcategory?category=_top', "directory", {
+            title: 'Top 100'
 	});
 
         page.appendItem("", "separator", {
             title: "Stations by"
         });
 
-        page.appendItem(PREFIX + "category:country", "directory", {
-	    title: "Country"
-	});
-
-        page.appendItem(PREFIX + "category:genre", "directory", {
+        page.appendItem(plugin.getDescriptor().id + ":category:genre", "directory", {
 	    title: "Genre"
 	});
 
-        page.appendItem(PREFIX + "category:city", "directory", {
+        page.appendItem(plugin.getDescriptor().id + ":category:topic", "directory", {
+	    title: "Topic"
+	});
+
+        page.appendItem(plugin.getDescriptor().id + ":category:country", "directory", {
+	    title: "Country"
+	});
+
+
+        page.appendItem(plugin.getDescriptor().id + ":category:city", "directory", {
 	    title: "City"
 	});
 
-        page.appendItem(PREFIX + "category:language", "directory", {
+        page.appendItem(plugin.getDescriptor().id + ":category:language", "directory", {
 	    title: "Language"
-	});
-
-        page.appendItem(PREFIX + "category:topic", "directory", {
-	    title: "Topic"
 	});
     });
 
-    plugin.addSearcher("rad.io", logo, function(page, query) {
-        setPageHeader(page, '');
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
+        setPageHeader(page, plugin.getDescriptor().id);
         var fromPage = 0, tryToSearch = true;
         page.entries = 0;
 
         function loader() {
             if (!tryToSearch) return false;
-	    page.loading = true;
-	    var result = get_data('index/searchembeddedbroadcast', {
-	        'q': query.replace(' ', '+'),
-	        'start': fromPage,
-	        'rows': '30'
-            });
-	    page.loading = false;
-    	    for (var station in result) {
-                populate_stations(page, station);
+	    var json = getJSON(page, 'index/searchembeddedbroadcast?q=' +
+                query.replace(' ', '+') + '&start=' + fromPage + '&rows=30');
+    	    for (var i in json) {
+                appendStation(page, json[i]);
                 page.entries++;
 	    }
             if (!result) return tryToSearch = false;
-            fromPage+=30;
+            fromPage += 30;
             return true;
         };
         loader();
