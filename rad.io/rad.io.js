@@ -54,7 +54,7 @@
         return s.replace(/^\s+|\s+$/g, '').replace("mms://","http://");
     }
     // populate countries
-    var data = getJSON(null, 'menu/valuesofcategory?category=_country');
+    var data = getJSON('menu/valuesofcategory?category=_country');
     var options = [];
     for (var i in data)
 	options.push([data[i], data[i]]);
@@ -88,7 +88,7 @@
 	    try {
 		bce = plugin.cacheGet(STREAMURL_STASH, station.id);
 		if (bce == null) {
-		    bce = getJSON(page, 'broadcast/getbroadcastembedded?broadcast='+ station.id);
+		    bce = getJSON('broadcast/getbroadcastembedded?broadcast='+ station.id);
 		    plugin.cachePut(STREAMURL_STASH, station.id, bce, 84600);
 		}
 	    } catch(e) {}
@@ -174,28 +174,28 @@
         fill_fav(page);
     });
 
-    function getJSON(page, url) {
-        if (page) page.loading = true;
-        var result = showtime.JSONDecode(showtime.httpReq(BASE_URL + url));
-        if (page) page.loading = false;
-        return result;
+    function getJSON(url) {
+        return showtime.JSONDecode(showtime.httpReq(BASE_URL + url));
     }
 
     // Handle hardcoded lists
     plugin.addURI(plugin.getDescriptor().id + ":list:(.*):(.*)", function(page, title, url) {
         setPageHeader(page, plugin.getDescriptor().id + " - " + unescape(title));
-	var json = getJSON(page, url);
+        page.loading = true;
+	var json = getJSON(url);
 	for (var i in json)
             appendStation(page, json[i]);
+        page.loading = false;
     });
 
     // Nearest
     plugin.addURI(plugin.getDescriptor().id + ":getByCategory:(.*):(.*)", function(page, category, value) {
         setPageHeader(page, "rad.io - " + "Nearest stations");
-	var json = getJSON(page, 'menu/broadcastsofcategory?category=_' + unescape(category) + '&value=' + encodeURIComponent(unescape(value)));
-    	for (var i in json) {
+        page.loading = true;
+	var json = getJSON('menu/broadcastsofcategory?category=_' + unescape(category) + '&value=' + encodeURIComponent(unescape(value)));
+    	for (var i in json)
             appendStation(page, json[i]);
-	}
+        page.loading = false;
     });
 
     // List by category
@@ -206,7 +206,7 @@
 	page.contents = "items";
         page.loading = false;
 
-        var json = getJSON(page, 'menu/valuesofcategory?category=_' + category);
+        var json = getJSON('menu/valuesofcategory?category=_' + category);
         for (var i in json) {
             page.appendItem(plugin.getDescriptor().id + ":getByCategory:" + escape(category) + ":" + escape(json[i]), "directory", {
                 title: json[i]
@@ -279,13 +279,15 @@
 
         function loader() {
             if (!tryToSearch) return false;
-	    var json = getJSON(page, 'index/searchembeddedbroadcast?q=' +
+            page.loading = true;
+	    var json = getJSON('index/searchembeddedbroadcast?q=' +
                 query.replace(' ', '+') + '&start=' + fromPage + '&rows=30');
     	    for (var i in json) {
                 appendStation(page, json[i]);
                 page.entries++;
 	    }
-            if (!result) return tryToSearch = false;
+            page.loading = false;
+            if (!json) return tryToSearch = false;
             fromPage += 30;
             return true;
         };
