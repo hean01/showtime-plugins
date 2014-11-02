@@ -138,18 +138,18 @@
 	    
 	        item.onEvent("addFavorite", function(item) {
 		    var entry = {
-		        url: this.url,
-		        title: this.station,
-		        station: this.station,
-		        description: this.description,
-		        format: this.format,
-		        bitrate: this.bitrate
+		        url: item.url ? item.url : this.url,
+		        title: item.station ? item.station : this.station,
+		        station: item.station ? item.station : this.station,
+		        description: item.description ? item.description : this.description,
+		        format: item.format ? item.format : this.format,
+		        bitrate: item.bitrate ? item.bitrate : this.bitrate
 		    };
 		    var list = eval(store.list);
                     var array = [showtime.JSONEncode(entry)].concat(list);
                     store.list = showtime.JSONEncode(array);
-		    showtime.notify("'" + item.station+ "' has been added to My Favorites.", 2);
-	        }.bind(item));
+		    showtime.notify("'" + (item.station ? item.station : this.station) + "' has been added to My Favorites.", 2);
+	        });
 	    }
 
             var next = doc.match(/<ul class="pager">([\S\s]*?)<\/ul>/);
@@ -180,7 +180,7 @@
 	for (var i in list) {
 	    var itemmd = showtime.JSONDecode(list[i]);
 
-	    var item = page.appendItem("icecast:"+itemmd.url, "station", {
+	    var item = page.appendItem("icecast:" + itemmd.url, "station", {
 		title: itemmd.station,
 		station: itemmd.station,
 		description: itemmd.description,
