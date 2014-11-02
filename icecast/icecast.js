@@ -148,8 +148,8 @@
 		    var list = eval(store.list);
                     var array = [showtime.JSONEncode(entry)].concat(list);
                     store.list = showtime.JSONEncode(array);
-		    showtime.notify("'" + this.station+ "' has been added to My Favorites.", 2);
-	        });
+		    showtime.notify("'" + item.station+ "' has been added to My Favorites.", 2);
+	        }.bind(item));
 	    }
 
             var next = doc.match(/<ul class="pager">([\S\s]*?)<\/ul>/);
