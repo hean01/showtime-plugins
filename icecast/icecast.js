@@ -135,21 +135,36 @@
 	        item.format = itemmd.format;
 
 	        item.addOptAction("Add '" + itemmd.station + "' to My Favorites", "addFavorite");
-	    
-	        item.onEvent("addFavorite", function(item) {
-		    var entry = {
-		        url: item.url ? item.url : this.url,
-		        title: item.station ? item.station : this.station,
-		        station: item.station ? item.station : this.station,
-		        description: item.description ? item.description : this.description,
-		        format: item.format ? item.format : this.format,
-		        bitrate: item.bitrate ? item.bitrate : this.bitrate
-		    };
-		    var list = eval(store.list);
-                    var array = [showtime.JSONEncode(entry)].concat(list);
-                    store.list = showtime.JSONEncode(array);
-		    showtime.notify("'" + (item.station ? item.station : this.station) + "' has been added to My Favorites.", 2);
-	        });
+                function setEventHandler(obj) {
+                }
+
+                if (typeof Duktape != "undefined") {
+	            item.onEvent("addFavorite", function(item) {
+		        var entry = showtime.JSONEncode({
+		            url: this.url,
+		            title: this.station,
+		            station: this.station,
+		            description: this.description,
+		            format: this.format,
+		            bitrate: this.bitrate
+		        });
+                        store.list = showtime.JSONEncode([entry].concat(eval(store.list)));
+    		        showtime.notify("'" + this.station + "' has been added to My Favorites.", 2);
+	            }.bind(item));
+                } else {
+	            item.onEvent("addFavorite", function(item) {
+		        var entry = showtime.JSONEncode({
+		            url: this.url,
+		            title: this.station,
+		            station: this.station,
+		            description: this.description,
+		            format: this.format,
+		            bitrate: this.bitrate
+		        });
+                        store.list = showtime.JSONEncode([entry].concat(eval(store.list)));
+    		        showtime.notify("'" + this.station + "' has been added to My Favorites.", 2);
+	            });
+                }
 	    }
 
             var next = doc.match(/<ul class="pager">([\S\s]*?)<\/ul>/);
