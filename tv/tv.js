@@ -340,17 +340,28 @@
         item.link = link;
         item.title = title;
         item.icon = icon;
-        item.onEvent("addFavorite", function(item) {
-     	    var entry = {
-	        link: this.link,
-                title: this.title,
-                icon: this.icon
-	    };
-	    var list = eval(store.list);
-            var array = [showtime.JSONEncode(entry)].concat(list);
-            store.list = showtime.JSONEncode(array);
-	    showtime.notify("'" + title + "' has been added to My Favorites.", 2);
-	});
+
+        if (typeof Duktape != 'undefined') {
+            item.onEvent("addFavorite", function(item) {
+                var entry = showtime.JSONEncode({
+	            link: this.link,
+                    title: this.title,
+                    icon: this.icon
+	        });
+                store.list = showtime.JSONEncode([entry].concat(eval(store.list)));
+	        showtime.notify("'" + this.title + "' has been added to My Favorites.", 2);
+	    }.bind(item));
+        } else {
+            item.onEvent("addFavorite", function(item) {
+                var entry = showtime.JSONEncode({
+	            link: this.link,
+                    title: this.title,
+                    icon: this.icon
+	        });
+                store.list = showtime.JSONEncode([entry].concat(eval(store.list)));
+	        showtime.notify("'" + this.title + "' has been added to My Favorites.", 2);
+	    });
+        }
 	item.addOptAction("Add '" + title + "' to My Favorites", "addFavorite");
     }
 

@@ -51,6 +51,7 @@
         store.list = "[]";
     }
     function trim(s) {
+        if (!s) return '';
         return s.replace(/^\s+|\s+$/g, '').replace("mms://","http://");
     }
     // populate countries
@@ -87,51 +88,62 @@
 	    var bce = {}
 	    try {
 		bce = plugin.cacheGet(STREAMURL_STASH, station.id);
-		if (bce == null) {
-		    bce = getJSON('broadcast/getbroadcastembedded?broadcast='+ station.id);
+		if (!bce) {
+		    bce = getJSON('broadcast/getbroadcastembedded?broadcast=' + station.id);
 		    plugin.cachePut(STREAMURL_STASH, station.id, bce, 84600);
 		}
 	    } catch(e) {}
 
-	    var iconUrl = null;
-
-	    if (station.picture1Name)
-                iconUrl = station.pictureBaseURL + station.picture1Name;
 	    var item = page.appendItem("icecast:" + trim(bce.streamURL), "station", {
 		station: station.name,
-		description: bce.description,
-		icon: iconUrl,
-		album_art: iconUrl,
+		description: station.genresAndTopics,
+		icon: station.pictureBaseURL + station.picture1Name,
+		album_art: station.pictureBaseURL + station.picture1Name,
 		title: station.name,
                 onair: fixMB(station.currentTrack),
 		bitrate: station.bitrate,
-		format: bce.streamContentFormat
+		format: station.streamContentFormat
 	    });
 
 	    item.url = "icecast:" + trim(bce.streamURL);
 	    item.station = station.name;
-	    item.description = (bce.description?bce.description:"");
-	    item.icon = iconUrl;
-	    item.album_art = iconUrl;
+	    item.description = station.genresAndTopics;
+	    item.icon = station.pictureBaseURL + station.picture1Name;
+	    item.album_art = station.pictureBaseURL + station.picture1Name;
 	    item.bitrate = station.bitrate;
-	    item.format = bce.streamContentFormat;
+	    item.format = station.streamContentFormat;
 
-	    item.onEvent("addFavorite", function(item) {
-		var entry = {
-		    url: this.url,
-		    icon: this.icon,
-		    album_art: this.icon,
-                    station: this.station,
-                    title: station.name,
-		    description: this.description,
-		    bitrate: this.bitrate,
-                    format: this.format
-		};
-		var list = eval(store.list);
-                var array = [showtime.JSONEncode(entry)].concat(list);
-                store.list = showtime.JSONEncode(array);
-		showtime.notify("'" + station.name + "' has been added to My Favorites.", 2);
-	    });
+            if (typeof Duktape != 'undefined') {
+	        item.onEvent("addFavorite", function(item) {
+		    var entry = showtime.JSONEncode({
+		        url: this.url,
+		        icon: this.icon,
+		        album_art: this.icon,
+                        station: this.station,
+                        title: this.station,
+		        description: this.description,
+		        bitrate: this.bitrate,
+                        format: this.format
+		    });
+                    store.list = showtime.JSONEncode([entry].concat(eval(store.list)));
+		    showtime.notify("'" + this.station + "' has been added to My Favorites.", 2);
+	        }.bind(item));
+            } else {
+	        item.onEvent("addFavorite", function(item) {
+		    var entry = showtime.JSONEncode({
+		        url: this.url,
+		        icon: this.icon,
+		        album_art: this.icon,
+                        station: this.station,
+                        title: this.station,
+		        description: this.description,
+		        bitrate: this.bitrate,
+                        format: this.format
+		    });
+                    store.list = showtime.JSONEncode([entry].concat(eval(store.list)));
+		    showtime.notify("'" + this.station + "' has been added to My Favorites.", 2);
+	        });
+            }
 	    item.addOptAction("Add '" + station.name + "' to My Favorites", "addFavorite");
     }
 
