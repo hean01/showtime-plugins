@@ -1,7 +1,7 @@
 /*
  *  LubeTube - Showtime Plugin
  *
- *  Copyright (C) 2012 Henrik Andersson
+ *  Copyright (C) 2012-2014 Henrik Andersson, lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 
 (function(plugin) {
     var BASE_URL = "http://lubetube.com"
-    var PREFIX = "lubetube:"
     var logo = plugin.path + "lubetube.png";
 
     function setPageHeader(page, title) {
@@ -29,213 +28,224 @@
         }
         page.type = "directory";
         page.contents = "items";
+        page.loading = false;
     }
 
-    plugin.createService("LubeTube", PREFIX + "start", "video", true, plugin.path + "lubetube.png");
+    var blue = "6699CC", orange = "FFA500";
+
+    function colorStr(str, color) {
+        return '<font color="' + color + '"> (' + str + ')</font>';
+    }
+
+    function coloredStr(str, color) {
+        return '<font color="' + color + '">' + str + '</font>';
+    }
+
+    plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "video", true, logo);
 
     function indexPornstars(page) {
-        var title = page.metadata.title;
-        var offset = 0;
+        page.loading = true;
+        page.entries = 0;
+        var tryToSearch = true, url = '/pornstars/'
 
-        function loader() {
-            var p = Math.floor(1 + (offset / 50));
-            var response = showtime.httpGet(BASE_URL + "/pornstars/?page=" + p).toString();
-			page.loading = false;
-            var re = /px;">[\S\s]*?<a href="([^"]+)[\S\s]*?class="main_gallery" src="([^"]+)[\S\s]*?title="Pornstar Name">([^\<]+)[\S\s]*?;">Videos: ([^\s\&]+)[\S\s]*?Views: ([^\<]+)/g;
-            var match = re.exec(response);
+        function scraper(doc) {
+	    // 1-link, 2-icon, 3-title, 4-videos, 5-views
+            var re = /<li>[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?src="([\S\s]*?)" title="([\S\s]*?)"[\S\s]*?<p>Videos: ([\S\s]*?) \&nbsp; Views: ([\S\s]*?)<\/p>/g;
+            var match = re.exec(doc);
             while (match) {
-                page.appendItem(PREFIX + "pornstar:" + match[1] + ":" + match[3] + " (" + match[4] + ")", "video", {
-                    title: new showtime.RichText(match[3] + '<font color="6699CC"> (Videos: </font>' + match[4] + '<font color="6699CC"> Views: </font>' + match[5] + '<font color="6699CC">)</font>'),
-                    icon: match[2]
+                page.appendItem(plugin.getDescriptor().id + ":pornstar:" + escape(match[1]) + ":" + escape(match[3]), "video", {
+                    title: new showtime.RichText(match[3] + colorStr(match[4], orange)),
+                    icon: match[2],
+                    description: new showtime.RichText(coloredStr('Views: ', orange) + match[5])
                 });
-                match = re.exec(response);
-                offset++;
+                page.entries++;
+                match = re.exec(doc);
             }
-            re = />All Pornstars \(([0-9]+)\)</;
-            match = re.exec(response);
-            if (match) {
-                page.entries = match[1];
-                page.metadata.title = title + " (" + match[1] + ")"
-            }
-            return offset < page.entries;
         }
-        loader();
-        page.paginator = loader;
-    }
-
-    function indexVideos(page, uri) {
-        var offset = 0;
 
         function loader() {
-            var p = Math.floor(1 + (offset / 50));
-            var response = showtime.httpGet(BASE_URL + uri + "page=" + p).toString();
-			page.loading = false;
-            var re = /">next<\/a>/;
-            if ((offset > 0) && (!re.exec(response))) return false;
-            re = /" href="(http:\/\/lubetube.com\/video\/([^"]+))" title="([^"]+)"><img src="([^"]+)[\S\s]*?<span class="length">Length: ([^\<]+)<[\S\s]*?<span class="views">Views: ([^\<]+)<[\S\s]*?<span class="rating" style="width:([^\%]+)\%/g;
-            var match = re.exec(response);
-            while (match) {
-                page.appendItem(PREFIX + "play:" + escape(match[1]) + ":" + escape(match[3]), "video", {
-                    title: new showtime.RichText(match[3] + '<font color="6699CC"> (' + match[5] + ')</font>'),
-                    icon: match[4],
-                    description: new showtime.RichText('<font color="6699CC">Views: </font>' + match[6]),
-                    genre: 'Adult',
-                    duration: match[5],
-                    rating: match[7] * 1
+            if (!tryToSearch) return false;
+            page.loading = true;
+            var doc = showtime.httpReq(checkLink(url)).toString();
+            page.loading = false;
+            var mp = doc.match(/<h2>Featured Pornstars<\/h2>([\S\s]*?)<\/ul>/);
+            if (mp) {
+                page.appendItem("", "separator", {
+                    title: 'Featured Pornstars'
                 });
-                match = re.exec(response);
-                offset++;
+                scraper(mp[1]);
+                page.appendItem("", "separator", {
+                    title: doc.match(/<br class="clear" \/>[\S\s]*?<h2>([\S\s]*?)<\/h2>/)[1]
+                });
             }
+            scraper(doc.substr(doc.lastIndexOf('<div class="seperator">')));
+            var next = doc.match(/<a class="next" href="([\S\s]*?)">Next<\/a>/);
+            if (!next) return tryToSearch = false;
+            url = next[1];
             return true;
         }
         loader();
         page.paginator = loader;
     }
 
-    function index(page, url) {
-        var offset = 0;
-        if (page.metadata) var title = page.metadata.title;
-
-        function loader() {
-            var p = Math.floor(1 + (offset / 50));
-            var response = showtime.httpGet(url + "&page=" + p).toString();
-            page.loading = false;
-            var re = /<a class="frame" href="(http:\/\/lubetube.com\/video\/([^"]+))" title="([^"]+)"><img src="([^"]+)[\S\s]*?<span class="length">Length: ([^\<]+)<[\S\s]*?<span class="views">Views: ([^\<]+)<[\S\s]*?<span class="rating" style="width:([^\%]+)\%/g;
-            var match = re.exec(response);
-            while (match) {
-                page.appendItem(PREFIX + "play:" + escape(match[1]) + ":" + escape(match[3]), "video", {
-                    title: new showtime.RichText(match[3] + '<font color="6699CC"> (' + match[5] + ')</font>'),
-                    icon: match[4],
-                    description: new showtime.RichText('<font color="6699CC">Views: </font>' + match[6]),
-                    genre: 'Adult',
-                    duration: match[5],
-                    rating: match[7] * 1
-                });
-                match = re.exec(response);
-                offset++;
-            }
-
-            re = /<strong>([0-9]+)<\/strong> videos/;
-            match = re.exec(response);
-            if (match) {
-                page.entries = match[1];
-                if (page.metadata) page.metadata.title = title + " - found (" + match[1] + ") videos"
-            }
-            return offset < page.entries;
-        }
-        loader();
-        page.paginator = loader;
-    }
-
-
     // Play videolink
-    plugin.addURI(PREFIX + "play:(.*):(.*)", function(page, url, title) {
-	var link = '';
-        var response = showtime.httpGet(unescape(url)).toString();
-        var match = response.match(/playlist_flow_player_flv.php\?vid=[0-9]+/);
-        if (match) {
-            response = showtime.entityDecode(showtime.httpGet(BASE_URL + "/" + match[0]).toString());
-            match = response.match(/url="([^"]+)"/);
-            if (match) link = unescape(match[1]); else showtime.error("Can't get link");
-        }
-		page.loading = false;	
+    plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
+        var doc = showtime.httpReq(unescape(url)).toString();
+	page.loading = false;
         page.type = "video";
+        var link = doc.match(/<a id="video-hd" href="([\S\s]*?)"/);
+        if (!link) link = doc.match(/<a id="video-high" href="([\S\s]*?)"/);
+        if (!link) link = doc.match(/<a id="video-standard" href="([\S\s]*?)"/);
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            canonicalUrl: PREFIX + "play:" + url + ":" + title,
+            canonicalUrl: plugin.getDescriptor().id + ":play:" + url + ":" + title,
             sources: [{
-                url: link
+                url: link[1]
             }]
         });
     });
 
     // Sorting selected category
-    plugin.addURI(PREFIX + "sorting:(.*):(.*)", function(page, name, uri) {
-        setPageHeader(page, 'Lubetube - ' + name);
-        page.loading = false;
-        page.appendItem(PREFIX + 'category:' + name + ":" + uri, 'directory', {
+    plugin.addURI(plugin.getDescriptor().id + ":sorting:(.*):(.*)", function(page, title, url) {
+        setPageHeader(page, 'Lubetube - ' + unescape(title));
+        page.appendItem(plugin.getDescriptor().id + ':category:' + title + ":" + url, 'directory', {
             title: "Newest",
             icon: logo
         });
-        page.appendItem(PREFIX + 'category:' + name + ":" + uri.replace("adddate", "rate"), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':category:' + title + ":" + url.replace("adddate", "rate"), 'directory', {
             title: "Highest rated",
             icon: logo
         });
-        page.appendItem(PREFIX + 'category:' + name + ":" + uri.replace("adddate", "viewnum"), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':category:' + title + ":" + url.replace("adddate", "viewnum"), 'directory', {
             title: "Most Viewed",
             icon: logo
         });
-        page.appendItem(PREFIX + 'category:' + name + ":" + uri.replace("adddate", "title"), 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':category:' + title + ":" + url.replace("adddate", "title"), 'directory', {
             title: "By Title",
             icon: logo
         });
     });
 
     // Enter category
-    plugin.addURI(PREFIX + "category:(.*):(.*)", function(page, name, uri) {
-        setPageHeader(page, name);
-        index(page, BASE_URL + uri);
+    plugin.addURI(plugin.getDescriptor().id + ":category:(.*):(.*)", function(page, title, url) {
+        setPageHeader(page, unescape(title));
+        index(page, unescape(url));
     });
 
     // Pornstar page
-    plugin.addURI(PREFIX + "pornstar:(.*):(.*)", function(page, uri, name) {
-        setPageHeader(page, 'Lubetube - ' + name);
-        indexVideos(page, uri + "?");
+    plugin.addURI(plugin.getDescriptor().id + ":pornstar:(.*):(.*)", function(page, url, title) {
+        setPageHeader(page, 'Lubetube - ' + unescape(title));
+        index(page, unescape(url));
     });
 
     // Pornstars page
-    plugin.addURI(PREFIX + "pornstars", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":pornstars", function(page) {
         setPageHeader(page, 'Lubetube - Pornstars');
         indexPornstars(page);
     });
 
     // Main page
-    plugin.addURI(PREFIX + "movies:(.*):(.*)", function(page, uri, title) {
-        setPageHeader(page, 'Lubetube - ' + title);
-        indexVideos(page, uri);
+    plugin.addURI(plugin.getDescriptor().id + ":movies:(.*):(.*)", function(page, url, title) {
+        setPageHeader(page, 'Lubetube - ' + unescape(title));
+        index(page, unescape(url));
     });
 
 
     // Categories page
-    plugin.addURI(PREFIX + "categories", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":categories", function(page) {
         setPageHeader(page, 'Lubetube - Categories');
-        var response = showtime.httpGet(BASE_URL + "/categories");
+        page.loading = true;
+        var doc = showtime.httpReq(BASE_URL + "/categories").toString();
         page.loading = false;
-	// 1 - uri, 2 - image, 3 - title
-        var re = /<a href="http:\/\/lubetube.com([^\s]+)"><img width="[0-9]+" height="[0-9]+" alt="[^"]+" class="main_gallery" src="([^\s]+)" title="([^"]+)" \/><\/a><br \/>/g;
-        var match = re.exec(response);
+        var mp = doc.match(/<ul class="gallery">([\S\s]*?)<\/ul>/)[1];
+	// 1-link, 2-numofvideos, 3-icon, 4-title
+        var re = /<li>[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?<\/i> ([\S\s]*?)<\/span>[\S\s]*?src="([\S\s]*?)" title="([\S\s]*?)"/g;
+        var match = re.exec(mp);
         while (match) {
-            page.appendItem(PREFIX + "sorting:" + match[3] + ":" + match[1], "directory", {
-                title: match[3],
-                icon: match[2]
+            page.appendItem(plugin.getDescriptor().id + ":sorting:" + escape(match[4]) + ":" + escape(match[1]), "video", {
+                title: new showtime.RichText(match[4] + colorStr(match[2], blue)),
+                icon: match[3]
             });
-            var match = re.exec(response);
+            var match = re.exec(mp);
         }
     });
 
+    function checkLink(link) {
+        if (link.substr(0, 4) != 'http') return BASE_URL + link;
+        return link;
+    }
+
+    function index(page, url) {
+        page.loading = true;
+        page.entries = 0;
+        var tryToSearch = true;
+
+        function scraper(doc) {
+            // 1-link, 2-title, 3-icon, 4-length, 5-views, 6-rating
+            var re = /<span class="videothumb"[\S\s]*?href="([\S\s]*?)" title="([\S\s]*?)"><img src="([\S\s]*?)"[\S\s]*?<span class="length">Length: ([^\<]+)<[\S\s]*?<span class="views">Views: ([^\<]+)<[\S\s]*?<span class="rating" style="width:([^\%]+)\%/g;
+            var match = re.exec(doc);
+            while (match) {
+                page.appendItem(plugin.getDescriptor().id + ":play:" + escape(match[1]) + ":" + escape(match[2]), "video", {
+                    title: new showtime.RichText(match[2] + colorStr(match[4], orange)),
+                    icon: match[3],
+                    description: new showtime.RichText(coloredStr('Views: ', orange) + match[5]),
+                    genre: 'Adult',
+                    duration: match[4],
+                    rating: match[6] * 10
+                });
+                page.entries++;
+                match = re.exec(doc);
+            }
+        }
+
+        function loader() {
+            if (!tryToSearch) return false;
+            page.loading = true;
+            var doc = showtime.httpReq(checkLink(url)).toString();
+            page.loading = false;
+            var mp = doc.match(/<h2>Most Popular Videos<\/h2>([\S\s]*?)<span class="seperator_rt">/);
+            if (mp) {
+                page.appendItem("", "separator", {
+                    title: 'Most Popular Videos'
+                });
+                scraper(mp[1]);
+                page.appendItem("", "separator", {
+                    title: 'Videos (' + doc.match(/<span class="seperator_rt">[\S\s]*?of <strong>([\S\s]*?)<\/strong>/)[1] + ')'
+                });
+            }
+            scraper(doc.match(/<span class="seperator_rt">([\S\s]*?)<\/html>/)[1]);
+            var next = doc.match(/<a class="next" href="([\S\s]*?)">Next<\/a>/);
+            if (!next) return tryToSearch = false;
+            url = next[1];
+            return true;
+        }
+        loader();
+        page.paginator = loader;
+    }
+
     // Start page
-    plugin.addURI(PREFIX + "start", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, "LubeTube - Home");
-        page.loading = false;
-        page.appendItem(PREFIX + 'movies:/view/basic/mostrecent/:Newest', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':movies:/view/basic/mostrecent/:Newest', 'directory', {
             title: 'Newest'
         });
-        page.appendItem(PREFIX + 'movies:/view/basic/toprated/:Highest Rated', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':movies:/view/basic/toprated/:Highest Rated', 'directory', {
             title: 'Highest Rated'
         });
-        page.appendItem(PREFIX + 'movies:/view/basic/mostviewed/:Most Viewed', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':movies:/view/basic/mostviewed/:Most Viewed', 'directory', {
             title: 'Most Viewed'
         });
-        page.appendItem(PREFIX + 'categories', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':categories', 'directory', {
             title: 'Categories'
         });
-        page.appendItem(PREFIX + 'pornstars', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':pornstars', 'directory', {
             title: 'Pornstars'
         });
+        index(page, BASE_URL);
     });
 
-    plugin.addSearcher("LubeTube - Videos", logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
         index(page, BASE_URL + "/search/videos?search_id=" + query.replace(/\s/g, '\+'));
     });
-
 })(this);

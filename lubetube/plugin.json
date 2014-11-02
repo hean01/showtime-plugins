@@ -4,10 +4,10 @@
 	"homepage": "https://github.com/lprot/showtime-plugins", 
 	"title": "LubeTube", 
 	"synopsis": "The you tube of porn, Free Porn Movies updated daily!", 
-	"version": "0.6.2", 
+	"version": "0.7",
 	"file": "lubetube.js", 
 	"showtimeVersion": "4.1.215", 
-	"type": "javascript", 
+	"type": "javascript",
 	"id": "lubetube", 
 	"icon": "lubetube.png",
 	"category": "video"
