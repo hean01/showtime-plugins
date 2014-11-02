@@ -337,11 +337,14 @@
             icon: icon
         });
 
+        item.link = link;
+        item.title = title;
+        item.icon = icon;
         item.onEvent("addFavorite", function(item) {
      	    var entry = {
-	        link: link,
-                title: title,
-                icon: icon
+	        link: this.link,
+                title: this.title,
+                icon: this.icon
 	    };
 	    var list = eval(store.list);
             var array = [showtime.JSONEncode(entry)].concat(list);
@@ -359,8 +362,8 @@
            return;
         }
         var pos = 0;
-	for (var item in list) {
-	    var itemmd = showtime.JSONDecode(item);
+	for (var i in list) {
+	    var itemmd = showtime.JSONDecode(list[i]);
 	    var item = page.appendItem(itemmd.link, "video", {
        		title: itemmd.title,
 		icon: itemmd.icon
