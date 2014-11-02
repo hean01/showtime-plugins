@@ -78,9 +78,9 @@
     plugin.addURI("dropbox:browse:(.*)", function(page, path) {
         page.type = "directory";
         page.content = "items";
-        page.loading = false;
 
         if (!store.access_token) {
+            page.loading = false;
             var msg =  'To link Dropbox to Showtime, on any PC with internet browser open\n\n' +
                        'http://dropbox.com/1/oauth2/authorize?response_type=code&client_id=' + OAUTH_CONSUMER_KEY +
                        '\n\nSign in to Dropbox and allow Showtime to access your folders and files.'+
@@ -127,7 +127,9 @@
         var title = doc.path.split('/');
         if (doc.path == '/') {
             page.metadata.title = 'Dropbox Root';
+            page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(API + 'account/info?access_token=' + store.access_token));
+            page.loading = false;
             page.appendPassiveItem('video', '', {
                 title: new showtime.RichText(coloredStr('Account info', orange)),
                 description: new showtime.RichText(
