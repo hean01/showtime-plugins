@@ -6,7 +6,7 @@
 	"synopsis": "Baskino.com: Онлайн фильмы в хорошем HD качестве бесплатно и без регистрации",
 	"version": "0.3.4", "file": "baskino.js",
 	"showtimeVersion": "4.3.9",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "baskino.com",
 	"category": "video",
 	"icon": "logo.png"

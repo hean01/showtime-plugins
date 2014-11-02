@@ -6,7 +6,7 @@
 	"synopsis": "Express file - server of information exchange",
 	"version": "0.7.4", "file": "ex_ua.js",
 	"showtimeVersion": "4.1.397",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "ex.ua",
 	"icon": "logo.png",
 	"category": "video"

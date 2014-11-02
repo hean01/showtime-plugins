@@ -6,7 +6,7 @@
 	"synopsis": "Docu.im: Документальные фильмы онлайн",
 	"version": "0.3.7", "file": "docuim.js",
 	"showtimeVersion": "4.3.9",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "docu.im",
 	"icon": "logo.png",
 	"category": "video"

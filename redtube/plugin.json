@@ -6,7 +6,7 @@
 	"synopsis": "Redtube: Home of free porn videos",
 	"version": "2.0.4", "file": "redtube.js",
 	"showtimeVersion": "4.1.273",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "redtube",
 	"icon": "logo.png",
 	"category": "video"

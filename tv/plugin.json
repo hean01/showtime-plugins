@@ -7,7 +7,7 @@
 	"version": "0.3.11",
 	"file": "tv.js",
 	"showtimeVersion": "4.5.25",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "tv",
 	"icon": "logo.png",
 	"category": "tv"

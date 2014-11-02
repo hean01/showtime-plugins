@@ -6,7 +6,7 @@
 	"synopsis": "Tree.tv - online фильмы - новинки кино в хорошем качестве смотреть бесплатно без регистрации онлайн",
 	"version": "0.4.7", "file": "treetv.js",
 	"showtimeVersion": "4.5.146",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "tree.tv",
 	"category": "video",
 	"icon": "logo.png"

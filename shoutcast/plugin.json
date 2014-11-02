@@ -7,7 +7,7 @@
 	"version": "0.2.2",
 	"file": "shoutcast.js",
 	"showtimeVersion": "4.5.28",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "shoutcast",
 	"icon": "logo.png",
 	"category": "music"

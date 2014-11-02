@@ -7,7 +7,7 @@
 	"version": "0.7.1",
 	"file": "lubetube.js", 
 	"showtimeVersion": "4.1.215", 
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "lubetube", 
 	"icon": "lubetube.png",
 	"category": "video"

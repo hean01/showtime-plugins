@@ -113,6 +113,7 @@
     // Index page
     plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*):(.*)", function(page, hoster, url, title) {
         var canonicalUrl = plugin.getDescriptor().id + ":play:" + hoster + ':' + url + ':' + title;
+        page.loading = true;
         var doc = showtime.httpReq(checkLink(unescape(url)), {
             noFollow: true
         });
@@ -202,6 +203,7 @@
                     url = url.match(/file: "([\S\s]*?)"/)[1];
                     break;
                 }
+                page.loading = false;
                 page.error("Video was deleted. Sorry :(");
                 return;
             case 'Indavideo':
@@ -211,12 +213,14 @@
                     url = showtime.JSONDecode(url).data.video_file;
                     break;
                 }
+                page.loading = false;
                 page.error("Video was deleted. Sorry :(");
                 return;
             case '1fichier (Letöltés)':
                 url = showtime.httpReq(checkLink(doc.headers.Location)).toString();
                 if (url.match(/red">([\S\s]*?)<\/div>/)) {
                     page.error(url.match(/red">([\S\s]*?)<\/div>/)[1].replace(/<br\/>/g, '. '));
+                    page.loading = false;
                     return;
                 }
                 url = showtime.httpReq(url.match(/method="post" action="([\S\s]*?)"/)[1], {
@@ -232,11 +236,11 @@
                 url = showtime.httpReq(checkLink(url[1])).toString().match(/name="src" value="([\S\s]*?)"/)[1];
                 break;
             default:
+                page.loading = false;
                 page.error("Can't get the link. Sorry :(");
                 return;
-                break;
         }
-
+        page.loading = false;
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
           title: unescape(unescape(title)),
@@ -246,7 +250,6 @@
                 url: url
             }]
         });
-        page.loading = false;
     });
 
     function checkLink(link) {
