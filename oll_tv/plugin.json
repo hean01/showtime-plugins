@@ -4,9 +4,9 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "oll.tv",
 	"synopsis": "oll.tv — все видео здесь. Смотри с комфортом и в хорошем качестве.",
-	"version": "0.3.3", "file": "oll_tv.js",
+	"version": "0.3.4", "file": "oll_tv.js",
 	"showtimeVersion": "4.1.397",
-	"type": "ecmascript",
+	"type": "javascript",
 	"id": "oll.tv",
 	"icon": "logo.png",
 	"category": "video"

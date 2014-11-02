@@ -4,9 +4,9 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Docu.im",
 	"synopsis": "Docu.im: Документальные фильмы онлайн",
-	"version": "0.3.6", "file": "docuim.js",
+	"version": "0.3.7", "file": "docuim.js",
 	"showtimeVersion": "4.3.9",
-	"type": "ecmascript",
+	"type": "javascript",
 	"id": "docu.im",
 	"icon": "logo.png",
 	"category": "video"
