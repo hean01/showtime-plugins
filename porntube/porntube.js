@@ -18,8 +18,6 @@
  */
 
 (function(plugin) {
-    var descriptor = getDescriptor();
-    var PREFIX = descriptor.id;
     var BASE_URL = 'http://www.porntube.com';
     var logo = plugin.path + "logo.png";
 
@@ -37,7 +35,7 @@
         page.loading = false;
     }
 
-    var service = plugin.createService(descriptor.title, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "video", true, logo);
     var Order = "", Quality = "", Age = "";
 
     function trim(s) {
@@ -50,8 +48,8 @@
         return +(str.match(/\d+/));
     }
 
-    plugin.addURI(PREFIX + ":videos:(.*):(.*)", function(page, url, title) {
-        setPageHeader(page, descriptor.title + ' - ' + unescape(title));
+    plugin.addURI(plugin.getDescriptor().id + ":videos:(.*):(.*)", function(page, url, title) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - ' + unescape(title));
         var fromPage = 1, tryToSearch = true;
         var Order = '', Quality = '', Duration = '', Age = '';
 
@@ -111,8 +109,8 @@
         page.paginator = loader;
     });
 
-    plugin.addURI(PREFIX + ":categories", function(page) {
-        setPageHeader(page, descriptor.title + ' - Categories');
+    plugin.addURI(plugin.getDescriptor().id + ":categories", function(page) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - Categories');
         page.loading = true;
         var v = showtime.httpReq(BASE_URL + "/tags").toString();
         page.loading = false;
@@ -122,7 +120,7 @@
             var re = /<a class="thumb-link" href="([\S\s]*?)"[\S\s]*?<\/i>([\S\s]*?)<\/li>[\S\s]*?class="thumb-title">([\S\s]*?)<[\S\s]*?data-original="([\S\s]*?)"/g;
             var match = re.exec(htmlBlock[1]);
             while (match) {
-                page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText(match[3] + blueStr(" (" + trim(match[2].replace(',','')) + ")")),
                     icon: match[4]
                 });
@@ -138,7 +136,7 @@
             var re = /<a href="([\S\s]*?)"[\S\s]*?">([\S\s]*?)<span>([\S\s]*?)<\/span>/g;
             var match = re.exec(htmlBlock[1]);
             while (match) {
-                page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(trim(match[2])), 'directory', {
+                page.appendItem(plugin.getDescriptor().id + ':videos:' + escape(match[1]) + ":" + escape(trim(match[2])), 'directory', {
                     title: new showtime.RichText(trim(match[2]) + ' ' + blueStr(trim(match[3])))
                 });
                 match = re.exec(htmlBlock[1]);
@@ -146,8 +144,8 @@
         };
     });
 
-    plugin.addURI(PREFIX + ":channels", function(page) {
-        setPageHeader(page, descriptor.title + ' - Channels');
+    plugin.addURI(plugin.getDescriptor().id + ":channels", function(page) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - Channels');
         var fromPage = 1, tryToSearch = true;
         var Letter = '', Order = '', Age = "alltime";
 
@@ -162,7 +160,7 @@
                 var re = /<a class="thumb-link" href="([\S\s]*?)"[\S\s]*?<\/i>([\S\s]*?)<\/li>[\S\s]*?">([\S\s]*?)<[\S\s]*?data-original="([\S\s]*?)"/g;
                 var match = re.exec(htmlBlock[1]);
                 while (match) {
-                    page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
+                    page.appendItem(plugin.getDescriptor().id + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                        title: new showtime.RichText(match[3] + blueStr(" (" + trim(match[2].replace(',','')) + ")")),
                        icon: match[4]
                     });
@@ -203,8 +201,8 @@
         page.paginator = loader;
     });
 
-    plugin.addURI(PREFIX + ":pornstars", function(page) {
-        setPageHeader(page, descriptor.title + ' - Pornstars');
+    plugin.addURI(plugin.getDescriptor().id + ":pornstars", function(page) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - Pornstars');
         var fromPage = 1, tryToSearch = true;
         var Letter = '', Order = 'rating', Titties = '', Age = '', Hair = '', Height = '';
 
@@ -219,7 +217,7 @@
                 var re = /<a class="thumb-link" href="([\S\s]*?)" title="([\S\s]*?)"[\S\s]*?<\/i>([\S\s]*?)<\/li>[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?data-original="([\S\s]*?)"/g;
                 var match = re.exec(htmlBlock[1]);
                 while (match) {
-                    page.appendItem(PREFIX + ':videos:' + escape(match[1]) + ":" + escape(match[2]), 'video', {
+                    page.appendItem(plugin.getDescriptor().id + ':videos:' + escape(match[1]) + ":" + escape(match[2]), 'video', {
                        title: new showtime.RichText(match[2] + blueStr(" (" + trim(match[3].replace(',','')) + ")")),
                        icon: match[5],
                        description: match[4]
@@ -302,7 +300,7 @@
     });
 
     // Play links
-    plugin.addURI(PREFIX + ":video:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":video:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         var v = showtime.httpReq(unescape(url)).toString();
         page.loading = false;
@@ -320,11 +318,11 @@
 			'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36' }
 		}).toString();
         page.loading = false;
-	match = v.match(/"token":"([\S\s]*?)"}/);
+	match = v.match(/"token":"([\S\s]*?)"\}/);
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: showtime.entityDecode(unescape(title)),
-            canonicalUrl: PREFIX + ":video:" + url + ":" + title,
+            canonicalUrl: plugin.getDescriptor().id + ":video:" + url + ":" + title,
             sources: [{
                 url: unescape(showtime.entityDecode(match[1]))
             }]
@@ -339,7 +337,7 @@
         re = /<a href="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?<ul class="thumb-info_top">([\S\s]*?)div class="bottom">[\S\s]*?"icon icon-timer"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-eye"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-up"><\/i>([\S\s]*?)<\/li>/g;
         var match = re.exec(bw);
         while (match) {
-            page.appendItem(PREFIX + ':video:' + escape(match[1]) + ":" + escape(match[2]), 'video', {
+            page.appendItem(plugin.getDescriptor().id + ':video:' + escape(match[1]) + ":" + escape(match[2]), 'video', {
                 title: new showtime.RichText((match[4].match(/>HD</) ? blueStr("HD ") : "") + match[2]),
                 duration: trim(match[5]),
                 description: new showtime.RichText("Views: " + blueStr(trim(match[6])) + "\nAdded: " + blueStr(trim(match[7]))),
@@ -350,21 +348,21 @@
         }
     }
 
-    plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, descriptor.synopsis);
-        page.appendItem(PREFIX + ':videos:/videos:Videos', 'directory', {
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
+        setPageHeader(page, plugin.getDescriptor().synopsis);
+        page.appendItem(plugin.getDescriptor().id + ':videos:/videos:Videos', 'directory', {
             title: 'Videos',
             icon: logo
         });
-        page.appendItem(PREFIX + ':categories', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':categories', 'directory', {
             title: 'Categories',
             icon: logo
         });
-        page.appendItem(PREFIX + ':channels', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':channels', 'directory', {
             title: 'Channels',
             icon: logo
         });
-        page.appendItem(PREFIX + ':pornstars', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':pornstars', 'directory', {
             title: 'Pornstars',
             icon: logo
         });
@@ -402,7 +400,7 @@
         page.paginator = loader;
     });
 
-    plugin.addSearcher(descriptor.title, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
         page.entries = 0;
         var fromPage = 1, tryToSearch = true;
 

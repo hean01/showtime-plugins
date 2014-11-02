@@ -74,7 +74,7 @@
     // populate countries
     var options = [];
     var data = get_data("menu/valuesofcategory", {'category':'_country'});
-    for each (country in data) {
+    for (var country in data) {
 	options.push([country,country]);
     }
 
@@ -191,7 +191,7 @@
            return;
         }
         var pos = 0;
-	for each (item in list) {
+	for (var item in list) {
 	    var itemmd = showtime.JSONDecode(item);
 	    var item = page.appendItem(itemmd.url, "station", {
 		station: itemmd.station,
@@ -229,8 +229,8 @@
 
         // Populate Most Wanted
 	var result = get_data(items[key].path, items[key].gets);
-	for each (category in result) {
-            for each (station in category) {
+	for (var category in result) {
+            for (var station in category) {
                 populate_stations(page, station);
             }
 	}
@@ -245,7 +245,7 @@
 	    'value': value
 	});
 
-    	for each (station in result) {
+    	for (var station in result) {
             populate_stations(page, station);
 	}
     });
@@ -259,7 +259,7 @@
         page.loading = false;
 
         var data = get_data("menu/valuesofcategory", {'category':'_'+category});
-        for each (item in data) {
+        for (var item in data) {
             page.appendItem(PREFIX + "getByCategory:" + category + ":" + item, "directory", {
                 title: item
             });
@@ -333,7 +333,7 @@
 	        'rows': '30'
             });
 	    page.loading = false;
-    	    for each (station in result) {
+    	    for (var station in result) {
                 populate_stations(page, station);
                 page.entries++;
 	    }

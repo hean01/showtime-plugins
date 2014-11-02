@@ -7,7 +7,7 @@
 	"version": "0.8.20",
         "file": "megogo.js",
 	"showtimeVersion": "4.1.397",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "megogo.net",
 	"icon": "logo.png",
 	"category": "video"

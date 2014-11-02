@@ -6,7 +6,7 @@
 	"synopsis": "INGFILM.RU | HD Фильмы Онлайн",
 	"version": "0.1.5", "file": "ingfilm.js",
 	"showtimeVersion": "4.3.9",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "ingfilm.ru",
 	"icon": "logo.png",
 	"category": "video"

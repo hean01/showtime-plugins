@@ -6,7 +6,7 @@
 	"synopsis": "Dropbox – Your stuff, anywhere",
 	"version": "0.4.2", "file": "dropbox.js",
 	"showtimeVersion": "3.1.163",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "dropbox",
 	"icon": "logo.png",
 	"category": "video"

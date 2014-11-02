@@ -53,7 +53,7 @@
         page.loading = false;
     }
 
-    var service = plugin.createService(getDescriptor().id, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().id, PREFIX + ":start", "video", true, logo);
 
     plugin.addURI(PREFIX + ":getItems:(.*):(.*):(.*):(.*)", function(page, block_id, cat_id, filters, title) {
         setPageHeader(page, unescape(title));
@@ -273,7 +273,7 @@
     }
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, getDescriptor().synopsis);
+        setPageHeader(page, plugin.getDescriptor().synopsis);
         if (logged) {
              page.loading = true;
              var user = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/account/info?'+sn));
@@ -344,7 +344,7 @@
         }
 
         if (!logged) {
-            credentials = plugin.getAuthCredentials(getDescriptor().synopsis, text, showDialog);
+            credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, text, showDialog);
             if (credentials && credentials.username && credentials.password) {
                 page.loading = true;
                 var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/login', {
@@ -365,8 +365,8 @@
         }
     }
 
-    var settings = plugin.createSettings(getDescriptor().id, logo, getDescriptor().synopsis);
-    settings.createAction(getDescriptor().id + '_login', 'Войти в ' + getDescriptor().id, function() {
+    var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
+    settings.createAction(plugin.getDescriptor().id + '_login', 'Войти в ' + plugin.getDescriptor().id, function() {
         login(0, true);
     });
 
@@ -444,7 +444,7 @@
         page.paginator = loader;
     }
 
-    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
         login(page, false);
         search(page, query);
     });

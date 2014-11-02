@@ -18,11 +18,8 @@
  */
 
 (function(plugin) {
-    var pluginInfo = getDescriptor();
-    var PREFIX = pluginInfo.id;
     var BASE_URL = 'http://www.redtube.com';
     var logo = plugin.path + "logo.png";
-    var slogan = pluginInfo.synopsis;
 
     function fix_entity(doc) {
         doc = doc.replace(/\&Acirc;\&iexcl;/g, '\u00a1');
@@ -80,9 +77,9 @@
         page.loading = false;
     }
 
-    var service = plugin.createService(pluginInfo.title, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "video", true, logo);
 
-    var settings = plugin.createSettings(pluginInfo.title, logo, slogan);
+    var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().synopsis);
 
     function index_pornstars(page, url) {
         setPageHeader(page, 'Redtube - Pornstar Directory');
@@ -102,7 +99,7 @@
 
             var match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ":index:" + match[1] + '?:' + match[2], "video", {
+                page.appendItem(plugin.getDescriptor().id + ":index:" + match[1] + '?:' + match[2], "video", {
                     title: new showtime.RichText(match[2] + coloredStr(' (' + match[4] + ')', orange)),
                     icon: match[3]
                 });
@@ -143,7 +140,7 @@
             page.loading = false;
             var match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ":play:" + escape(match[1]) + ":" + escape(match[2]), "video", {
+                page.appendItem(plugin.getDescriptor().id + ":play:" + escape(match[1]) + ":" + escape(match[2]), "video", {
                     title: new showtime.RichText((match[5].match(/hd-video/) ? coloredStr('HD ', orange) : '') + match[2] + coloredStr(' (' + match[3] + ')', orange)),
                     icon: match[4],
                     description: new showtime.RichText(trim(match[7])+ profile),
@@ -162,7 +159,7 @@
         page.paginator = loader;
     }
 
-    plugin.addURI(PREFIX + ":categoriesAPI", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":categoriesAPI", function(page) {
         setPageHeader(page, 'Redtube - Categories');
         //Getting pictures
         page.loading = true;
@@ -175,7 +172,7 @@
         page.loading = false;
 	var lastIcon;
         for (var i in jsonobj.categories) {
-            page.appendItem(PREFIX + ':search:category=' + escape(jsonobj.categories[i].category), 'video', {
+            page.appendItem(plugin.getDescriptor().id + ':search:category=' + escape(jsonobj.categories[i].category), 'video', {
                 title: jsonobj.categories[i].category,
                 icon: (jsonobj.categories[i].category == 'japanesecensored') ? lastIcon : match[3]
             });
@@ -185,7 +182,7 @@
         }
     });
 
-    plugin.addURI(PREFIX + ":categories", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":categories", function(page) {
         setPageHeader(page, 'Redtube - Categories');
         page.loading = true;
         var response = showtime.httpReq(BASE_URL + "/channels");
@@ -193,7 +190,7 @@
         var re = /class="video">[\S\s]*?<a href="([^"]+)" title="([^"]+)[\S\s]*?src="([^"]+)[\S\s]*?numberVideos">[\S\s]*?([0-9].*)\sVideos/g;
         var match = re.exec(response);
         while (match) {
-            page.appendItem(PREFIX + ":sorting:" + match[1] + ":" + match[2], "video", {
+            page.appendItem(plugin.getDescriptor().id + ":sorting:" + match[1] + ":" + match[2], "video", {
                 title: new showtime.RichText(match[2] + coloredStr(' (' + match[4].replace(',', '') + ')', orange)),
                 icon: match[3]
             });
@@ -202,51 +199,51 @@
     });
 
     // For sorting selected category
-    plugin.addURI(PREFIX + ":sorting:(.*):(.*)", function(page, uri, name) {
+    plugin.addURI(plugin.getDescriptor().id + ":sorting:(.*):(.*)", function(page, uri, name) {
         setPageHeader(page, 'Redtube - ' + name);
         page.loading = false;
-        page.appendItem(PREFIX + ':index:' + uri + '?:Newest videos', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:' + uri + '?:Newest videos', 'directory', {
             title: "Newest videos",
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:' + uri + '?sorting=rating&:Top rated', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:' + uri + '?sorting=rating&:Top rated', 'directory', {
             title: "Top rated",
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:' + uri + '?sorting=mostviewed&:Most viewed', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:' + uri + '?sorting=mostviewed&:Most viewed', 'directory', {
             title: "Most viewed",
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:' + uri + '?sorting=mostfavored&:Most favored', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:' + uri + '?sorting=mostfavored&:Most favored', 'directory', {
             title: "Most favored",
             icon: logo
         });
     });
 
     // Index page at URL
-    plugin.addURI(PREFIX + ":index:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":index:(.*):(.*)", function(page, url, title) {
         index(page, BASE_URL + url, title);
     });
 
     // Index Pornstar Directory page
-    plugin.addURI(PREFIX + ":index_stars:(.*)", function(page, url) {
+    plugin.addURI(plugin.getDescriptor().id + ":index_stars:(.*)", function(page, url) {
         index_pornstars(page, BASE_URL + url);
     });
 
-    plugin.addURI(PREFIX + ":tags", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":tags", function(page) {
         setPageHeader(page, 'Redtube - Tags');
         page.loading = true;
         var jsonobj = showtime.JSONDecode(showtime.httpReq("http://api.redtube.com/?data=redtube.Tags.getTagList&output=json").toString());
         page.loading = false;
         for (var i in jsonobj.tags) {
-            page.appendItem(PREFIX + ':search:tags[]=' + escape(jsonobj.tags[i].tag.tag_name), 'directory', {
+            page.appendItem(plugin.getDescriptor().id + ':search:tags[]=' + escape(jsonobj.tags[i].tag.tag_name), 'directory', {
                 title: jsonobj.tags[i].tag.tag_name,
                 icon: logo
             })
         }
     });
 
-    plugin.addURI(PREFIX + ":stars", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":stars", function(page) {
         page.loading = true;
         var jsonobj = showtime.JSONDecode(showtime.httpReq("http://api.redtube.com/?data=redtube.Stars.getStarList&output=json").toString());
         page.loading = false;
@@ -260,7 +257,7 @@
         function showPage() {
             var itemCounter = 0;
             while ((itemCounter < 20) && (offset < starCounter)) {
-                page.appendItem(PREFIX + ':search:stars[]=' + escape(jsonobj.stars[offset].star.star_name), 'directory', {
+                page.appendItem(plugin.getDescriptor().id + ':search:stars[]=' + escape(jsonobj.stars[offset].star.star_name), 'directory', {
                     title: jsonobj.stars[offset].star.star_name,
                     icon: logo
                 });
@@ -326,7 +323,7 @@
                     title = title.video.title
                 }
                 title = showtime.entityDecode(fix_entity(title));
-                page.appendItem(PREFIX + ":play:" + jsonobj.videos[i].video.video_id + ":" + escape(title), "video", {
+                page.appendItem(plugin.getDescriptor().id + ":play:" + jsonobj.videos[i].video.video_id + ":" + escape(title), "video", {
                     title: new showtime.RichText(title + coloredStr(' (' + jsonobj.videos[i].video.duration + ')', orange)),
                     rating: +(jsonobj.videos[i].video.rating) * 20,
                     icon: jsonobj.videos[i].video.default_thumb,
@@ -345,111 +342,111 @@
         page.paginator = loader;
     };
 
-    plugin.addURI(PREFIX + ":search:(.*)", function(page, query) {
+    plugin.addURI(plugin.getDescriptor().id + ":search:(.*)", function(page, query) {
         scraper(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&"), escape(query))
     });
 
-    plugin.addURI(PREFIX + ":play:(.*):(.*)", function(page, video_id, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*)", function(page, video_id, title) {
         page.loading = true;
 	var link = showtime.httpReq("http://www.redtube.com/" + video_id).toString().match(/vpVideoSource[\S\s]*?"([\S\s]*?)"/);
         page.loading = false;
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            canonicalUrl: PREFIX + ":play:" + video_id + ":" + title,
+            canonicalUrl: plugin.getDescriptor().id + ":play:" + video_id + ":" + title,
             sources: [{
                 url: unescape(link[1]).replace(/\\/g,'')
             }]
         });
     });
 
-    plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, slogan);
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
+        setPageHeader(page, plugin.getDescriptor().synopsis);
 
-        page.appendItem(PREFIX + ':index:/?:Newest videos', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:/?:Newest videos', 'directory', {
             title: 'Newest videos',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/top?:Top rated', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:/top?:Top rated', 'directory', {
             title: 'Top rated (weekly)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/top?period=monthly&:Top rated (monthly)', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:/top?period=monthly&:Top rated (monthly)', 'directory', {
             title: 'Top rated (monthly)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/top?period=alltime&:Top rated (all time)', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:/top?period=alltime&:Top rated (all time)', 'directory', {
             title: 'Top rated (all time)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/mostviewed?:Most viewed (weekly)', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:/mostviewed?:Most viewed (weekly)', 'directory', {
             title: 'Most viewed (weekly)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/mostviewed?period=monthly&:Most viewed (monthly)', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:/mostviewed?period=monthly&:Most viewed (monthly)', 'directory', {
             title: 'Most viewed (monthly)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/mostviewed?period=alltime&:Most viewed (all time)', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:/mostviewed?period=alltime&:Most viewed (all time)', 'directory', {
             title: 'Most viewed (all time)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/mostfavored?:Most favored (weekly)', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:/mostfavored?:Most favored (weekly)', 'directory', {
             title: 'Most favored (weekly)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/mostfavored?period=monthly&:Most favored (monthly)', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:/mostfavored?period=monthly&:Most favored (monthly)', 'directory', {
             title: 'Most favored (monthly)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index:/mostfavored?period=alltime&:Most favored (all time)', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index:/mostfavored?period=alltime&:Most favored (all time)', 'directory', {
             title: 'Most favored (all time)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':categories', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':categories', 'directory', {
             title: 'Categories',
             icon: logo
         });
-        page.appendItem(PREFIX + ':categoriesAPI', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':categoriesAPI', 'directory', {
             title: 'Categories (API)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':tags', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':tags', 'directory', {
             title: 'Tags',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index_stars:/pornstar/alphabetical', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index_stars:/pornstar/alphabetical', 'directory', {
             title: 'Pornstar Directory (Female by Alphabet)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index_stars:/pornstar', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index_stars:/pornstar', 'directory', {
             title: 'Pornstar Directory (Female by Videocount)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index_stars:/pornstar/alphabetical/male', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index_stars:/pornstar/alphabetical/male', 'directory', {
             title: 'Pornstar Directory (Male by Alphabet)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index_stars:/pornstar/male', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index_stars:/pornstar/male', 'directory', {
             title: 'Pornstar Directory (Male by Videocount)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index_stars:/pornstar/alphabetical/all', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index_stars:/pornstar/alphabetical/all', 'directory', {
             title: 'Pornstar Directory (All by Alphabet)',
             icon: logo
         });
-        page.appendItem(PREFIX + ':index_stars:/pornstar/all', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':index_stars:/pornstar/all', 'directory', {
             title: 'Pornstar Directory (All by Videocount)',
             icon: logo
         });
 
-        page.appendItem(PREFIX + ':stars', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':stars', 'directory', {
             title: 'Stars',
             icon: logo
         });
     });
 
-    plugin.addSearcher(pluginInfo.title, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
         scraper(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&search="), escape(query.replace(/\s/g, '\+')));
     });
 })(this);

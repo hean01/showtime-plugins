@@ -47,9 +47,9 @@
         "Horror", "Music", "Musical", "Mystery", "Romance", "Sci-Fi", "Short",
         "Sport", "Thriller", "War", "Western"];
 
-    var service = plugin.createService(getDescriptor().id, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().id, PREFIX + ":start", "video", true, logo);
 
-    var settings = plugin.createSettings(getDescriptor().id, logo, getDescriptor().synopsis);
+    var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
 
     settings.createBool('enableMetadata', 'Enable metadata fetching', false, function(v) {
         service.enableMetadata = v;
@@ -176,7 +176,7 @@
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, getDescriptor().synopsis);
+        setPageHeader(page, plugin.getDescriptor().synopsis);
         page.appendItem(PREFIX + ":genres", "directory", {
             title: 'Genres'
         });
@@ -306,7 +306,7 @@
         }
     });
 
-    plugin.addSearcher(getDescriptor().id, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
         browseItems(page, {
             keywords: query
         });
