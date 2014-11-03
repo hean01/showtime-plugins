@@ -93,15 +93,15 @@
     }
 
     var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "video", true, logo);
-
+    var store = plugin.createStore('offset');
     var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
     settings.createAction(plugin.getDescriptor().id+'_login', 'Войти в ' + plugin.getDescriptor().id, function() {
         loginAndGetConfig(0, true);
     });
 
-
     function getTimePeriod(timestamp) {
-        var a = new Date((+timestamp + 10800 + new Date().getTimezoneOffset() * 60) * 1000);
+        if (!store.offset) store.offset = 10800;
+        var a = new Date((+timestamp + store.offset + new Date().getTimezoneOffset() * 60) * 1000);
         return ((a.getHours() < 10 ? '0' + a.getHours() : a.getHours()) + ':' +
             (a.getMinutes() < 10 ? '0' + a.getMinutes() : a.getMinutes()));
     }
@@ -110,8 +110,7 @@
             var first = true;
             for (i in json)
                 for (j in json[i]) {
-                    if (day == json[i][j].day &&
-                        start <= json[i][j].start) {
+                    if (day == json[i][j].day && start <= json[i][j].start) {
                         if (first)
                             page.appendItem("", "separator", {
                                 title: 'Программа передач'
@@ -365,8 +364,8 @@
         now = new Date(now);
 
         // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
-        if (!service.offset) service.offset = 10800;
-        var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - service.offset);
+        if (!store.offset) store.offset = 10800;
+        var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - store.offset);
 
         var epg = request(page, showtime.JSONEncode({
             method: 'getEpgByChannelIdsAndDay',
@@ -377,8 +376,8 @@
             }
         }));
         if (!showtime.JSONEncode(epg)) {
-            service.offset = 7200;
-            day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - service.offset);
+            store.offset = 7200;
+            day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - store.offset);
             var epg = request(page, showtime.JSONEncode({
                 method: 'getEpgByChannelIdsAndDay',
                 Params: {
