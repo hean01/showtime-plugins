@@ -26,6 +26,8 @@
 	    page.metadata.title = title;
 	    page.metadata.logo = logo;
 	    page.metadata.glwview = plugin.path + "views/array.view";
+        }
+        if (page.options) {
             page.options.createInt('childTilesX', 'Number of X Child Tiles', 6, 1, 10, 1, '', function (v) {
                 page.metadata.childTilesX = v;
             }, true);
