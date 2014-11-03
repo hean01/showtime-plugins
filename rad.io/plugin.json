@@ -7,7 +7,7 @@
 	"version": "0.3.10",
 	"file": "rad.io.js",
 	"showtimeVersion": "4.5.28",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "rad.io",
 	"icon": "rad.io.png",
 	"category": "music"

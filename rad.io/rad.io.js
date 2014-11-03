@@ -20,7 +20,6 @@
 
 (function(plugin) {
     var BASE_URL = "http://www.rad.io/info/";
-    var STREAMURL_STASH = "streamurl";
     var logo = plugin.path + "rad.io.png";
 
     function setPageHeader(page, title) {
@@ -60,6 +59,8 @@
     for (var i in data)
 	options.push([data[i], data[i]]);
 
+print(JSON.stringify(data));
+print(JSON.stringify(options));
     settings.createMultiOpt("country", "Country for the nearest stations", options, function(v) {
 	service.country = v;
     });
@@ -69,7 +70,7 @@
         store.list = "[]";
         showtime.notify('Favorites has been cleaned successfully', 2);
     });
-
+settings.dump();
     var cp1252 = 'ÀÁÂÃÄÅ¨ÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕ×ÖØÙÜÚÛÝÞßàáâãäå¸æçèéêëìíîïðñòóôõ÷öøùüúûýþÿ³²ºª¿¯´¥';
     var cp1251 = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЧЦШЩЬЪЫЭЮЯабвгдеёжзийклмнопрстуфхчцшщьъыэюяіІєЄїЇґҐ';
     function fixMB(s) {
@@ -87,18 +88,21 @@
     function appendStation(page, station) {
 	    var bce = {}
 	    try {
-		bce = plugin.cacheGet(STREAMURL_STASH, station.id);
+		bce = plugin.cacheGet('streamurl', station.id);
 		if (!bce) {
 		    bce = getJSON('broadcast/getbroadcastembedded?broadcast=' + station.id);
-		    plugin.cachePut(STREAMURL_STASH, station.id, bce, 84600);
+		    plugin.cachePut('streamurl', station.id, bce, 84600);
 		}
 	    } catch(e) {}
-
+print(JSON.stringify(bce));
+            var iconUrl = null;
+	    if (station.picture1Name)
+		iconUrl = station.pictureBaseURL + station.picture1Name;
 	    var item = page.appendItem("icecast:" + trim(bce.streamURL), "station", {
 		station: station.name,
 		description: station.genresAndTopics,
-		icon: station.pictureBaseURL + station.picture1Name,
-		album_art: station.pictureBaseURL + station.picture1Name,
+		icon: iconUrl,
+		album_art: iconUrl,
 		title: station.name,
                 onair: fixMB(station.currentTrack),
 		bitrate: station.bitrate,
@@ -108,8 +112,8 @@
 	    item.url = "icecast:" + trim(bce.streamURL);
 	    item.station = station.name;
 	    item.description = station.genresAndTopics;
-	    item.icon = station.pictureBaseURL + station.picture1Name;
-	    item.album_art = station.pictureBaseURL + station.picture1Name;
+	    item.icon = iconUrl;
+	    item.album_art = iconUrl;
 	    item.bitrate = station.bitrate;
 	    item.format = station.streamContentFormat;
 

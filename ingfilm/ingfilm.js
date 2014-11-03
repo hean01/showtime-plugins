@@ -34,7 +34,7 @@
     }
 
     function checkLink(url) {
-        return url.substr(0, 4) == 'http' ? url : BASE_URL + url;
+        return url.substr(0, 4) == 'http' ? url : BASE_URL + (url[1] == '/' ? url : '/' + url);
     }
     function unicode2win1251(str) {
         if (str == 0) return 0;
@@ -90,30 +90,23 @@
             case 'http://mo':
                     var html = showtime.httpReq(unescape(url)).toString();
                     var link = showtime.JSONDecode(showtime.httpReq('http://moonwalk.cc/sessions/create_session', {
-                               postdata: {
-                                   'video_token': html.match(/video_token: '([\s\S]*?)'/)[1],
-                                   'video_secret': html.match(/video_secret: '([\s\S]*?)'/)[1]
-                               }
+                        postdata: {
+                            'video_token': html.match(/video_token: '([\s\S]*?)'/)[1],
+                            'video_secret': html.match(/video_secret: '([\s\S]*?)'/)[1]
+                        }
                     }));
                     link = 'hls:' + link['manifest_m3u8']
                 break;
             case 'http://vk':
             case 'https://v':
-                var html = showtime.httpReq(unescape(url));
-                var re = /url720=(.*?)&/;
-                var link = re.exec(html);
-                if (!link) {
-                    re = /url480=(.*?)&/;
-                    link = re.exec(html);
-                }
-                if (!link) {
-                    re = /url360=(.*?)&/;
-                    link = re.exec(html);
-                }
-                if (!link) {
-                    re = /url240=(.*?)&/;
-                    link = re.exec(html);
-                }
+                var html = showtime.httpReq(unescape(url)).toString();
+                var link = html.match(/url720=(.*?)&/);
+                if (!link)
+                    link = link = html.match(/url480=(.*?)&/);
+                if (!link)
+                    link = link = html.match(/url360=(.*?)&/);
+                if (!link)
+                    link = link = html.match(/url240=(.*?)&/);
                 if (!link) {
                     page.error('Видео не доступно. / This video is not available, sorry :(');
                     return;
@@ -134,30 +127,48 @@
         });
     });
 
+    function getGenres(blob) {
+        // Let's get the genres
+        var genre = '', first = true;
+        var re = /<a href="([\s\S]*?)">([\s\S]*?)<\/a>/g;
+        var gMatch = re.exec(blob);
+        while (gMatch) {
+            if (first) {
+                genre += gMatch[2];
+                    first = false;
+            } else
+                genre += ', ' + gMatch[2]
+                gMatch = re.exec(blob)
+        }
+        return genre;
+    }
+
     plugin.addURI(PREFIX + ":indexItem:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
         var htmlBlock = showtime.httpReq(unescape(url)).toString();
+        var genres = '';
 
         // 1-icon, 2-title, 3-genre, 4-rating, 5-year, 6-quality, 7-soundtrack,
         // 8-country, 9-director, 10-budget, 11-out(worldwide), 12-out(russia),
         // 13-duration, 14-actors, 15-url, 16-description
         var match = htmlBlock.match(/<div class="full-news-image"><img src="([\s\S]*?)" alt="([\s\S]*?)"[\s\S]*?<div class="main-news-janr">Жанр: ([\s\S]*?)<\/div>[\s\S]*?<li class="current-rating" style="[\s\S]*?">([\s\S]*?)<\/li>[\s\S]*?<span class="year">([\s\S]*?)<\/span>[\s\S]*?<font color="quality">([\s\S]*?)<\/font>[\s\S]*?<font color="[\s\S]*?">([\s\S]*?)<\/font>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<iframe id="div_video" src="([\s\S]*?)"[\s\S]*?<br \/>([\s\S]*?)<\/div>/);
         if (match) {
-           function addItem(link, title, simpleTitle) {
-               page.appendItem(PREFIX + ':play:' + escape(link) + ":" + escape(simpleTitle), 'video', {
-                   title: new showtime.RichText(title),
-                   icon: checkLink(match[1]),
-                   genre: match[3],
-                   duration: match[13],
-                   year: +match[5],
-                   rating: +match[4],
-                   description: new showtime.RichText(orangeStr('Перевод: ') + match[7] +
-                       ' ' +orangeStr('Страна: ') + match[8] + '<br>' + orangeStr('Режиссер: ') + match[9] +
-                       ' ' +orangeStr('Бюджет: ') + match[10] + '<br>' + orangeStr('Премьера (Мир): ') + match[11] +
-                       ' ' +orangeStr('Премьера (РФ): ') + match[12] + '<br>' + orangeStr('В ролях: ') + match[14] +
-                       '<br>' + orangeStr('Описание: ') + match[16])
-               });
+            function addItem(link, title, simpleTitle) {
+                genres = match[3];
+                page.appendItem(PREFIX + ':play:' + escape(link) + ":" + escape(simpleTitle), 'video', {
+                    title: new showtime.RichText(title),
+                    icon: checkLink(match[1]),
+                    genre: getGenres(match[3]),
+                    duration: match[13],
+                    year: +match[5],
+                    rating: +match[4],
+                    description: new showtime.RichText(orangeStr('Перевод: ') + match[7] +
+                        ' ' +orangeStr('Страна: ') + match[8] + '<br>' + orangeStr('Режиссер: ') + match[9] +
+                        ' ' +orangeStr('Бюджет: ') + match[10] + '<br>' + orangeStr('Премьера (Мир): ') + match[11] +
+                        ' ' +orangeStr('Премьера (РФ): ') + match[12] + '<br>' + orangeStr('В ролях: ') + match[14] +
+                        '<br>' + orangeStr('Описание: ') + match[16])
+                });
             }
 
             if (match[15].substr(0, 9) == 'http://mo' && match[15].match(/serial/)) { // handle as series
@@ -184,6 +195,21 @@
             } else
                  addItem(match[15], blueStr(match[6]) + ' ' + match[2], match[2]);
         };
+        if (genres) {
+            page.appendItem("", "separator", {
+	        title: 'Жанры:'
+	    });
+            // Let's get the genres
+            var re = /<a href="([\s\S]*?)">([\s\S]*?)<\/a>/g;
+            var gMatch = re.exec(genres);
+            while (gMatch) {
+                page.appendItem(PREFIX + ':listGenre:' + escape(gMatch[1]) + ":" + escape(gMatch[2]), 'directory', {
+                    title: gMatch[2]
+                });
+                gMatch = re.exec(genres)
+             }
+        }
+
         htmlBlock = htmlBlock.match(/<div class="rel-news">([\s\S]*?)<\/ul>/);
         if (htmlBlock) {
             page.appendItem("", "separator", {
@@ -219,7 +245,7 @@
     plugin.addURI(PREFIX + ":listGenre:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
-        v = showtime.httpReq(BASE_URL + '/' + unescape(url)).toString();
+        v = showtime.httpReq(checkLink(unescape(url))).toString();
         page.loading = false;
         var tryToSearch = true;
         function loader() {
@@ -249,7 +275,7 @@
                 page.appendItem(PREFIX + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText(match[3]),
                     icon: checkLink(match[2]),
-                    genre: match[5],
+                    genre: getGenres(match[5]),
                     rating: +match[6],
                     description: new showtime.RichText(trim(match[4]))
                 });
