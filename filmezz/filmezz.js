@@ -120,8 +120,10 @@
         doc = showtime.httpReq(checkLink(doc.headers.Location), {
             noFollow: true
         });
-
         switch (unescape(hoster)) {
+            case 'Vidzi.tv':
+                url = 'hls:' + showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/file: "([\S\s]*?)"/)[1];
+                break;
             case 'VidToMe':
                 var param = showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/name="op" value="([\S\s]*?)"[\S\s]*?name="id" value="([\S\s]*?)"[\S\s]*?name="fname" value="([\S\s]*?)"[\S\s]*?name="hash" value="([\S\s]*?)"/);
                 sleep(6000);
