@@ -353,9 +353,13 @@
             var next = v.match(/<i class="next-nav1">([\S\s]*?)<span>/);
             if (!next || !next[1]) return tryToSearch = false;
             page.loading = true;
-            v = showtime.httpReq(next[1].match(/<a href="([\S\s]*?)">/)[1]).toString();
-            page.loading = false;
-            return true;
+            var next = next[1].match(/<a href="([\S\s]*?)">/);
+            if (next) {
+                 v = showtime.httpReq([1]).toString();
+                 page.loading = false;
+                 return true;
+            }
+            return page.loading = tryToSearch = false;
         };
 
         loader();

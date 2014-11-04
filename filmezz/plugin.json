@@ -6,7 +6,7 @@
 	"synopsis": "filmezz.eu: Várunk téged is a filmezz.eu-n, az online filmek birodalmában!",
 	"version": "0.3.6", "file": "filmezz.js",
 	"showtimeVersion": "4.3.9",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "filmezz.eu",
 	"category": "video",
 	"icon": "logo.png"

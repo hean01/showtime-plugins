@@ -169,6 +169,7 @@
                 if (json[i].path.split('.').pop().toUpperCase() == 'PLX')
                     url = 'navi-x:playlist:playlist:' + escape(url)
                 var type = json[i].mime_type.split('/')[0];
+
 	        page.appendItem(url, type, {
 	            title: new showtime.RichText(title + colorStr(json[i].size, blue) + ' ' + json[i].modified.replace( /\+0000/, ''))
 	        });
