@@ -26,8 +26,8 @@
 			"type": "javascript",
 			"id": "baskino.com",
 			"category": "video",
-			"icon": "https://github.com/lprot/showtime-plugins/raw/master/baskino/logo.png"
-			"downloadURL": "https://github.com/lprot/showtime-plugins/raw/master/plugins/baskino.zip",
-		},
+			"icon": "https://github.com/lprot/showtime-plugins/raw/master/baskino/logo.png",
+			"downloadURL": "https://github.com/lprot/showtime-plugins/raw/master/plugins/baskino.zip"
+		}
 	]
 }
