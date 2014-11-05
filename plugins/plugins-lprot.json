@@ -1,0 +1,47 @@
+{
+	"version": 1,
+	"plugins": [
+		{
+			"id": "opensubtitles",
+			"version": "1.2",
+			"type": "javascript",
+			"author": "Andreas Ã–man",
+			"showtimeVersion": "4.1.404",
+			"title": "Opensubtitles",
+			"synopsis": "Biggest multi-language subtitle database",
+			"description": "Installing this plugin will make Showtime automatically search for subtitles online at opensubtitles.org when playing a movie",
+			"homepage": "http://www.opensubtitles.org/",
+			"category": "subtitles",
+			"downloadURL": "http://showtime.lonelycoder.com/plugins/data/ae8fa6471aeefa2f45f28deb081b484b9b71716a",
+			"icon": "http://showtime.lonelycoder.com/plugins/data/b22786f4d757317bd0a4ec8702ac2675d12dd1d4"
+		},
+		{
+			"id": "webmedia",
+			"version": "1.2",
+			"type": "javascript",
+			"author": "andreus sebes (andreus.sebes@gmail.com)",
+			"showtimeVersion": "4.1.404",
+			"title": "WEBmedia",
+			"synopsis": "Internet source media reader",
+			"description": "WEBmedia plugin for Showtime is a internet source media reader\n\nCan read RSS feeds, Imagecast, Podcast, Videocast, Live TV/Radio (RTMP), Web Resources and Web Folders.",
+			"homepage": "https://github.com/andreus-sebes/showtime-plugin-webmedia",
+			"category": "video",
+			"downloadURL": "http://showtime.lonelycoder.com/plugins/data/d4572d711e52d4cee9b9bfe25948462b4a25f4f5",
+			"icon": "http://showtime.lonelycoder.com/plugins/data/88d25c4b396d8d5df26b1025b2b0910ce37a9f68"
+		},
+		{
+			"id": "ingfilm.ru",
+			"version": "0.1.5",
+			"type": "javascript",
+			"author": "lprot",
+			"showtimeVersion": "4.3.9",
+			"title": "ingfilm.ru",
+			"synopsis": "INGFILM.RU | HD Ð¤Ð¸Ð»ÑŒÐ¼Ñ‹ ÐžÐ½Ð»Ð°Ð¹Ð½",
+			"description": "<p>INGFILM.RU | HD Ð¤Ð¸Ð»ÑŒÐ¼Ñ‹ ÐžÐ½Ð»Ð°Ð¹Ð½<p>Ð”Ð»Ñ Ð´Ð¾Ð¿Ð¾Ð»Ð½Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð¾Ð¹ Ð¸Ð½Ñ„Ð¾Ñ€Ð¼Ð°Ñ†Ð¸Ð¸, Ð¿Ð¾ÑÐµÑ‚Ð¸Ñ‚Ðµ <a href=\"http://ingfilm.ru\">http://ingfilm.ru</a>",
+			"homepage": "http://github.com/lprot/showtime-plugins",
+			"category": "video",
+			"downloadURL": "http://showtime.lonelycoder.com/plugins/data/1f3f9d8a0d7cc346e13f3e6c93a675edbb56aa29",
+			"icon": "http://showtime.lonelycoder.com/plugins/data/d9181602b8ebcc34af1de1e7e39d0768c15232ae"
+		}
+	]
+}
