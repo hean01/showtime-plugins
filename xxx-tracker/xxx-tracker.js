@@ -18,11 +18,8 @@
  */
 
 (function(plugin) {
-    var plugin_info = plugin.getDescriptor();
-    var PREFIX = plugin_info.id;
     var BASE_URL = 'http://xxx-tracker.com';
     var logo = plugin.path + "logo.png";
-    var slogan = plugin_info.synopsis;
 
     var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
@@ -50,10 +47,10 @@
         page.loading = false;
     }
 
-    plugin.createService(plugin_info.title, PREFIX + ":start", "video", true, logo);
+    plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "video", true, logo);
 
-    plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, plugin_info.synopsis);
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
+        setPageHeader(page, plugin.getDescriptor().synopsis);
         page.loading = true;
         var doc = showtime.httpReq(BASE_URL + '/top').toString();
         page.loading = false;
@@ -89,6 +86,6 @@
         }
     });
 
-    plugin.addSearcher(plugin_info.title, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
     });
 })(this);

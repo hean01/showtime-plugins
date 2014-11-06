@@ -359,7 +359,7 @@
            return;
         }
         var pos = 0;
-	for each (item in list) {
+	for (var item in list) {
 	    var itemmd = showtime.JSONDecode(item);
 	    var item = page.appendItem(itemmd.link, "video", {
        		title: itemmd.title,

@@ -22,7 +22,7 @@
     var BASE_URL = "http://www.somafm.com";
     var logo = plugin.path + "somafm.png";
 
-    plugin.createService(getDescriptor().title, getDescriptor().id + ":start", "audio", true, logo);
+    plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "audio", true, logo);
 
     function descr(s) {
         var tmp = s.match(/<p class="descr">([\S\s]*?)<dl>/);
@@ -33,12 +33,12 @@
     }
 
     // Start page
-    plugin.addURI(getDescriptor().id + ":start", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
 	page.type = "directory";
 	page.metadata.glwview = plugin.path + "views/array.view";
 	page.contents = "items";
 	page.metadata.logo = logo;
-	page.metadata.title = getDescriptor().title;
+	page.metadata.title = plugin.getDescriptor().title;
 
         page.options.createInt('childTilesX', 'Tiles by X', 6, 1, 10, 1, '', function(v) {
             page.metadata.childTilesX = v;

@@ -42,7 +42,7 @@
         }
 
         if (!logged) {
-            credentials = plugin.getAuthCredentials(getDescriptor().synopsis, text, showDialog);
+            credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, text, showDialog);
             if (credentials && credentials.username && credentials.password) {
                 var params = 'login=' + credentials.username + '&password=' + credentials.password + '&remember=1';
                 page.loading = true;
@@ -65,7 +65,7 @@
     }
 
     var service = plugin.createService("Tree.tv", PREFIX + ":start", "video", true, logo);
-    var settings = plugin.createSettings(getDescriptor().id, logo, getDescriptor().synopsis);
+    var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
     settings.createAction('treetv_login', 'Войти в tree.tv', function() {
         login(0, true);
     });
@@ -559,7 +559,7 @@
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, getDescriptor().synopsis);
+        setPageHeader(page, plugin.getDescriptor().synopsis);
 
         if (logged) {
              page.appendPassiveItem('file', '', {
@@ -618,11 +618,11 @@
 
         // Building list
         page.appendItem("", "separator");
-        scrape(page, '?', escape(getDescriptor().synopsis));
+        scrape(page, '?', escape(plugin.getDescriptor().synopsis));
     });
 
     plugin.addSearcher("Tree.tv", logo, function(page, query) {
         login(page, false);
-        scrapeSmall(page, escape(BASE_URL + '/search/index/index/usersearch/' + query+'/page/'), getDescriptor().synopsis, 1);
+        scrapeSmall(page, escape(BASE_URL + '/search/index/index/usersearch/' + query+'/page/'), plugin.getDescriptor().synopsis, 1);
     });
 })(this);

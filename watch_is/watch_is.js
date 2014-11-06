@@ -18,7 +18,6 @@
  */
 
 (function(plugin) {
-    var descriptor = getDescriptor();
     var PREFIX = 'watch_is';
     var BASE_URL = 'http://watch.is';
     var logo = plugin.path + "logo.png";
@@ -44,7 +43,7 @@
         if (showDialog && page) ask = false; // first time we just try to read credentials silently
 
         while (1) {
-            var credentials = plugin.getAuthCredentials(descriptor.synopsis, "Login required", ask);
+            var credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, "Login required", ask);
             if (credentials.rejected) return false;
             if ((!credentials || !credentials.username || !credentials.password) && showDialog) {
                 ask = true;
@@ -86,9 +85,9 @@
         return true;
     }
 
-    var service = plugin.createService(descriptor.id, PREFIX + ":start", "video", true, logo);
-    var settings = plugin.createSettings(descriptor.id, logo, descriptor.synopsis);
-    settings.createAction(descriptor.id + '_login', 'Change account', function() {
+    var service = plugin.createService(plugin.getDescriptor().id, PREFIX + ":start", "video", true, logo);
+    var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
+    settings.createAction(plugin.getDescriptor().id + '_login', 'Change account', function() {
         login(0, true);
     });
 
@@ -307,11 +306,11 @@
     }
 
     plugin.addURI(PREFIX + ":start", function(page) {
-	if (!setPageHeader(page, descriptor.synopsis)) return;
+	if (!setPageHeader(page, plugin.getDescriptor().synopsis)) return;
         scraper(page, BASE_URL + '/', null);
     });
 
-    plugin.addSearcher(descriptor.id, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
         if (!login(page, false)) return;
         scraper(page, BASE_URL, {args:{search:query}});
     });
