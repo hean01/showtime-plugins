@@ -18,8 +18,6 @@
  */
 
 (function(plugin) {
-    var descriptor = getDescriptor();
-    var PREFIX = 'paradisehil';
     var BASE_URL = 'http://paradisehill.tv';
     var logo = plugin.path + "logo.png";
 
@@ -33,9 +31,9 @@
         page.contents = "items";
     }
 
-    var service = plugin.createService(descriptor.id, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "video", true, logo);
 
-    var settings = plugin.createSettings(descriptor.id, plugin.path + "logo.png", descriptor.synopsis);
+    var settings = plugin.createSettings(plugin.getDescriptor().id, plugin.path + "logo.png", plugin.getDescriptor().synopsis);
     settings.createDivider('Settings');
     settings.createMultiOpt("lang", "Language", [
         ['en', 'english', true],
@@ -48,7 +46,7 @@
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
     }
 
-    const blue = "6699CC", orange = "FFA500";
+    var blue = "6699CC", orange = "FFA500";
 
     function colorStr(str, color) {
         return '<font color="' + color + '"> (' + str + ')</font>';
@@ -62,7 +60,7 @@
         return url.substr(0, 4) == 'http' ? url : BASE_URL + url
     }
 
-    plugin.addURI(PREFIX + ":indexItem:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":indexItem:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
         var response = showtime.httpReq(BASE_URL + "/" + url).toString();
@@ -107,7 +105,7 @@
         }
     });
 
-    plugin.addURI(PREFIX + ":listNew", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":listNew", function(page) {
         setPageHeader(page, 'New');
         // 1-link, 2-icon, 3-title, 4-genre
         var re = /<div class="item_zag">[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">[\s\S]*?<a href="[\s\S]*?">([\s\S]*?)<\/a>/g;
@@ -120,7 +118,7 @@
 
             var match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[3]), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ":indexItem:" + match[1] + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText(match[3] + colorStr(match[4], blue)),
                     genre: match[4],
                     description: match[3],
@@ -139,7 +137,7 @@
         page.paginator = loader;
     });
 
-    plugin.addURI(PREFIX + ":indexCategory:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":indexCategory:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, title);
         var p = 2;
         // 1-link, 2-icon, 3-title
@@ -151,7 +149,7 @@
         function loader() {
             var match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[3]), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ":indexItem:" + match[1] + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText(match[3] ? match[3] : 'No title'),
                     description: match[3],
                     icon: checkLink(match[2])
@@ -173,7 +171,7 @@
     });
 
     function startPage(page) {
-        setPageHeader(page, descriptor.id);
+        setPageHeader(page, plugin.getDescriptor().id);
 
         page.loading = true;
         var lang = '/';
@@ -189,7 +187,7 @@
         re = /<div class="item_zag">[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">[\s\S]*?<a href="[\s\S]*?">([\s\S]*?)<\/a>/g;
         var match = re.exec(response);
         while (match) {
-            page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[3]), 'video', {
+            page.appendItem(plugin.getDescriptor().id + ":indexItem:" + match[1] + ":" + escape(match[3]), 'video', {
                 title: new showtime.RichText(match[3] + colorStr(match[4], blue)),
                 genre: match[4],
                 description: match[3],
@@ -197,7 +195,7 @@
             });
             match = re.exec(response);
         }
-        page.appendItem(PREFIX + ":listNew", 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ":listNew", 'directory', {
             title: service.lang == "en" ? 'More ►' : 'Больше ►'
         });
 
@@ -209,7 +207,7 @@
 	var re = /<div class="item_zag clz">[\s\S]*?<a href="([\s\S]*?)" title="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="item_cat clc"><span><\/span>([\s\S]*?)<\/div>/g;
         var match = re.exec(response);
         while (match) {
-             page.appendItem(PREFIX + ":indexCategory:" + match[1] + ":" + match[2], 'video', {
+             page.appendItem(plugin.getDescriptor().id + ":indexCategory:" + match[1] + ":" + match[2], 'video', {
                  title: new showtime.RichText(match[2] + colorStr(match[4], blue)),
                  icon: checkLink(match[3])
              });
@@ -217,9 +215,9 @@
         }
     };
 
-    plugin.addURI(PREFIX + ":start", startPage);
+    plugin.addURI(plugin.getDescriptor().id + ":start", startPage);
 
-    plugin.addSearcher(descriptor.id, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
         page.entries = 0;
         var fromPage = 1, tryToSearch = true;
         // 1-link, 2-title, 3-icon, 4-genre
@@ -235,7 +233,7 @@
                response = showtime.httpReq(BASE_URL + (service.lang == "en" ? '/en/' : '/') + 'search_results.html?search=' + query.replace(/\s/g, '%20') + '&page=' + fromPage);
             var match = re.exec(response);
             while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + match[1] + ":" + escape(match[2]), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ":indexItem:" + match[1] + ":" + escape(match[2]), 'video', {
                     title: new showtime.RichText(match[2] + colorStr(match[4], blue)),
                     genre: match[4],
                     description: match[2],

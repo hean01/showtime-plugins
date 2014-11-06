@@ -58,7 +58,7 @@
 
     settings.createAction("cleanFavorites", "Clean My Favorites", function() {
         store.list = "[]";
-        showtime.notify('My Favorites are succesfully cleaned.', 2);
+        showtime.notify('My Favorites has been succesfully cleaned.', 2);
     });
 
     function trim(str) {
@@ -85,6 +85,8 @@
 
 	    item.onEvent(pos, function(item) {
 		var list = eval(store.list);
+showtime.print('111');
+showtime.print(list);
 		showtime.notify(showtime.JSONDecode(list[item]).station + " has been removed from My Favorites.", 2);
 	        list.splice(item, 1);
 		store.list = showtime.JSONEncode(list);
@@ -156,9 +158,9 @@
             item.station = match[1];
             item.onEvent("addFavorite", function(item) {
                 var entry = {
-                    url: this.url,
-                    title: this.title,
-                    station: this.station
+                    url: item.url,
+                    title: item.title,
+                    station: item.station
                 };
 	        showtime.trace("item: "+showtime.JSONEncode(entry));
                 var list = eval(store.list);
@@ -197,9 +199,9 @@
                   item.station = match[1];
                   item.onEvent("addFavorite", function(item) {
                       var entry = {
-                          url: this.url,
-                          title: this.title,
-                          station: this.station
+                          url: item.url,
+                          title: item.title,
+                          station: item.station
                       };
 		      showtime.trace("item: "+showtime.JSONEncode(entry));
                       var list = eval(store.list);

@@ -6,7 +6,7 @@
 	"synopsis": "oll.tv — все видео здесь. Смотри с комфортом и в хорошем качестве.",
 	"version": "0.3.3", "file": "oll_tv.js",
 	"showtimeVersion": "4.1.397",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "oll.tv",
 	"icon": "logo.png",
 	"category": "video"

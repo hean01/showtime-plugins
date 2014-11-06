@@ -107,13 +107,11 @@
         function loader() {
             if (!url) return false;
             getDoc(page, url);
-            var re = /<title>([\S\s]*?)<\/title>/;
-            setPageHeader(page, showtime.entityDecode(re.exec(doc)[1]));
+            setPageHeader(page, showtime.entityDecode(doc.match(/<title>([\S\s]*?)<\/title>/)[1]));
 
-            re = /valign=center><a href='([\S\s]*?)'>([\S\s]*?)<b>([\S\s]*?)<\/b><\/a><.*?>([\S\s]*?)>\&nbsp\;/g;
+            var re = /valign=center><a href='([\S\s]*?)'>([\S\s]*?)<b>([\S\s]*?)<\/b><\/a><.*?>([\S\s]*?)>\&nbsp\;/g;
             // 1 = link, 2 = raw image link or empty field, 3 = title, 4 = additional info
             var match = re.exec(doc);
-
             if (!match) { // try the page as texts
                 re = /class=include([\S\s]*?)<\/tr><\/table>/;
                 match = re.exec(doc);

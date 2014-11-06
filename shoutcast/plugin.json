@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Shoutcast",
 	"synopsis": "SHOUTcast Radio - Listen to Free Online Radio Stations",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"file": "shoutcast.js",
 	"showtimeVersion": "4.5.28",
 	"type": "javascript",
