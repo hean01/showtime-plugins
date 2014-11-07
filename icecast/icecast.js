@@ -53,12 +53,8 @@
 
     // create plugin favorites store
     var store = plugin.createStore('favorites', true)
-    if (!store.list) {
-        store.version = "1";
-        store.background = "";
-        store.title = "icecast » My Favorites";
+    if (!store.list)
         store.list = "[]";
-    }
 
     // create plugin service
     plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "audio", true, logo);
@@ -181,8 +177,8 @@
         }
 
         var pos = 0;
-	for (var item in list) {
-	    var itemmd = showtime.JSONDecode(item);
+	for (var i in list) {
+	    var itemmd = showtime.JSONDecode(list[i]);
 
 	    var item = page.appendItem("icecast:"+itemmd.url, "station", {
 		title: itemmd.station,
@@ -311,7 +307,7 @@
     });
 
     plugin.addSearcher("icecast", logo, function(page, query) {
-        setPageHeader(page, '');
-	scrape_page(page, BASE_URL + "/search?search=" + query.replace(' ', '+'), 0 , 1);
+        setPageHeader(page, plugin.getDescriptor().id);
+	scrape_page(page, BASE_URL + "/search?search=" + query.replace(/\s/g, '+'), 0 , 1);
     });
 })(this);

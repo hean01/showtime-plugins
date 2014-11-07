@@ -1,5 +1,5 @@
 {
-        "type": "ecmascript",
+        "type": "javascript",
         "id": "navi-x",
         "file": "navi-x.js",
         "showtimeVersion": "4.3.9",
