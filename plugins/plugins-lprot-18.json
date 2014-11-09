@@ -2,6 +2,20 @@
 	"version": 1,
 	"plugins": [
 		{
+			"description": "<p>4tube - Free Porn Videos <p>Pornstars Sex Videos all Mobile and HD Ready on 4tube.com. Find Pornstars and all their XXX Videos to watch or download here. For more information, visit <a href=\"http://www.4tube.com\">http://www.4tube.com</a>", 
+			"author": "AC", 
+			"homepage": "https://github.com/druelie/showtime-plugins", 
+			"title": "4tube", 
+			"synopsis": "Free Porn Videos | 4tube", 
+			"version": "0.0.1",
+			"showtimeVersion": "4.1.215", 
+			"type": "javascript",
+			"id": "4tube", 
+			"icon": "https://github.com/lprot/showtime-plugins/raw/master/4tube/4tube.png",
+			"category": "video"
+			"downloadURL": "https://github.com/druelie/showtime-plugins/raw/master/plugins/4tube.zip"
+		}
+		{
 			"description": "<p>Porno films online | You can watch video completely free of charge<p>For additional info visit <a href=\"http://kordonivkakino.net\">http://kordonivkakino.net</a>",
 			"author": "lprot", 
 			"homepage": "http://github.com/lprot/showtime-plugins",
