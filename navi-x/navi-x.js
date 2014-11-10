@@ -81,22 +81,19 @@
 
     settings.createDivider('Action Settings');
 
-    settings.createAction("cleanLocalPlaylists", "Clean All Local Playlists", function () {
+    settings.createAction("cleanLocalHistoryPlaylist", "Clean Browse History list", function () {
         store.history.list = "[]";
+        showtime.notify("Browse history list is cleaned.", 2);
+    });
+
+    settings.createAction("cleanLocalFavoritesPlaylist", "Clean My Favorites list", function () {
         store.favorites.list = "[]";
+        showtime.notify("My Favorites list is cleaned.", 2);
+    });
+
+    settings.createAction("cleanLocalHomeItemsPlaylist", "Clean Home Items list", function () {
         store.homeitems.list = "[]";
-    });
-
-    settings.createAction("cleanLocalHistoryPlaylist", "Clean Local History", function () {
-        store.history.list = "[]";
-    });
-
-    settings.createAction("cleanLocalFavoritesPlaylist", "Clean Local Favorites", function () {
-        store.favorites.list = "[]";
-    });
-
-    settings.createAction("cleanLocalHomeItemsPlaylist", "Clean Local Home Items", function () {
-        store.homeitems.list = "[]";
+        showtime.notify("Home Items list is cleaned.", 2);
     });
 
     settings.createDivider('User Interface');
@@ -1520,67 +1517,55 @@
                     item.addOptSeparator("Playlists");
                     
                     if (m.type == "video" || m.type == "image" || m.type == "audio" || m.type == "playlist") {
-                        var exist = store.exist_in_playlist('favorites', playlist.list[i]);
-                        if (!exist.found)
-                            item.addOptAction("Add to local favorites", "addFavorite");
+                        if (!store.exist_in_playlist('favorites', playlist.list[i]).found)
+                            item.addOptAction("Add to My Favorites list", "addFavorite");
                         else
-                            item.addOptAction("Remove from local favorites", "removeFavorite");
+                            item.addOptAction("Remove from My Favorites list", "removeFavorite");
 
                         item.onEvent('addFavorite', function (item) {
-                            if (!store.exist_in_playlist('favorites', playlist.list[this.id]).found) {
-                                if (store.add_to_playlist("favorites", playlist.list[this.id])) {
-                                    showtime.notify('Entry was added syccesfully to the playlist Favorites.', 3);
-                                }
+                            if (!store.exist_in_playlist('favorites', playlist.list[this.id]).found)
+                                if (store.add_to_playlist("favorites", playlist.list[this.id]))
+                                    showtime.notify('The item is successfully added to My Favorites list.', 3);
                                 else
-                                    showtime.notify('There was one error while trying to add this entry to the playlist', 3);
-                            }
-                            else {
-                                showtime.notify('Item was already added to Favorites.', 3);
-                            }
+                                    showtime.notify('Error while trying to add this item to My Favorites list', 3);
+                            else
+                                showtime.notify('The item is already added to My Favorites.', 3);
                         });
 
                         item.onEvent('removeFavorite', function (item) {
-                            if (store.exist_in_playlist('favorites', playlist.list[this.id]).found) {
+                            if (store.exist_in_playlist('favorites', playlist.list[this.id]).found)
                                 if (store.remove_from_playlist("favorites", playlist.list[this.id]))
-                                    showtime.notify('Entry was removed syccesfully to the playlist Favorites.', 3);
+                                    showtime.notify('The item is successfully removed from My Favorites list', 3);
                                 else
-                                    showtime.notify('There was one error while trying to remove this entry to the playlist', 3);
-                            }
-                            else {
-                                showtime.notify('The item doesn\'t exist in Favorites.', 3);
-                            }
+                                    showtime.notify('Error while trying to remove this item from My Favorites list', 3);
+                            else
+                                showtime.notify("The item doesn't exist in My Favorites.", 3);
                         });
 
                         // Home Items
-                        var exist = store.exist_in_playlist('homeitems', playlist.list[i]);
-                        if (!exist.found)
+                        if (!store.exist_in_playlist('homeitems', playlist.list[i]).found)
                             item.addOptAction("Add to Home Items", "addHomeItem");
                         else
                             item.addOptAction("Remove from Home Items", "removeHomeItem");
 
                         item.onEvent('addHomeItem', function (item) {
-                            if (!store.exist_in_playlist('homeitems', playlist.list[this.id]).found) {
-                                if (store.add_to_playlist("homeitems", playlist.list[this.id])) {
-                                    showtime.notify('Entry was added syccesfully to the playlist Home Items.', 3);
-                                }
+                            if (!store.exist_in_playlist('homeitems', playlist.list[this.id]).found)
+                                if (store.add_to_playlist("homeitems", playlist.list[this.id]))
+                                    showtime.notify('The item is successfully added Home Items list.', 3);
                                 else
-                                    showtime.notify('There was one error while trying to add this entry to the playlist', 3);
-                            }
-                            else {
-                                showtime.notify('Item was already added to Home Items.', 3);
-                            }
+                                    showtime.notify('Error while trying to add this item to Home Items list', 3);
+                            else
+                                showtime.notify('The item is already added to Home Items.', 3);
                         });
 
                         item.onEvent('removeHomeItem', function (item) {
-                            if (store.exist_in_playlist('homeitems', playlist.list[this.id]).found) {
+                            if (store.exist_in_playlist('homeitems', playlist.list[this.id]).found)
                                 if (store.remove_from_playlist("homeitems", playlist.list[this.id]))
-                                    showtime.notify('Entry was removed syccesfully to the playlist Home Items.', 3);
+                                    showtime.notify('The item is successfully removed from Home Items list.', 3);
                                 else
-                                    showtime.notify('There was one error while trying to remove this entry to the playlist', 3);
-                            }
-                            else {
-                                showtime.notify('The item doesn\'t exist in Home Items.', 3);
-                            }
+                                    showtime.notify('Error while trying to remove this item from Home Items list', 3);
+                            else
+                                showtime.notify("The item doesn't exist in Home Items.", 3);
                         });
                     }
                 }

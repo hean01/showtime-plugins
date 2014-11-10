@@ -357,15 +357,19 @@
             channelIds.push(json.channels[i].id);
 
         // As we don't have reliable timestamp locally, let's get it from google.com
-        var now = showtime.httpReq("http://google.com", {
-            method: 'HEAD'
-        }).headers.Date;
-        showtime.trace('Google time: ' + now + ', Local time: ' + new Date(now));
-        now = new Date(now);
+        var now = showtime.httpReq("http://google.com", { method: 'HEAD' }).headers.Date;
+        showtime.trace('Google time: ' + now);
+        if (typeof Duktape != 'undefined')
+            now = new Date(Showtime.parseTime(now));
+        else
+            now = new Date(now);
+
+        showtime.trace('System time: ' + now + ' Timestamp: ' + now.getTime());
 
         // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
         if (!store.offset) store.offset = 10800;
         var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - store.offset);
+        showtime.trace('Store offset: ' + store.offset + ' Request timestamp: ' + day);
 
         var epg = request(page, showtime.JSONEncode({
             method: 'getEpgByChannelIdsAndDay',
@@ -375,7 +379,8 @@
                 baseClientKey:baseClientKey
             }
         }));
-        if (!showtime.JSONEncode(epg)) {
+
+        if (!showtime.JSONEncode(epg) || showtime.JSONEncode(epg) == '[]') {
             store.offset = 7200;
             day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - store.offset);
             var epg = request(page, showtime.JSONEncode({

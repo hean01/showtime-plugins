@@ -18,8 +18,7 @@
  */
 
 (function(plugin) {
-    var plugin_info = plugin.getDescriptor();
-    var PREFIX = plugin_info.id;
+    var logo = plugin.path + "logo.png";
     var country = '';
     var ui = {
         background : null
@@ -39,11 +38,9 @@
         return '<font color="' + color + '">' + str + '</font>';
     }
 
-    var service = plugin.createService(plugin_info.title, PREFIX + ":start", "video", true,
-	plugin.path + "logo.png");
+    var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "video", true, logo);
         
-    var settings = plugin.createSettings(plugin_info.title, plugin.path + "logo.png", 
-        plugin_info.synopsis);
+    var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().synopsis);
 
     // stores
     var v3_oauth_information = plugin.createStore('v3_oauth2', true);
@@ -268,7 +265,7 @@
                 var title = obj.metadata.title;
                 title = title.replace(/<.+?>/g, "").replace(/\[.+?\]/g, "");
                 t("Search in Youtube: " + title);
-                nav.openURL(PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/videos?q=" + title)+':');
+                nav.openURL(plugin.getDescriptor().id + ":feed:" + escape("https://gdata.youtube.com/feeds/api/videos?q=" + title)+':');
             }
         });
     }
@@ -283,7 +280,7 @@
         for (var i in api["standard_feeds"]) {
             var entry = api["standard_feeds"][i];
             standard_feeds.push({
-                url: PREFIX + ':feed:' + escape(entry[1]) + ':' +escape('Standard Feeds'),
+                url: plugin.getDescriptor().id + ':feed:' + escape(entry[1]) + ':' +escape('Standard Feeds'),
                 title: entry[0],
                 icon: entry[2]
             });
@@ -293,7 +290,7 @@
         for (var i in api["channel_feeds"]) {
             var entry = api["channel_feeds"][i];
             channel_feeds.push({
-                url: PREFIX + ':feed:' + escape(entry[1])+ ':' +escape('Channel Feeds'),
+                url: plugin.getDescriptor().id + ':feed:' + escape(entry[1])+ ':' +escape('Channel Feeds'),
                 title: entry[0],
                 icon: entry[2]
             });
@@ -310,7 +307,7 @@
         			"subrequest": "list"
         		}
         	};
-       	 	items.push(page.appendItem(PREFIX + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('My Activity'), 'directory', {
+       	 	items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('My Activity'), 'directory', {
         		title: 'My Activity'
         	}));
         }
@@ -323,7 +320,7 @@
         		"subrequest": "list"
         	}
         };
-        items.push(page.appendItem(PREFIX + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Guide Categories'), 'directory', {
+        items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Guide Categories'), 'directory', {
         	title: 'Guide Categories', icon: plugin.path + "views/img/logos/explore.png"
         }));
 
@@ -335,20 +332,20 @@
         		"subrequest": "list"
         	}
         };
-        items.push(page.appendItem(PREFIX + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Video Categories'), 'directory', {
+        items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Video Categories'), 'directory', {
         	title: 'Video Categories', icon: plugin.path + "views/img/logos/explore.png"
         }));
         
-        items.push(page.appendItem(PREFIX + ':mixfeeds:'+ 'standard_feeds:'+escape('Standard Feeds'), 'directory', {title: 'Standard Feeds', icon: plugin.path + "views/img/logos/feeds.png" }));
-        items.push(page.appendItem(PREFIX + ':mixfeeds:'+ 'channel_feeds:'+escape('Channel Feeds'), 'directory', {title: 'Channel Feeds', icon: plugin.path + "views/img/logos/channels.png" }));
-        items.push(page.appendItem(PREFIX + ':edu:'+escape('Youtube EDU'), 'directory', { title: 'Youtube EDU', icon: plugin.path + "views/img/logos/edu.png" }));
-        items.push(page.appendItem(PREFIX + ':mixfeeds:'+ 'live_feeds:'+escape('Youtube Live'), 'directory', {title: 'Youtube Live', icon: plugin.path + "views/img/logos/live.png" }));
-        items.push(page.appendItem(PREFIX + ':mixfeeds:'+ 'movie_feeds:'+escape('Youtube Movies'), 'directory', {title: 'Youtube Movies', icon: plugin.path + "views/img/logos/movies.png" }));
-        items.push(page.appendItem(PREFIX + ':mixfeeds:'+ 'show_feeds:'+escape('Youtube Shows'), 'directory', {title: 'Youtube Shows', icon: plugin.path + "views/img/logos/shows.png" }));
-        items.push(page.appendItem(PREFIX + ':disco:null:'+escape('Youtube Disco'), 'directory', {title: 'Youtube Disco', icon: plugin.path + "views/img/logos/disco.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'standard_feeds:'+escape('Standard Feeds'), 'directory', {title: 'Standard Feeds', icon: plugin.path + "views/img/logos/feeds.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'channel_feeds:'+escape('Channel Feeds'), 'directory', {title: 'Channel Feeds', icon: plugin.path + "views/img/logos/channels.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':edu:'+escape('Youtube EDU'), 'directory', { title: 'Youtube EDU', icon: plugin.path + "views/img/logos/edu.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'live_feeds:'+escape('Youtube Live'), 'directory', {title: 'Youtube Live', icon: plugin.path + "views/img/logos/live.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'movie_feeds:'+escape('Youtube Movies'), 'directory', {title: 'Youtube Movies', icon: plugin.path + "views/img/logos/movies.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'show_feeds:'+escape('Youtube Shows'), 'directory', {title: 'Youtube Shows', icon: plugin.path + "views/img/logos/shows.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':disco:null:'+escape('Youtube Disco'), 'directory', {title: 'Youtube Disco', icon: plugin.path + "views/img/logos/disco.png" }));
         
         if (apiV3.auth.authenticated)
-            items.push(page.appendItem(PREFIX + ':user:default', 'directory', {title: 'User Profile', icon: plugin.path + "views/img/logos/user.png" }));
+            items.push(page.appendItem(plugin.getDescriptor().id + ':user:default', 'directory', {title: 'User Profile', icon: plugin.path + "views/img/logos/user.png" }));
     
         try {
             for (var i in items) {
@@ -389,11 +386,11 @@
         page.contents = "items";
         page.loading = false;
 
-        page.metadata.logo = plugin.path + "logo.png";
+        page.metadata.logo = logo;
         page.metadata.title = "Youtube - Home Page";
     }
 
-    plugin.addURI(PREFIX + ":oauth:confirm:(.*)", function (page, code) {
+    plugin.addURI(plugin.getDescriptor().id + ":oauth:confirm:(.*)", function (page, code) {
         page.type = "directory";
         page.metadata.glwview = plugin.path + "views/auth_2.view";
 
@@ -421,7 +418,7 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":search", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":search", function(page) {
         page.metadata.title = 'Youtube Search';
         page.metadata.logo = plugin.path + "views/img/logos/music.png";
 
@@ -431,25 +428,25 @@
         page.subscribe("page.model.metadata.search", function(v) {
             page.metadata.search = v;
         });
-        page.appendAction("navopen", PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/videos?q=" + page.metadata.search), true, {
+        page.appendAction("navopen", plugin.getDescriptor().id + ":feed:" + escape("https://gdata.youtube.com/feeds/api/videos?q=" + page.metadata.search), true, {
             title: "Search for Videos",
             icon: plugin.path + "views/img/search_videos.png",
             hidden: true,
             search: true
         });
-        page.appendAction("navopen", PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/snippets?q=" + page.metadata.search), true, {
+        page.appendAction("navopen", plugin.getDescriptor().id + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/snippets?q=" + page.metadata.search), true, {
             title: "Search for Playlists",
             icon: plugin.path + "views/img/search_playlists.png",
             hidden: true,
             search: true
         });
-        page.appendAction("navopen", PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/channels?q=" + page.metadata.search), true, {
+        page.appendAction("navopen", plugin.getDescriptor().id + ":feed:" + escape("https://gdata.youtube.com/feeds/api/channels?q=" + page.metadata.search), true, {
             title: "Search for Channels",
             icon: plugin.path + "views/img/search_channels.png",
             hidden: true,
             search: true
         });
-        page.appendAction("navopen", PREFIX + ":disco:" + escape(page.metadata.search)+':'+escape('Search for Disco: '), true, {
+        page.appendAction("navopen", plugin.getDescriptor().id + ":disco:" + escape(page.metadata.search)+':'+escape('Search for Disco: '), true, {
             title: "Search for Disco",
             icon: plugin.path + "views/img/logos/music.png",
             hidden: true,
@@ -463,7 +460,7 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":list:(.*)", function(page, list) {
+    plugin.addURI(plugin.getDescriptor().id + ":list:(.*)", function(page, list) {
         page.metadata.title = 'Youtube Music';
         page.metadata.logo = plugin.path + "views/img/logos/music.png";
 
@@ -473,7 +470,7 @@
 
         for (var i in entries) {
             var item = entries[i];
-            page.appendItem(PREFIX + ":video:" + item.id, "video", item);
+            page.appendItem(plugin.getDescriptor().id + ":video:" + item.id, "video", item);
         }
     
         page.type = "directory";
@@ -481,7 +478,7 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":edu:(.*)", function(page, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":edu:(.*)", function(page, title) {
         page.metadata.title = unescape(showtime.entityDecode(title));
         page.metadata.logo = plugin.path + "views/img/logos/edu.png";
 
@@ -491,7 +488,7 @@
         for (var i in edu_categories) {
             var entry = edu_categories[i];
             if (entry[1] == "All") continue;
-            page.appendItem(PREFIX + ':edu:category:' + entry[0] + ':' + escape(title), 'directory', {
+            page.appendItem(plugin.getDescriptor().id + ':edu:category:' + entry[0] + ':' + escape(title), 'directory', {
                 title: unescape(showtime.entityDecode(entry[1]))
             })
         }
@@ -501,17 +498,17 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":edu:category:(.*):(.*)", function(page, categoryId, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":edu:category:(.*):(.*)", function(page, categoryId, title) {
         page.metadata.title = unescape(showtime.entityDecode(title));
         page.metadata.logo = plugin.path + "views/img/logos/edu.png";
 
         pageMenu(page, null, null);
 
-        page.appendItem(PREFIX + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/courses?category=" + categoryId) + ':Courses', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/courses?category=" + categoryId) + ':Courses', 'directory', {
             title: "Courses"
         })
 
-        page.appendItem(PREFIX + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/lectures?category=" + categoryId) + ':Lectures', 'directory', {
+        page.appendItem(plugin.getDescriptor().id + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/lectures?category=" + categoryId) + ':Lectures', 'directory', {
             title: "Lectures"
         })
         
@@ -520,9 +517,9 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":disco:(.*):(.*)", function(page, query, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":disco:(.*):(.*)", function(page, query, title) {
         page.metadata.title = unescape(showtime.entityDecode(title));
-        page.metadata.logo = plugin.path + "logo.png";
+        page.metadata.logo = logo;
 
         pageMenu(page);
         page.loading = false;
@@ -554,7 +551,7 @@
             
             for (var i in entries) {
                 var item = entries[i];
-                page.appendItem(PREFIX + ":video:" + item.id, "video", {
+                page.appendItem(plugin.getDescriptor().id + ":video:" + item.id, "video", {
                     title: showtime.entityDecode(unescape(item.title)),
                     icon: item.logo
                 });
@@ -571,9 +568,9 @@
         page.loading = false;
     });
   
-    plugin.addURI(PREFIX + ":mixfeeds:(.*):(.*)", function(page, type, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":mixfeeds:(.*):(.*)", function(page, type, title) {
         page.metadata.title = unescape(showtime.entityDecode(title));
-        page.metadata.logo = plugin.path + "logo.png";
+        page.metadata.logo = logo;
 
         pageMenu(page);
 		
@@ -581,7 +578,7 @@
     
         for (var i in api[type]) {
             var entry = api[type][i];
-            page.appendItem(PREFIX + ':feed:' + escape(entry[1])+':'+escape(entry[0]),"directory", {
+            page.appendItem(plugin.getDescriptor().id + ':feed:' + escape(entry[1])+':'+escape(entry[0]),"directory", {
                 title: unescape(showtime.entityDecode(entry[0])),
                 icon: entry[2]
             });
@@ -592,7 +589,7 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":feed:sort:(.*):(.*):(.*)", function(page, category, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":feed:sort:(.*):(.*):(.*)", function(page, category, url, title) {
         page.metadata.title = unescape(showtime.entityDecode(title));
         page.type = "directory";
         page.contents = "contents";
@@ -615,13 +612,13 @@
             res.args['orderby'] = value[1];
             var link_tmp = putUrlArgs(link, res.args);
 
-            page.appendItem(PREFIX + ':feed:' + escape(link_tmp) + ':'+escape(value[0]),"directory", {
+            page.appendItem(plugin.getDescriptor().id + ':feed:' + escape(link_tmp) + ':'+escape(value[0]),"directory", {
                 title: unescape(showtime.entityDecode(value[0]))
             });
         }
     });
 
-    plugin.addURI(PREFIX + ":feed:duration:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":feed:duration:(.*):(.*)", function(page, url, title) {
         page.metadata.title = unescape(showtime.entityDecode(title));
         page.type = "directory";
         page.contents = "contents";
@@ -641,13 +638,13 @@
         res.args['duration'] = 'long';
         var link_tmp3 = putUrlArgs(link, res.args);
 
-        page.appendItem(PREFIX + ':feed:' + escape(link_tmp1)+':'+escape('Short: Less than 4 minutes'), "directory", {
+        page.appendItem(plugin.getDescriptor().id + ':feed:' + escape(link_tmp1)+':'+escape('Short: Less than 4 minutes'), "directory", {
             title: 'Short: Less than 4 minutes'
         });
-        page.appendItem(PREFIX + ':feed:' + escape(link_tmp2)+':'+escape('Medium: Between 4 minutes and 20 minutes (inclusive)'), "directory", {
+        page.appendItem(plugin.getDescriptor().id + ':feed:' + escape(link_tmp2)+':'+escape('Medium: Between 4 minutes and 20 minutes (inclusive)'), "directory", {
             title: 'Medium: Between 4 minutes and 20 minutes (inclusive)'
         });
-        page.appendItem(PREFIX + ':feed:' + escape(link_tmp3)+':'+escape('Long: Longer than 20 minutes'), "directory", {
+        page.appendItem(plugin.getDescriptor().id + ':feed:' + escape(link_tmp3)+':'+escape('Long: Longer than 20 minutes'), "directory", {
             title: 'Long: Longer than 20 minutes'
         });
     });
@@ -685,7 +682,7 @@
                 var c = 0;
 
                 if (!doc.entry) {
-                    page.appendItem(PREFIX + ':start', 'directory', {
+                    page.appendItem(plugin.getDescriptor().id + ':start', 'directory', {
                         title: 'This feed does not contain any item. Sorry about that.'
                     });
                 }
@@ -853,7 +850,7 @@
                             metadata.picture1 = "http://i.ytimg.com/vi/" + id + "/1.jpg";
                             metadata.picture2 = "http://i.ytimg.com/vi/" + id + "/3.jpg";
 
-                            var item = page.appendItem(PREFIX + ':video:' + id, "video", metadata);
+                            var item = page.appendItem(plugin.getDescriptor().id + ':video:' + id, "video", metadata);
 
                             item.id = id;
                             if (entry.media$group && entry.media$group.media$credit) {
@@ -863,7 +860,7 @@
                         }
                         else if (entry.category[0].term == "http://gdata.youtube.com/schemas/2007#course") {
                             var match = entry.id.$t.match(":course:([^:]*)")[1];
-                            var item = page.appendItem(PREFIX + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/lectures?course=" + match)+':'+escape(title), "directory", metadata);
+                            var item = page.appendItem(plugin.getDescriptor().id + ':feed:' + escape("http://gdata.youtube.com/feeds/api/edu/lectures?course=" + match)+':'+escape(title), "directory", metadata);
                         }
                         else if (doc.id.$t.toString().indexOf('charts:movies') != -1) {
                             
@@ -892,9 +889,9 @@
 
                                 metadata.title = "Season " + entry.yt$season.season + ' - ' + title;
 
-                                var item = page.appendItem(PREFIX + ':feed:' + escape(link.href) + ':' + escape(metadata.title), "directory", metadata);
+                                var item = page.appendItem(plugin.getDescriptor().id + ':feed:' + escape(link.href) + ':' + escape(metadata.title), "directory", metadata);
 
-                                item.appendItem = "page.appendItem(PREFIX + ':feed:' + escape(link.href) + ':' + escape(title), \"directory\", metadata);";
+                                item.appendItem = "page.appendItem(plugin.getDescriptor().id + ':feed:' + escape(link.href) + ':' + escape(title), \"directory\", metadata);";
                             }
                         }
                         else if (entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#video' ||
@@ -920,7 +917,7 @@
                             metadata.picture1 = "http://i.ytimg.com/vi/" + id + "/1.jpg";
                             metadata.picture2 = "http://i.ytimg.com/vi/" + id + "/2.jpg";
                         
-                            var item = page.appendItem(PREFIX + ':video:' + id, "video", metadata);
+                            var item = page.appendItem(plugin.getDescriptor().id + ':video:' + id, "video", metadata);
 
                             item.id = id;
                             if (entry.media$group && entry.media$group.media$credit) {
@@ -930,16 +927,16 @@
                         }
                         else if (entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#friend' ||
                         entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#subscription') {
-                            var item = page.appendItem(PREFIX + ':user:username:' + entry.yt$username.$t, "directory", metadata);
+                            var item = page.appendItem(plugin.getDescriptor().id + ':user:username:' + entry.yt$username.$t, "directory", metadata);
                         }
                         else if (entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#playlistLink' ||
                         entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#show' ||
                         entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#season') {
                             url = entry.content.src;
-                            var item = page.appendItem(PREFIX + ':feed:' + escape(url)+':'+escape(title), "directory", metadata);
+                            var item = page.appendItem(plugin.getDescriptor().id + ':feed:' + escape(url)+':'+escape(title), "directory", metadata);
                         }
                         else if (entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#channel') {
-                            var item = page.appendItem(PREFIX + ':feed:' + escape(entry.gd$feedLink[0].href)+':'+escape(title), "directory", metadata);
+                            var item = page.appendItem(plugin.getDescriptor().id + ':feed:' + escape(entry.gd$feedLink[0].href)+':'+escape(title), "directory", metadata);
                         }
                         else if (entry.category[0].term == 'http://gdata.youtube.com/schemas/2007#channelstandard') {
                             var icon = eval('(entry.media$group)?entry.media$group.media$thumbnail[0].url:null');
@@ -947,7 +944,7 @@
                                 icon = 'http:' + icon;
                             }
 
-                            var item = page.appendItem(PREFIX + ':user:username:' + entry.id.$t.toString().slice(entry.id.$t.toString().lastIndexOf(':')+1), "directory", metadata);
+                            var item = page.appendItem(plugin.getDescriptor().id + ':user:username:' + entry.id.$t.toString().slice(entry.id.$t.toString().lastIndexOf(':')+1), "directory", metadata);
                         }
 
                         if (metadata.published) {
@@ -987,11 +984,11 @@
         page.paginator = paginator;
     }
   
-    plugin.addURI(PREFIX + ":feed:(.*)", function(page, url) {
-        page.redirect(PREFIX + ":feed:"+url+':'+escape('Search results:'));
+    plugin.addURI(plugin.getDescriptor().id + ":feed:(.*)", function(page, url) {
+        page.redirect(plugin.getDescriptor().id + ":feed:"+url+':'+escape('Search results:'));
     });
 
-    plugin.addURI(PREFIX + ":feed:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":feed:(.*):(.*)", function(page, url, title) {
         page.metadata.title = new showtime.RichText(unescape(showtime.entityDecode(title)));
         page.type = "directory";
         page.contents = "items";
@@ -999,7 +996,7 @@
         var duration_included = false;
 
         try {
-            page.metadata.logo = plugin.path + "logo.png";
+            page.metadata.logo = logo;
             api.reset_args();
 
             pageController(page, function(offset) { 
@@ -1068,7 +1065,7 @@
                 //}
 
                 if (!duration_included) {
-                    page.appendItem(PREFIX + ':feed:duration:' + escape(link)+':'+escape('Filter by duration'), "directory", {
+                    page.appendItem(plugin.getDescriptor().id + ':feed:duration:' + escape(link)+':'+escape('Filter by duration'), "directory", {
                         title: "Filter by duration"}
                     );
                     duration_included = true;
@@ -1096,7 +1093,7 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":v3:request:(.*):(.*)", function(page, args, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":v3:request:(.*):(.*)", function(page, args, title) {
         page.type = "directory";
         page.contents = "items";
         page.metadata.title = new showtime.RichText(unescape(showtime.entityDecode(title)));
@@ -1105,7 +1102,7 @@
         args = showtime.JSONDecode(unescape(args));
 
         try {
-            page.metadata.logo = plugin.path + "logo.png";
+            page.metadata.logo = logo;
 
             var type = args.request.type;
             var request = args.request.subrequest;
@@ -1183,7 +1180,7 @@
                 };
 
                 if (it.kind == "youtube#playlistItem" && it.snippet.resourceId.kind == "youtube#video")
-                    args.url = PREFIX + ":video:" + it.snippet.resourceId.videoId;
+                    args.url = plugin.getDescriptor().id + ":video:" + it.snippet.resourceId.videoId;
                 else if (it.kind == "youtube#playlist") {
                     var args1 = {
                         "part": "id,snippet",
@@ -1193,10 +1190,10 @@
                             "subrequest": "list"
                         }
                     };
-                    args.url = PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args1))+':'+escape(it.snippet.title);
+                    args.url = plugin.getDescriptor().id + ":v3:request:" + escape(showtime.JSONEncode(args1))+':'+escape(it.snippet.title);
                 }
                 else if (it.kind == "youtube#subscription" && it.snippet.resourceId.kind == "youtube#channel")
-                    args.url = PREFIX + ":user:" + it.snippet.resourceId.channelId;
+                    args.url = plugin.getDescriptor().id + ":user:" + it.snippet.resourceId.channelId;
 
                 arr.push(args);
             }
@@ -1208,11 +1205,11 @@
         return arr;
     }
 
-    plugin.addURI(PREFIX + ":user:username:(.*)", function(page, username) {	
-    	page.redirect(PREFIX + ":user:" + parseChannelId(username));
+    plugin.addURI(plugin.getDescriptor().id + ":user:username:(.*)", function(page, username) {
+    	page.redirect(plugin.getDescriptor().id + ":user:" + parseChannelId(username));
     });
 
-    plugin.addURI(PREFIX + ":user:(.*)", function(page, user) {
+    plugin.addURI(plugin.getDescriptor().id + ":user:(.*)", function(page, user) {
         if (!apiV3.auth.authenticated && user == 'default') {
             showtime.trace('YOUTUBE: User must be authenticated to see this profile');
             page.error('User must be authenticated to see this profile');
@@ -1316,7 +1313,7 @@
                             title: it.title.$t,
                             subtitle: it.author[0].name.$t,
                             image: images,
-                            url: PREFIX + ":video:" + id
+                            url: plugin.getDescriptor().id + ":video:" + id
                         });
                     }
                     catch(ex) {
@@ -1329,7 +1326,7 @@
                     newSubscriptionVideos.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/newsubscriptionvideos')+':'+escape(page.metadata.title)
+                        url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/newsubscriptionvideos')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", newSubscriptionVideos, { title: "New Subscription Videos" });
@@ -1355,7 +1352,7 @@
                     favorites.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/favorites')+':'+escape(page.metadata.title)
+                        url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/favorites')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", favorites, { title: "Favorites" });
@@ -1387,7 +1384,7 @@
                     watchLater.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_later')+':'+escape(page.metadata.title)
+                        url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_later')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", watchLater, { title: "Watch Later" });
@@ -1412,7 +1409,7 @@
                     watchHistory.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_history')+':'+escape(page.metadata.title)
+                        url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/watch_history')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", watchHistory, { title: "Watch History" });
@@ -1437,7 +1434,7 @@
                     likes.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/" + likesPlaylistId)+':'+escape(page.metadata.title)
+                        url: plugin.getDescriptor().id + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/" + likesPlaylistId)+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", watchLater, { title: "Likes" });
@@ -1463,7 +1460,7 @@
                     subscriptions.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/subscriptions')+':'+escape(page.metadata.title)
+                        url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/subscriptions')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", subscriptions, { title: "Subscriptions" });
@@ -1490,7 +1487,7 @@
                     playlists.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/playlists')+':'+escape(page.metadata.title)
+                        url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/playlists')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", playlists, { title: "Playlists" });
@@ -1538,7 +1535,7 @@
                             title: it.title.$t,
                             subtitle: it.author[0].name.$t,
                             image: images,
-                            url: PREFIX + ":video:" + id
+                            url: plugin.getDescriptor().id + ":video:" + id
                         });
                     }
                     catch(ex) {
@@ -1551,7 +1548,7 @@
                     videoRecommendations.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/recommendations')+':'+escape(page.metadata.title)
+                        url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/recommendations')+':'+escape(page.metadata.title)
                     });
 
                     if (user == "default") page.appendPassiveItem("list", videoRecommendations, { title: "Video Recommendations" });
@@ -1577,7 +1574,7 @@
                 uploads.push({
                     title: "See More",
                     image: plugin.path + "views/img/add.png",
-                    url: PREFIX + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/uploads')+':'+escape(page.metadata.title)
+                    url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/uploads')+':'+escape(page.metadata.title)
                 });
 
                 if (user == "default") page.appendPassiveItem("list", uploads, { title: "Uploads" });
@@ -1842,7 +1839,7 @@
         var url = unescape(unescape(video_url));
         var videoParams = {
             title: showtime.entityDecode(unescape(unescape(title))),
-            canonicalUrl: PREFIX + ':video:' + id,
+            canonicalUrl: plugin.getDescriptor().id + ':video:' + id,
             sources: [{	
                 url: url  
             }],
@@ -1899,15 +1896,15 @@
         showtime.print(message);
     }
 
-    plugin.addURI(PREFIX + ":video:(.*)", function(page, id) {
+    plugin.addURI(plugin.getDescriptor().id + ":video:(.*)", function(page, id) {
         var extractedId = unescape(id).match(/\/embed\/([^\?|^\&|"]+)/);
         if (!extractedId)
             extractedId = unescape(id).match(/watch\?v=([^\?|^\&|"]+)/);
         if (extractedId) id = extractedId[1];
-    	page.redirect(PREFIX + ":video:" + service.mode + ":" + id);
+    	page.redirect(plugin.getDescriptor().id + ":video:" + service.mode + ":" + id);
     });
 
-    plugin.addURI(PREFIX + ":video:simple:(.*)", function(page, id) {
+    plugin.addURI(plugin.getDescriptor().id + ":video:simple:(.*)", function(page, id) {
         try {
             var video_url = getVideosList(page, id, 1);
             if (service.enableDebug) {
@@ -1930,7 +1927,7 @@
             video_url = video_url[0].video_url;
             //playVideo(page, title, id, video_url);
 
-            page.redirect(PREFIX + ":video:stream:" + escape(title) + ":" + id + ":" + video_url);
+            page.redirect(plugin.getDescriptor().id + ":video:stream:" + escape(title) + ":" + id + ":" + video_url);
         }
         catch (err) {
             if (err == "Error: HTTP error: 404")
@@ -1945,7 +1942,7 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":video:simple:(.*):(.*)", function(page, title, id) {
+    plugin.addURI(plugin.getDescriptor().id + ":video:simple:(.*):(.*)", function(page, title, id) {
         try {
             var video_url = getVideosList(page, id, 1);
             if (service.enableDebug) {
@@ -1981,7 +1978,7 @@
         page.loading = false;
     });
   
-    plugin.addURI(PREFIX + ":video:advanced:(.*)", function(page, id) {
+    plugin.addURI(plugin.getDescriptor().id + ":video:advanced:(.*)", function(page, id) {
         page.metadata.icon = "http://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
         page.type = "directory";
         page.metadata.glwview = plugin.path + "views/video.view";
@@ -2034,7 +2031,7 @@
     
         var channelId = video.snippet.channelId;
         var author = video.snippet.channelTitle;
-        page.appendAction("navopen", PREFIX + ':user:' + channelId, true, {                  
+        page.appendAction("navopen", plugin.getDescriptor().id + ':user:' + channelId, true, {
             title: author     
         });
 
@@ -2062,7 +2059,7 @@
             var videos = [];
             for (var i in videos_list) {
                 var item = videos_list[i];
-                page.appendAction("navopen", PREFIX + ':video:stream:'+escape(title)+':'+escape(id) + ':' + item.video_url, true, {      
+                page.appendAction("navopen", plugin.getDescriptor().id + ':video:stream:'+escape(title)+':'+escape(id) + ':' + item.video_url, true, {
                     title: item.quality
                 });
 
@@ -2071,7 +2068,7 @@
                 videos.push({
                     title: item.quality,
                     image: image,
-                    url: PREFIX + ':video:stream:'+escape(title)+':'+escape(id) + ':' + item.video_url
+                    url: plugin.getDescriptor().id + ':video:stream:'+escape(title)+':'+escape(id) + ':' + item.video_url
                 });
             }
             page.appendPassiveItem("list", videos, {
@@ -2082,7 +2079,7 @@
             extras.push({
                 title: 'User Profile',
                 image: plugin.path + "views/img/logos/user.png",
-                url: PREFIX + ':user:' + channelId
+                url: plugin.getDescriptor().id + ':user:' + channelId
             });
 
             for (var i in video.link) {
@@ -2090,25 +2087,25 @@
                 if (feed.rel == "http://gdata.youtube.com/schemas/2007#video.trailer-for") {
                     var match = feed.href.match('videos/([^?]*)');
                     if (match) {
-                        page.appendAction("navopen", PREFIX + ':video:' + escape(match[1]), true, {      
+                        page.appendAction("navopen", plugin.getDescriptor().id + ':video:' + escape(match[1]), true, {
                             title: 'Movie'
                         });
                         extras.push({
                             title: 'Movie',
                             image: plugin.path + "views/img/logos/movies.png",
-                            url: PREFIX + ':video:' + escape(match[1])
+                            url: plugin.getDescriptor().id + ':video:' + escape(match[1])
                         });
                     }
                 }
 
                 if (feed.rel == "http://gdata.youtube.com/schemas/2007#video.trailers") {
-                    page.appendAction("navopen", PREFIX + ':feed:' + escape(feed.href)+':Trailers', true, {
+                    page.appendAction("navopen", plugin.getDescriptor().id + ':feed:' + escape(feed.href)+':Trailers', true, {
                         title: 'Trailers'
                     });
                     extras.push({
                         title: 'Trailers',
                         image: plugin.path + "views/img/logos/trailers.png",
-                        url: PREFIX + ':feed:' + escape(feed.href)+':Trailers'
+                        url: plugin.getDescriptor().id + ':feed:' + escape(feed.href)+':Trailers'
                     });
                 }
             }
@@ -2123,25 +2120,25 @@
                 }
             };
 
-            page.appendAction("navopen", PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args))+ ':' + escape('Related Videos'), true, {
+            page.appendAction("navopen", plugin.getDescriptor().id + ":v3:request:" + escape(showtime.JSONEncode(args))+ ':' + escape('Related Videos'), true, {
                 title: 'Related videos'          
             });
             extras.push({
                 title: 'Related',
                 image: plugin.path + "views/img/nophoto.bmp",
-                url: PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape('Related Videos')
+                url: plugin.getDescriptor().id + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape('Related Videos')
             });
     
             for (var i in video.link) {
                 var link = video.link[i];
                 if (link.rel == 'http://gdata.youtube.com/schemas/2007#video.responses') {
-                    page.appendAction("navopen", PREFIX + ':feed:'+escape('https://gdata.youtube.com/feeds/api/videos/'+id+'/responses')+':'+escape('Response videos'), true, {
+                    page.appendAction("navopen", plugin.getDescriptor().id + ':feed:'+escape('https://gdata.youtube.com/feeds/api/videos/'+id+'/responses')+':'+escape('Response videos'), true, {
                         title: 'Response videos'          
                     });
                     extras.push({
                         title: 'Responses',
                         image: plugin.path + "views/img/nophoto.bmp",
-                        url: PREFIX + ':feed:'+escape('https://gdata.youtube.com/feeds/api/videos/'+id+'/responses')+':Responses'
+                        url: plugin.getDescriptor().id + ':feed:'+escape('https://gdata.youtube.com/feeds/api/videos/'+id+'/responses')+':Responses'
                     });
                 }
             }
@@ -2196,7 +2193,7 @@
                     var args = {
                         "videoId": videoId
                     };
-                    page.redirect(PREFIX + ':playlist:add:' + escape(showtime.JSONEncode(args)));
+                    page.redirect(plugin.getDescriptor().id + ':playlist:add:' + escape(showtime.JSONEncode(args)));
                 });
             }
 
@@ -2252,7 +2249,7 @@
                 var c = 0;
 
                 if (data.items.length == 0) {
-                    page.appendItem(PREFIX + ':start', 'directory', { title: 'This feed does not contain any item. Sorry about that.' });
+                    page.appendItem(plugin.getDescriptor().id + ':start', 'directory', { title: 'This feed does not contain any item. Sorry about that.' });
                 }
 
                 for (var i in data.items) {
@@ -2301,7 +2298,7 @@
 						if (entry.kind == "youtube#playlist") {
 							var args = args0;
                         	args.playlistId = entry.id;
-                    		page.appendItem(PREFIX + ":playlist:add:" + escape(showtime.JSONEncode(args)), "directory", metadata);
+                    		page.appendItem(plugin.getDescriptor().id + ":playlist:add:" + escape(showtime.JSONEncode(args)), "directory", metadata);
                         }
                     }
                     catch(err) {
@@ -2323,7 +2320,7 @@
         page.paginator = paginator;
     }
 
-    plugin.addURI(PREFIX + ":playlist:add:(.*)", function(page, args0) {
+    plugin.addURI(plugin.getDescriptor().id + ":playlist:add:(.*)", function(page, args0) {
 	args0 = showtime.JSONDecode(unescape(args0));
 	if (args0.playlistId) {
 	    if (apiV3.playlistItems.insert(args0.playlistId, args0.videoId)) {
@@ -2332,7 +2329,7 @@
 		showtime.notify("There was one error while trying to add video", 3);
 	    }
 	    //page.redirect(args0.referrer);
-	    page.redirect(PREFIX + ":user:default");
+	    page.redirect(plugin.getDescriptor().id + ":user:default");
 	} else {
 	    pageControllerAddToPlaylist(page, args0, function(nextPageToken) {
                 var args = {
@@ -2351,7 +2348,7 @@
     });
   
     // We need to use this function so we can pass the correct title of video
-    plugin.addURI(PREFIX + ":video:stream:(.*):(.*):(.*)", function(page, title, id, video_url) {
+    plugin.addURI(plugin.getDescriptor().id + ":video:stream:(.*):(.*):(.*)", function(page, title, id, video_url) {
         playVideo(page, title, id, video_url);
     });
   
@@ -2959,7 +2956,7 @@
     function itemOptions(item, entry) {
         // TODO: Maximum resolution to be played
 
-        item.addOptURL("More from this user", PREFIX + ':user:username:' + item.author);
+        item.addOptURL("More from this user", plugin.getDescriptor().id + ':user:username:' + item.author);
 
         item.addOptAction("Like video", "like");
         item.onEvent('like', function (item) {
@@ -2990,37 +2987,37 @@
             var args = {
                 "videoId": item.id
             };
-            item.addOptURL("Add to Playlist", PREFIX + ':playlist:add:' + escape(showtime.JSONEncode(args)));
+            item.addOptURL("Add to Playlist", plugin.getDescriptor().id + ':playlist:add:' + escape(showtime.JSONEncode(args)));
         }
 
         for (var i in entry.link) {
             var link = entry.link[i];
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.related") {
-                item.addOptURL("Related", PREFIX + ':feed:' + escape(link.href)+':Related');
+                item.addOptURL("Related", plugin.getDescriptor().id + ':feed:' + escape(link.href)+':Related');
             }
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.responses") {
-                item.addOptURL("Responses", PREFIX + ':feed:' + escape(link.href)+':Responses');
+                item.addOptURL("Responses", plugin.getDescriptor().id + ':feed:' + escape(link.href)+':Responses');
             }
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.trailer-for") {
                 var match = link.href.match('videos/([^?]*)');
                 if (match) {
-                    item.addOptURL("Redirect to Movie", PREFIX + ':video:' + escape(match[1]));
+                    item.addOptURL("Redirect to Movie", plugin.getDescriptor().id + ':video:' + escape(match[1]));
                 }
             }
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.trailers") {
-                item.addOptURL("Trailers", PREFIX + ':feed:' + escape(link.href)+':Trailers');
+                item.addOptURL("Trailers", plugin.getDescriptor().id + ':feed:' + escape(link.href)+':Trailers');
             }
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.show") {
-                item.addOptURL("Redirect to Show", PREFIX + ':feed:' + escape(link.href + "/content")+':'+escape('Redirect to Show'));
+                item.addOptURL("Redirect to Show", plugin.getDescriptor().id + ':feed:' + escape(link.href + "/content")+':'+escape('Redirect to Show'));
             }
 
             if (link.rel == "http://gdata.youtube.com/schemas/2007#video.season") {
-                item.addOptURL("Redirect to Season", PREFIX + ':feed:' + escape(link.href + "/episodes")+':'+escape('Redirect to Season'));
+                item.addOptURL("Redirect to Season", plugin.getDescriptor().id + ':feed:' + escape(link.href + "/episodes")+':'+escape('Redirect to Season'));
             }
         }
     }
@@ -3070,7 +3067,7 @@
 
         //page.metadata.font = "default";
 
-        page.appendAction("navopen", PREFIX + ":search", true, { title: "Search", icon: plugin.path + "views/img/search.png" });
+        page.appendAction("navopen", plugin.getDescriptor().id + ":search", true, { title: "Search", icon: plugin.path + "views/img/search.png" });
         page.appendAction("pageevent", "sortDateDec", true, { title: "Sort by Date (Decrementing)", icon: plugin.path + "views/img/sort_date_dec.png" });
         page.appendAction("pageevent", "sortViewsDec", true, { title: "Sort by Views (Decrementing)", icon: plugin.path + "views/img/sort_views_dec.png" });
         page.appendAction("pageevent", "sortAlphabeticallyInc", true, { title: "Sort Alphabetically (Incrementing)", icon: plugin.path + "views/img/sort_alpha_inc.png" });
@@ -3546,7 +3543,7 @@
 
     function setVideoItemOptions(item, page) {
         if (item.channelId)
-            item.addOptURL("More from this user", PREFIX + ':user:' + item.channelId);
+            item.addOptURL("More from this user", plugin.getDescriptor().id + ':user:' + item.channelId);
 
         if (item.videoId) {
             item.addOptAction("Like video", "like");
@@ -3584,19 +3581,19 @@
                 }
             };
 
-            item.addOptURL("Related Videos", PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape('Related Videos'));
+            item.addOptURL("Related Videos", plugin.getDescriptor().id + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape('Related Videos'));
 
             if (apiV3.auth.authenticated) {
             	var args = {
             		"videoId": item.videoId
             	};
-                item.addOptURL("Add to Playlist", PREFIX + ':playlist:add:' + escape(showtime.JSONEncode(args)));
+                item.addOptURL("Add to Playlist", plugin.getDescriptor().id + ':playlist:add:' + escape(showtime.JSONEncode(args)));
             }
         }
     }
 
     function addVideoItem(page, entry, metadata) {
-        var item = page.appendItem(PREFIX + ":video:" + entry.videoId, "video", metadata);
+        var item = page.appendItem(plugin.getDescriptor().id + ":video:" + entry.videoId, "video", metadata);
         for (var i in entry)
             item[i] = entry[i];
         setVideoItemOptions(item, page);
@@ -3688,7 +3685,7 @@
                 var c = 0;
 
                 if (data.items.length == 0) {
-                    page.appendItem(PREFIX + ':start', 'directory', { title: 'This feed does not contain any item. Sorry about that.' });
+                    page.appendItem(plugin.getDescriptor().id + ':start', 'directory', { title: 'This feed does not contain any item. Sorry about that.' });
                 }
 
                 var videoIds = [];
@@ -3921,14 +3918,14 @@
 	                    					"subrequest": "list"
                     					}
                     				};
-                    				var item = page.appendItem(PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape('Recommended Videos'), "directory",
+                    				var item = page.appendItem(plugin.getDescriptor().id + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape('Recommended Videos'), "directory",
                     					metadata);
                         		}
                         		else if (resourceId == "youtube#channel") {
                         			var channelId = entry.contentDetails[type].resourceId.channelId;
 
                         			metadata.title = "[CHANNEL RECOMMENDATION] " + title;
-                        			var item = page.appendItem(PREFIX + ':user:' + channelId, "directory", metadata);
+                        			var item = page.appendItem(plugin.getDescriptor().id + ':user:' + channelId, "directory", metadata);
                         		}
                         	}
                         	else if (type == "subscription") {
@@ -3937,7 +3934,7 @@
                         			var channelId = entry.contentDetails[type].resourceId.channelId;
 
                         			metadata.title = "[SUBSCRIPTION] " + title;
-                        			var item = page.appendItem(PREFIX + ':user:' + channelId, "directory", metadata);
+                        			var item = page.appendItem(plugin.getDescriptor().id + ':user:' + channelId, "directory", metadata);
                         		}
                         	}
                     	}
@@ -3950,7 +3947,7 @@
                     				"subrequest": "list"
                     			}
                     		};
-                    		var item = page.appendItem(PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape(title), "directory", metadata);
+                    		var item = page.appendItem(plugin.getDescriptor().id + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape(title), "directory", metadata);
                         }
                     	else if (entry.kind == "youtube#videoCategory") {
                     		var args = {
@@ -3962,7 +3959,7 @@
                     				"subrequest": "list"
                     			}
                     		};
-                    		var item = page.appendItem(PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape(title), "directory", metadata);
+                    		var item = page.appendItem(plugin.getDescriptor().id + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape(title), "directory", metadata);
                     	}
                     	else if (entry.kind == "youtube#playlistItem") {
                     		if (entry.snippet.resourceId.kind == "youtube#video") {
@@ -3973,7 +3970,7 @@
                     	}
                         else if (entry.kind == "youtube#channel") {
                         	if (entry.contentDetails) {
-                        		var item = page.appendItem(PREFIX + ':user:' + entry.id, "directory", metadata);
+                        		var item = page.appendItem(plugin.getDescriptor().id + ':user:' + entry.id, "directory", metadata);
                         	}
                         	else {
                         		var args = {
@@ -3984,11 +3981,11 @@
 	                    				"subrequest": "list"
                     				}
                     			};
-                    			var item = page.appendItem(PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape(title), "directory", metadata);
+                    			var item = page.appendItem(plugin.getDescriptor().id + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape(title), "directory", metadata);
                     		}
                         }
                     	else if (entry.id.kind == "youtube#channel") {
-                        	var item = page.appendItem(PREFIX + ':user:' + entry.id.channelId, "directory", metadata);
+                        	var item = page.appendItem(plugin.getDescriptor().id + ':user:' + entry.id.channelId, "directory", metadata);
                         }
                         else if (entry.id.kind == "youtube#playlist") {
                         	var args = {
@@ -3999,7 +3996,7 @@
 	                    			"subrequest": "list"
                     			}
                     		};
-                    		var item = page.appendItem(PREFIX + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape(title), "directory", metadata);
+                    		var item = page.appendItem(plugin.getDescriptor().id + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape(title), "directory", metadata);
                         }
                         else if (entry.id.kind == "youtube#video") {
                             var item = addVideoItem(page, {
@@ -4042,19 +4039,18 @@
         page.paginator = paginator;
     }
 
-    plugin.addURI(PREFIX+":start", startPage);
+    plugin.addURI(plugin.getDescriptor().id+":start", startPage);
 
-    plugin.addSearcher("Youtube - Videos", plugin.path + "logo.png",    
-    function(page, query) { 
+    plugin.addSearcher("Youtube - Videos", logo, function(page, query) {
         try {
             pageController(page, function(offset) {	
                 api.args_common['start-index'] = offset;
                 api.args_common.q = escape(query);
 
-                page.appendItem(PREFIX + ':feed:sort:' + escape("http://gdata.youtube.com/schemas/2007#video") + ':' + escape("https://gdata.youtube.com/feeds/api/videos/?q=" + query)+':'+escape('Sort by...'),"directory", {
+                page.appendItem(plugin.getDescriptor().id + ':feed:sort:' + escape("http://gdata.youtube.com/schemas/2007#video") + ':' + escape("https://gdata.youtube.com/feeds/api/videos/?q=" + query)+':'+escape('Sort by...'),"directory", {
                     title: "Sort by..."
                 });
-                page.appendItem(PREFIX + ':feed:duration:' + escape("https://gdata.youtube.com/feeds/api/videos/?q=" + query)+':'+escape('Filter by duration'), "directory", {
+                page.appendItem(plugin.getDescriptor().id + ':feed:duration:' + escape("https://gdata.youtube.com/feeds/api/videos/?q=" + query)+':'+escape('Filter by duration'), "directory", {
                     title: "Filter by duration"
                 });
 
@@ -4067,8 +4063,7 @@
         }
     });
 
-    plugin.addSearcher("Youtube - Videos V3", plugin.path + "logo.png",    
-    function(page, query) {
+    plugin.addSearcher("Youtube - Videos V3", logo, function(page, query) {
         try {
             pageControllerV3(page, function(nextPageToken) {
             	var args = {
@@ -4091,8 +4086,7 @@
         }
     });
 
-    plugin.addSearcher("Youtube - Playlists", plugin.path + "logo.png",    
-    function(page, query) { 
+    plugin.addSearcher("Youtube - Playlists", logo, function(page, query) {
         try {
             pageController(page, function(offset) {	
                 api.args_common['start-index'] = offset;
@@ -4109,8 +4103,7 @@
         }
     });
 
-    plugin.addSearcher("Youtube - Playlists V3", plugin.path + "logo.png",    
-    function(page, query) {
+    plugin.addSearcher("Youtube - Playlists V3", logo, function(page, query) {
         try {
             pageControllerV3(page, function(nextPageToken) {
             	var args = {
@@ -4133,8 +4126,7 @@
         }
     });
 
-    plugin.addSearcher("Youtube - Channels", plugin.path + "logo.png",    
-    function(page, query) {
+    plugin.addSearcher("Youtube - Channels", logo, function(page, query) {
         try {
             pageController(page, function(offset) {	
                 api.args_common['start-index'] = offset;
@@ -4148,8 +4140,7 @@
         }
     });
 
-    plugin.addSearcher("Youtube - Channels V3", plugin.path + "logo.png",    
-    function(page, query) {
+    plugin.addSearcher("Youtube - Channels V3", logo, function(page, query) {
         try {
             pageControllerV3(page, function(nextPageToken) {
             	var args = {
@@ -4158,11 +4149,10 @@
             		"q": escape(query)
             	};
             	if (nextPageToken)
-            		args.pageToken = nextPageToken;
+            	args.pageToken = nextPageToken;
             	var data = apiV3.search.list(args);
             	data = data.response;
             	nextPageToken = data.nextPageToken;
-
                 return data;
             });
         }
