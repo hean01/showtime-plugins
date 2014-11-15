@@ -26,9 +26,9 @@
         if (page.metadata) {
             page.metadata.title = title;
             page.metadata.logo = logo;
-	    page.metadata.glwview = plugin.path + "views/array.view";
         }
         if (page.options) {
+	    page.metadata.glwview = plugin.path + "views/array.view";
             page.options.createInt('childTilesX', 'Number of tiles by X', 6, 1, 10, 1, '', function (v) {
                 page.metadata.childTilesX = v;
             }, true);
@@ -297,13 +297,13 @@
             if (!tryToSearch) return false;
             page.loading = true;
 	    var json = getJSON('index/searchembeddedbroadcast?q=' +
-                query.replace(' ', '+') + '&start=' + fromPage + '&rows=30');
+                encodeURI(query) + '&start=' + fromPage + '&rows=30');
     	    for (var i in json) {
                 appendStation(page, json[i]);
                 page.entries++;
 	    }
             page.loading = false;
-            if (!json) return tryToSearch = false;
+            if (!json || json == '') return tryToSearch = false;
             fromPage += 30;
             return true;
         };
