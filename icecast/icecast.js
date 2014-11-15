@@ -25,9 +25,9 @@
         if (page.metadata) {
 	    page.metadata.title = title;
 	    page.metadata.logo = logo;
-	    page.metadata.glwview = plugin.path + "views/array.view";
         }
         if (page.options) {
+	    page.metadata.glwview = plugin.path + "views/array.view";
             page.options.createInt('childTilesX', 'Number of X Child Tiles', 6, 1, 10, 1, '', function (v) {
                 page.metadata.childTilesX = v;
             }, true);
@@ -325,6 +325,6 @@
 
     plugin.addSearcher("icecast", logo, function(page, query) {
         setPageHeader(page, plugin.getDescriptor().id);
-	scrape_page(page, BASE_URL + "/search?search=" + query.replace(/\s/g, '+'), 0 , 1);
+	scrape_page(page, BASE_URL + "/search?search=" + encodeURI(query), 0 , 1);
     });
 })(this);
