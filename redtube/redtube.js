@@ -278,8 +278,6 @@
     }
 
     function scraper(page, url, query) {
-        url = unescape(url);
-        query = unescape(query);
         var pageNum = 0, offset = 0;
 
         function loader() {
@@ -288,7 +286,7 @@
             var jsonobj = showtime.JSONDecode(showtime.httpReq(url + query + "&page=" + pageNum).toString());
             page.loading = false;
             if (!jsonobj.videos) return -1;
-            setPageHeader(page, 'Redtube - Search (found ' + jsonobj.count + ' videos)');
+            setPageHeader(page, 'Redtube (' + jsonobj.count + ')');
             for (var i in jsonobj.videos) {
                 var description = coloredStr('Video ID: ', orange) + jsonobj.videos[i].video.video_id +
                     coloredStr(' Views: ', orange) + jsonobj.videos[i].video.views +
@@ -343,7 +341,7 @@
     };
 
     plugin.addURI(plugin.getDescriptor().id + ":search:(.*)", function(page, query) {
-        scraper(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&"), escape(query))
+        scraper(page, 'http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&', encodeURI(unescape(query)))
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*)", function(page, video_id, title) {
@@ -447,6 +445,6 @@
     });
 
     plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
-        scraper(page, escape("http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&search="), escape(query.replace(/\s/g, '\+')));
+        scraper(page, 'http://api.redtube.com/?data=redtube.Videos.searchVideos&output=json&thumbsize=none&search=', encodeURI(query));
     });
 })(this);
