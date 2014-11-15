@@ -71,7 +71,7 @@
                        var comments = match2[5].match(/[\s\S]*?<td align="right">([\s\S]*?)</)[1];
                    } else
                        var end = match2[5].match(/[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-                       page.appendItem('torrent:browse:'+ match2[2].replace(/\/parse\//,'http://'), "directory", {
+                       page.appendItem('torrent:browse:'+ BASE_URL + match2[2], "directory", {
     	                   title: new showtime.RichText(colorStr(match2[1], orange) + ' ' +
                                match2[4] + ' ('+ coloredStr(end[2], green) + '/'+
                                coloredStr(end[3], red) + ') ' + colorStr(end[1], blue) +
@@ -85,6 +85,49 @@
         }
     });
 
-    plugin.addSearcher(plugin_info.title, logo, function(page, query) {
-    });
+      plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
+	page.entries = 0;
+	var fromPage = 0, tryToSearch = true;
+	
+	//1-date, 2-torrent, 3-link, 4-title, 5-size, 6-seeders, 7-leechers
+	var re = /<tr class="gai"><td>([\S\s]{0,100}?)<\/td><td ><a class="downgif" href="([\S\s]{0,100}?)"[\S\s]{0,200}?<a href="([\S\s]{0,300}?)">([\S\s]*?)<\/a>[\S\s]{0,100}<td align="right">([\S\s]{0,100}?)<\/td>[\S\s]{0,200}?alt="S" \/>([\S\s]{0,50}?)<\/span>[\S\s]*?alt="L" \/><span class="red">([\S\s]{0,50}?)<\/span>/g;
+	
+	function loader() {
+	  if (!tryToSearch) return false;
+			 page.loading = true;
+	  var response = showtime.httpReq(BASE_URL + "/search/"+ fromPage +"/0/010/0/" + query.replace(/\s/g, '\+')).toString();
+	  page.loading = false;
+	  var match = re.exec(response);
+	  var date,
+	  torrent,
+	  link,
+	  title,
+	  size,
+	  seeders,
+	  leechers;
+	  while (match) {
+	  date = match[1],
+	  torrent = match[2],
+	  link = match[3],
+	  title = match[4],
+	  size = match[5],
+	  seeders = match[6],
+	  leechers = match[7];
+	  
+	    
+			 page.appendItem('torrent:browse:'+ BASE_URL + torrent, "directory", {
+    	                   title: new showtime.RichText(colorStr(date, orange) + ' ' +
+                               title + ' ('+ coloredStr(seeders, green) + '/'+
+                               coloredStr(leechers, red) + ') ' + colorStr(size, blue))
+                   });
+	    page.entries++;
+	    match = re.exec(response);
+	  };
+	  if (!response.match(/downgif/)) return tryToSearch = false;
+			 fromPage++;
+	  return true;
+	};
+	loader();
+	page.paginator = loader;
+      });
 })(this);
