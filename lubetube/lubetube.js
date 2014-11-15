@@ -214,7 +214,11 @@
                     title: 'Videos (' + doc.match(/<span class="seperator_rt">[\S\s]*?of <strong>([\S\s]*?)<\/strong>/)[1] + ')'
                 });
             }
-            scraper(doc.match(/<span class="seperator_rt">([\S\s]*?)<\/html>/)[1]);
+            var blob = doc.match(/<span class="seperator_rt">([\S\s]*?)<\/html>/);
+            if (blob)
+                scraper(blob[1])
+            else
+                return tryToSearch = false;
             var next = doc.match(/<a class="next" href="([\S\s]*?)">Next<\/a>/);
             if (!next) return tryToSearch = false;
             url = next[1];
@@ -246,6 +250,6 @@
     });
 
     plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
-        index(page, BASE_URL + "/search/videos?search_id=" + query.replace(/\s/g, '\+'));
+        index(page, BASE_URL + "/search/videos?search_id=" + encodeURI(query));
     });
 })(this);

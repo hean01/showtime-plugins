@@ -405,6 +405,7 @@
         var fromPage = 1, tryToSearch = true;
 
         function loader() {
+          try {
             if (!tryToSearch) return false;
             page.loading = true;
             v = showtime.httpReq(BASE_URL + '/search?q=' + encodeURI(query) + "&p=" + fromPage).toString();
@@ -414,6 +415,9 @@
             if (v.match(/"#" id="next"/)) return tryToSearch = false;
             fromPage++;
             return true;
+          } catch(err) {
+            return tryToSearch = false;
+          }
         };
         loader();
         page.paginator = loader;
