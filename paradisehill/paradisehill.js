@@ -222,15 +222,14 @@
         var fromPage = 1, tryToSearch = true;
         // 1-link, 2-title, 3-icon, 4-genre
         var re = /<div class="item_zag"><a href="([\s\S]*?)" title="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<a href="[\s\S]*?" title="([\s\S]*?)"/g;
-        var re2 = /<span>([\S\s]*?)<\/span><\/li><\/ul>/;
 
         function loader() {
             if (!tryToSearch) return false;
             var response;
             if (fromPage == 1)
-               response = showtime.httpReq(BASE_URL + (service.lang == "en" ? '/en/' : '/') + 'search_results.html?search=' + query.replace(/\s/g, '\+'));
+               response = showtime.httpReq(BASE_URL + (service.lang == "en" ? '/en/' : '/') + 'search_results.html?search=' + encodeURI(query)).toString();
             else
-               response = showtime.httpReq(BASE_URL + (service.lang == "en" ? '/en/' : '/') + 'search_results.html?search=' + query.replace(/\s/g, '%20') + '&page=' + fromPage);
+               response = showtime.httpReq(BASE_URL + (service.lang == "en" ? '/en/' : '/') + 'search_results.html?search=' + encodeURI(query) + '&page=' + fromPage).toString();
             var match = re.exec(response);
             while (match) {
                 page.appendItem(plugin.getDescriptor().id + ":indexItem:" + match[1] + ":" + escape(match[2]), 'video', {
@@ -243,7 +242,8 @@
                 match = re.exec(response);
             };
 
-            if (re2.exec(response)) return tryToSearch = false;
+            if (!response.match(/<span>([\S\s]*?)<\/span><\/li><\/ul>/))
+                return tryToSearch = false;
             fromPage++;
             return true;
         };
