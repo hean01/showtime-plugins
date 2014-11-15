@@ -1143,8 +1143,8 @@
         var obj = {};
         if (data.items[0] && data.items[0].brandingSettings) {
         	data = data.items[0].brandingSettings.hints;
-        	for each (var it in data) {
-            	obj[it.property] = it.value;
+        	for (var it in data) {
+            	obj[data[it].property] = data[it].value;
         	}
     	}
         return obj;
@@ -2352,19 +2352,23 @@
         playVideo(page, title, id, video_url);
     });
   
+    //workaround for "Syntax Error: xml is a reserved identifier" - From Andreus Sebes's WebMedia
+    function valid_xml(xmltext) {
+        return xmltext.replace(/^[\s\S]*?(<[^\?!])/, "$1");
+    }
 
     function getCatList(link) {
-        var atom = new Namespace("http://www.w3.org/2005/Atom");
+        //var atom = new Namespace("http://www.w3.org/2005/Atom");
         if (service.enableDebug)
             showtime.print(link);
       
-        var data = new XML(valid_xml(showtime.httpGet(link).toString()));
+        var data = valid_xml(showtime.httpGet(link).toString());
         var list = [];
         list.push(['all', 'All', true]);
       
-        for (var i in data.atom::category) {
-            var entry = data.atom::category[i];
-            var item = [entry.@term, entry.@label];
+        for (var i in data.category) {
+            var entry = data.category[i];
+            var item = [entry.term, entry.label];
             list.push(item);
         }
 
@@ -2381,14 +2385,6 @@
         var res = "[" + categories_str.slice(0, categories_str.length - 1) + "]";
       
         return res;
-    }
-  
-    //workaround for "Syntax Error: xml is a reserved identifier" - From Andreus Sebes's WebMedia
-    function valid_xml(xmltext)
-    {
-        xmltext=xmltext.replace(/^[\s\S]*?(<[^\?!])/, "$1");
-
-        return xmltext;
     }
   
     function getTime(date) {
@@ -2769,12 +2765,12 @@
         var subtitles = [];
         var langs = [];
 
-        var data = xml;
+        var data = xml2json(xml);
         for (var i in data.track) {
             var track = data.track[i];
-            var kind = track.@kind;
-            var lg = track.@lang_code;
-            var title = track.@lang_translated;
+            var kind = track.kind;
+            var lg = track.lang_code;
+            var title = track.lang_translated;
 
             if (kind == 'asr')
                 continue;
@@ -2800,12 +2796,12 @@
         var subtitles = [];
         var langs = [];
 
-        var data = xml;
+        var data = xml2json(xml);
         for (var i in data.track) {
             var track = data.track[i];
-            var lg = track.@lang_code;
-            var title = track.@lang_translated;
-            var kind = track.@kind.toString();
+            var lg = track.lang_code;
+            var title = track.lang_translated;
+            var kind = track.kind.toString();
 
             if ((kind && kind != "") != true)
                 continue;
