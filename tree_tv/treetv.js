@@ -623,6 +623,6 @@
 
     plugin.addSearcher("Tree.tv", logo, function(page, query) {
         login(page, false);
-        scrapeSmall(page, escape(BASE_URL + '/search/index/index/usersearch/' + query+'/page/'), plugin.getDescriptor().synopsis, 1);
+        scrapeSmall(page, escape(BASE_URL + '/search/index/index/usersearch/' + encodeURI(query) + '/page/'), plugin.getDescriptor().id, 1);
     });
 })(this);
