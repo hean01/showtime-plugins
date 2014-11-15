@@ -18,7 +18,6 @@
  */
 
 (function(plugin) {
-    var PREFIX = 'kordonivkakino';
     var BASE_URL = 'http://kordonivkakino.net';
     var logo = plugin.path + "logo.png";
 
@@ -32,7 +31,7 @@
         page.contents = "items";
     }
 
-    var service = plugin.createService(PREFIX, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "video", true, logo);
 
     function trim(s) {
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
@@ -98,13 +97,13 @@
                url: url,
                mimetype: 'video/quicktime'
             }],
-            canonicalUrl: PREFIX + ':' + unescape(title) + ':'+n,
+            canonicalUrl: plugin.getDescriptor().id + ':' + unescape(title) + ':'+n,
             no_fs_scan: true
         };
         return "videoparams:" + showtime.JSONEncode(videoparams);
     }
 
-    plugin.addURI(PREFIX + ":vk:(.*):(.*):(.*)", function(page, url, title, n) {
+    plugin.addURI(plugin.getDescriptor().id + ":vk:(.*):(.*):(.*)", function(page, url, title, n) {
         page.loading = true;
         var response = showtime.httpReq(unescape(url));
         page.loading = false;
@@ -130,14 +129,14 @@
                     url: link[1],
                     mimetype: 'video/quicktime'
                 }],
-                canonicalUrl: PREFIX + ':' + title + ':' + n,
+                canonicalUrl: plugin.getDescriptor().id + ':' + title + ':' + n,
                 no_fs_scan: true
             });
         } else page.error('Видео не доступно. / This video is not available, sorry :(');
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":fd:(.*):(.*):(.*)", function(page, url, title, n) {
+    plugin.addURI(plugin.getDescriptor().id + ":fd:(.*):(.*):(.*)", function(page, url, title, n) {
         page.loading = true;
         var response = showtime.httpReq('http://s1video.filmodom.net/vk_video/video.php?action=get&url='+escape(url)+'&callback=?').toString();
         page.loading = false;
@@ -149,14 +148,14 @@
                     url: response.match(/download_url":"([\S\s]*?)"/)[1].replace(/\\/g,''),
                     mimetype: 'video/quicktime'
                 }],
-                canonicalUrl: PREFIX + ':' + title + ':' + n,
+                canonicalUrl: plugin.getDescriptor().id + ':' + title + ':' + n,
                 no_fs_scan: true
             });
         } else page.error('Видео не доступно. / This video is not available, sorry :(');
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":indexItem:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":indexItem:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString().replace(/\n/g, '|||').replace(/<br \/>/g, '|||');
@@ -242,13 +241,13 @@
                     params = videoparams(link[1], title, n)
                 break
                 case 2: // filmodom.net
-                    params = PREFIX + ':fd:' + link[1] + ':' + title + ':' + n
+                    params = plugin.getDescriptor().id + ':fd:' + link[1] + ':' + title + ':' + n
                 break
                 case 3: // vk.com
-                    params = PREFIX + ':vk:' + link[1] + ':' + title + ':' + n
+                    params = plugin.getDescriptor().id + ':vk:' + link[1] + ':' + title + ':' + n
                 break
                 case 4: // vimple.ru
-                    params = PREFIX + ':vimple:' + link[1] + ':' + title + ':' + n
+                    params = plugin.getDescriptor().id + ':vimple:' + link[1] + ':' + title + ':' + n
                 break
                 default:
             }
@@ -269,7 +268,7 @@
             page.appendItem("", "separator", {
                 title: 'Год'
             });
-            page.appendItem(PREFIX + ":indexFolder:" + escape(BASE_URL + '/upload/xfsearch/'+year) + ":" + escape(year), 'directory', {
+            page.appendItem(plugin.getDescriptor().id + ":indexFolder:" + escape(BASE_URL + '/upload/xfsearch/'+year) + ":" + escape(year), 'directory', {
                 title: year
             });
         }
@@ -286,7 +285,7 @@
                         });
                         banner = 0;
                     }
-                    page.appendItem(PREFIX + ":indexFolder:" + escape(link) + ":" + escape(trim(splitted[i])), 'directory', {
+                    page.appendItem(plugin.getDescriptor().id + ":indexFolder:" + escape(link) + ":" + escape(trim(splitted[i])), 'directory', {
                        title: trim(splitted[i])
                     });
                 }
@@ -305,7 +304,7 @@
                         });
                         banner = 0;
                     }
-                    page.appendItem(PREFIX + ":indexFolder:" + escape(link) + ":" + escape(trim(splitted[i])), 'directory', {
+                    page.appendItem(plugin.getDescriptor().id + ":indexFolder:" + escape(link) + ":" + escape(trim(splitted[i])), 'directory', {
                        title: trim(splitted[i])
                     });
                 }
@@ -324,7 +323,7 @@
                         });
                         banner = 0;
                     }
-                    page.appendItem(PREFIX + ":indexFolder:" + escape(link) + ":" + escape(trim(splitted[i])), 'directory', {
+                    page.appendItem(plugin.getDescriptor().id + ":indexFolder:" + escape(link) + ":" + escape(trim(splitted[i])), 'directory', {
                         title: trim(splitted[i])
                     });
                 }
@@ -344,7 +343,7 @@
                         });
                         banner = 0;
                     }
-                    page.appendItem(PREFIX + ":indexFolder:" + escape(link) + ":" + escape(trim(showtime.entityDecode(splitted[i]))), 'directory', {
+                    page.appendItem(plugin.getDescriptor().id + ":indexFolder:" + escape(link) + ":" + escape(trim(showtime.entityDecode(splitted[i]))), 'directory', {
                         title: trim(showtime.entityDecode(splitted[i]))
                     });
                 }
@@ -361,7 +360,7 @@
             re = /<div class="wallpappers-news-image">[\s\S]*?<a href="([\s\S]*?)"><img src="([\s\S]*?)" alt="([\s\S]*?)">/g;
             var match = re.exec(htmlBlock[1]);
             while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + escape(match[1]) + ":" + escape(trim(showtime.entityDecode(match[3]))), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ":indexItem:" + escape(match[1]) + ":" + escape(trim(showtime.entityDecode(match[3]))), 'video', {
                     title: trim(showtime.entityDecode(match[3])),
                     icon: BASE_URL + match[2],
                     description: new showtime.RichText(coloredStr('Название: ', orange) + trim(match[3]))
@@ -384,7 +383,7 @@
             var re = /<div class="main-news">[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="main-news-views">([\s\S]*?)<\/div>[\s\S]*?<li class="current-rating"[\s\S]*?">([\s\S]*?)<\/li>/g;
             var match = re.exec(doc);
             while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[2])), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ":indexItem:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[2])), 'video', {
                     title: showtime.entityDecode(match[2]),
                     description: new showtime.RichText(coloredStr('Название: ', orange) + match[2] +
                     coloredStr('<br>Просмотров: ', orange) + match[4]),
@@ -407,7 +406,7 @@
         page.paginator = loader;
     }
 
-    plugin.addURI(PREFIX + ":indexFolder:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":indexFolder:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(unescape(title)));
         page.loading = true;
         doc = showtime.httpReq(unescape(url)).toString();
@@ -415,7 +414,7 @@
         scraper(page);
     });
 
-    plugin.addURI(PREFIX + ":start", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         page.loading = true;
         doc = showtime.httpReq(BASE_URL).toString();
         page.loading = false;
@@ -426,7 +425,7 @@
         var re = /<a href="([\s\S]*?)" class="menu-link">([\s\S]*?)<\/a>/g;
         var match = re.exec(htmlBlock[1]);
         while (match) {
-            page.appendItem(PREFIX + ":indexFolder:" + escape(match[1]) + ":" + escape(trim(match[2])), 'directory', {
+            page.appendItem(plugin.getDescriptor().id + ":indexFolder:" + escape(match[1]) + ":" + escape(trim(match[2])), 'directory', {
                 title: trim(match[2])
             });
             match = re.exec(htmlBlock[1]);
@@ -441,7 +440,7 @@
         re = /<div class="article-news">[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">[\s\S]*?<a href="([\s\S]*?)">/g;
         match = re.exec(doc);
         while (match) {
-            page.appendItem(PREFIX + ":indexItem:" + escape(match[3]) + ":" + escape(trim(showtime.entityDecode(match[2]))), 'video', {
+            page.appendItem(plugin.getDescriptor().id + ":indexItem:" + escape(match[3]) + ":" + escape(trim(showtime.entityDecode(match[2]))), 'video', {
                 title: trim(showtime.entityDecode(match[2])),
                 icon: match[1],
                 description: new showtime.RichText(coloredStr('Название: ', orange) + trim(match[2]))
@@ -455,19 +454,48 @@
         scraper(page);
     });
 
-    plugin.addSearcher("kordonivkakino.net", logo, function(page, query) {
-        setPageHeader(page, "kordonivkakino.net");
-        var doc = showtime.httpReq(BASE_URL + '/upload/index.php?do=search&subaction=search&search_start=1&story=' + query.replace(/\s/g,'+')).toString();
-        var tryToSearch = true, p = 2;
+    function unicode2win1251(str) {
+        if (str == 0) return 0;
+        var result = "";
+        var uniCode = 0;
+        var winCode = 0;
+        for (var i = 0; i < str.length; i++) {
+            uniCode = str.charCodeAt(i);
+            if (uniCode == 1105) {
+                winCode = 184;
+            } else if (uniCode == 1025) {
+                winCode = 168;
+            } else if (uniCode > 1039 && uniCode < 1104) {
+                winCode = uniCode - 848;
+            } else {
+                winCode = uniCode;
+            }
+            result += String.fromCharCode(winCode);
+        }
+        var encoded = "";
+        for (var i = 0; i < result.length; ++i) {
+            var code = Number(result.charCodeAt(i));
+            encoded += "%" + code.toString(16).toUpperCase();
+        }
+        return encoded;
+    }
+
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
+        setPageHeader(page, plugin.getDescriptor().id);
+        var tryToSearch = true, p = 1;
         page.entries = 0;
+
+        //1-link, 2-title, 3-icon, 4-views
+        var re = /<div class="main-news">[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="main-news-views">([\s\S]*?)<\/div>/g;
 
         function loader() {
             if (!tryToSearch) return false;
-            //1-link, 2-title, 3-icon, 4-views
-            var re = /<div class="main-news">[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="main-news-views">([\s\S]*?)<\/div>/g;
+            page.loading = true;
+            doc = showtime.httpReq(BASE_URL + '/upload/index.php?do=search&subaction=search&search_start=' + p + '&story=' + unicode2win1251(query)).toString();
+            page.loading =  false;
             var match = re.exec(doc);
             while (match) {
-                page.appendItem(PREFIX + ":indexItem:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[2])), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ":indexItem:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[2])), 'video', {
                     title: showtime.entityDecode(match[2]),
                     description: new showtime.RichText(coloredStr('Название: ', orange) + match[2] +
                     coloredStr('<br>Просмотров: ', orange) + match[4]),
@@ -476,18 +504,12 @@
                 match = re.exec(doc);
                 page.entries++;
             }
-            match = doc.match(/<span>следующая&gt;<\/span>/);
-            if (!match) {
-               page.loading = true;
-               doc = showtime.httpReq(BASE_URL + '/upload/index.php?do=search&subaction=search&search_start=' + p + '&story=' + query.replace(/\s/g,'+')).toString();
-               p++;
-               page.loading =  false;
-               return true;
-            };
-            return tryToSearch = false;
+            if (doc.match(/<span>следующая&gt;<\/span>/))
+                return tryToSearch = false;
+            p++;
+            return true;
         }
         loader();
         page.paginator = loader;
     });
-
 })(this);
