@@ -770,62 +770,43 @@
         }
     });
 
-      plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
 	page.entries = 0;
 	var fromPage = 0, tryToSearch = true;
 	
-	//1-link, 2-title, 3-image, 4 - description, 5 - type, 6 - type in text, 7 - genre
-	//NEW SCHEME: 1-link,2-image,3-title,4-genres,5-positive rating,6-negative rating, 7-description
+	// 1-link,2-image,3-title,4-genres,5-positive rating,6-negative rating, 7-description
 	var re = /<a href="([\S\s]{0,200}?)"[\S\s]{0,200}?<img src="([\S\s]*?)"[\S\s]*?results-item-title">([\S\s]*?)<\/span>[\S\s]*?results-item-genres">([\S\s]*?)<\/span>[\S\s]*?results-item-rating-positive">([\S\s]*?)<\/span>[\S\s]*?results-item-rating-negative">([\S\s]*?)<\/span>[\S\s]*?results-item-description">([\S\s]*?)<\/span>/g;
 	
 	function loader() {
-	  if (!tryToSearch) return false;
-			 page.loading = true;
-	  var response = showtime.httpReq(BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+') + (fromPage ? "&page=" + fromPage : '')).toString();
-	  page.loading = false;
-	  var match = re.exec(response);
-	  var link,
-	    image,
-	    title,
-	    genres,
-	    ratePos,
-	    rateNeg,
-	    description,
-	    rate = parseInt(ratePos) - parseInt(rateNeg);
-	  while (match) {
-	    link = match[1];
-	    image = match[2];
-	    title = match[3];
-	    genres = match[4];
-	    ratePos = match[5];
-	    rateNeg = match[6];
-	    description = match[7];
-	    rate = parseInt(ratePos) - parseInt(rateNeg);
-	    
-	    if (ratePos != '' && rateNeg !='') {
-	      if(rate > 0) {
-		//color title to green, if positive rating prevails
-		rate = colorStr('+' + rate.toString(), green);
-	      }
-	      else if(rate < 0) {
-		rate = colorStr(rate.toString(), red);
-	      }
-	      else {
-		rate = colorStr(rate.toString(), white);
-	      }
-	    }
-			 page.appendItem(plugin.getDescriptor().id + ":listRoot:" + escape(link) + ":" + escape(title), "video", {
-			   title: new showtime.RichText(rate+' '+title),
-					 icon: image.replace('/5/', '/2/'),
-					 genre: new showtime.RichText(genres),
-					 description: new showtime.RichText(coloredStr('Описание: ', orange) + description)
-			 });
-	    page.entries++;
-	    match = re.exec(response);
-	  };
-	  if (!response.match(/<b>Следующая страница<\/b>/)) return tryToSearch = false;
-			 fromPage++;
-	  return true;
+            if (!tryToSearch) return false;
+            page.loading = true;
+	    var response = showtime.httpReq(BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+') + (fromPage ? "&page=" + fromPage : '')).toString();
+	    page.loading = false;
+	    var match = re.exec(response);
+	    while (match) {
+                var rate = match[5] - match[6];
+                // positve rate = green, negative = red, zero = white
+	        if (rate > 0)
+		    rate = colorStr('+' + rate.toString(), green);
+	        else
+                    if (rate < 0)
+		        rate = colorStr(rate, red);
+	            else
+		        rate = colorStr(rate, white);
+
+		page.appendItem(plugin.getDescriptor().id + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
+                    title: new showtime.RichText(rate + ' ' + match[3]),
+                    icon: match[2].replace('/5/', '/2/'),
+                    genre: new showtime.RichText(match[4]),
+                    description: new showtime.RichText(coloredStr('Описание: ', orange) + match[7])
+                });
+                page.entries++;
+                match = re.exec(response);
+            };
+            if (!response.match(/<b>Следующая страница<\/b>/))
+                return tryToSearch = false;
+            fromPage++;
+            return true;
 	};
 	loader();
 	page.paginator = loader;
