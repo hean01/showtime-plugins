@@ -61,8 +61,6 @@
     for (var i in data)
 	options.push([data[i], data[i]]);
 
-print(JSON.stringify(data));
-print(JSON.stringify(options));
     settings.createMultiOpt("country", "Country for the nearest stations", options, function(v) {
 	service.country = v;
     });
@@ -72,7 +70,7 @@ print(JSON.stringify(options));
         store.list = "[]";
         showtime.notify('Favorites has been cleaned successfully', 2);
     });
-settings.dump();
+
     var cp1252 = 'ÀÁÂÃÄÅ¨ÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕ×ÖØÙÜÚÛÝÞßàáâãäå¸æçèéêëìíîïðñòóôõ÷öøùüúûýþÿ³²ºª¿¯´¥';
     var cp1251 = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЧЦШЩЬЪЫЭЮЯабвгдеёжзийклмнопрстуфхчцшщьъыэюяіІєЄїЇґҐ';
     function fixMB(s) {
@@ -96,7 +94,7 @@ settings.dump();
 		    plugin.cachePut('streamurl', station.id, bce, 84600);
 		}
 	    } catch(e) {}
-print(JSON.stringify(bce));
+
             var iconUrl = null;
 	    if (station.picture1Name)
 		iconUrl = station.pictureBaseURL + station.picture1Name;
