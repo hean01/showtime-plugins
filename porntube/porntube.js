@@ -407,7 +407,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            v = showtime.httpReq(BASE_URL + '/search?q=' + query.replace(/\s/g, '\+') + "&p=" + fromPage).toString();
+            v = showtime.httpReq(BASE_URL + '/search?q=' + encodeURI(query) + "&p=" + fromPage).toString();
             page.loading = false;
             re = /<div class="col thumb_video"([\S\s]*?)class="pagination"/;
             scrape(page);
