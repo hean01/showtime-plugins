@@ -136,11 +136,11 @@
             }
             // 1-link, 2-title, 3-icon, 4-quality, 5-full title,
             // 6-rating, 7-num of comments, 8-date added, 9-year
-            var re = /<div class="postcover">[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<img title="([\S\s]*?)" src="([\S\s]*?)"[\S\s]*?class="quality_type ([\S\s]*?)">[\S\s]*?<div class="posttitle">[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>[\S\s]*?<!-- <div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="rinline">([\S\s]*?)<\/div>/g;
+            var re = /<div class="postcover">[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<img title="([\S\s]*?)" src="([\S\s]*?)"([\S\s]*?)<\/a>[\S\s]*?<div class="posttitle">[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>[\S\s]*?<!-- <div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="linline">([\S\s]*?)<\/div>[\S\s]*?<div class="rinline">([\S\s]*?)<\/div>/g;
             var match = re.exec(response);
             while (match) {
                 page.appendItem(PREFIX + ':index:' + escape(match[1]), 'video', {
-                    title: new showtime.RichText(match[5] + ' ' + (match[4] == "quality_hd" ? colorStr("HD", blue) : colorStr("DVD", orange))),
+                    title: new showtime.RichText(match[5] + ' ' + (match[4].match(/quality_hd/) ? colorStr("HD", blue) : colorStr("DVD", orange))),
                     rating: +(match[6]) / 2,
                     icon: match[3],
                     year: match[9].match(/(\d+)/) ? +match[9].match(/(\d+)/)[1] : '',
@@ -197,9 +197,12 @@
     plugin.addURI(PREFIX + ":vk:(.*):(.*)", function(page, url, title) {
         var response = showtime.httpReq(unescape(url)).toString();
         var link = response.match(/url720=(.*?)&/);
-        if (!link) link = response.match(/url480=(.*?)&/);
-        if (!link) link = response.match(/url360=(.*?)&/);
-        if (!link) link = response.match(/url240=(.*?)&/);
+        if (!link)
+            link = response.match(/url480=(.*?)&/);
+        if (!link)
+            link = response.match(/url360=(.*?)&/);
+        if (!link)
+            link = response.match(/url240=(.*?)&/);
         page.loading = false;
         if (!link) {
             page.error('Видео не доступно. / This video is not available, sorry :(');
@@ -450,70 +453,9 @@
                 match = re.exec(response);
             };
         } else { // movie
-            var player_tabs = response.match(/<ul id="player_tabs" class="tabs.*">([\S\s]*?)<\/ul>/)[1];
-            re = /<li rel="([\S\s]*?)">([\S\s]*?)<\/li>/g;
-            match = re.exec(player_tabs);
-            var num = 0;
-            while (match) {
-                var link = response.match(/<iframe src="http:\/\/vk(.*?)"/g); // try to get vk link
-                if (link && link[num]) link = PREFIX + ":vk:" + escape(link[num]) + ":" + escape(title);
-                else link = 0;
-                if (!link) {
-                    link = response.match(/<iframe src="https:\/\/vk(.*?)"/g); // try to get vks link
-                    if (link && link[num]) link = PREFIX + ":vk:" + escape(link[num]) + ":" + escape(title);
-                    else link = 0;
-                }
-                if (!link) {
-                    link = response.match(/<iframe src="http:\/\/moonwalk.cc\/video\/(.*?)\//g); // try to get hdserials link
-                    if (link && link[num]) link = PREFIX + ":moonwalk:" + escape(link[num]) + ":" + escape(title);
-                    else link = 0;
-                }
-                if (!link) {
-                    link = response.match(/value="pl=c:(.*?)&amp;/g); //
-                    if (link && link[num]) link = PREFIX + ":kinostok:" + escape(link[num]) + ":" + escape(title);
-                    else link = 0;
-                }
-                if (!link) {
-                    link = response.match(/src="http:\/\/megogo.net(.*?)"/g);
-                    if (link && link[num]) link = PREFIX + ":megogo:" + escape(link[num]) + ":" + escape(title);
-                    else link = 0;
-                }
-                if (!link) {
-                    link = response.match(/;file=(.*?)&amp;/g);
-                    if (link && link[num]) link = PREFIX + ":armtube:" + escape(link[num]) + ":" + escape(title);
-                    else link = 0;
-                }
-                if (!link) {
-                    link = response.match(/value="fileID=(.*?)&/g);
-                    if (link && link[num]) link = PREFIX + ":metaua:" + escape(link[num]) + ":" + escape(title);
-                    else link = 0;
-                }
-                if (!link) {
-                    link = response.match(/src="http:\/\/gidtv.cc(.*?)"/g);
-                    if (link && link[num]) link = PREFIX + ":gidtv:" + escape(link[num]) + ":" + escape(title);
-                    else link = 0;
-                }
-                if (!link) {
-                    link = response.match(/src="\/\/www.youtube.com\/embed\/(.*?)"/g);
-                    if (link && link[num]) link = 'youtube:video:' + escape(link[num]);
-                    else link = 0;
-                }
-                if (!link) { // try baskino links
-                    link = response.match(/file:"([^"]+)/);
-                    if (link) {
-                        link = link[1];
-                        var videoparams = {
-                            sources: [{
-                                url: link
-                            }],
-                            title: title,
-                            imdbid: getIMDBid(escape(title))
-                        };
-                        link = "videoparams:" + showtime.JSONEncode(videoparams);
-                    }
-                }
+            function addItem(player) {
                 page.appendItem(link, 'video', {
-                    title: new showtime.RichText(title + ' ' + coloredStr(match[2], orange)),
+                    title: new showtime.RichText(title + ' ' + coloredStr(player, orange)),
                     icon: icon,
                     year: +year[2],
                     genre: genre,
@@ -524,10 +466,73 @@
                         country + coloredStr(" Слоган: ", orange) + slogan + "\n" +
                         description)
                 });
-                match = re.exec(player_tabs);
-                num++;
-            };
+            }
+            // add HD first
+            var link = response.match(/<iframe src="(http:\/\/vk.*?)"/);
+            if (link)
+                link = PREFIX + ":vk:" + escape(link[1]) + ":" + escape(title);
+            else link = 0;
+            if (!link) {
+                link = response.match(/<iframe src="(https:\/\/vk.*?)"/);
+                if (link)
+                    link = PREFIX + ":vk:" + escape(link[1]) + ":" + escape(title);
+                else link = 0;
+            }
+            if (!link) {
+                link = response.match(/<iframe src="(http:\/\/moonwalk.*?)"/);
+                if (link)
+                    link = PREFIX + ":moonwalk:" + escape(link[1]) + ":" + escape(title);
+                else link = 0;
+            }
+            if (!link) {
+                link = response.match(/value="pl=c:(.*?)&amp;/);
+                if (link)
+                    link = PREFIX + ":kinostok:" + escape(link[1]) + ":" + escape(title);
+                else link = 0;
+            }
+            if (!link) {
+                link = response.match(/src="(http:\/\/megogo.net.*?)"/);
+                if (link) link = PREFIX + ":megogo:" + escape(link[1]) + ":" + escape(title);
+                else link = 0;
+            }
+            if (!link) {
+                link = response.match(/;file=(.*?)&amp;/);
+                if (link)
+                    link = PREFIX + ":armtube:" + escape(link[1]) + ":" + escape(title);
+                else link = 0;
+            }
+            if (!link) {
+                link = response.match(/value="fileID=(.*?)&/);
+                if (link)
+                    link = PREFIX + ":metaua:" + escape(link[1]) + ":" + escape(title);
+                else link = 0;
+            }
+            if (!link) {
+                link = response.match(/src="http:\/\/gidtv.cc(.*?)"/);
+                if (link)
+                    link = PREFIX + ":gidtv:" + escape(link[1]) + ":" + escape(title);
+                else link = 0;
+            }
+            if (link)
+                addItem('HD плеер');
 
+            // Then try baskino links
+            re = /file:"([^"]+)/g;
+            match = re.exec(response);
+            num = 0;
+            while (match) {
+                var videoparams = {
+                    sources: [{
+                        url: match[1]
+                    }],
+                    title: title,
+                    imdbid: getIMDBid(escape(title))
+                };
+                link = "videoparams:" + showtime.JSONEncode(videoparams);
+                addItem(num ? 'Оригинал' : 'MP4 плеер' );
+                num++;
+                match = re.exec(response);
+            }
         };
 
         //trailer
