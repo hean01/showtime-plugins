@@ -333,13 +333,13 @@
     // Play gidtv links
     plugin.addURI(PREFIX + ":gidtv:(.*):(.*)", function(page, url, title) {
         page.loading = true;
-        var doc = showtime.httpReq(unescape(url).match(/src="(.*)"/)[1]).toString();
+        var doc = showtime.httpReq(unescape(url)).toString();
         page.loading = false;
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(title),
-            canonicalUrl: PREFIX + ":gidtv:" + url+':'+title,
+            canonicalUrl: PREFIX + ":gidtv:" + url + ':' + title,
             sources: [{
                 url: doc.match(/setFlash\('([\s\S]*?)\s/)[1].replace(/manifest.f4m/,'index.m3u8')
             }]
@@ -361,6 +361,23 @@
             imdbid: getIMDBid(title),
             sources: [{
                 url: 'hls:' + link[1]
+            }]
+        });
+        page.loading = false;
+    });
+
+    // Play hdgo links
+    plugin.addURI(PREFIX + ":hdgo:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
+        var doc = showtime.httpReq(unescape(url)).toString();
+        page.loading = false;
+        page.type = "video";
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            imdbid: getIMDBid(title),
+            canonicalUrl: PREFIX + ":hdgo:" + url + ':' + title,
+            sources: [{
+                url: doc.match(/<source src="([\s\S]*?)"/)[1]
             }]
         });
         page.loading = false;
@@ -508,9 +525,15 @@
                 else link = 0;
             }
             if (!link) {
-                link = response.match(/src="http:\/\/gidtv.cc(.*?)"/);
+                link = response.match(/src="(http:\/\/gidtv.*?)"/);
                 if (link)
                     link = PREFIX + ":gidtv:" + escape(link[1]) + ":" + escape(title);
+                else link = 0;
+            }
+            if (!link) {
+                link = response.match(/src="(http:\/\/hdgo.*?)"/);
+                if (link)
+                    link = PREFIX + ":hdgo:" + escape(link[1]) + ":" + escape(title);
                 else link = 0;
             }
             if (link)
