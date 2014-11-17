@@ -542,7 +542,7 @@
             // Then try baskino links
             re = /file:"([^"]+)/g;
             match = re.exec(response);
-            num = 0;
+            var num = 0;
             while (match) {
                 var videoparams = {
                     sources: [{
