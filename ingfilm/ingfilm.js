@@ -23,7 +23,7 @@
     var logo = plugin.path + "logo.png";
 
     function trim(s) {
-        return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ");
+        return showtime.entityDecode(s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " "));
     }
 
     function orangeStr(str) {
@@ -230,22 +230,42 @@
                 gMatch = re.exec(actors)
              }
 
-        htmlBlock = htmlBlock.match(/<div class="rel-news">([\s\S]*?)<\/ul>/);
-        if (htmlBlock) {
+        var related = htmlBlock.match(/<div class="rel-news">([\s\S]*?)<\/ul>/);
+        if (related) {
             page.appendItem("", "separator", {
 	        title: 'Похожие новости:'
 	    });
             // 1-link, 2-icon, 3-title
             var re = /<div class="rel-news-image">[\S\s]*?<a href="([\S\s]*?)"><img src="([\S\s]*?)" alt="([\S\s]*?)"><\/a>/g;
-            var match = re.exec(htmlBlock[1]);
+            var match = re.exec(related[1]);
             while (match) {
                 page.appendItem(PREFIX + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: match[3],
                     icon: checkLink(match[2])
                 });
-                match = re.exec(htmlBlock[1]);
+                match = re.exec(related[1]);
             }
         }
+
+        // 1-icon, 2-nick, 3-stats, 4-text
+        var re = /<div class="comment-block">[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?href="[\S\s]*?">([\S\s]*?)<\/a>([\S\s]*?)<\/div>[\S\s]*?<div id='[\S\s]*?'>([\S\s]*?)<\/div>/g;
+        var first = true;
+        var match = re.exec(htmlBlock);
+        while (match) {
+            if (first) {
+                page.appendItem("", "separator", {
+	            title: 'Комментарии:'
+	        });
+                first = false;
+            }
+            page.appendPassiveItem('video', '', {
+                title: match[2],
+                icon: checkLink(match[1]),
+                description: new showtime.RichText(orangeStr('Добавлено: ') + trim(match[3]) + '\n' + orangeStr('Комментарий: ') + trim(match[4]))
+            });
+            match = re.exec(htmlBlock);
+        }
+
         page.loading = false;
     });
 
