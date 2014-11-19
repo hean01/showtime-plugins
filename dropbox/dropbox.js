@@ -45,8 +45,6 @@
         var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
         if (bytes == 0) return '0 Byte';
         var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-        showtime.trace(bytes + ' ' + i + ' ' + Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i]);
-        showtime.trace(+bytes + ' ' + i + ' ' + Math.round(+bytes / Math.pow(1024, i), 2) + ' ' + sizes[i]);
         return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     };
 
@@ -122,9 +120,10 @@
         if (doc.path == '/') {
             page.metadata.title = 'Dropbox Root';
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(API + 'account/info?access_token=' + store.access_token));
+            var json = showtime.httpReq(API + 'account/info?access_token=' + store.access_token);
+showtime.trace(json);
+            json = showtime.JSONDecode(json);
             page.loading = false;
-showtime.trace(json.quota_info.quota);
             page.appendPassiveItem('video', '', {
                 title: new showtime.RichText(coloredStr('Account info', orange)),
                 description: new showtime.RichText(
