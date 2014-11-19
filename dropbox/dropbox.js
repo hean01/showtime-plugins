@@ -121,6 +121,7 @@
             page.metadata.title = 'Dropbox Root';
             page.loading = true;
             var json = showtime.httpReq(API + 'account/info?access_token=' + store.access_token);
+showtime.print(json);
 showtime.trace(json);
             json = showtime.JSONDecode(json);
             page.loading = false;
