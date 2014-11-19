@@ -16,8 +16,8 @@
  */
 
 (function(plugin) {
-    var OAUTH_CONSUMER_KEY='wuqod6evftbfe5k';
-    var OAUTH_CONSUMER_SECRET='mg4qqagy2ingdue';
+    var OAUTH_CONSUMER_KEY='qu2ctt42e52yfh3';
+    var OAUTH_CONSUMER_SECRET='h26qrtan40ufbfa';
     var logo = plugin.path + 'logo.png';
     var doc, API = 'https://api.dropbox.com/1/';
 
@@ -81,24 +81,64 @@
 
         if (!store.access_token) {
             page.loading = false;
-            var msg =  'To link Dropbox to Showtime, on any PC with internet browser open\n\n' +
-                       'http://dropbox.com/1/oauth2/authorize?response_type=code&client_id=' + OAUTH_CONSUMER_KEY +
-                       '\n\nSign in to Dropbox and allow Showtime to access your folders and files.'+
-                       '\nAfter allowing the access - Dropbox will show you the code that you should enter to the textbox below:\n'+
-                       '(alternatively you can enter the code via http://showtimeIP:42000/ as dropbox:auth:CodeFromDropbox'
+showtime.print('http://dropbox.com/1/oauth2/authorize?response_type=code&client_id=' + OAUTH_CONSUMER_KEY);
+            var doc = showtime.httpReq('http://dropbox.com/1/oauth2/authorize?response_type=code&client_id=' + OAUTH_CONSUMER_KEY).toString();
+            var t = doc.match(/name="t" value="([\s\S]*?)"/)[1];
+            var recaptcha_public_key = doc.match(/name="recaptcha_public_key" value="([\s\S]*?)"/)[1];
 
-            while (1) {
-                var result = showtime.textDialog(msg, true, true);
-                if (result.rejected) {
-                    page.error('You need to link Dropbox to Showtime to continue');
-                    return;
+            var doc = showtime.httpReq('https://www.dropbox.com/ajax_login', {
+                headers: {
+                    'origin': 'https://www.dropbox.com',
+                    'referer': 'https://www.dropbox.com/login',
+                    'x-requested-with': 'XMLHttpRequest',
+                    'Cookie': 't=' + t
+                },
+                postdata: {
+                    'is_xhr': true,
+                    't': t,
+                    'cont': '/',
+                    'require_role': '',
+                    'signup_data': '',
+                    'signup_tag': '',
+                    'login_email': 'lprotasov@gmail.com',
+                    'login_password': '1977ronnie',
+                    'recaptcha_response_field': '',
+                    'recaptcha_public_key': recaptcha_public_key,
+                    'remember_me': 'True'
                 }
+            });
+showtime.print(doc);
+showtime.print(showtime.JSONEncode(doc.headers));
+var csrf = showtime.JSONDecode(doc).csrf_token;
+var id = showtime.JSONDecode(doc).id;
+//            doc = showtime.httpReq('http://dropbox.com/1/oauth2/authorize?response_type=code&client_id=' + OAUTH_CONSUMER_KEY).toString();
+//showtime.print(doc);
+//showtime.print(showtime.JSONEncode(doc.headers));
+
+            doc = showtime.httpReq('https://www.dropbox.com/1/oauth2/authorize_submit', {
+                headers: {
+                    'origin': 'https://www.dropbox.com',
+                    'referer': 'http://dropbox.com/1/oauth2/authorize?response_type=code&client_id=' + OAUTH_CONSUMER_KEY,
+                    'x-requested-with': 'XMLHttpRequest'
+//                    'Cookie': 't=' + showtime.JSONDecode(doc).csrf_token +'; js_csrf=' + showtime.JSONDecode(doc).csrf_token
+                },
+                postdata: {
+                    't': csrf,
+                    'allow_access': 1,
+                    'context': '{"response_type":"code","client_id":"'+OAUTH_CONSUMER_KEY+'"}',
+                    'user_id': id
+                }
+            }).toString();
+showtime.print(doc);
+showtime.print(doc.match(/id="auth-code">(.*)<\/div>/));
+return;
+
                 try {
                     page.loading = true;
                     doc = showtime.httpReq(API + 'oauth2/token', {
                         postdata: {
                             'grant_type': 'authorization_code',
-                            'code': result.input,
+                            'code': showtime.JSONDecode(doc).csrf_token,
                             'client_id': OAUTH_CONSUMER_KEY,
                             'client_secret': OAUTH_CONSUMER_SECRET
                         }
@@ -106,18 +146,20 @@
                     page.loading = false;
                 } catch (err) {
                     showtime.notify("Wrong code, please try again...", 5, '');
-                    continue;
+                    return;
                 }
                 var json = showtime.JSONDecode(doc);
-                if (json.access_token) {
+                if (json.access_token)
                     store.access_token = json.access_token;
-                    break;
-                }
-            }
         }
-
         page.loading = true;
-        var doc = showtime.JSONDecode(showtime.httpReq(API + 'metadata/dropbox' + path + '?access_token=' + store.access_token));
+        try {
+            var doc = showtime.JSONDecode(showtime.httpReq(API + 'metadata/dropbox' + path + '?access_token=' + store.access_token));
+        } catch(err) {
+            page.error(err);
+            store = [];
+            return;
+        }
         page.loading = false;
 
         if (!doc.is_dir) {

@@ -7,7 +7,7 @@
 	"version": "0.4.3",
         "file": "dropbox.js",
 	"showtimeVersion": "3.1.163",
-	"type": "ecmascript",
+	"type": "javascript",
 	"id": "dropbox",
 	"icon": "logo.png",
 	"category": "video"

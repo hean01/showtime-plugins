@@ -147,32 +147,39 @@
         setPageHeader(page, unescape(title));
         page.loading = true;
         var htmlBlock = showtime.httpReq(unescape(url)).toString();
-        var genres = '';
+        var genres = '', actors = '';
 
-        // 1-icon, 2-title, 3-genre, 4-rating, 5-year, 6-quality, 7-soundtrack,
-        // 8-country, 9-director, 10-budget, 11-out(worldwide), 12-out(russia),
-        // 13-duration, 14-actors, 15-url, 16-description
-        var match = htmlBlock.match(/<div class="full-news-image"><img src="([\s\S]*?)" alt="([\s\S]*?)"[\s\S]*?<div class="main-news-janr">Жанр: ([\s\S]*?)<\/div>[\s\S]*?<li class="current-rating" style="[\s\S]*?">([\s\S]*?)<\/li>[\s\S]*?<span class="year">([\s\S]*?)<\/span>[\s\S]*?<font color="quality">([\s\S]*?)<\/font>[\s\S]*?<font color="[\s\S]*?">([\s\S]*?)<\/font>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<iframe id="div_video" src="([\s\S]*?)"[\s\S]*?<br \/>([\s\S]*?)<\/div>/);
+        // 1-icon, 2-title, 3-views, 4-genre, 5-rating, 6-year, 7-quality, 8-soundtrack,
+        // 9-country, 10-director, 11-budget, 12-out(worldwide), 13-out(russia),
+        // 14-duration, 15-rating kinopoisk, 16-rating imdb, 17-actors
+        // 18-url, 19-description
+        var match = htmlBlock.match(/<div class="full-news-image"><img src="([\s\S]*?)" alt="([\s\S]*?)"[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="main-news-janr">Жанр: ([\s\S]*?)<\/div>[\s\S]*?<li class="current-rating" style="[\s\S]*?">([\s\S]*?)<\/li>[\s\S]*?<span class="year">([\s\S]*?)<\/span>[\s\S]*?<font color="quality">([\s\S]*?)<\/font>[\s\S]*?<font color="[\s\S]*?">([\s\S]*?)<\/font>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<\/b>([\s\S]*?)<br>[\s\S]*?<iframe id="div_video" src="([\s\S]*?)"[\s\S]*?<br \/>([\s\S]*?)<\/div>/);
         if (match) {
             function addItem(link, title, simpleTitle) {
-                genres = match[3];
+                genres = match[4];
+                actors = match[17];
                 page.appendItem(PREFIX + ':play:' + escape(link) + ":" + escape(simpleTitle), 'video', {
                     title: new showtime.RichText(title),
                     icon: checkLink(match[1]),
-                    genre: getGenres(match[3]),
-                    duration: match[13],
-                    year: +match[5],
-                    rating: +match[4],
-                    description: new showtime.RichText(orangeStr('Перевод: ') + match[7] +
-                        ' ' +orangeStr('Страна: ') + match[8] + '<br>' + orangeStr('Режиссер: ') + match[9] +
-                        ' ' +orangeStr('Бюджет: ') + match[10] + '<br>' + orangeStr('Премьера (Мир): ') + match[11] +
-                        ' ' +orangeStr('Премьера (РФ): ') + match[12] + '<br>' + orangeStr('В ролях: ') + match[14] +
-                        '<br>' + orangeStr('Описание: ') + match[16])
+                    genre: getGenres(genres),
+                    duration: match[14],
+                    year: +match[6],
+                    rating: +match[5],
+                    description: new showtime.RichText(orangeStr('Просмотров: ') + match[3] +
+                        orangeStr(' Перевод: ') + match[8] +
+                        orangeStr(' Страна: ') + match[9] +
+                        orangeStr('\nРежиссер: ') + match[10] +
+                        orangeStr(' Бюджет: ') + match[11] +
+                        orangeStr('\nПремьера (Мир): ') + match[12] +
+                        orangeStr('\nПремьера (РФ): ') + match[13] +
+                        orangeStr('\nКиноПоиск: ') + match[15] +
+                        orangeStr(' IMDB: ') + match[16] +
+                        orangeStr('\nОписание: ') + match[19])
                 });
             }
 
-            if (match[15].substr(0, 9) == 'http://mo' && match[15].match(/serial/)) { // handle as series
-                var html = showtime.httpReq(match[15]).toString();
+            if (match[18].substr(0, 9) == 'http://mo' && match[18].match(/serial/)) { // handle as series
+                var html = showtime.httpReq(match[18]).toString();
                 var block = html.match(/<select id="season"([\s\S]*?)<\/select>/);
                 //1-value, 2-title
                 var re = /value="([\s\S]*?)">([\s\S]*?)<\/option>/g;
@@ -181,20 +188,21 @@
                     page.appendItem("", "separator", {
 	                title: series[2]
     	            });
-                    var video = showtime.httpReq(match[15]+'?season='+series[1]+'&episode=1').toString();
+                    var video = showtime.httpReq(match[18]+'?season='+series[1]+'&episode=1').toString();
                     var videos = video.match(/<select id="episode"([\s\S]*?)<\/select>/);
                     //1-value, 2-title
                     var re2 = /value="([\s\S]*?)">([\s\S]*?)<\/option>/g;
                     video = re2.exec(videos[1])
                     while (video) {
-                        addItem(match[15]+'?season='+series[1]+'&episode='+video[1], series[2] + ' - ' + video[2], series[2] + ' - ' + video[2]);
+                        addItem(match[18]+'?season='+series[1]+'&episode='+video[1], series[2] + ' - ' + video[2], series[2] + ' - ' + video[2]);
                         video = re2.exec(videos[1])
                     }
                     series = re.exec(block[1])
                 }
             } else
-                 addItem(match[15], blueStr(match[6]) + ' ' + match[2], match[2]);
+                 addItem(match[18], blueStr(match[7]) + ' ' + match[2], match[2]);
         };
+
         if (genres) {
             page.appendItem("", "separator", {
 	        title: 'Жанры:'
@@ -209,6 +217,18 @@
                 gMatch = re.exec(genres)
              }
         }
+
+        page.appendItem("", "separator", {
+            title: 'В ролях:'
+	});
+        var re = /<a href="([\s\S]*?)">([\s\S]*?)<\/a>/g;
+        var gMatch = re.exec(actors);
+            while (gMatch) {
+                page.appendItem(PREFIX + ':listGenre:' + escape(gMatch[1]) + ":" + escape(gMatch[2]), 'directory', {
+                    title: gMatch[2]
+                });
+                gMatch = re.exec(actors)
+             }
 
         htmlBlock = htmlBlock.match(/<div class="rel-news">([\s\S]*?)<\/ul>/);
         if (htmlBlock) {
