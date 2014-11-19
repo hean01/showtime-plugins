@@ -124,6 +124,7 @@
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(API + 'account/info?access_token=' + store.access_token));
             page.loading = false;
+showtime.trace(json.quota_info.quota);
             page.appendPassiveItem('video', '', {
                 title: new showtime.RichText(coloredStr('Account info', orange)),
                 description: new showtime.RichText(
