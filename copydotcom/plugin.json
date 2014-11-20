@@ -1,10 +1,10 @@
 {
 	"description": "<p>Copy.com is a service that enables you to access files from everywhere. Share without boundaries <p>For additional info, visit <a href=\"http://copy.com\">http://copy.com</a>",
-	"author": "lprot, w00fer",
+	"author": "lprot",
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "Copy.com",
 	"synopsis": "Sync, Protect and Share, Everywhere",
-	"version": "0.1",
+	"version": "0.1.1",
         "file": "copy.js",
 	"showtimeVersion": "4.7.507",
 	"type": "javascript",
