@@ -140,8 +140,17 @@
                 return 0;
         }
         if (!setHeader) {
-             plugin.addHTTPAuth('.*\.copy\.com.*', function(req) {
+             plugin.addHTTPAuth('https:\/\/.*.copy.com.*', function(req) {
                  req.setHeader('X-Api-Version', '1');
+
+                 showtime.trace('OAuth oauth_consumer_key="' + CONSUMER_KEY + '", ' +
+                        'oauth_signature_method="PLAINTEXT", ' +
+                        'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
+                        'oauth_timestamp="' + new Date().getTime() + '", ' +
+                        'oauth_version="1.0", ' +
+                        'oauth_token="' + store.access_token + '", ' +
+                        'oauth_signature="' + CONSUMER_SECRET + '&' + store.access_secret + '"');
+
                  req.setHeader('Authorization', 'OAuth oauth_consumer_key="' + CONSUMER_KEY + '", ' +
                         'oauth_signature_method="PLAINTEXT", ' +
                         'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
