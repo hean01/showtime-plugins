@@ -52,15 +52,19 @@
         page.type = "directory";
         page.content = "items";
         page.loading = true;
-        var credentials = null;
 
         if (!store.access_token) {
             var html = showtime.httpReq('http://dropbox.com/1/oauth2/authorize?response_type=code&client_id=' + OAUTH_CONSUMER_KEY).toString();
             page.loading = false;
 
             while (1) {
-                credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, 'Please enter email and password to authorize Showtime', true);
-                if (credentials && credentials.username && credentials.password) {
+                var credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, 'Please enter email and password to authorize Showtime', true, false, true);
+                if (credentials.rejected) {
+                    page.error('Cannot login to ' + plugin.getDescriptor().title);
+                    return;
+                }
+
+                if (credentials.username && credentials.password) {
                     page.loading = true;
                     var doc = showtime.httpReq('https://www.dropbox.com/ajax_login', {
                         postdata: {
