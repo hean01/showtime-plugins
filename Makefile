@@ -31,7 +31,8 @@ PLUGINS= \
         xxx-tracker.zip \
         divan_tv.zip \
         navi-x.zip \
-        filmezz.zip
+        filmezz.zip \
+        copydotcom.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

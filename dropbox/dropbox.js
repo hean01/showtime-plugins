@@ -120,10 +120,7 @@
         if (doc.path == '/') {
             page.metadata.title = 'Dropbox Root';
             page.loading = true;
-            var json = showtime.httpReq(API + 'account/info?access_token=' + store.access_token);
-showtime.print(json);
-showtime.trace(json);
-            json = showtime.JSONDecode(json);
+            var json = showtime.JSONDecode(showtime.httpReq(API + 'account/info?access_token=' + store.access_token));
             page.loading = false;
             page.appendPassiveItem('video', '', {
                 title: new showtime.RichText(coloredStr('Account info', orange)),
