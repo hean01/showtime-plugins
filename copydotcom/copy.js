@@ -139,6 +139,7 @@
             if (!login(page))
                 return 0;
         }
+        showtime.trace('Calling addHTTPAuth ' + setHeader);
         if (!setHeader) {
              plugin.addHTTPAuth('https:\/\/.*.copy.com.*', function(req) {
                  req.setHeader('X-Api-Version', '1');
@@ -168,7 +169,7 @@
             page.loading = false;
         } catch(err) {
             store.access_token = '';
-            return 0;
+            return setHeader = false;
         }
         return 1;
     }
