@@ -140,8 +140,8 @@
                 return 0;
         }
         if (!setHeader) {
-             plugin.addHTTPAuth('https://.*.copy.com', function(req) {
-                 req.setHeader('X-Api-Version', 1);
+             plugin.addHTTPAuth('https:\/\/.*\.copy\.com', function(req) {
+                 req.setHeader('X-Api-Version', '1');
                  req.setHeader('Authorization', 'OAuth oauth_consumer_key="' + CONSUMER_KEY + '", ' +
                         'oauth_signature_method="PLAINTEXT", ' +
                         'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
