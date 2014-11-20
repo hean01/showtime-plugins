@@ -19,7 +19,7 @@
     var CONSUMER_KEY='I8lxlFw7HtTjiCe8oKhHQlQPy9PsM527';
     var CONSUMER_SECRET='dfET0lUInz48z1sGLVkWPlOWJUaeMDkTNtYxipqhV6SCJnYV';
     var logo = plugin.path + 'logo.png';
-    var doc; API = 'https://api.copy.com';
+    var doc, API = 'https://api.copy.com', setHeader = false;
 
     var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
@@ -70,7 +70,7 @@
 
             while (1) {
                 page.loading = false;
-                credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, 'Please enter email and password to authorize Showtime', true, false, true);
+                var credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, 'Please enter email and password to authorize Showtime', true, false, true);
                 if (credentials.rejected)
                      return 0;
                 if (credentials.username && credentials.password) {
@@ -128,6 +128,7 @@
 
             store.access_token = tokens.match(/oauth_token=([\s\S]*?)&/)[1];
             store.access_secret = tokens.match(/oauth_token_secret=([\s\S]*?)$/)[1];
+            setHeader = false;
         }
         page.loading = false;
         return 1;
@@ -137,6 +138,19 @@
         if (!store.access_token) {
             if (!login(page))
                 return 0;
+        }
+        if (!setHeader) {
+             plugin.addHTTPAuth("https://.*\.copy\.com", function(req) {
+                 req.setHeader('X-Api-Version', 1);
+                 req.setHeader('Authorization', 'OAuth oauth_consumer_key="' + CONSUMER_KEY + '", ' +
+                        'oauth_signature_method="PLAINTEXT", ' +
+                        'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
+                        'oauth_timestamp="' + new Date().getTime() + '", ' +
+                        'oauth_version="1.0", ' +
+                        'oauth_token="' + store.access_token + '", ' +
+                        'oauth_signature="' + CONSUMER_SECRET + '&' + store.access_secret + '"');
+            });
+            setHeader = true;
         }
 
         try {
@@ -149,17 +163,6 @@
         }
         return 1;
     }
-
-    plugin.addHTTPAuth("https://.*\.copy\.com", function(req) {
-        req.setHeader('X-Api-Version', 1);
-        req.setHeader('Authorization', 'OAuth oauth_consumer_key="' + CONSUMER_KEY + '", ' +
-                        'oauth_signature_method="PLAINTEXT", ' +
-                        'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
-                        'oauth_timestamp="' + new Date().getTime() + '", ' +
-                        'oauth_version="1.0", ' +
-                        'oauth_token="' + store.access_token + '", ' +
-                        'oauth_signature="' + CONSUMER_SECRET + '&' + store.access_secret + '"');
-    })
 
     plugin.addURI("copy:browse:(.*)", function(page, path) {
         page.type = "directory";
@@ -194,6 +197,7 @@
     });
 
     function ls(page, json) {
+        //showtime.print(showtime.JSONEncode(json));
         // folders first
         for (var i in json) {
             if (json[i].type != 'file') {
