@@ -1,5 +1,5 @@
 ﻿/**
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2014 lprot, w00fer
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -50,126 +50,157 @@
 
     function login(page) {
         page.loading = true;
-        var tokens = showtime.httpReq(API + '/oauth/request', {
-            headers: {
-                Authorization: 'OAuth oauth_version="1.0", ' +
-                    'oauth_signature_method="PLAINTEXT", ' +
-                    'oauth_consumer_key="' + CONSUMER_KEY + '", ' +
-                    'oauth_signature="' + CONSUMER_SECRET + '&", ' +
-                    'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
-                    'oauth_timestamp="' + new Date().getTime() + '", ' +
-                    'oauth_callback="oob"'
+
+        if (!store.access_token) {
+            var tokens = showtime.httpReq(API + '/oauth/request', {
+                headers: {
+                    Authorization: 'OAuth oauth_version="1.0", ' +
+                        'oauth_signature_method="PLAINTEXT", ' +
+                        'oauth_consumer_key="' + CONSUMER_KEY + '", ' +
+                        'oauth_signature="' + CONSUMER_SECRET + '&", ' +
+                        'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
+                        'oauth_timestamp="' + new Date().getTime() + '", ' +
+                        'oauth_callback="oob"'
+                    }
+            }).toString();
+
+            var requestTokenSecret = tokens.match(/oauth_token_secret=([\s\S]*?)&/)[1];
+
+            doc = showtime.httpReq('https://www.copy.com/applications/authorize?oauth_token=' + tokens.match(/oauth_token=([\s\S]*?)&/)[1]);
+
+            while (1) {
+                page.loading = false;
+                credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, 'Please enter email and password to authorize Showtime', true, false, true);
+                if (credentials.rejected)
+                     return 0;
+                if (credentials.username && credentials.password) {
+                    page.loading = true;
+                    try {
+                        doc = showtime.httpReq('https://www.copy.com/auth/login', {
+                            headers: {
+                                'Host': 'www.copy.com',
+                                'Origin': 'https://www.copy.com',
+                                'Referer': 'https://www.copy.com/applications/authorize?oauth_token=' + tokens.match(/oauth_token=([\s\S]*?)&/)[1]
+                            },
+                            postdata: {
+                                redirect: '/applications/authorize_allow?oauth_token=' + tokens.match(/oauth_token=([\s\S]*?)&/)[1],
+                                source: '',
+                                user_count: '',
+                                username: credentials.username,
+                                password: credentials.password
+                            },
+                            noFollow: true
+                        });
+	                var err = doc.toString().match(/<div class="flash-message error">([\s\S]*?)<\/div>/);
+                        if (err) {
+                            page.loading = false;
+                            showtime.message(err[1].trim(), true, false);
+                            continue;
+                        } else
+                            break;
+                    } catch(err) {
+                        page.loading = false;
+                        continue;
+                    }
+                } else
+                    continue;
             }
-        }).toString();
 
-        var requestTokenSecret = tokens.match(/oauth_token_secret=([\s\S]*?)&/)[1];
+            doc = showtime.httpReq(doc.headers.location, {
+                noFollow: true
+            });
 
-        doc = showtime.httpReq('https://www.copy.com/applications/authorize?oauth_token=' + tokens.match(/oauth_token=([\s\S]*?)&/)[1]);
+            tokens = doc.headers.location.match(/oauth_token=([\s\S]*?)&oauth_verifier=([\s\S]*?)$/);
 
-        doc = showtime.httpReq('https://www.copy.com/auth/login', {
-            headers: {
-                'Host': 'www.copy.com',
-                'Origin': 'https://www.copy.com',
-                'Referer': 'https://www.copy.com/applications/authorize?oauth_token=' + tokens.match(/oauth_token=([\s\S]*?)&/)[1]
-            },
-            postdata: {
-                redirect: '/applications/authorize_allow?oauth_token=' + tokens.match(/oauth_token=([\s\S]*?)&/)[1],
-                source: '',
-                user_count: '',
-                username: '',
-                password: ''
-            },
-            noFollow: true
-        });
+            tokens = showtime.httpReq(API + '/oauth/access', {
+                headers: {
+                    Authorization: 'OAuth oauth_verifier="' + tokens[2] + '", ' +
+                        'oauth_consumer_key="' + CONSUMER_KEY + '", ' +
+                        'oauth_signature_method="PLAINTEXT", ' +
+                        'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
+                        'oauth_timestamp="' + new Date().getTime() + '", ' +
+                        'oauth_version="1.0", ' +
+                        'oauth_token="' + tokens[1] + '", ' +
+                        'oauth_signature="' + CONSUMER_SECRET + '&' + requestTokenSecret + '"'
+                    },
+                    postdata: {}
+            }).toString();
 
-        doc = showtime.httpReq(doc.headers.location, {
-            noFollow: true
-        });
-
-        tokens = doc.headers.location.match(/oauth_token=([\s\S]*?)&oauth_verifier=([\s\S]*?)$/);
-
-        tokens = showtime.httpReq(API + '/oauth/access', {
-            headers: {
-                Authorization: 'OAuth oauth_verifier="' + tokens[2] + '", ' +
-                    'oauth_consumer_key="' + CONSUMER_KEY + '", ' +
-                    'oauth_signature_method="PLAINTEXT", ' +
-                    'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
-                    'oauth_timestamp="' + new Date().getTime() + '", ' +
-                    'oauth_version="1.0", ' +
-                    'oauth_token="' + tokens[1] + '", ' +
-                    'oauth_signature="' + CONSUMER_SECRET + '&' + requestTokenSecret + '"'
-            },
-            postdata: {}
-        }).toString();
-
-        store.access_token = tokens.match(/oauth_token=([\s\S]*?)&/)[1];
-        store.access_secret = tokens.match(/oauth_token_secret=([\s\S]*?)$/)[1];
+            store.access_token = tokens.match(/oauth_token=([\s\S]*?)&/)[1];
+            store.access_secret = tokens.match(/oauth_token_secret=([\s\S]*?)$/)[1];
+        }
         page.loading = false;
+        return 1;
     }
 
     function getData(page, path) {
+        if (!store.access_token) {
+            if (!login(page))
+                return 0;
+        }
+
         try {
             page.loading = true;
-            doc = showtime.JSONDecode(showtime.httpReq(API + path, {
-                headers: {
-                    'X-Api-Version': 1,
-                    Authorization: 'OAuth oauth_consumer_key="' + CONSUMER_KEY + '", ' +
+            doc = showtime.JSONDecode(showtime.httpReq(API + path));
+            page.loading = false;
+        } catch(err) {
+            store.access_token = '';
+            return 0;
+        }
+        return 1;
+    }
+
+    plugin.addHTTPAuth("https://.*\.copy\.com", function(req) {
+        req.setHeader('X-Api-Version', 1);
+        req.setHeader('Authorization', 'OAuth oauth_consumer_key="' + CONSUMER_KEY + '", ' +
                         'oauth_signature_method="PLAINTEXT", ' +
                         'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
                         'oauth_timestamp="' + new Date().getTime() + '", ' +
                         'oauth_version="1.0", ' +
                         'oauth_token="' + store.access_token + '", ' +
-                        'oauth_signature="' + CONSUMER_SECRET + '&' + store.access_secret + '"'
-                }
-            }));
-            page.loading = false;
-        } catch(err) {
-            login();
-        }
-    }
+                        'oauth_signature="' + CONSUMER_SECRET + '&' + store.access_secret + '"');
+    })
 
     plugin.addURI("copy:browse:(.*)", function(page, path) {
         page.type = "directory";
         page.content = "items";
         page.loading = true;
-        if (!store.access_token)
-            login(page);
 
-        getData(page, '/rest/meta');
-        showtime.print(showtime.JSONEncode(doc));
-
-        var title = doc.path.split('/');
-        if (doc.path == '/') {
-            page.metadata.title = plugin.getDescriptor().title + ' Root';
-            getData(page, '/rest/user');
-            showtime.print(showtime.JSONEncode(doc));
-            page.appendPassiveItem('video', '', {
-                title: new showtime.RichText(coloredStr('Account info', orange)),
-                icon: 'https:' + showtime.entityDecode(doc.avatar_url),
-                description: new showtime.RichText(
-                    coloredStr('\nFirst name: ', orange) + doc.first_name +
-                    coloredStr('\nLast name: ', orange) + doc.last_name +
-                    coloredStr('\nEmail: ', orange) + doc.email +
-                    coloredStr('\nUsed: ', orange) + bytesToSize(doc.storage.used) +
-                    coloredStr('\nQuota: ', orange) + bytesToSize(doc.storage.quota) +
-                    coloredStr('\nSaved: ', orange) + bytesToSize(doc.storage.saved) +
-                    coloredStr('\nID: ', orange) + doc.id +
-                    coloredStr('\nCreated time: ', orange) + new Date(doc.created_time * 1000)
-                )
-            });
+        if (getData(page, '/rest/meta' + unescape(path))) {
+            var json = doc;
+            var title = doc.path.split('/');
+            if (doc.id == '/') {
+                page.metadata.title = plugin.getDescriptor().title + ' Root';
+                getData(page, '/rest/user');
+                page.appendPassiveItem('video', '', {
+                    title: new showtime.RichText(coloredStr('Account info', orange)),
+                    icon: 'https:' + showtime.entityDecode(doc.avatar_url),
+                    description: new showtime.RichText(
+                        coloredStr('\nFirst name: ', orange) + doc.first_name +
+                        coloredStr('\nLast name: ', orange) + doc.last_name +
+                        coloredStr('\nEmail: ', orange) + doc.email +
+                        coloredStr('\nUsed: ', orange) + bytesToSize(doc.storage.used) +
+                        coloredStr('\nQuota: ', orange) + bytesToSize(doc.storage.quota) +
+                        coloredStr('\nSaved: ', orange) + bytesToSize(doc.storage.saved) +
+                        coloredStr('\nID: ', orange) + doc.id +
+                        coloredStr('\nCreated time: ', orange) + new Date(doc.created_time * 1000)
+                    )
+                });
+            } else
+                page.metadata.title = doc.name;
+            ls(page, json.children);
         } else
-            page.metadata.title = title[title.length-1];
-        ls(page, doc.contents);
+            page.error('Cannot login to ' + plugin.getDescriptor().title);
     });
 
     function ls(page, json) {
         // folders first
         for (var i in json) {
-            if (json[i].is_dir) {
+            if (json[i].type != 'file') {
                 var title = json[i].path.split('/');
-                title = title[title.length-1]
-                page.appendItem("copy:browse:" + showtime.pathEscape(json[i].path), "directory", {
-                    title: new showtime.RichText(title + colorStr(json[i].modified.replace(/ \+0000/, ''), orange))
+                title = json[i].name;
+                page.appendItem("copy:browse:" + escape(json[i].id), "directory", {
+                    title: new showtime.RichText(title)
 	        });
                 page.entries++;
             }
@@ -178,32 +209,18 @@
 
         // then files
         for (var i in json) {
-            if (!json[i].is_dir) {
+            if (json[i].type == 'file') {
                 var title = json[i].path.split('/');
                 title = title[title.length-1]
-                var url = 'https://api-content.dropbox.com/1/files/dropbox' + showtime.pathEscape(json[i].path) + '?access_token=' + store.access_token;
+                var url = json.url;
                 if (json[i].path.split('.').pop().toUpperCase() == 'PLX')
                     url = 'navi-x:playlist:playlist:' + escape(url)
                 var type = json[i].mime_type.split('/')[0];
-
-	        page.appendItem(url, type, {
-	            title: new showtime.RichText(title + colorStr(json[i].size, blue) + ' ' + json[i].modified.replace( /\+0000/, ''))
+	        page.appendItem(API + '/rest/files' + encodeURI(json[i].path), type, {
+	            title: new showtime.RichText(title + colorStr(bytesToSize(json[i].size), blue) + ' ' + new Date(json[i].modified_time * 1000))
 	        });
                 page.entries++;
             }
         }
     }
-
-    plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
-        page.entries = 0;
-        page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(API + 'search/auto/', {
-            args: {
-                access_token: store.access_token,
-                query: query
-            }
-        }));
-        page.loading = false;
-        ls(page, json);
-    });
 })(this);
