@@ -32,7 +32,8 @@ PLUGINS= \
         divan_tv.zip \
         navi-x.zip \
         filmezz.zip \
-        copydotcom.zip
+        copydotcom.zip \
+	gdrive.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
