@@ -137,8 +137,6 @@
 	        item.format = itemmd.format;
 
 	        item.addOptAction("Add '" + itemmd.station + "' to My Favorites", "addFavorite");
-                function setEventHandler(obj) {
-                }
 
                 if (typeof Duktape != "undefined") {
 	            item.onEvent("addFavorite", function(item) {

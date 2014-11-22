@@ -19,11 +19,8 @@
 
 
 (function(plugin) {
-    var plugin_info = plugin.getDescriptor();
-    var BASE_URL = "http://api.shoutcast.com";
-    var PREFIX = "shoutcast:";
+    var API = "http://api.shoutcast.com", k = 'sh1t7hyn3Kh0jhlV';
     var logo = plugin.path + "logo.png";
-    var k = 'sh1t7hyn3Kh0jhlV';
 
     function setPageHeader(page, title) {
         page.loading = false;
@@ -43,18 +40,14 @@
 
     // create plugin favorites store
     var store = plugin.createStore('favorites', true)
-    if (!store.list) {
-        store.version = "1";
-        store.background = "";
-        store.title = "Shoutcast » My Favorites";
+    if (!store.list)
         store.list = "[]";
-    }
 
     // create plugin service
-    plugin.createService(plugin_info.id, PREFIX + "start", "audio", true, logo);
+    plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "audio", true, logo);
 
     // create settings
-    var settings = plugin.createSettings(plugin_info.id, logo, plugin_info.synopsis);
+    var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
 
     settings.createAction("cleanFavorites", "Clean My Favorites", function() {
         store.list = "[]";
@@ -73,21 +66,19 @@
         }
 
         var pos = 0;
-	for (item in list) {
-	    var itemmd = showtime.JSONDecode(list[item]);
+	for (var i in list) {
+	    var itemmd = showtime.JSONDecode(list[i]);
 
 	    var item = page.appendItem(itemmd.url, "station", {
-		title: new showtime.RichText(itemmd.title),
-                station: itemmd.station
+		title: itemmd.station,
+		station: itemmd.station
 	    });
 
             item.addOptAction("Remove '" + itemmd.station + "' from My Favorites", pos);
 
 	    item.onEvent(pos, function(item) {
 		var list = eval(store.list);
-showtime.print('111');
-showtime.print(list);
-		showtime.notify(showtime.JSONDecode(list[item]).station + " has been removed from My Favorites.", 2);
+		showtime.notify("'" + showtime.JSONDecode(list[item]).station + "' has been removed from My Favorites.", 2);
 	        list.splice(item, 1);
 		store.list = showtime.JSONEncode(list);
                 page.flush();
@@ -98,26 +89,26 @@ showtime.print(list);
     }
 
     // Favorites
-    plugin.addURI(PREFIX + "favorites", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":favorites", function(page) {
         setPageHeader(page, "My Favorites");
         fill_fav(page);
     });
 
-    plugin.addURI(PREFIX + "genresearch:(.*):(.*)", function(page, id, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":genresearch:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, 'Shoutcast - ' + title);
-        getStationsFromXML(page, BASE_URL+'/legacy/genresearch?k='+k+'&genre='+showtime.entityDecode(unescape(title)).replace(/\s/g,'\+'));
+        getStationsFromXML(page, API+'/legacy/genresearch?k='+k+'&genre='+showtime.entityDecode(unescape(title)).replace(/\s/g,'\+'));
     });
 
-    plugin.addURI(PREFIX + "subgenre:(.*):(.*)", function(page, id, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":subgenre:(.*):(.*)", function(page, id, title) {
         setPageHeader(page, 'Shoutcast - ' + title);
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(BASE_URL+'/genre/secondary?parentid='+id+'&k='+k+'&f=json').toString());
+        var json = showtime.JSONDecode(showtime.httpReq(API+'/genre/secondary?parentid='+id+'&k='+k+'&f=json').toString());
         page.loading = false;
 
         if (json.response.data.genrelist.genre) {
         for (var i in json.response.data.genrelist.genre) {
             var genre = json.response.data.genrelist.genre[i];
-	    page.appendItem(PREFIX + "genresearch:"+genre.id+":"+escape(genre.name), "directory", {
+	    page.appendItem(plugin.getDescriptor().id + ":genresearch:"+genre.id+":"+escape(genre.name), "directory", {
 		title: showtime.entityDecode(genre.name)
 	    });
         };
@@ -125,49 +116,58 @@ showtime.print(list);
         getRandomStations(page);
     });
 
-    plugin.addURI(PREFIX + "genres", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":genres", function(page) {
         setPageHeader(page, 'Shoutcast - Genres');
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(BASE_URL+'/genre/primary?k='+k+'&f=json').toString());
+        var json = showtime.JSONDecode(showtime.httpReq(API + '/genre/primary?k=' + k + '&f=json').toString());
         page.loading = false;
 
         for (var i in json.response.data.genrelist.genre) {
             var genre = json.response.data.genrelist.genre[i];
-            page.appendItem(PREFIX + (genre.haschildren ? 'subgenre:' : 'genresearch:') + genre.id+":"+escape(genre.name), "directory", {
+            page.appendItem(plugin.getDescriptor().id + (genre.haschildren ? ':subgenre:' : ':genresearch:') + genre.id+":"+escape(genre.name), "directory", {
 	        title: showtime.entityDecode(genre.name)
      	    });
         };
         getRandomStations(page);
     });
 
+    function addItemToFavorites(item) {
+        var entry = showtime.JSONEncode({
+            url: item.url,
+            title: item.title,
+            station: item.station
+        });
+        store.list = showtime.JSONEncode([entry].concat(eval(store.list)));
+        showtime.notify("'" + item.station + "' has been added to My Favorites.", 2);
+    };
+
     function getRandomStations(page) {
         page.loading = true;
-        var xml = showtime.httpReq(BASE_URL+'/station/randomstations?k='+k+'&f=xml').toString();
+        var xml = showtime.httpReq(API + '/station/randomstations?k=' + k + '&f=xml').toString();
         page.loading = false;
         // 1-title, 2-genre, 3-now playing, 4-format, 5-id, 6-bitrate, 7-listeners
-        var re = /<station name="([\s\S]*?)" genre="([\s\S]*?)" ct="([\s\S]*?)" mt="audio\/([\s\S]*?)" id="([\s\S]*?)" br="([\s\S]*?)" lc="([\s\S]*?)"/g;
+        var re = /<station name="([\s\S]*?)" genre="([\s\S]*?)"[\s\S]*?ct="([\s\S]*?)" mt="audio\/([\s\S]*?)" id="([\s\S]*?)" br="([\s\S]*?)" lc="([\s\S]*?)"/g;
         var match = re.exec(xml);
         while (match) {
-            var item = page.appendItem('icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id='+match[5], "station", {
+            var item = page.appendItem('icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id=' + match[5], "station", {
                 title: new showtime.RichText(match[1]+colorStr(match[2], orange) +
                     colorStr(match[7], orange)+colorStr(match[4]+' '+match[6], orange))
             });
-            item.url = 'icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id='+match[3];
-            item.title = match[1]+colorStr(match[2], orange) +
-                         colorStr(match[7], orange)+colorStr(match[4]+' '+match[6], orange),
+            item.url = 'icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id=' + match[3];
+            item.title = match[1] + colorStr(match[2], orange) +
+                         colorStr(match[7], orange) + colorStr(match[4] + ' ' + match[6], orange);
             item.station = match[1];
-            item.onEvent("addFavorite", function(item) {
-                var entry = {
-                    url: item.url,
-                    title: item.title,
-                    station: item.station
-                };
-	        showtime.trace("item: "+showtime.JSONEncode(entry));
-                var list = eval(store.list);
-                var array = [showtime.JSONEncode(entry)].concat(list);
-                store.list = showtime.JSONEncode(array);
-                showtime.notify("'" + entry.station + "' has been added to My Favorites.", 2);
-            });
+
+            if (typeof Duktape != "undefined") {
+                item.onEvent("addFavorite", function(item) {
+                    addItemToFavorites(this);
+	        }.bind(item));
+            } else {
+	        item.onEvent("addFavorite", function(item) {
+                    addItemToFavorites(this);
+                });
+            }
+
 	    item.addOptAction("Add '" + match[1] + "' to My Favorites", "addFavorite");
             match = re.exec(xml);
         };
@@ -181,37 +181,36 @@ showtime.print(list);
             if (!tryToSearch) return false;
 
             page.loading = true;
-            var xml = showtime.httpReq(url+'&limit='+offset+','+20).toString();
+            var xml = showtime.httpReq(url + '&limit=' + offset + ',' + 20).toString();
             // 1-title, 2-format, 3-id, 4-bitrate, 5-genre, 6-now playing, 7-listeners
-            var re = /<station name="([\s\S]*?)" mt="audio\/([\s\S]*?)" id="([\s\S]*?)" br="([\s\S]*?)" genre="([\s\S]*?)" ct="([\s\S]*?)" lc="([\s\S]*?)"/g;
+            var re = /<station name="([\s\S]*?)" mt="audio\/([\s\S]*?)" id="([\s\S]*?)" br="([\s\S]*?)" genre="([\s\S]*?)"[\s\S]*?ct="([\s\S]*?)" lc="([\s\S]*?)"/g;
             page.loading = false;
 
             var match = re.exec(xml);
             if (!match) return tryToSearch = false;
             while (match) {
-                  var item = page.appendItem('icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id='+match[3], "station", {
-                      title: new showtime.RichText(match[1]+colorStr(match[5], orange) +
-                             colorStr(match[7], orange)+colorStr(match[2]+' '+match[4], orange))
-	          });
-                  item.url = 'icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id='+match[3];
-                  item.title = match[1]+colorStr(match[5], orange) +
-                              colorStr(match[7], orange)+colorStr(match[2]+' '+match[4], orange),
-                  item.station = match[1];
-                  item.onEvent("addFavorite", function(item) {
-                      var entry = {
-                          url: item.url,
-                          title: item.title,
-                          station: item.station
-                      };
-		      showtime.trace("item: "+showtime.JSONEncode(entry));
-                      var list = eval(store.list);
-                      var array = [showtime.JSONEncode(entry)].concat(list);
-                      store.list = showtime.JSONEncode(array);
-                      showtime.notify("'" + entry.station + "' has been added to My Favorites.", 2);
-                  });
-	          item.addOptAction("Add '" + match[1] + "' to My Favorites", "addFavorite");
-                  page.entries++;
-                  match = re.exec(xml);
+                var item = page.appendItem('icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id='+match[3], "station", {
+                    title: new showtime.RichText(match[1]+colorStr(match[5], orange) +
+                        colorStr(match[7], orange)+colorStr(match[2]+' '+match[4], orange))
+	        });
+                item.url = 'icecast:http://yp.shoutcast.com/sbin/tunein-station.pls?id='+match[3];
+                item.title = match[1] + colorStr(match[5], orange) +
+                             colorStr(match[7], orange) + colorStr(match[2] + ' ' + match[4], orange),
+                item.station = match[1];
+
+                if (typeof Duktape != "undefined") {
+	            item.onEvent("addFavorite", function(item) {
+                        addItemToFavorites(this);
+	            }.bind(item));
+                } else {
+	            item.onEvent("addFavorite", function(item) {
+                        addItemToFavorites(this);
+                    });
+                }
+
+                item.addOptAction("Add '" + match[1] + "' to My Favorites", "addFavorite");
+                page.entries++;
+                match = re.exec(xml);
             };
             offset += 20;
             return true;
@@ -221,22 +220,22 @@ showtime.print(list);
     }
 
     // Start page
-    plugin.addURI(PREFIX + "start", function(page) {
-        setPageHeader(page, plugin_info.synopsis);
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
+        setPageHeader(page, plugin.getDescriptor().synopsis);
 
-     	page.appendItem(PREFIX + "genres", "directory", {
+     	page.appendItem(plugin.getDescriptor().id + ":genres", "directory", {
 	    title: "Genres"
 	});
 
-	page.appendItem(PREFIX + "favorites", "directory", {
+	page.appendItem(plugin.getDescriptor().id + ":favorites", "directory", {
 	    title: "My Favorites"
 	});
 
-        getStationsFromXML(page, BASE_URL+'/legacy/Top500?k=' + k);
+        getStationsFromXML(page, API + '/legacy/Top500?k=' + k);
     });
 
     plugin.addSearcher("Shoutcast", logo, function(page, query) {
-        getStationsFromXML(page, BASE_URL+'/legacy/stationsearch?k=' + k+'&search='+query.replace(/\s/g,'\+'));
+        getStationsFromXML(page, API + '/legacy/stationsearch?k=' + k + '&search=' + encodeURI(query));
     });
 
 })(this);
