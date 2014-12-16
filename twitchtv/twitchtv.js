@@ -125,7 +125,7 @@
 
         for (var i in json.featured) {
             page.appendItem(plugin.getDescriptor().id + ':channel:' + encodeURIComponent(json.featured[i].stream.channel.name) + ':' + encodeURIComponent(json.featured[i].stream.channel.display_name), "video", {
-                title: new showtime.RichText(json.featured[i].stream.game + ' - ' + json.featured[i].stream.channel.display_name + coloredStr(' (' + json.featured[i].stream.viewers + ')', orange)),
+                title: new showtime.RichText((json.featured[i].stream.game ? json.featured[i].stream.game + ' - ' : '') + json.featured[i].stream.channel.display_name + coloredStr(' (' + json.featured[i].stream.viewers + ')', orange)),
                 icon: json.featured[i].stream.preview.large,
                 description: new showtime.RichText(coloredStr('Viewing this stream: ', orange) + json.featured[i].stream.viewers +
                     coloredStr('\nStream created at: ', orange) + json.featured[i].stream.created_at +
@@ -241,7 +241,10 @@
             page.appendItem(json.chunks.live[i].url, "video", {
                 title: 'Chunk' + (+i + 1),
                 icon: json.preview,
-                duration: json.chunks.live[i].length
+                duration: json.chunks.live[i].length,
+                description: new showtime.RichText(coloredStr('Start offset: ', orange) + json.start_offset +
+                    coloredStr('\nEnd offset: ', orange) + json.end_offset
+                )
             });
         }
     });
@@ -287,6 +290,7 @@
         });
     });
 
+    var id = 0;
     plugin.addURI(plugin.getDescriptor().id + ":channel:(.*):(.*)", function (page, name, display_name) {
         setPageHeader(page, plugin.getDescriptor().title + ' - ' + decodeURIComponent(display_name));
         page.entries = 0;
@@ -343,8 +347,8 @@
                     duration: json.videos[i].length,
                     description: new showtime.RichText(coloredStr('Views: ', orange) + json.videos[i].views +
                         (json.videos[i].game ? coloredStr('\nGame: ', orange) + json.videos[i].game : '') +
-                        coloredStr('\nRecorded at: ', orange) + json.videos[i].recorded_at +
-                        coloredStr('\nDescription: ', orange) + json.videos[i].description
+                        (json.videos[i].recorded_at ? coloredStr('\nRecorded at: ', orange) + json.videos[i].recorded_at : '') +
+                        (json.videos[i].description ? coloredStr('\nDescription: ', orange) + json.videos[i].description : '')
                     )
                 });
                 page.entries++;
