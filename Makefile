@@ -33,7 +33,8 @@ PLUGINS= \
         navi-x.zip \
         filmezz.zip \
         copydotcom.zip \
-	gdrive.zip
+	gdrive.zip \
+        twitchtv.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

@@ -1,0 +1,14 @@
+{
+	"description": "<p>One of the best resource available on the Internet for gamers.<p>",
+	"author": "F\u00e1bio Ferreira (facanferff), lprot",
+	"homepage": "https://github.com/lprot/showtime-plugins",
+	"title": "TwitchTV",
+	"synopsis": "Twitch.TV: Game streaming.",
+	"version": "1.0.8",
+	"file": "twitchtv.js",
+	"showtimeVersion": "4.2",
+	"type": "javascript",
+	"id": "twitchtv",
+	"icon": "logo.png",
+	"category": "video"
+}
