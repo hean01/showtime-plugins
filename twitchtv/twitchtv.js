@@ -1,8 +1,8 @@
 ﻿/**
  * TwitchTV plugin for Showtime Media Center
  *
- *  Copyright (C) 2012-2014 Fábio Ferreira (facanferff), lprot
- *  Adapted from https://github.com/StateOfTheArt89/Twitch.tv-on-XBMC
+ *  Copyright (C) 2014 lprot
+ *  Based on the plugin of Fábio Ferreira (facanferff)
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 (function(plugin) {
     var logo = plugin.path + "logo.png", API = 'https://api.twitch.tv/kraken';
+    var itemsPerPage = 50;
 
     var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "video", true, logo);
 
@@ -50,16 +51,7 @@
         return '<font color="' + color + '">' + str + '</font>';
     }
 
-    settings.createInfo("info", logo,
-                 "Plugin developed by facanferff, creator of Youtube, Navi-X and TMDB plugins.");
-
-    settings.createDivider('Browser Settings');
-
-    settings.createInt("itemsPerPage", "Number of items per request/page", 50, 1, 100, 1, '', function(v) {
-        service.itemsPerPage = v;
-    });
-
-    settings.createDivider("Video Playback");
+    settings.createInfo("info", logo, plugin.getDescriptor().synopsis);
 
     var videoQualities = [
         ['0', 'Source', true], ['1', 'High'], ['2', 'Medium'], ['3', 'Low'], ['4', 'Mobile']
@@ -68,51 +60,39 @@
         service.videoQuality = v;
     });
 
-    var following_users = plugin.createStore('following_users', true);
-    if (!following_users.users)
-        following_users.users = '';
-
-    plugin.addURI(plugin.getDescriptor().id + ":start", function (page) {
-        setPageHeader(page, plugin.getDescriptor().title + ' - Home');
-        var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/summary').toString());
-        page.metadata.title += ' (Channels: ' + json.channels + ' Viewers: ' + json.viewers + ')';
-
-        page.appendItem(plugin.getDescriptor().id + ":list:streams:featured", "directory", {
-            title: "Featured Streams"
-        });
-        page.appendItem(plugin.getDescriptor().id + ":list:games", "directory", {
-            title: "Top Games"
-        });
-        page.appendItem(plugin.getDescriptor().id + ":list:following", "directory", {
-            title: "Following"
-        });
-        page.appendItem(plugin.getDescriptor().id + ":list:teams", "directory", {
-            title: "Teams"
-        });
+    // Discard favorites
+    settings.createAction("cleanFavorites", "Clean My Favorites", function() {
+        store.list = "[]";
+        showtime.notify('My Favorites has been cleaned successfully', 2);
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":list:streams:featured", function (page) {
-        setPageHeader(page, plugin.getDescriptor().title + ' - Featured Streams');
+    var store = plugin.createStore('favorites', true)
+    if (!store.list) {
+        store.list = "[]";
+    }
+
+    plugin.addURI(plugin.getDescriptor().id + ":teams", function (page) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - Teams');
         var tryToSearch = true, first = true;
-        var url = API + '/streams/featured?limit=' + service.itemsPerPage;
+        var url = API + '/teams?limit=' + itemsPerPage;
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(url));
             page.loading = false;
-            for (var i in json.featured) {
-                page.appendItem(plugin.getDescriptor().id + ":play:live:" + encodeURIComponent(json.featured[i].stream.channel.name), "video", {
-                    title: new showtime.RichText(json.featured[i].stream.game + ' - ' + json.featured[i].stream.channel.display_name + coloredStr(' (' + json.featured[i].stream.viewers + ')', orange)),
-                    icon: json.featured[i].stream.preview.large,
-                    description: new showtime.RichText(coloredStr('Channel name: ', orange) + json.featured[i].stream.channel.display_name +
-                        coloredStr('\nViewers: ', orange) + json.featured[i].stream.viewers +
-                        coloredStr('\nChannel status: ', orange) + json.featured[i].stream.channel.status +
-                        coloredStr('\nDescription: ', orange) + trim(json.featured[i].text)
+            for (var i in json.teams) {
+                page.appendItem(plugin.getDescriptor().id + ":team:" + encodeURIComponent(json.teams[i].name), "video", {
+                    title: new showtime.RichText(json.teams[i].display_name),
+                    icon: json.teams[i].logo,
+                    description: new showtime.RichText(coloredStr('Name: ', orange) + json.teams[i].name +
+                        coloredStr('\nCreated at: ', orange) + json.teams[i].created_at +
+                        coloredStr('\nUpdated at: ', orange) + json.teams[i].updated_at +
+                        coloredStr('\nInfo: ', orange) + trim(json.teams[i].info)
                     )
                 });
                 page.entries++;
             }
-            if (json.featured.length == 0)
+            if (json.teams.length == 0)
                 return tryToSearch = false;
             url = json['_links'].next;
             return true;
@@ -121,43 +101,61 @@
         page.paginator = loader;
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":list:following", function (page) {
-        page.type = "directory";
-        page.contents = "items";
+    plugin.addURI(plugin.getDescriptor().id + ":start", function (page) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - Home');
+        page.appendItem(plugin.getDescriptor().id + ":favorites", "directory", {
+            title: "My Favorites"
+        });
+        page.appendItem(plugin.getDescriptor().id + ":teams", "directory", {
+            title: "The List of Teams"
+        });
+
+        page.loading = true;
+        var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/summary').toString());
         page.loading = false;
-        page.metadata.logo = logo;
-        page.metadata.title = "TwitchTV - Following Users";
+        page.metadata.title += ' (Channels: ' + json.channels + ' Viewers: ' + json.viewers + ')';
 
-        var users = following_users.users.split("|");
-        if (users.length == 1 && users[0] == "")
-            page.appendItem(plugin.getDescriptor().id + ":start", "directory", {
-                title: "No users in list"
+        // Featured streams
+        page.loading = true;
+        var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/featured'));
+        page.loading = false;
+        page.appendItem("", "separator", {
+            title: 'Featured streams (' + json.featured.length + ')'
+        });
+
+        for (var i in json.featured) {
+            page.appendItem(plugin.getDescriptor().id + ':channel:' + encodeURIComponent(json.featured[i].stream.channel.name) + ':' + encodeURIComponent(json.featured[i].stream.channel.display_name), "video", {
+                title: new showtime.RichText(json.featured[i].stream.game + ' - ' + json.featured[i].stream.channel.display_name + coloredStr(' (' + json.featured[i].stream.viewers + ')', orange)),
+                icon: json.featured[i].stream.preview.large,
+                description: new showtime.RichText(coloredStr('Viewing this stream: ', orange) + json.featured[i].stream.viewers +
+                    coloredStr('\nStream created at: ', orange) + json.featured[i].stream.created_at +
+                    coloredStr('\nChannel created at: ', orange) + json.featured[i].stream.channel.created_at +
+                    coloredStr('\nChannel updated at: ', orange) + json.featured[i].stream.channel.updated_at +
+                    (json.featured[i].stream.channel.mature ? coloredStr('\nMature: ', orange) + json.featured[i].stream.channel.mature : '') +
+                    (json.featured[i].stream.channel.language ? coloredStr('\nChannel language: ', orange) + json.featured[i].stream.channel.language : '') +
+                    (json.featured[i].stream.channel.views ? coloredStr('\nChannel views: ', orange) + json.featured[i].stream.channel.views : '') +
+                    (json.featured[i].stream.channel.followers ? coloredStr('\nChannel followers: ', orange) + json.featured[i].stream.channel.followers : '') +
+                    coloredStr('\nChannel status: ', orange) + json.featured[i].stream.channel.status
+                )
             });
-        else {
-            for (var i in users) {
-                var user = users[i];
-                page.appendItem(plugin.getDescriptor().id + ":user:" + user, "directory", {
-                    title: user
-                });
-            }
         }
-    });
 
-    plugin.addURI(plugin.getDescriptor().id + ":list:games", function (page) {
-        setPageHeader(page, plugin.getDescriptor().title + ' - Top Games');
+        // Top Games
         var tryToSearch = true, first = true;
-        var url = API + '/games/top?limit=' + service.itemsPerPage;
+        var url = API + '/games/top?limit=' + itemsPerPage;
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(url));
             if (first) {
-                page.metadata.title +=  ' (' + json._total + ')';
+                page.appendItem("", "separator", {
+                    title: 'Top Games (' + json._total + ')'
+                });
                 first = false;
             }
             page.loading = false;
             for (var i in json.top) {
-                page.appendItem(plugin.getDescriptor().id + ":list:game:" + encodeURIComponent(json.top[i].game.name), "video", {
+                page.appendItem(plugin.getDescriptor().id + ":game:" + encodeURIComponent(json.top[i].game.name), "video", {
                     title: new showtime.RichText(json.top[i].game.name + coloredStr(' (' + json.top[i].viewers + ')', orange)),
                     icon: json.top[i].game.box.large,
                     description: new showtime.RichText(coloredStr('Viewers: ', orange) + json.top[i].viewers +
@@ -175,153 +173,97 @@
         page.paginator = loader;
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":list:game:(.*)", function (page, name) {
-        setPageHeader(page, 'Streams for game: ' + decodeURIComponent(name));
-        var tryToSearch = true, first = true;
-        var url = API + '/streams?game=' + name + '&limit=' + service.itemsPerPage;
-        function loader() {
-            if (!tryToSearch) return false;
-            page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(url));
-            if (first) {
-                page.metadata.title +=  ' (' + json._total + ')';
-                first = false;
-            }
-            page.loading = false;
-            for (var i in json.streams) {
-                page.appendItem(plugin.getDescriptor().id + ":play:live:" + escape(json.streams[i].channel.name), "video", {
-                    title: new showtime.RichText(json.streams[i].channel.display_name + coloredStr(' (' + json.streams[i].viewers + ')', orange)),
-                    icon: json.streams[i].preview.large,
-                    description: new showtime.RichText(coloredStr('Viewing this stream: ', orange) + json.streams[i].viewers +
-                        coloredStr('\nStream created at: ', orange) + json.streams[i].created_at +
-                        coloredStr('\nChannel created at: ', orange) + json.streams[i].channel.created_at +
-                        coloredStr('\nChannel updated at: ', orange) + json.streams[i].channel.updated_at +
-                        (json.streams[i].channel.mature ? coloredStr('\nMature: ', orange) + json.streams[i].channel.mature : '') +
-                        (json.streams[i].channel.language ? coloredStr('\nChannel language: ', orange) + json.streams[i].channel.language : '') +
-                        (json.streams[i].channel.views ? coloredStr('\nChannel views: ', orange) + json.streams[i].channel.views : '') +
-                        coloredStr('\nChannel status: ', orange) + json.streams[i].channel.status
-                    )
-                });
-                page.entries++;
-            }
-            if (json.streams.length == 0)
-                return tryToSearch = false;
-            url = json['_links'].next;
-            return true;
+    function fill_fav(page) {
+	var list = eval(store.list);
+        if (!list || !list.toString()) {
+           page.error("My Favorites list is empty");
+           return;
         }
-        loader();
-        page.paginator = loader;
-    });
 
-    plugin.addURI(plugin.getDescriptor().id + ":list:teams", function (page) {
-        setPageHeader(page, plugin.getDescriptor().title + ' - Teams');
-        var tryToSearch = true, first = true;
-        var url = API + '/teams?limit=' + service.itemsPerPage;
-        function loader() {
-            if (!tryToSearch) return false;
-            page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(url));
-            page.loading = false;
-            for (var i in json.teams) {
-                page.appendItem(plugin.getDescriptor().id + ":list:team:streams" + encodeURIComponent(json.teams[i].name), "video", {
-                    title: new showtime.RichText(json.teams[i].display_name),
-                    icon: json.teams[i].logo,
-                    description: new showtime.RichText(coloredStr('Name: ', orange) + json.teams[i].name +
-                        coloredStr('\nCreated at: ', orange) + json.teams[i].created_at +
-                        coloredStr('\nUpdated at: ', orange) + json.teams[i].updated_at +
-                        json.teams[i].info
-                    )
-                });
-                page.entries++;
-            }
-            if (json.teams.length == 0)
-                return tryToSearch = false;
-            url = json['_links'].next;
-            return true;
-        }
-        loader();
-        page.paginator = loader;
-    });
+        var pos = 0;
+	for (var i in list) {
+	    var itemmd = showtime.JSONDecode(list[i]);
 
-    plugin.addURI(plugin.getDescriptor().id + ":add:(.*)", function (page, user) {
-        page.type = "directory";
-        page.contents = "items";
-        page.loading = false;
+	    var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + itemmd.name + ':' + itemmd.display_name, "video", {
+		title: decodeURIComponent(itemmd.display_name)
+	    });
 
-        if (following_users.users != "") following_users.users += "|";
-        following_users.users += user;
+            item.addOptAction("Remove '" + itemmd.name + "' from My Favorites", pos);
 
-        showtime.notify("Added user to Following list.", 2);
-
-        page.redirect(plugin.getDescriptor().id + ":user:" + user);
-
-        page.metadata.logo = logo;
-    });
-
-    function userStreams(page, team) {
-        page.appendItem(plugin.getDescriptor().id + ":add:" + team, "directory", {
-            title: "Add User to Following"
-        });
-
-        page.type = "directory";
-        page.contents = "items";
-        page.loading = false;
-
-            var json = showtime.JSONDecode(showtime.httpReq('http://api.twitch.tv/api/team/' + team + '/live_channels.json').toString());
-            if (!json) {
-                throw new Exception("Failed to request page.");
-            }
-            for (var i in json.channels) {
-                var image = "";
-                try {
-                    image = json.channels[i].channel.image.size600;
-                }
-                catch (ex) {
-
-                }
-                var channelData = json.channels[i].channel;
-                var title = getTitle(channelData.display_name, channelData.title, channelData.current_viewers);
-                var channelName = json.channels[i].channel.name;
-                page.appendItem(plugin.getDescriptor().id + ":play:live:" + channelName, "video", {
-                    title: title,
-                    icon: image
-                });
-            }
-
-            if (json.channels.length == 0) {
-                page.appendItem(plugin.getDescriptor().id + ":list:team:streams:" + team, "directory", {
-                    title: "There are no entries in this page"
-                });
-            } 
-
-        page.metadata.logo = logo;
-        page.metadata.title = "TwitchTV - Featured Streams";
+	    item.onEvent(pos, function(item) {
+		var list = eval(store.list);
+		showtime.notify("'" + showtime.JSONDecode(list[item]).name + "' has been removed from My Favorites.", 2);
+	        list.splice(item, 1);
+		store.list = showtime.JSONEncode(list);
+                page.flush();
+                fill_fav(page);
+	    });
+            pos++;
+	}
     }
 
-    plugin.addURI(plugin.getDescriptor().id + ":list:team:(.*)", function(page, team) {
-        userStreams(page, team);
+    // Favorites
+    plugin.addURI(plugin.getDescriptor().id + ":favorites", function(page) {
+        setPageHeader(page, "My Favorites");
+        fill_fav(page);
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":user:(.*)", function (page, team) {
-        userStreams(page, team);
+    plugin.addURI(plugin.getDescriptor().id + ":team:(.*)", function(page, team) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - Channels of: ' + decodeURIComponent(team));
+        page.loading = true;
+        var json = showtime.JSONDecode(showtime.httpReq('http://api.twitch.tv/api/team/' + team + '/live_channels.json').toString());
+        page.loading = false;
+        for (var i in json.channels) {
+            page.appendItem(plugin.getDescriptor().id + ":channel:" + encodeURIComponent(json.channels[i].channel.name  + ':' + encodeURIComponent(json.channels[i].channel.display_name)), "video", {
+                title: new showtime.RichText(json.channels[i].channel.display_name + ' - ' + json.channels[i].channel.title + coloredStr(' (' + json.channels[i].channel.current_viewers + ')', orange)),
+                icon: json.channels[i].channel.image.size600,
+                description: new showtime.RichText(coloredStr('Viewing this channel: ', orange) + json.channels[i].channel.current_viewers +
+                    coloredStr('\nMeta game: ', orange) + json.channels[i].channel.meta_game +
+                    (json.channels[i].channel.total_views ? coloredStr('\nTotal views: ', orange) + json.channels[i].channel.total_views : '') +
+                    (json.channels[i].channel.followers_count ? coloredStr('\nChannel followers: ', orange) + json.channels[i].channel.followers_count : '') +
+                     coloredStr('\nChannel status: ', orange) + json.channels[i].channel.status
+                )
+            });
+        }
+
+        if (json.channels.length == 0)
+            page.appendPassiveItem('video', '', {
+                title: 'Currently there is no live channels of this team'
+            });
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":play:live:(.*)", function (page, name) {
+    plugin.addURI(plugin.getDescriptor().id + ":video:(.*):(.*)", function (page, id, name) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - ' + decodeURIComponent(name));
+        page.loading = true;
+        var json = showtime.JSONDecode(showtime.httpReq('https://api.twitch.tv/api/videos/' + id));
+        page.loading = false;
+        for (var i in json.chunks.live) {
+            page.appendItem(json.chunks.live[i].url, "video", {
+                title: 'Chunk' + (+i + 1),
+                icon: json.preview,
+                duration: json.chunks.live[i].length
+            });
+        }
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":play:(.*)", function (page, name) {
         page.type = "video";
 
-        // Get Access Token (not necessary at the moment but could come into effect at any time)
+        // Get sig and token
+        page.loading = true;
         var json = showtime.JSONDecode(
             showtime.httpReq('http://api.twitch.tv/api/channels/' + name + '/access_token')
         );
 
-        // Download Multiple Quality Stream Playlist and split into multilines
+        // Download playlist and split it into multilines
         var playlist = showtime.httpReq('http://usher.twitch.tv/api/channel/hls/' + name +
             '.m3u8?sig=' + json.sig + '&token=' + json.token +
             '&allow_source=true').toString().split('\n');
 
+        page.loading = false;
         var url = null;
 
-        // Loop Through Multiple Quality Stream Playlist Until We Find Our Preferred Quality
+        // Loop through the playlist and select preferred quality
         for (var line = 0; line < playlist.length; line++) {
             if (playlist[line].indexOf('EXT-X-MEDIA:TYPE=VIDEO') > -1) {
                 var url = playlist[line + 2];
@@ -336,7 +278,7 @@
             page.error("Cannot find stream URL.");
             return;
         }
-        
+
         page.source = "videoparams:" + showtime.JSONEncode({
             title: name,
             sources: [{
@@ -345,44 +287,41 @@
         });
     });
 
-    //https://api.twitch.tv/api/videos/a577357806
-    plugin.addURI(plugin.getDescriptor().id + ":video:(.*)", function (page, id) {
-        setPageHeader(page, plugin.getDescriptor().title + ' - Videos');
-            page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq('https://api.twitch.tv/api/videos/' + id));
-            page.loading = false;
-            for (var i in json.videos) {
-                page.appendItem(json.videos[i].url, "video", {
-                    title: json.channels[i].display_name,
-                    icon: json.channels[i].logo
-                });
-                page.entries++;
-            }
-            if (json.channels.length == 0)
-                return tryToSearch = false;
-            url = json['_links'].next;
-            return true;
-        }
-        loader();
-        page.paginator = loader;
-    });
+    plugin.addURI(plugin.getDescriptor().id + ":channel:(.*):(.*)", function (page, name, display_name) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - ' + decodeURIComponent(display_name));
+        page.entries = 0;
+        page.options.createAction('addToFavorites', "Add '" + decodeURIComponent(display_name) + "' to My Favorites", function() {
+            var entry = showtime.JSONEncode({
+                name: name,
+                display_name: display_name
+            });
+            store.list = showtime.JSONEncode([entry].concat(eval(store.list)));
+            showtime.notify("'" + decodeURIComponent(display_name) + "' has been added to My Favorites.", 2);
+        });
 
-    plugin.addURI(plugin.getDescriptor().id + ":channel:(.*)", function (page, name) {
-        setPageHeader(page, plugin.getDescriptor().title + ' - ' + decodeURIComponent(name));
         var tryToSearch = true, first = true;
-
+        page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/' + name));
+        page.loading = false;
         if (json.stream) {
-                page.appendItem(plugin.getDescriptor().id + ":play:live:" + encodeURIComponent(json.stream.channel.name), "video", {
-                    title: new showtime.RichText(json.teams[i].display_name),
-                    icon: json.teams[i].preview,
-                    description: new showtime.RichText(coloredStr('Name: ', orange) + json.teams[i].name +
-                        coloredStr('\nCreated at: ', orange) + json.teams[i].created_at +
-                        coloredStr('\nUpdated at: ', orange) + json.teams[i].updated_at +
-                        json.teams[i].info
-                    )
-                });
-
+            page.appendItem("", "separator", {
+                title: 'Stream'
+            });
+            page.appendItem(plugin.getDescriptor().id + ":play:" + encodeURIComponent(json.stream.channel.name), "video", {
+                title: new showtime.RichText((json.stream.game ? json.stream.game + ' - ' : '') + json.stream.channel.display_name + coloredStr(' (' + json.stream.viewers + ')', orange)),
+                icon: json.stream.preview.large,
+                description: new showtime.RichText(coloredStr('Viewing this stream: ', orange) + json.stream.viewers +
+                    coloredStr('\nStream created at: ', orange) + json.stream.created_at +
+                    coloredStr('\nChannel created at: ', orange) + json.stream.channel.created_at +
+                    coloredStr('\nChannel updated at: ', orange) + json.stream.channel.updated_at +
+                    (json.stream.channel.mature ? coloredStr('\nMature: ', orange) + json.stream.channel.mature : '') +
+                    (json.stream.channel.language ? coloredStr('\nChannel language: ', orange) + json.stream.channel.language : '') +
+                    (json.stream.channel.views ? coloredStr('\nChannel views: ', orange) + json.stream.channel.views : '') +
+                    (json.stream.channel.followers ? coloredStr('\nChannel followers: ', orange) + json.stream.channel.followers : '') +
+                     coloredStr('\nChannel status: ', orange) + json.stream.channel.status
+                )
+            });
+            page.entries++;
         }
 
         var url = API + '/channels/' + name + '/videos';
@@ -391,15 +330,22 @@
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(url));
             page.loading = false;
+            if (json.videos.length && first) {
+                page.appendItem("", "separator", {
+                    title: 'Videos'
+                });
+                first = false;
+            }
             for (var i in json.videos) {
-                page.appendItem(plugin.getDescriptor().id + ":video:" + json.videos[i]._id, "video", {
-                    title: new showtime.RichText(json.videos[i].title),
-                    icon: json.videos[i].logo//,
-//                    description: new showtime.RichText(coloredStr('Name: ', orange) + json.teams[i].name +
-//                        coloredStr('\nCreated at: ', orange) + json.teams[i].created_at +
-//                        coloredStr('\nUpdated at: ', orange) + json.teams[i].updated_at +
-//                        json.teams[i].info
-//                    )
+                page.appendItem(plugin.getDescriptor().id + ":video:" + json.videos[i]._id + ':' + encodeURIComponent(json.videos[i].title), "video", {
+                    title: new showtime.RichText(json.videos[i].title + coloredStr(' (' + json.videos[i].views + ')', orange)),
+                    icon: json.videos[i].preview,
+                    duration: json.videos[i].length,
+                    description: new showtime.RichText(coloredStr('Views: ', orange) + json.videos[i].views +
+                        (json.videos[i].game ? coloredStr('\nGame: ', orange) + json.videos[i].game : '') +
+                        coloredStr('\nRecorded at: ', orange) + json.videos[i].recorded_at +
+                        coloredStr('\nDescription: ', orange) + json.videos[i].description
+                    )
                 });
                 page.entries++;
             }
@@ -410,21 +356,38 @@
         }
         loader();
         page.paginator = loader;
+        if (!page.entries)
+            page.appendPassiveItem('video', '', {
+                title: 'Currently this channel is empty :('
+            });
+
     });
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Channels', logo, function (page, query) {
         setPageHeader(page, plugin.getDescriptor().title + ' - Channels');
-        var tryToSearch = true;
-        var url = API + '/search/channels?q=' + encodeURIComponent(query) + '&limit=' + service.itemsPerPage;
+        var tryToSearch = true, first = true;
+        var url = API + '/search/channels?q=' + encodeURIComponent(query) + '&limit=' + itemsPerPage;
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(url));
             page.loading = false;
+            if (first && page.metadata) {
+                page.metadata.title +=  ' (' + json._total + ')';
+                first = false;
+            }
             for (var i in json.channels) {
-                page.appendItem(plugin.getDescriptor().id + ":channel:" + encodeURIComponent(json.channels[i].name), "video", {
-                    title: json.channels[i].display_name,
-                    icon: json.channels[i].logo
+                page.appendItem(plugin.getDescriptor().id + ':channel:' + encodeURIComponent(json.channels[i].name) + ':' + encodeURIComponent(json.channels[i].display_name), 'video', {
+                    title: json.channels[i].display_name + (json.channels[i].game ? ' - ' + json.channels[i].game : ''),
+                    icon: json.channels[i].logo,
+                    description: new showtime.RichText((json.channels[i].views ? coloredStr('\nChannel views: ', orange) + json.channels[i].views : '') +
+                        coloredStr('\nCreated at: ', orange) + json.channels[i].created_at +
+                        coloredStr('\nUpdated at: ', orange) + json.channels[i].updated_at +
+                        (json.channels[i].mature ? coloredStr('\nMature: ', orange) + json.channels[i].mature : '') +
+                        (json.channels[i].language ? coloredStr('\nLanguage: ', orange) + json.channels[i].language : '') +
+                        (json.channels[i].followers ? coloredStr('\nFollowers: ', orange) + json.channels[i].followers : '') +
+                        coloredStr('\nStatus: ', orange) + json.channels[i].status
+                    )
                 });
                 page.entries++;
             }
@@ -439,17 +402,70 @@
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Streams', logo, function (page, query) {
         setPageHeader(page, plugin.getDescriptor().title + ' - Streams');
-        var tryToSearch = true;
-        var url = API + '/search/streams?limit=' + service.itemsPerPage + '&q=' + encodeURIComponent(query);
+        var tryToSearch = true, first = true;
+        var url = API + '/search/streams?limit=' + itemsPerPage + '&q=' + encodeURIComponent(query);
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
             var json = showtime.JSONDecode(showtime.httpReq(url));
             page.loading = false;
+            if (first && page.metadata) {
+                page.metadata.title +=  ' (' + json._total + ')';
+                first = false;
+            }
             for (var i in json.streams) {
-                page.appendItem(plugin.getDescriptor().id + ":play:live:" + encodeURIComponent(json.streams[i].channel.name), "video", {
-                    title: (json.streams[i].game ? json.streams[i].game + ' - ' : '') + json.streams[i].channel.display_name + ' (' + json.streams[i].viewers + ')',
-                    icon: json.streams[i].preview.large
+                page.appendItem(plugin.getDescriptor().id + ":channel:" + encodeURIComponent(json.streams[i].channel.name) + ':' + encodeURIComponent(json.streams[i].channel.display_name), "video", {
+                    title: new showtime.RichText((json.streams[i].game ? json.streams[i].game + ' - ' : '') + json.streams[i].channel.display_name + coloredStr(' (' + json.streams[i].viewers + ')', orange)),
+                    icon: json.streams[i].preview.large,
+                    description: new showtime.RichText(coloredStr('Viewing this stream: ', orange) + json.streams[i].viewers +
+                        coloredStr('\nStream created at: ', orange) + json.streams[i].created_at +
+                        coloredStr('\nChannel created at: ', orange) + json.streams[i].channel.created_at +
+                        coloredStr('\nChannel updated at: ', orange) + json.streams[i].channel.updated_at +
+                        (json.streams[i].channel.mature ? coloredStr('\nMature: ', orange) + json.streams[i].channel.mature : '') +
+                        (json.streams[i].channel.language ? coloredStr('\nChannel language: ', orange) + json.streams[i].channel.language : '') +
+                        (json.streams[i].channel.views ? coloredStr('\nChannel views: ', orange) + json.streams[i].channel.views : '') +
+                        (json.streams[i].channel.followers ? coloredStr('\nChannel followers: ', orange) + json.streams[i].channel.followers : '') +
+                        coloredStr('\nChannel status: ', orange) + json.streams[i].channel.status
+                    )
+                });
+                page.entries++;
+            }
+            if (json.streams.length == 0)
+                return tryToSearch = false;
+            url = json['_links'].next;
+            return true;
+        }
+        loader();
+        page.paginator = loader;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":game:(.*)", function (page, name) {
+        setPageHeader(page, 'Channels casting: ' + decodeURIComponent(name));
+        var tryToSearch = true, first = true;
+        var url = API + '/streams?game=' + name + '&limit=' + itemsPerPage;
+        function loader() {
+            if (!tryToSearch) return false;
+            page.loading = true;
+            var json = showtime.JSONDecode(showtime.httpReq(url));
+            if (first) {
+                page.metadata.title +=  ' (' + json._total + ')';
+                first = false;
+            }
+            page.loading = false;
+            for (var i in json.streams) {
+                page.appendItem(plugin.getDescriptor().id + ':channel:' + encodeURIComponent(json.streams[i].channel.name) + ':' + encodeURIComponent(json.streams[i].channel.display_name), 'video', {
+                    title: new showtime.RichText(json.streams[i].channel.display_name + coloredStr(' (' + json.streams[i].viewers + ')', orange)),
+                    icon: json.streams[i].preview.large,
+                    description: new showtime.RichText(coloredStr('Viewing this stream: ', orange) + json.streams[i].viewers +
+                        coloredStr('\nStream created at: ', orange) + json.streams[i].created_at +
+                        coloredStr('\nChannel created at: ', orange) + json.streams[i].channel.created_at +
+                        coloredStr('\nChannel updated at: ', orange) + json.streams[i].channel.updated_at +
+                        (json.streams[i].channel.mature ? coloredStr('\nMature: ', orange) + json.streams[i].channel.mature : '') +
+                        (json.streams[i].channel.language ? coloredStr('\nChannel language: ', orange) + json.streams[i].channel.language : '') +
+                        (json.streams[i].channel.views ? coloredStr('\nChannel views: ', orange) + json.streams[i].channel.views : '') +
+                        (json.streams[i].channel.followers ? coloredStr('\nChannel followers: ', orange) + json.streams[i].channel.followers : '') +
+                        coloredStr('\nChannel status: ', orange) + json.streams[i].channel.status
+                    )
                 });
                 page.entries++;
             }
@@ -468,9 +484,10 @@
         var json = showtime.JSONDecode(showtime.httpReq(API + '/search/games?type=suggest&q=' + encodeURIComponent(query) + '&live=true'));
         page.loading = false;
         for (var i in json.games) {
-            page.appendItem(plugin.getDescriptor().id + ":list:game:" + escape(json.games[i].name) + ':0', "directory", {
-                title: json.games[i].name,
-                icon: json.games[i].box.large
+            page.appendItem(plugin.getDescriptor().id + ":game:" + encodeURIComponent(json.games[i].name), "video", {
+                title: new showtime.RichText(json.games[i].name + coloredStr(' (' + json.games[i].popularity + ')', orange)),
+                icon: json.games[i].box.large,
+                description: new showtime.RichText(coloredStr('Popularity: ', orange) + json.games[i].popularity)
             });
             page.entries++;
         }
