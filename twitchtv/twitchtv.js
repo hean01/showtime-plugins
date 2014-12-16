@@ -135,7 +135,7 @@
                     (json.featured[i].stream.channel.language ? coloredStr('\nChannel language: ', orange) + json.featured[i].stream.channel.language : '') +
                     (json.featured[i].stream.channel.views ? coloredStr('\nChannel views: ', orange) + json.featured[i].stream.channel.views : '') +
                     (json.featured[i].stream.channel.followers ? coloredStr('\nChannel followers: ', orange) + json.featured[i].stream.channel.followers : '') +
-                    coloredStr('\nChannel status: ', orange) + json.featured[i].stream.channel.status
+                    (json.featured[i].stream.channel.status ? coloredStr('\nChannel status: ', orange) + json.featured[i].stream.channel.status : '')
                 )
             });
         }
@@ -221,7 +221,7 @@
                     coloredStr('\nMeta game: ', orange) + json.channels[i].channel.meta_game +
                     (json.channels[i].channel.total_views ? coloredStr('\nTotal views: ', orange) + json.channels[i].channel.total_views : '') +
                     (json.channels[i].channel.followers_count ? coloredStr('\nChannel followers: ', orange) + json.channels[i].channel.followers_count : '') +
-                     coloredStr('\nChannel status: ', orange) + json.channels[i].channel.status
+                    (json.channels[i].channel.status ? coloredStr('\nChannel status: ', orange) + json.channels[i].channel.status : '')
                 )
             });
         }
@@ -318,7 +318,7 @@
                     (json.stream.channel.language ? coloredStr('\nChannel language: ', orange) + json.stream.channel.language : '') +
                     (json.stream.channel.views ? coloredStr('\nChannel views: ', orange) + json.stream.channel.views : '') +
                     (json.stream.channel.followers ? coloredStr('\nChannel followers: ', orange) + json.stream.channel.followers : '') +
-                     coloredStr('\nChannel status: ', orange) + json.stream.channel.status
+                    (json.stream.channel.status ? coloredStr('\nChannel status: ', orange) + json.stream.channel.status : '')
                 )
             });
             page.entries++;
@@ -360,7 +360,6 @@
             page.appendPassiveItem('video', '', {
                 title: 'Currently this channel is empty :('
             });
-
     });
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Channels', logo, function (page, query) {
@@ -386,7 +385,7 @@
                         (json.channels[i].mature ? coloredStr('\nMature: ', orange) + json.channels[i].mature : '') +
                         (json.channels[i].language ? coloredStr('\nLanguage: ', orange) + json.channels[i].language : '') +
                         (json.channels[i].followers ? coloredStr('\nFollowers: ', orange) + json.channels[i].followers : '') +
-                        coloredStr('\nStatus: ', orange) + json.channels[i].status
+                        (json.channels[i].status ? coloredStr('\nStatus: ', orange) + json.channels[i].status : '')
                     )
                 });
                 page.entries++;
@@ -425,7 +424,7 @@
                         (json.streams[i].channel.language ? coloredStr('\nChannel language: ', orange) + json.streams[i].channel.language : '') +
                         (json.streams[i].channel.views ? coloredStr('\nChannel views: ', orange) + json.streams[i].channel.views : '') +
                         (json.streams[i].channel.followers ? coloredStr('\nChannel followers: ', orange) + json.streams[i].channel.followers : '') +
-                        coloredStr('\nChannel status: ', orange) + json.streams[i].channel.status
+                        (json.streams[i].channel.status ? coloredStr('\nChannel status: ', orange) + json.streams[i].channel.status : '')
                     )
                 });
                 page.entries++;
@@ -464,7 +463,7 @@
                         (json.streams[i].channel.language ? coloredStr('\nChannel language: ', orange) + json.streams[i].channel.language : '') +
                         (json.streams[i].channel.views ? coloredStr('\nChannel views: ', orange) + json.streams[i].channel.views : '') +
                         (json.streams[i].channel.followers ? coloredStr('\nChannel followers: ', orange) + json.streams[i].channel.followers : '') +
-                        coloredStr('\nChannel status: ', orange) + json.streams[i].channel.status
+                        (json.streams[i].channel.status ? coloredStr('\nChannel status: ', orange) + json.streams[i].channel.status : '')
                     )
                 });
                 page.entries++;
