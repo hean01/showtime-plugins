@@ -237,15 +237,25 @@
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq('https://api.twitch.tv/api/videos/' + id));
         page.loading = false;
+        var start_offset = 0, end_offset = 0;
+        var n = 0;
         for (var i in json.chunks.live) {
+            end_offset = start_offset + json.chunks.live[i].length;
+            if (start_offset > json.end_offset || end_offset < json.start_offset) {
+                start_offset += json.chunks.live[i].length;
+                continue;
+            }
+            n++;
             page.appendItem(json.chunks.live[i].url, "video", {
-                title: 'Chunk' + (+i + 1),
+                title: new showtime.RichText('Chunk' + (+n) + ' ' + colorStr(start_offset + ' - ' + end_offset, orange)),
                 icon: json.preview,
                 duration: json.chunks.live[i].length,
-                description: new showtime.RichText(coloredStr('Start offset: ', orange) + json.start_offset +
+                description: new showtime.RichText(coloredStr('Title: ', orange) + decodeURIComponent(name) +
+                    coloredStr('\nStart offset: ', orange) + json.start_offset +
                     coloredStr('\nEnd offset: ', orange) + json.end_offset
                 )
             });
+            start_offset += json.chunks.live[i].length;
         }
     });
 
