@@ -4,11 +4,11 @@
     "file": "ted.js",
     "showtimeVersion": "3.1",
     "version": "1.0",
-    "author": "NP, lprot",
+    "author": "lprot",
     "title": "TED Talks",
     "icon": "logo.png",
-    "synopsis": "Here you will find the best talks and performances from TED conferences.", "description": "TED  Talks  began as a simple  attempt to share what \n happens  at  TED  with the world.  Under the moniker \n ideas worth spreading, talks were released online. \n They rapidly  attracted  a  global  audience  in the \n millions.  Indeed, the  reaction was so enthusiastic \n that the entire  TED  website has been  reengineered \n around  TED Talks, with the  goal of giving everyone \n on-demand access to the world's most inspiring voices.\nLearn more on <a href=\"http://www.ted.com/talks\">wwww.ted.com</a>\n",
+    "synopsis": "TED conferences bring together the world's most fascinating thinkers and doers, who are challenged to give the talk of their lives (in 18 minutes or less).",
     "homepage": "https://github.com/lprot/showtime-plugins/",
     "category": "video",
-    "description": "TED conferences bring together the world's most fascinating thinkers and doers, who are challenged to give the talk of their lives (in 18 minutes or less)."
+    "description": "Here you will find the best talks and performances from TED conferences.", "description": "TED  Talks  began as a simple  attempt to share what \n happens  at  TED  with the world.  Under the moniker \n ideas worth spreading, talks were released online. \n They rapidly  attracted  a  global  audience  in the \n millions.  Indeed, the  reaction was so enthusiastic \n that the entire  TED  website has been  reengineered \n around  TED Talks, with the  goal of giving everyone \n on-demand access to the world's most inspiring voices.\nLearn more on <a href=\"http://www.ted.com/talks\">wwww.ted.com</a>\n"
 }

@@ -1,7 +1,7 @@
 ﻿/**
  * TED Talks plugin for Showtime Media Center
  *
- *  Copyright (C) 2012-2014 NP, lprot
+ *  Copyright (C) 2014 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,160 +18,105 @@
  */
 
 (function(plugin) {
-    var TED = 'http://www.ted.com';
+    var BASE_URL = 'https://www.ted.com';
     var logo = plugin.path + "logo.png";
+
+    function setPageHeader(page, title) {
+        if (page.metadata) {
+            page.metadata.title = title;
+            page.metadata.logo = logo;
+        }
+        page.type = "directory";
+        page.contents = "items";
+        page.loading = false;
+    }
+
+    function trim(str) {
+        return str.replace(/^\s+|\s+$/g,"");
+    }
+
+    var blue = "6699CC", orange = "FFA500";
+
+    function coloredStr(str, color) {
+        return '<font color="' + color + '">' + str + '</font>';
+    }
 
     var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "video", true, logo);
 
-    plugin.addURI(plugin.getDescriptor().id + "list:(.*):(.*):(.*)", function(page, title, link, page_nbr) {
-        page.type = "directory";
-        page.contents = "video";
-        page.metadata.logo = logo;
-        page.metadata.title = "TED Talks: " + title;
-
-        if (page_nbr > 1) {
-            page.metadata.title = "TED Talks: " + title + " " + page_nbr;
-            var linkp = link + "&page=" + page_nbr;
-        } else
-            var linkp = link;
-
-        var content = showtime.httpGet(TED + "/talks/list" + linkp).toString();
-
-        content = content.slice(content.indexOf('<div class="col clearfix">'),
-            content.indexOf('<!-- sidebar -->')).split('<div class="col clearfix">');
-
-        var name = null;
-        var img = null;
-        var pubDate = null;
-        var year = null;
-        var descrip = null;
-        var duration = null;
-
-        for (var i in content) {
-            var talk = content[i];
-            if (talk.indexOf('<a title="') != -1) {
-                name = talk.slice(talk.indexOf('<a title="') + 10, talk.indexOf('" href="')).replace(/&quot;/g, '"');
-                descrip = name;
-
-                if (name.indexOf(":") != "-1");
-                name = name.slice(0, name.indexOf(":"));
-
-                img = talk.slice(talk.lastIndexOf('http://', talk.indexOf('" /></a>')), talk.indexOf('" /></a>'));
-                if (showtime.probe(img.replace('132x99.jpg', '615x461.jpg')).result == 0)
-                    img = img.replace('132x99.jpg', '615x461.jpg');
-
-                pubDate = talk.slice(talk.indexOf('Posted:') + 8, talk.indexOf('</span', talk.indexOf('Posted:'))).replace('<span class="notranslate">', '');
-
-                duration = talk.slice(talk.indexOf('<span class="notranslate">') + 26, talk.indexOf('</span', talk.indexOf('<span class="notranslate">')));
-
-                var metadata = {
-                    title: name,
-                    description: descrip,
-                    year: pubDate,
-                    duration: duration,
-                    icon: img
-                };
-
-                var url = talk.slice(talk.indexOf('href="') + 6, talk.indexOf('"', talk.indexOf('href="') + 6));
-                if (talk.indexOf('/images/play_botw_icon.gif') == -1)
-                    page.appendItem(plugin.getDescriptor().id + "videos:" + url.replace('http://', ''), "video", metadata);
-                else
-                if (service.youtube == "1")
-                    page.appendItem('youtube:video:simple:' + escape(metadata.title) + ':' + getYoutubeId(url), "video", metadata);
-            }
-        }
-        if (content[content.length - 1].indexOf('">Next') != -1) {
-            page_nbr++;
-            page.appendItem('ted:list:' + title + ':' + link + ':' + page_nbr, "directory", {
-                title: "Next"
-            });
-        }
+    plugin.addURI(plugin.getDescriptor().id + ":talk:(.*):(.*)", function(page, link, title) {
+        setPageHeader(page, decodeURIComponent(title));
+        page.loading = true;
+        var doc = showtime.httpReq(BASE_URL + decodeURIComponent(link)).toString();
         page.loading = false;
-
-    });
-
-    plugin.addURI(plugin.getDescriptor().id + "videos:(.*)", function(page, url) {
-        url = getUrl(url);
-
-        page.source = "videoparams:" + showtime.JSONEncode({
-            sources: [{
-                url: url
-            }]
+        page.appendItem(doc.match(/"high":"([\s\S]*?)"/)[1], "video", {
+            title: decodeURIComponent(title),
+            description: trim(doc.match(/<p class='talk-description' lang='[\s\S]*?'>([\s\S]*?)<\/p>/)[1])
         });
-        page.type = "video";
+
+        var json = showtime.JSONDecode(doc.match(/"subtitledDownloads":([\s\S]*?),"audioDownload"/)[1]);
+        var first = true;
+        for (var i in json) {
+             if (first) {
+                 page.appendItem("", "separator", {
+                     title: 'With subtitles:'
+                 });
+                 first = false;
+             }
+             page.appendItem(json[i].high, "video", {
+                 title: json[i].name
+             });
+        }
     });
 
-    function getUrl(link) {
-        var content = showtime.httpGet(TED + link).toString();
-
-        if (service.hd == 1)
-            content = content.slice(content.lastIndexOf('http://', content.indexOf('.mp4')), content.indexOf('.mp4') + 4).replace('.mp4', '-480p.mp4');
-        else
-            content = content.slice(content.lastIndexOf('http://', content.indexOf('.mp4')), content.indexOf('.mp4') + 4);
-
-        return content;
-    }
-
-    function getYoutubeId(link) {
-        var content = showtime.httpGet(TED + link).toString();
-        return content.slice(content.indexOf('/v/') + 3, content.indexOf('&', content.indexOf('/v/') + 3));
-    }
+    plugin.addURI(plugin.getDescriptor().id + ":index:(.*):(.*)", function(page, sort, title) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - Sorted by: ' + decodeURIComponent(title));
+        var tryToSearch = true, first = true, param = '', counter = 1;
+        var url = BASE_URL + '/talks?sort=' + sort;
+        function loader() {
+            if (!tryToSearch) return false;
+            page.loading = true;
+            var doc = showtime.httpReq(url + param).toString();
+            page.loading = false;
+            // 1-icon, 2-duration, 3-speaker, 4-link, 5-title, 6-views, 7-date
+            var re = /<div class='media media--sm-v'>[\s\S]*?src="([\s\S]*?)"[\s\S]*?class="thumb__duration">([\s\S]*?)<\/span>[\s\S]*?speaker'>([\s\S]*?)<[\s\S]*?<a href='([\s\S]*?)'>([\s\S]*?)<\/a>[\s\S]*?<span class='meta__val'>([\s\S]*?)views[\s\S]*?<span class='meta__val'>([\s\S]*?)<\/span>/g;
+            var match = re.exec(doc);
+            while (match) {
+                page.appendItem(plugin.getDescriptor().id + ':talk:' + encodeURIComponent(match[4]) + ':' + encodeURIComponent(trim(match[5])), "video", {
+                    title: match[3] + ' - ' + trim(match[5]),
+                    icon: match[1],
+                    duration: match[2],
+                    description: new showtime.RichText(coloredStr('Speaker: ', orange) + match[3] +
+                        coloredStr('\nTitle: ', orange) + trim(match[5]) +
+                        coloredStr('\nViews: ', orange) + trim(match[6]) +
+                        coloredStr('\nAdded: ', orange) + trim(match[7])
+                    )
+                });
+                match = re.exec(doc);
+            }
+            if (!doc.match(/rel="next"/))
+                return tryToSearch = false;
+            counter++;
+            param = '&page=' + counter;
+            return true;
+        }
+        loader();
+        page.paginator = loader;
+    });
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-        page.type = "directory";
-        page.metadata.logo = logo;
-        page.metadata.title = "TED Talks: " + "Order By";
-
-        var list = {
-            indice: [{
-                    name: "Newest releases",
-                    link: "?"
-                }, {
-                    name: "Date filmed",
-                    link: "?orderedby=FILMED"
-                }, {
-                    name: "Most viewed",
-                    link: "?orderedby=MOSTVIEWED"
-                }, {
-                    name: "Most emailed this week",
-                    link: "?orderedby=MOSTEMAILED"
-                }, {
-                    name: "Most comments this week",
-                    link: "?orderedby=MOSTDISCUSSED"
-                }, {
-                    name: "Rated jaw-dropping",
-                    link: "?orderedby=JAW-DROPPING"
-                }, {
-                    name: "Rated persuasive",
-                    link: "?orderedby=PERSUASIVE"
-                }, {
-                    name: "Rated courageous",
-                    link: "?orderedby=COURAGEOUS"
-                }, {
-                    name: "Rated ingenious",
-                    link: "?orderedby=INGENIOUS"
-                }, {
-                    name: "Rated fascinating",
-                    link: "?orderedby=FASCINATING"
-                }, {
-                    name: "Rated inspiring",
-                    link: "?orderedby=INSPIRING"
-                }, {
-                    name: "Rated beautiful",
-                    link: "?orderedby=BEAUTIFUL"
-                }, {
-                    name: "Rated funny",
-                    link: "?orderedby=FUNNY"
-                }
-            ]
-        }
-
-        for (var i in list.indice) {
-            var indice = list.indice[i];
-            page.appendItem(plugin.getDescriptor().id + 'list:' + indice.name + ':' + indice.link + ':' + "1", "directory", {
-                title: indice.name
-            });
-        }
+        setPageHeader(page, plugin.getDescriptor().title + ' - Sort by:');
+        page.loading = true;
+        var doc = showtime.httpReq(BASE_URL + '/talks').toString();
         page.loading = false;
+        var sort = doc.match(/<optgroup label="Sort by([\s\S]*?)<\/optgroup>/)[1];
+        // 1-uri component, 2-title
+        var re = /<option value="([\s\S]*?)">([\s\S]*?)<\/option>/g;
+        var match = re.exec(sort);
+        while (match) {
+            page.appendItem(plugin.getDescriptor().id + ':index:' + match[1] + ':' + encodeURIComponent(match[2]), "directory", {
+                title: match[2]
+            });
+            match = re.exec(sort);
+        }
     });
 })(this);
