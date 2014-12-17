@@ -4,10 +4,10 @@
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "TwitchTV",
 	"synopsis": "Twitch.TV: Game streaming.",
-	"version": "2.0.3",
+	"version": "2.0.4",
 	"file": "twitchtv.js",
 	"showtimeVersion": "4.2",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "twitchtv",
 	"icon": "logo.png",
 	"category": "video"
