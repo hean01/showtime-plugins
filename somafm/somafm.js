@@ -48,7 +48,7 @@
             page.metadata.childTilesY = v;
         }, true);
 
-        page.options.createBool('informationBar', 'Information Bar', true, function(v) {
+        page.options.createBool('informationBar', 'Information Bar', 1, function(v) {
             page.metadata.informationBar = v;
         }, true);
 

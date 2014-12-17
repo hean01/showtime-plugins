@@ -35,7 +35,7 @@
             page.options.createInt('childTilesY', 'Number of tiles by Y', 2, 1, 4, 1, '', function (v) {
                 page.metadata.childTilesY = v;
             }, true);
-            page.options.createBool('informationBar', 'Show Information Bar', true, function (v) {
+            page.options.createBool('informationBar', 'Show Information Bar', 1, function (v) {
                 page.metadata.informationBar = v;
             }, true);
         }
@@ -57,9 +57,13 @@
     }
     // populate countries
     var data = getJSON('menu/valuesofcategory?category=_country');
-    var options = [];
+    var options = [], first = true;
     for (var i in data)
-	options.push([data[i], data[i]]);
+        if (first) {
+            options.push([data[i], data[i], true]);
+            first = false;
+        } else
+            options.push([data[i], data[i]]);
 
     settings.createMultiOpt("country", "Country for the nearest stations", options, function(v) {
 	service.country = v;

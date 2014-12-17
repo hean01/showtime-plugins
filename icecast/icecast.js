@@ -34,7 +34,7 @@
             page.options.createInt('childTilesY', 'Number of Y Child Tiles', 2, 1, 4, 1, '', function (v) {
                 page.metadata.childTilesY = v;
             }, true);
-            page.options.createBool('informationBar', 'Information Bar', true, function (v) {
+            page.options.createBool('informationBar', 'Information Bar', 1, function (v) {
                 page.metadata.informationBar = v;
             }, true);
         }
