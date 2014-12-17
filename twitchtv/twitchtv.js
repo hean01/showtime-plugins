@@ -214,7 +214,7 @@
         var json = showtime.JSONDecode(showtime.httpReq('http://api.twitch.tv/api/team/' + team + '/live_channels.json').toString());
         page.loading = false;
         for (var i in json.channels) {
-            page.appendItem(plugin.getDescriptor().id + ":channel:" + encodeURIComponent(json.channels[i].channel.name  + ':' + encodeURIComponent(json.channels[i].channel.display_name)), "video", {
+            page.appendItem(plugin.getDescriptor().id + ":channel:" + encodeURIComponent(json.channels[i].channel.name)  + ':' + encodeURIComponent(json.channels[i].channel.display_name), "video", {
                 title: new showtime.RichText(json.channels[i].channel.display_name + ' - ' + json.channels[i].channel.title + coloredStr(' (' + json.channels[i].channel.current_viewers + ')', orange)),
                 icon: json.channels[i].channel.image.size600,
                 description: new showtime.RichText(coloredStr('Viewing this channel: ', orange) + json.channels[i].channel.current_viewers +
