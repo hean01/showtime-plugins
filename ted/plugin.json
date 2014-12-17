@@ -3,12 +3,12 @@
     "id": "ted",
     "file": "ted.js",
     "showtimeVersion": "3.1",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "author": "lprot",
     "title": "TED Talks",
     "icon": "logo.png",
     "synopsis": "<p>Here you will find the best talks and performances from TED conferences.",
-    "description": "TED Talks began as a simple attempt to share what happens at TED with the world. Under the moniker ideas worth spreading, talks were released online. They rapidly attracted a global audience in the millions. Indeed, the reaction was so enthusiastic that the entire TED website has been reengineered around TED Talks, with the goal of giving everyone on-demand access to the world's most inspiring voices.</p><p>Learn more on <a href=\"http://www.ted.com/talks\">wwww.ted.com</a><p>",
+    "description": "TED Talks began as a simple attempt to share what happens at TED with the world. Under the moniker ideas worth spreading, talks were released online. They rapidly attracted a global audience in the millions. Indeed, the reaction was so enthusiastic that the entire TED website has been reengineered around TED Talks, with the goal of giving everyone on-demand access to the world's most inspiring voices.</p><p>Learn more on <a href=\"http://www.ted.com/talks\">http://www.ted.com</a><p>",
     "homepage": "https://github.com/lprot/showtime-plugins/",
     "category": "video"
 }
