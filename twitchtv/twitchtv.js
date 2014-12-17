@@ -300,7 +300,41 @@
         });
     });
 
-    var id = 0;
+    plugin.addURI(plugin.getDescriptor().id + ":past:(.*):(.*)", function (page, name, display_name) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - Past broadcasts for: ' + decodeURIComponent(display_name));
+        page.loading = true;
+        var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/' + name));
+        page.loading = false;
+        var url = API + '/channels/' + name + '/videos?broadcasts=true';
+        var tryToSearch = true;
+
+        function loader() {
+            if (!tryToSearch) return false;
+            page.loading = true;
+            var json = showtime.JSONDecode(showtime.httpReq(url));
+            page.loading = false;
+            for (var i in json.videos) {
+                page.appendItem(plugin.getDescriptor().id + ":video:" + json.videos[i]._id + ':' + encodeURIComponent(json.videos[i].title), "video", {
+                    title: new showtime.RichText(json.videos[i].title + coloredStr(' (' + json.videos[i].views + ')', orange)),
+                    icon: json.videos[i].preview,
+                    duration: json.videos[i].length,
+                    description: new showtime.RichText(coloredStr('Views: ', orange) + json.videos[i].views +
+                        (json.videos[i].game ? coloredStr('\nGame: ', orange) + json.videos[i].game : '') +
+                        (json.videos[i].recorded_at ? coloredStr('\nRecorded at: ', orange) + json.videos[i].recorded_at : '') +
+                        (json.videos[i].description ? coloredStr('\nDescription: ', orange) + json.videos[i].description : '')
+                    )
+                });
+                page.entries++;
+            }
+            if (json.videos.length == 0)
+                return tryToSearch = false;
+            url = json['_links'].next;
+            return true;
+        }
+        loader();
+        page.paginator = loader;
+    });
+
     plugin.addURI(plugin.getDescriptor().id + ":channel:(.*):(.*)", function (page, name, display_name) {
         setPageHeader(page, plugin.getDescriptor().title + ' - ' + decodeURIComponent(display_name));
         page.entries = 0;
@@ -337,6 +371,10 @@
             });
             page.entries++;
         }
+
+        page.appendItem(plugin.getDescriptor().id + ":past:" + name + ':' + display_name, "directory", {
+            title: 'Past broadcasts'
+        });
 
         var url = API + '/channels/' + name + '/videos';
         function loader() {
