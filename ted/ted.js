@@ -49,7 +49,7 @@
         var doc = showtime.httpReq(BASE_URL + decodeURIComponent(link)).toString();
         page.loading = false;
         page.appendItem(doc.match(/"high":"([\s\S]*?)"/)[1], "video", {
-            title: decodeURIComponent(title),
+            title: showtime.entityDecode(decodeURIComponent(title)),
             description: trim(doc.match(/<p class='talk-description' lang='[\s\S]*?'>([\s\S]*?)<\/p>/)[1])
         });
 
@@ -68,10 +68,10 @@
         }
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":index:(.*):(.*)", function(page, sort, title) {
-        setPageHeader(page, plugin.getDescriptor().title + ' - Sorted by: ' + decodeURIComponent(title));
-        var tryToSearch = true, first = true, param = '', counter = 1;
-        var url = BASE_URL + '/talks?sort=' + sort;
+    function scraper(page, params) {
+        var tryToSearch = true, first = true, param = '', pageNum = 1;
+        page.entries = 0;
+        var url = params;
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
@@ -82,7 +82,7 @@
             var match = re.exec(doc);
             while (match) {
                 page.appendItem(plugin.getDescriptor().id + ':talk:' + encodeURIComponent(match[4]) + ':' + encodeURIComponent(trim(match[5])), "video", {
-                    title: match[3] + ' - ' + trim(match[5]),
+                    title: showtime.entityDecode(match[3]) + ' - ' + showtime.entityDecode(trim(match[5])),
                     icon: match[1],
                     duration: match[2],
                     description: new showtime.RichText(coloredStr('Speaker: ', orange) + match[3] +
@@ -91,16 +91,22 @@
                         coloredStr('\nAdded: ', orange) + trim(match[7])
                     )
                 });
+                page.entries++;
                 match = re.exec(doc);
             }
             if (!doc.match(/rel="next"/))
                 return tryToSearch = false;
-            counter++;
-            param = '&page=' + counter;
+            pageNum++;
+            param = '&page=' + pageNum;
             return true;
         }
         loader();
         page.paginator = loader;
+    }
+
+    plugin.addURI(plugin.getDescriptor().id + ":index:(.*):(.*)", function(page, sort, title) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - Sorted by: ' + decodeURIComponent(title));
+        scraper(page, BASE_URL + '/talks?sort=' + sort);
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
@@ -118,5 +124,10 @@
             });
             match = re.exec(sort);
         }
+    });
+
+    plugin.addSearcher(plugin.getDescriptor().title, logo, function (page, query) {
+        setPageHeader(page, plugin.getDescriptor().title);
+        scraper(page, BASE_URL + '/talks?q=' + encodeURIComponent(query));
     });
 })(this);
