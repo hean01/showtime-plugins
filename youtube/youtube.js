@@ -270,126 +270,6 @@
         });
     }
 
-    function startPage(page) {
-        ui.background = user_preferences.background;
-        pageMenu(page);
-
-        page.metadata.glwview = plugin.path + "views/array2.view";
-
-        var standard_feeds = [];
-        for (var i in api["standard_feeds"]) {
-            var entry = api["standard_feeds"][i];
-            standard_feeds.push({
-                url: plugin.getDescriptor().id + ':feed:' + escape(entry[1]) + ':' +escape('Standard Feeds'),
-                title: entry[0],
-                icon: entry[2]
-            });
-        }
-
-        var channel_feeds = [];
-        for (var i in api["channel_feeds"]) {
-            var entry = api["channel_feeds"][i];
-            channel_feeds.push({
-                url: plugin.getDescriptor().id + ':feed:' + escape(entry[1])+ ':' +escape('Channel Feeds'),
-                title: entry[0],
-                icon: entry[2]
-            });
-        }
-
-        var items = [];
-
-        if (apiV3.authenticated) {
-        	var args = {
-        		"part": "id,snippet,contentDetails",
-        		"home": true,
-        		"request": {
-        			"type": "activities",
-        			"subrequest": "list"
-        		}
-        	};
-       	 	items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('My Activity'), 'directory', {
-        		title: 'My Activity'
-        	}));
-        }
-
-        var args = {
-        	"part": "id,snippet",
-        	"regionCode": service.region != "all" ? service.region : "US",
-        	"request": {
-        		"type": "guideCategories",
-        		"subrequest": "list"
-        	}
-        };
-        items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Guide Categories'), 'directory', {
-        	title: 'Guide Categories', icon: plugin.path + "views/img/logos/explore.png"
-        }));
-
-        var args = {
-        	"part": "id,snippet",
-        	"regionCode": service.region != "all" ? service.region : "US",
-        	"request": {
-        		"type": "videoCategories",
-        		"subrequest": "list"
-        	}
-        };
-        items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Video Categories'), 'directory', {
-        	title: 'Video Categories', icon: plugin.path + "views/img/logos/explore.png"
-        }));
-        
-        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'standard_feeds:'+escape('Standard Feeds'), 'directory', {title: 'Standard Feeds', icon: plugin.path + "views/img/logos/feeds.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'channel_feeds:'+escape('Channel Feeds'), 'directory', {title: 'Channel Feeds', icon: plugin.path + "views/img/logos/channels.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':edu:'+escape('Youtube EDU'), 'directory', { title: 'Youtube EDU', icon: plugin.path + "views/img/logos/edu.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'live_feeds:'+escape('Youtube Live'), 'directory', {title: 'Youtube Live', icon: plugin.path + "views/img/logos/live.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'movie_feeds:'+escape('Youtube Movies'), 'directory', {title: 'Youtube Movies', icon: plugin.path + "views/img/logos/movies.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'show_feeds:'+escape('Youtube Shows'), 'directory', {title: 'Youtube Shows', icon: plugin.path + "views/img/logos/shows.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':disco:null:'+escape('Youtube Disco'), 'directory', {title: 'Youtube Disco', icon: plugin.path + "views/img/logos/disco.png" }));
-        
-        if (apiV3.auth.authenticated)
-            items.push(page.appendItem(plugin.getDescriptor().id + ':user:default', 'directory', {title: 'User Profile', icon: plugin.path + "views/img/logos/user.png" }));
-    
-        try {
-            for (var i in items) {
-                items[i].id = i;
-            }
-
-            if (!main_menu_order.order) {
-                var items_tmp = page.getItems();
-                for(var i = 0; i < items_tmp.length; i++) {
-                    if (!items_tmp[i].id) delete items_tmp[i];
-                }
-                main_menu_order.order = showtime.JSONEncode(items_tmp);
-            }
-
-            main_menu_order.order;
-
-            var order = showtime.JSONDecode(main_menu_order.order);
-            for (var i in order) {
-                items[order[i].id].moveBefore(i);
-            }
-
-            page.reorderer = function(item, before) {
-                item.moveBefore(before);
-                var items = page.getItems();
-                for(var i = 0; i < items.length; i++) {
-                    if (!items[i].id) delete items[i];
-                }
-
-                main_menu_order.order = showtime.JSONEncode(items);
-            };
-        }
-        catch (ex) {
-            t("Error while parsing main menu order");
-            e(ex);
-        }
-
-        page.type = "directory";
-        page.contents = "items";
-        page.loading = false;
-
-        page.metadata.logo = logo;
-        page.metadata.title = "Youtube - Home Page";
-    }
-
     plugin.addURI(plugin.getDescriptor().id + ":oauth:confirm:(.*)", function (page, code) {
         page.type = "directory";
         page.metadata.glwview = plugin.path + "views/auth_2.view";
@@ -520,6 +400,8 @@
     plugin.addURI(plugin.getDescriptor().id + ":disco:(.*):(.*)", function(page, query, title) {
         page.metadata.title = unescape(showtime.entityDecode(title));
         page.metadata.logo = logo;
+        page.type = "directory";
+        page.contents = "items";
 
         pageMenu(page);
         page.loading = false;
@@ -539,7 +421,8 @@
         }
         page.loading = true;
         var q = escape(artist);
-        var data = showtime.httpGet('http://www.youtube.com/disco?action_search=1&query=' + q);
+        var data = showtime.httpReq('http://www.youtube.com/disco?action_search=1&query=' + q);
+        page.loading = false;
         try {
             data = showtime.JSONDecode(data.toString());
             if (data.url == '\/disco?search_query=' + q) {
@@ -562,10 +445,6 @@
             e(ex);
             return;
         }
-    
-        page.type = "directory";
-        page.contents = "items";
-        page.loading = false;
     });
   
     plugin.addURI(plugin.getDescriptor().id + ":mixfeeds:(.*):(.*)", function(page, type, title) {
@@ -1097,6 +976,7 @@
         page.type = "directory";
         page.contents = "items";
         page.metadata.title = new showtime.RichText(unescape(showtime.entityDecode(title)));
+        page.loading = true;
         page.metadata.background = plugin.path + "views/img/background.png";
 
         args = showtime.JSONDecode(unescape(args));
@@ -1628,7 +1508,9 @@
             return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
         if (player != url) {
             if (service.enableDebug) showtime.print('player: '+ url);
+            page.loading = true;
             var code = showtime.httpReq('http:' + url).toString();
+            //page.loading = false;
             player = url;
             fnName = code.match(/signature=([^(]*)/);
             if (fnName)
@@ -1702,6 +1584,7 @@
 
 
     function getVideosList(page, id, number_items) {
+        page.loading = true;
         var doc = showtime.httpReq('http://www.youtube.com/watch?v=' + id, {
             headers:{
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1'
@@ -1721,6 +1604,7 @@
         var age = false;
         if (doc.match(/player-age-gate-content">/)) {
             age = true;
+            page.loading = true;
             doc = showtime.httpReq('http://www.youtube.com/get_video_info', {
                 args: {
                    'video_id': id,
@@ -1732,6 +1616,7 @@
                    'sts':'1588'
                 }
             }).toString();
+            page.loading = false;
             json = getMaps(doc);
             encoded_url_map = unescape(json.url_encoded_fmt_stream_map) + ',' + unescape(json.adaptive_fmts);
         }
@@ -1747,6 +1632,7 @@
         var resolution_strings = [
             '240p', '360p', '480p', '720p', '1080p'
         ];
+
 
         var links = [];
         if (json.args && json.args.hlsvp) {
@@ -1771,6 +1657,7 @@
                         }
                      }
                 }
+
                 if (url_data.s) realUrl += '&signature=' + unroll(age, json.assets ? json.assets.js : '', url_data.s);
                 if (url_data.sig) realUrl += '&signature=' + unroll(age, json.assets ? json.assets.js : '', url_data.sig);
 
@@ -1849,6 +1736,7 @@
     }
 
     function playVideo(page, title, id, video_url) {
+        page.loading = true;
         var url = unescape(unescape(video_url));
         var videoParams = {
             title: showtime.entityDecode(unescape(unescape(title))),
@@ -1876,7 +1764,9 @@
         if (service.transcribedCaptions || service.automaticSpeechCaptions) {
             var caption = getDefaultCaptionLink(id);
             if (caption) {
-                var data = new XML(showtime.httpGet(caption + '&type=list&tlangs=1&asrs=1').toString());
+                page.loading = true;
+                var data = new XML(showtime.httpReq(caption + '&type=list&tlangs=1&asrs=1').toString());
+                page.loading = false;
                 if (service.transcribedCaptions) {
                     var subtitles = getTranscribedCaptions(caption, data);
                     for (var i in subtitles)
@@ -2376,8 +2266,10 @@
         //var atom = new Namespace("http://www.w3.org/2005/Atom");
         if (service.enableDebug)
             showtime.print(link);
-      
-        var data = valid_xml(showtime.httpGet(link).toString());
+
+        page.loading = true;
+        var data = valid_xml(showtime.httpReq(link).toString());
+        page.loading = false;
         var list = [];
         list.push(['all', 'All', true]);
       
@@ -2762,7 +2654,9 @@
     }
 
     function getDefaultCaptionLink(id) {
-        var data = showtime.httpGet('http://www.youtube.com/watch?v='+id).toString();
+        page.loading = true;
+        var data = showtime.httpReq('http://www.youtube.com/watch?v='+id).toString();
+        page.loading = false;
 
         var cc_init = data.indexOf('ttsurl='); 
         if (cc_init == -1)
@@ -3150,7 +3044,10 @@
             var link = "http://www.youtube.com/playlist?list=" + list;
             var entries = [];
 
-            var data = showtime.httpGet(link).toString();
+            page.loading = true;
+            var data = showtime.httpReq(link).toString();
+            page.loading = false;
+
             var init = data.indexOf('<ol>');
             var end = data.indexOf('</ol>');
             data = data.slice(init, end).replace(/\r?\n/g, "").replace(/\s+/g, " ");
@@ -3475,9 +3372,11 @@
                 var data = null;
                 var post = options.post;
                 var postdata = options.postdata;
-                if (!post)
-                    data = showtime.httpGet(url, {}, headers);
-                else {
+                if (!post) {
+                    page.loading = true;
+                    data = showtime.httpReq(url, headers);
+                    page.loading = false;
+                } else {
                     headers["Content-Type"] = "application/json";
                     data = showtime.httpPost(url, postdata, null, headers);
                 }
@@ -4050,7 +3949,124 @@
         page.paginator = paginator;
     }
 
-    plugin.addURI(plugin.getDescriptor().id+":start", startPage);
+    plugin.addURI(plugin.getDescriptor().id+":start", function(page) {
+        ui.background = user_preferences.background;
+        pageMenu(page);
+        page.metadata.glwview = plugin.path + "views/array2.view";
+
+        var standard_feeds = [];
+        for (var i in api["standard_feeds"]) {
+            var entry = api["standard_feeds"][i];
+            standard_feeds.push({
+                url: plugin.getDescriptor().id + ':feed:' + escape(entry[1]) + ':' +escape('Standard Feeds'),
+                title: entry[0],
+                icon: entry[2]
+            });
+        }
+
+        var channel_feeds = [];
+        for (var i in api["channel_feeds"]) {
+            var entry = api["channel_feeds"][i];
+            channel_feeds.push({
+                url: plugin.getDescriptor().id + ':feed:' + escape(entry[1])+ ':' +escape('Channel Feeds'),
+                title: entry[0],
+                icon: entry[2]
+            });
+        }
+
+        var items = [];
+
+        if (apiV3.authenticated) {
+        	var args = {
+        		"part": "id,snippet,contentDetails",
+        		"home": true,
+        		"request": {
+        			"type": "activities",
+        			"subrequest": "list"
+        		}
+        	};
+       	 	items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('My Activity'), 'directory', {
+        		title: 'My Activity'
+        	}));
+        }
+
+        var args = {
+        	"part": "id,snippet",
+        	"regionCode": service.region != "all" ? service.region : "US",
+        	"request": {
+        		"type": "guideCategories",
+        		"subrequest": "list"
+        	}
+        };
+        items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Guide Categories'), 'directory', {
+        	title: 'Guide Categories', icon: plugin.path + "views/img/logos/explore.png"
+        }));
+
+        var args = {
+        	"part": "id,snippet",
+        	"regionCode": service.region != "all" ? service.region : "US",
+        	"request": {
+        		"type": "videoCategories",
+        		"subrequest": "list"
+        	}
+        };
+        items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Video Categories'), 'directory', {
+        	title: 'Video Categories', icon: plugin.path + "views/img/logos/explore.png"
+        }));
+
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'standard_feeds:'+escape('Standard Feeds'), 'directory', {title: 'Standard Feeds', icon: plugin.path + "views/img/logos/feeds.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'channel_feeds:'+escape('Channel Feeds'), 'directory', {title: 'Channel Feeds', icon: plugin.path + "views/img/logos/channels.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':edu:'+escape('Youtube EDU'), 'directory', { title: 'Youtube EDU', icon: plugin.path + "views/img/logos/edu.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'live_feeds:'+escape('Youtube Live'), 'directory', {title: 'Youtube Live', icon: plugin.path + "views/img/logos/live.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'movie_feeds:'+escape('Youtube Movies'), 'directory', {title: 'Youtube Movies', icon: plugin.path + "views/img/logos/movies.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'show_feeds:'+escape('Youtube Shows'), 'directory', {title: 'Youtube Shows', icon: plugin.path + "views/img/logos/shows.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':disco:null:'+escape('Youtube Disco'), 'directory', {title: 'Youtube Disco', icon: plugin.path + "views/img/logos/disco.png" }));
+
+        if (apiV3.auth.authenticated)
+            items.push(page.appendItem(plugin.getDescriptor().id + ':user:default', 'directory', {title: 'User Profile', icon: plugin.path + "views/img/logos/user.png" }));
+
+        try {
+            for (var i in items) {
+                items[i].id = i;
+            }
+
+            if (!main_menu_order.order) {
+                var items_tmp = page.getItems();
+                for(var i = 0; i < items_tmp.length; i++) {
+                    if (!items_tmp[i].id) delete items_tmp[i];
+                }
+                main_menu_order.order = showtime.JSONEncode(items_tmp);
+            }
+
+            main_menu_order.order;
+
+            var order = showtime.JSONDecode(main_menu_order.order);
+            for (var i in order) {
+                items[order[i].id].moveBefore(i);
+            }
+
+            page.reorderer = function(item, before) {
+                item.moveBefore(before);
+                var items = page.getItems();
+                for(var i = 0; i < items.length; i++) {
+                    if (!items[i].id) delete items[i];
+                }
+
+                main_menu_order.order = showtime.JSONEncode(items);
+            };
+        }
+        catch (ex) {
+            t("Error while parsing main menu order");
+            e(ex);
+        }
+
+        page.type = "directory";
+        page.contents = "items";
+        page.loading = false;
+
+        page.metadata.logo = logo;
+        page.metadata.title = "Youtube - Home Page";
+    });
 
     plugin.addSearcher("Youtube - Videos", logo, function(page, query) {
         try {
@@ -4065,7 +4081,7 @@
                     title: "Filter by duration"
                 });
 
-                return showtime.JSONDecode(showtime.httpGet("https://gdata.youtube.com/feeds/api/videos", 
+                return showtime.JSONDecode(showtime.httpReq("https://gdata.youtube.com/feeds/api/videos",
                     api.args_common, api.headers_common).toString());
             });
         }
@@ -4103,7 +4119,7 @@
                 api.args_common['start-index'] = offset;
                 api.args_common.q = escape(query);
 
-                var doc = showtime.JSONDecode(showtime.httpGet("https://gdata.youtube.com/feeds/api/playlists/snippets",
+                var doc = showtime.JSONDecode(showtime.httpReq("https://gdata.youtube.com/feeds/api/playlists/snippets",
                     api.args_common, api.headers_common).toString());
 
                 return doc;
@@ -4142,7 +4158,7 @@
             pageController(page, function(offset) {	
                 api.args_common['start-index'] = offset;
                 api.args_common.q = escape(query);
-                return showtime.JSONDecode(showtime.httpGet("https://gdata.youtube.com/feeds/api/channels",
+                return showtime.JSONDecode(showtime.httpReq("https://gdata.youtube.com/feeds/api/channels",
                     api.args_common, api.headers_common).toString());
             });
         }
