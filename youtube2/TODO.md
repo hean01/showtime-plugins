@@ -1,0 +1,6 @@
+- Add: User actions (Remove favorite, Update video information)
+- Add: News section
+- Add: Charts for category
+- Add: Charts for date
+- Add: Bypass age limit for authenticated users
+- Enhancement: Use id tag to identify content

@@ -1,0 +1,48 @@
+#import "common.view";
+
+widget(frontdrop, {
+		source: "img/infobar.png";
+		border: 8;
+		padding: 10;
+		
+		widget(container_x, {
+			widget(container_x, {
+				.width = $ui.width / 10;
+				widget(image, {
+					.alpha = 0.3 + 0.7 * ($clone.focused.metadata.hd);
+					width: $ui.width / 30;
+					.source = "img/hd1.png";
+				});
+			});
+
+			widget(container_x, {
+				.spacing = 5;
+				.padding = 5;
+				widget(container_y, {
+					widget(label, {
+						.hidden = !($clone.focused.metadata.title);
+						.caption = $clone.focused.metadata.title;
+						.align = center;
+						.ellipsize = true;
+						.shadow = true;
+						.color = 1.0;
+						.sizeScale = 1.8;
+					});
+				});
+			});
+
+			widget(container_x, {
+				widget(label, {
+					.alpha = ($clone.focused.metadata.duration);
+					.width = $ui.width / 10;
+					.caption= $clone.focused.metadata.duration;
+					.align = center;
+					.ellipsize = true;
+					.shadow = true;
+					.color = 1.0;
+					.sizeScale = 1.0;
+				});
+			});
+		});
+		widget(dummy, { .height = $ui.size *2; });
+	});

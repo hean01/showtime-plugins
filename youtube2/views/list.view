@@ -1,0 +1,110 @@
+#import "common.view"
+
+widget(container_y, {
+	// Top Bar
+	widget(loader, {
+		.source = "header.view";
+	});
+
+	widget(container_x, {
+
+	widget(container_y, {
+		// List panel
+		padding: 20;
+		spacing: 5;
+		widget(clist, {
+			id: "list";
+			&clone.focused = focusedChild();
+			spacing: 3;
+
+			cloner($page.model.nodes, container_x, {
+				focusable: true;
+				focusOnClick: true;
+				onEvent(activate, navOpen($self.url, void, void, $parent.model));
+  
+				alphaSelf: iir(isFocused() * 1, 8) + isHovered() * 0.1;
+
+				widget(container_x, {
+					spacing: 13;
+					
+					widget(container_y, {
+					widget(icon, {
+						.source = $self.metadata.icon;
+						.sizeScale = 4;
+						.alpha = iir(isReady(), 10);
+						.saturation = 1 - iir(isReady(), 10);
+						.color = 0.5 + $clone.active * 0.5;
+						.shadow = true;
+					});
+					});
+					
+					.width = $ui.width;
+					widget(container_y, {
+						widget(label, {
+							TextStyleItem();
+							color: select(isFocused(), 1.0, 0.6);
+							caption: $self.metadata.title;
+						});
+					});
+				});
+			});
+			
+			cloner($page.model.actions, container_x, {
+				focusable: true;
+				focusOnClick: true;
+				.hidden = ($self.metadata.hidden);
+				onEvent(activate,
+					translate($self.type, void,
+						"pageevent", deliverEvent($page.eventSink, $self.data),
+						"navopen", navOpen($self.data)
+				));
+  
+				alphaSelf: iir(isFocused() * 1, 8) + isHovered() * 0.1;
+
+				widget(container_x, {
+					spacing: 13;
+					
+					widget(container_y, {
+					widget(icon, {
+						.source = $self.metadata.icon;
+						.sizeScale = 4;
+						.alpha = iir(isReady(), 10);
+						.saturation = 1 - iir(isReady(), 10);
+						.color = 0.5 + $clone.active * 0.5;
+						.shadow = true;
+					});
+					});
+					
+					.width = $ui.width;
+					widget(container_y, {
+						widget(label, {
+							TextStyleItem();
+							color: select(isFocused(), 1.0, 0.6);
+							caption: $self.metadata.title;
+						});
+					});
+				});
+			});
+		});
+	});
+
+	widget(container_y, {
+		filterConstraintX: true;
+		widget(dummy, { .height = $ui.size *6; });
+		widget(image, {
+			.source = $clone.focused.metadata.hqPicture;
+			.alpha = iir(isReady(), 6);
+		});
+		
+		widget(container_x, {
+			.align = center;
+			widget(loader, {
+				source: "listitemviews/rating.view";
+			});
+		});
+		
+		widget(dummy, { .height = $ui.size *6; });
+	});
+
+	});
+});

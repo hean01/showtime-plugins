@@ -1,0 +1,129 @@
+#import "common.view"
+
+$view.showFilter = $page.model.filter && 1;
+
+widget(container_y, {
+	// Top Bar
+	widget(loader, {
+		.source = "header.view";
+	});
+
+	widget(container_x, {
+		widget(dummy, { .width = 2; });
+
+		widget(keyintercept, {
+			bind($page.model.filter);
+			.enabled = $page.model.canFilter;
+      
+			widget(container_y, {
+				.filterConstraintX = true;
+	
+				widget(expander_y, {
+					.filterConstraintX = true;
+
+					.expansion = scurve($view.showFilter, 0.25);
+					.alpha     = scurve($view.showFilter, 0.25);
+	  
+					widget(container_x, {
+						widget(backdrop, {
+							.filterConstraintX = true;
+							.color = [0.3, 0.3, 0.3];
+							PLATE_GFX();
+							widget(container_x, {
+		
+								widget(label, {
+									.caption = "Filter: ";
+								});
+		
+								widget(label, {
+									.caption = $page.model.filter;
+								});
+      						});
+						});
+					});
+				});
+
+	
+				widget(array, {
+					$view.sizer = int(getWidth() / 100);
+
+					&clone.focused = focusedChild();
+					.id = "array";
+					.border = $view.sizer * 3;
+					.Xspacing = $view.sizer;
+					.Yspacing = $view.sizer;
+					.childTilesX = 6;
+					.childTilesY = 3;
+	  
+					cloner($page.model.nodes, displacement, {
+						.focusable = true;
+						.focusOnClick = true;
+						.padding = $view.sizer * -1.5 * iir(isHovered() || isFocused(), 3) + $view.sizer * iir(isPressed(), 3);
+						
+						onEvent(activate, select($ui.fancyAnimations,
+							navOpen($self.url, void, $self, $parent.model),
+							navOpen($self.url, void, void, $parent.model)));
+						widget(container_y, {
+							.spacing = 5;
+							widget(detachable, {
+								widget(container_x, {
+									align: top;
+									widget(backdrop, {
+									//alphaSelf: 0.5*iir(0.6 + (isFocused() || isPressed() || isHovered()), 4);
+										source: "img/tile.png";
+										border: 8;
+										margin: -4;
+										padding: 10;
+										widget(container_x, {
+											widget(container_x, {
+												.width = $ui.width * 5/7;
+												widget(image, {
+													.color = 0.5 + isHovered() * 0.4 + isFocused() * 0.4 + isPressed() * 0.4;
+													.source = $self.metadata.icon ?? "img/nophoto.png";
+													.alpha = 0.7 + 0.3 * isFocused();
+												});
+											});
+
+											/*widget(container_x, {
+												.width = $ui.width * 1/7;
+												widget(container_y, {
+													widget(image, {
+														.alpha = 0.3 + 0.7 * ($self.metadata.hd);
+														.source = "img/hd1.png";
+													});
+												});
+											});*/
+										});
+									});
+								});
+							});
+
+							widget(label, {
+								//.color = 0.3 + isHovered() * 0.4 + isFocused() * 0.4 + isPressed() * 0.4;
+								.color = 0.7;
+								.caption = $self.metadata.title;
+								.align = center;
+								.ellipsize = true;
+								.shadow = true;
+
+								.filterConstraintX = true;
+								.sizeScale = 1.1 + 0.3* isFocused();
+								.bold = isFocused();
+								.outline = true;
+								.shadow = true;
+							});
+						});
+					});
+				});	  
+			});
+		});
+
+		widget(dummy, { .width = 2; });
+		LIST_Y_SLIDER("array");
+		widget(dummy, { .width = 2; });
+	});
+
+	widget(loader, {
+		.source = "footer.view";
+	});
+});

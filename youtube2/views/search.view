@@ -1,0 +1,47 @@
+#import "common.view"
+
+widget(container_y, {
+	padding: $ui.size * 10;
+	widget(container_x, {
+		height: $ui.size * 2.5;
+		popupInputField(
+			widget(text, {
+				.id = "input";
+				.focusable = 0.5;
+				bind($page.model.metadata.search);
+				sizeScale: 1.4;
+				width: $ui.width;
+				//onEvent(activate, navOpen($clone.focused.data + $page.model.metadata.search));
+			});
+		);
+	});
+
+	widget(dummy, {
+		height: $ui.size * 2;
+	});
+
+	widget(list_x, {
+		height: $ui.size * 10;
+		&clone.focused = focusedChild();
+		cloner($page.model.actions, container_z, {
+			hidden: !($self.metadata.search);
+			widget(image, {
+				focusable: 0.5;
+				focusOnClick: true;
+				.source = $self.metadata.icon;
+				.color = 0.3 + isHovered() * 0.6 + isFocused() * 0.6 + isPressed() * 0.6;
+				onEvent(activate, navOpen($self.data + $page.model.metadata.search));
+			});
+		});
+	});
+
+	widget(dummy, {
+		height: $ui.size;
+	});
+
+	widget(label, {
+		caption: $clone.focused.metadata.title;
+		sizeScale: 1.4;
+		align: center;
+	});
+});

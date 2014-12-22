@@ -1,0 +1,106 @@
+#import "common.view"
+
+widget(container_x, {
+	widget(container_y, {
+		// Left side
+		padding: $ui.width / 35;
+		spacing: 15;
+
+		widget(container_x, {
+			// Cover and details
+			widget(container_y, {
+				width: $ui.width * 1/7;
+				widget(image, {
+					source: $page.model.metadata.logo;
+					height: $ui.height * 2/5;
+					align: topLeft;
+					aspectConstraint: true;
+
+					widget(frontdrop, {
+						source: "img/boxart-overlay-blue.png";
+						alpha: 0.4;
+					});
+				});
+			});
+
+			widget(container_y, {
+				// Details
+				widget(container_x, {
+					height: 10;
+				});
+
+				widget(label, {
+					caption: $page.model.metadata.username;
+					TextStyleItem();
+					//bold: true;
+					color: select(isFocused(), 1, 0.5);
+					sizeScale: 1.8;
+				});
+
+				widget(container_x, {
+					height: 20;
+				});
+
+				filterConstraintY: true;
+				filterConstraintX: true;
+				spacing: 4;
+				cloner($page.model.nodes, loader, {
+					source: "itemviews/" + $self.type + ".view";
+				});
+			});
+		});
+
+		widget(container_y, {
+			// Description
+			widget(label, {
+				width: $ui.width * 3/5;
+				TextStyleItem();
+				sizeScale: 1.1;
+				caption: $page.model.metadata.description;
+				maxlines: 10;
+				align:justified;
+				color: 0.8;
+			});
+		});
+	});
+
+	widget(container_y, {
+		// Right Side
+		padding: 5;
+
+		widget(container_y, {
+			// Action Buttons
+			spacing: 4;
+			&view.focused = focusedChild();
+
+			cloner($page.model.actions, container_z, {
+				widget(container_x, {
+					widget(image, {
+						.color = 0.9;
+						.source = "img/cursor.png";
+
+						.alpha = isHovered() * 0.9 + isFocused() * 1.0 + isPressed() * 0.8;
+						.saturation = 1 - iir(isReady(), 10);
+						align: left;
+						width: $ui.width / 30;
+					});
+
+					widget(label, {
+						focusable: true;
+						padding: [5, 0];
+						caption: $self.metadata.title;
+						TextStyleItem();
+						color: select(isFocused(), 0.8, 0.5);
+						align: left;
+
+						onEvent(activate,
+							translate($self.type, void,
+								"pageevent", deliverEvent($page.eventSink, $self.data),
+								"navopen", navOpen($self.data)
+						));
+					});
+				});
+			});
+		});
+	});
+});

@@ -1,0 +1,39 @@
+#import "common.view"
+//#import "theme://popups/common.view"
+
+widget(container_x, {
+	widget(container_y, {
+		// Left side
+		padding: $ui.width / 35;
+		spacing: 15;
+
+		widget(container_y, {
+				widget(container_x, {
+					widget(label, {
+						padding: [5, 0];
+						caption: "Search: ";
+						TextStyleItem();
+						color: select(isFocused(), 0.8, 0.5);
+						align: left;
+					});
+
+					popupInputField(
+						widget(text, {
+							.width = $ui.width * 1/2;
+							.id = "artist";
+							.focusable = true;
+							bind($page.model.metadata.artist);
+						});
+					);
+				});
+
+				widget(container_y, {
+					widget(container_x, {
+						.padding = [20, 0, 0, 0];
+						popupButtonOK(deliverEvent($page.eventSink, "searchArtist"),
+							true, 0);
+					});
+				});
+		});
+	});
+});

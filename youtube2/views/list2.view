@@ -1,0 +1,103 @@
+#import "common.view"
+
+widget(backdrop, {
+	source: "img/background.png";
+	alphaSelf: 0.7;
+
+	widget(container_y, {
+	// Top Bar
+	widget(loader, {
+		.source = "header.view";
+	});
+
+widget(container_y, {
+	padding: $ui.size * 2;
+
+	widget(container_x, {
+	widget(list_y, {
+		$view.sizer = int(getWidth() / 100);
+
+		&clone.focused = focusedChild();
+		.id = "array";
+		.border = $view.sizer * 1.5;
+		.Xspacing = $view.sizer;
+		.Yspacing = $view.sizer;
+		.childTilesX = 1;
+		.childTilesY = 5;
+
+		cloner($page.model.nodes, backdrop, {
+			source: "img/infoOverlayTop.bmp";
+			alphaSelf: isFocused() * 1;
+			focusable: true;
+
+			onEvent(activate, select($ui.fancyAnimations,
+							navOpen($self.url, void, $self, $parent.model),
+							navOpen($self.url, void, void, $parent.model)));
+
+			widget(container_x, {
+				padding: $ui.size * 0.25;
+
+				widget(container_z, {
+					widget(image, {
+						source: $self.metadata.icon;
+						width: $ui.size * 7;
+					});
+
+					widget(container_y, {
+						hidden: !($self.metadata.rating);
+						filterConstraintX: true;
+						space(4.5);
+						widget(container_z, {
+							widget(quad, {
+								color: 0;
+								alpha: 0.75;
+							});
+
+							widget(loader, {
+								source: "listitemviews/rating.view";
+							});
+						});
+					});
+				});
+
+				widget(dummy, {
+					width: $ui.size * 0.25;
+				});
+
+			widget(container_y, {
+				padding: $ui.size;
+
+				widget(container_x, {
+					widget(frontdrop, {
+					hidden: !($self.metadata.hd);
+					width: $ui.size * 2;
+					source: "img/hd1.png";
+				});
+
+				widget(label, {
+					caption: $self.metadata.title;
+					bold: true;
+					TextStyleItem();
+					sizeScale: 1.6;
+				});
+				});
+
+				widget(container_x, {
+					width: $ui.width;
+					widget(label, {
+						caption: $self.metadata.description;
+						TextStyleItem();
+						sizeScale: 1.4;
+						maxlines: 5;
+					});
+				});
+			});
+			});
+		});
+	});
+
+	LIST_Y_SLIDER("array");
+	});
+});
+});
+});

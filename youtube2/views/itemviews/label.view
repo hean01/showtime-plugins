@@ -1,0 +1,22 @@
+#import "common.view"
+
+widget(container_x, {
+  widget(label, {
+	TextStyleItem();
+    caption: $self.metadata.title + " ";
+    align: left;
+	color: 0.75;
+	//size: 20;
+	.sizeScale = 1.4;
+  });
+
+  widget(label, {
+	TextStyleItem();
+    caption: $self.data;
+    align: left;
+    maxlines: 5;
+	color: 1.0;
+	//size: 20;
+	.sizeScale = 1.4;
+  });
+});

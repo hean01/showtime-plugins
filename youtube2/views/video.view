@@ -1,0 +1,63 @@
+#import "common.view"
+
+widget(container_y, {
+	widget(container_y, {
+		padding: $ui.size;
+
+		widget(container_x, {
+			widget(image, {
+				width: $ui.width / 3;
+				height: $ui.size * 12;
+				source: $page.model.metadata.icon;
+				color: iir(isFocused(), 4) + 0.4;
+				saturation: 1 - iir(isReady(), 10);
+			});
+
+			widget(dummy, {
+				width: $ui.size;
+			});
+
+			widget(container_y, {
+				width: $ui.width;
+
+				widget(label, {
+					caption: $page.model.metadata.title;
+					TextStyleItem();
+					//size: 42;
+					.sizeScale = 2.1;
+				});
+
+				cloner($page.model.nodes, loader, {
+					.hidden = ($self.type == "list");
+					source: "videoitemviews/" + $self.type + ".view";
+				});
+			});
+		});
+
+		widget(container_y, {
+			widget(array, {
+				// Lists
+				.childTilesX = 1;
+				.childTilesY = 2;
+				padding: $ui.size * 2;
+				spacing: $ui.size * 0.5;
+				cloner($page.model.nodes, loader, {
+					.hidden = ($self.type != "list");
+					source: "itemviews/" + $self.type + ".view";
+				});
+
+				widget(loader, {
+					source: "itemviews/list_actions.view";
+				});
+			
+				widget(dummy, { height: $ui.size; });
+			
+				widget(label, {
+					.caption = "Currently selected: " + $clone.focused;
+				});
+			
+				.width = $ui.width - $ui.width / 4 - $ui.width / 3;
+			});
+		});
+	});
+});

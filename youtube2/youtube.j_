@@ -18,10 +18,6 @@
  */
 
 (function(plugin) {
-    var authenticated = false, key = "AIzaSyCSDI9_w8ROa1UoE2CNIUdDQnUhNbp9XR4";
-    var client_id = "477107727317-bn1q4uorfi4vf941ro4musqmtai78u1t.apps.googleusercontent.com",
-        client_secret = "5PsYdg4f72gk4z989mtFC7eL";
-
     var logo = plugin.path + "logo.png";
     var country = '';
     var ui = {
@@ -48,90 +44,58 @@
 
     // stores
     var v3_oauth_information = plugin.createStore('v3_oauth2', true);
+
+    // Preload oauth information keys
+    v3_oauth_information.access_token;
+    v3_oauth_information.expires_in;
+    v3_oauth_information.token_type;
+    v3_oauth_information.refresh_token;
+
+    var oauth_information = plugin.createStore('oauth2', true);
     var store_lists = plugin.createStore('lists', true);
     var user_preferences = plugin.createStore('user_preferences', true);
+
     var main_menu_order = plugin.createStore('main_menu_order', true);
 
-    if (!main_menu_order.ready)
+    if (!main_menu_order.ready) {
         main_menu_order.ready = "1";
+    }
 
-    if (!user_preferences.ready)
+    if (!user_preferences.ready) {
         user_preferences.ready = "1";
+    }
 
     if (!store_lists.categories) {
         var categories = getCatList('http://gdata.youtube.com/schemas/2007/categories.cat');
         store_lists.categories = categories;
+
         categories = eval(categories);
-    } else
-        var categories = eval(store_lists.categories);
+    }
+    else var categories = eval(store_lists.categories);
 
     if (!store_lists.channel_types) {
         var channelTypes = getCatList('http://gdata.youtube.com/schemas/2007/channeltypes.cat');
         store_lists.channel_types = channelTypes;
+
         channelTypes = eval(channelTypes);
-    } else
-        var channelTypes = eval(store_lists.channel_types);
+    }
+    else var channelTypes = eval(store_lists.channel_types);
 
     if (!store_lists.show_genres) {
         var showGenres = getCatList('http://gdata.youtube.com/schemas/2007/showgenres.cat');
         store_lists.show_genres = showGenres;
+
         showGenres = eval(showGenres);
-    } else
-        var showGenres = eval(store_lists.show_genres);
+    }
+    else var showGenres = eval(store_lists.show_genres);
 
     if (!store_lists.movie_genres) {
         var movieGenres = getCatList('http://gdata.youtube.com/schemas/2007/moviegenres.cat');
         store_lists.movie_genres = movieGenres;
+
         movieGenres = eval(movieGenres);
-    } else
-        var movieGenres = eval(store_lists.movie_genres);
-
-    settings.createDivider('User Settings');
-
-    settings.createAction("loginV3", "Login to Youtube", function() {
-        var response = showtime.JSONDecode(showtime.httpReq("https://accounts.google.com/o/oauth2/device/code", {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            postdata: {
-                'client_id': client_id,
-                'scope': 'https://www.googleapis.com/auth/youtube'
-            }
-        }).toString());
-
-        var msg = 'Time limit: ' + parseInt(response.expires_in) / 60 + ' minutes.\nWebsite: ' + response.verification_url + '\nUser Code: ' + response.user_code +
-                  '\n\n1. In a computer with Internet access, navigate to ' + response.verification_url +
-                  '\n2. It should show the Google logo and a box requesting a code from the device, \nin that box type the user code specified above' +
-                  '\n3. If everything goes well, you should get to a page stating that Showtime Plugin Youtube \nrequests permission to access to the account.\n'+
-                  'If you want to use your account in Youtube, you have to authorize that access.' +
-                  '\n4. In case you accept, you should see a page stating that you authorized Showtime Plugin Youtube. \nCongratulations, now you can use the plugin fully, enjoy it.';
-
-        if (showtime.message(msg, true, false)) {
-            var response = showtime.JSONDecode(showtime.httpReq("https://accounts.google.com/o/oauth2/token", {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                postdata: {
-                    'client_id': client_id,
-                    'client_secret': client_secret,
-                    'code': response.device_code,
-                    'grant_type': 'http://oauth.net/grant_type/device/1.0'
-                }
-            }).toString());
-
-            if (response.error) {
-                showtime.notify("Failed to authenticate user: " + response.error, 3, "");
-                v3_oauth_information.access_token = authenticated = false;
-                return;
-            }
-
-            v3_oauth_information.access_token = response.access_token;
-            v3_oauth_information.token_type = response.token_type;
-            v3_oauth_information.refresh_token = response.refresh_token;
-            authenticated = true;
-            showtime.notify('Authenticated successfully', 2);
-        }
-    });
+    }
+    else var movieGenres = eval(store_lists.movie_genres);
 
     settings.createDivider('Browser Settings');
 
@@ -186,6 +150,7 @@
     settings.createMultiOpt("channelType", "Channel Type", channelTypes, function(v){
         service.channelType = v;
     });
+
 
     settings.createDivider('Movie Feed Settings');
     
@@ -270,199 +235,19 @@
     settings.createBool("showLikes", "Show User Likes", true, function(v) { service.showLikes = v; });
     settings.createBool("showVideoRecommendations", "Show User Video Recommendations", false, function(v) { service.showVideoRecommendations = v; });
 
-        var activities = {
-          "list": function(args) {
-                var url = "https://www.googleapis.com/youtube/v3/activities";
-                return download(url, args, false);
-            }
-        }
-
-        var channels = {
-            "list": function(args) {
-                var url = "https://www.googleapis.com/youtube/v3/channels";
-                return download(url, args, false);
-            }
-        }
-
-        var guideCategories = {
-            "list": function(args) {
-                var url = "https://www.googleapis.com/youtube/v3/guideCategories";
-                return download(url, args, false);
-            }
-        }
-
-        var playlistItems = {
-            "list": function(args) {
-                var url = "https://www.googleapis.com/youtube/v3/playlistItems";
-                return download(url, args, false);
-            },
-
-            "insert": function(playlistId, videoId) {
-            	var json = {
-            		"snippet": {
-            			"playlistId": playlistId,
-            			"resourceId": {
-            				"kind": "youtube#video",
-            				"videoId": videoId
-            			}
-            		}
-            	};
-
-            	var postdata = showtime.JSONEncode(json);
-            	var url = "https://www.googleapis.com/youtube/v3/playlistItems";
-            	var data = download(url, {
-            		"part": "snippet"
-            	}, false, true, postdata);
-
-            	return !data.error && data.response.snippet.playlistId == playlistId;
-            }
-        }
-
-        var playlists = {
-            "list": function(args) {
-                var url = "https://www.googleapis.com/youtube/v3/playlists";
-                return download(url, args, false);
-            },
-
-            "insert": function(title) {
-                var json = {
-                    "snippet": {
-                        "title": title
-                    }
-                };
-
-                var postdata = showtime.JSONEncode(json);
-                var url = "https://www.googleapis.com/youtube/v3/playlists";
-                var data = download(url, {
-                    "part": "snippet"
-                }, false, true, postdata);
-
-                return !data.error && data.response.snippet.title == title;
-            }
-        }
-
-        var subscriptions = {
-            "list": function(args) {
-                var url = "https://www.googleapis.com/youtube/v3/subscriptions";
-                return download(url, args, false);
-            },
-
-            "insert": function(channelId) {
-            	var json = {
-            		"snippet": {
-            			"resourceId": {
-            				"kind": "youtube#channel",
-            				"channelId": channelId
-            			}
-            		}
-            	};
-
-            	var postdata = showtime.JSONEncode(json);
-            	var url = "https://www.googleapis.com/youtube/v3/subscriptions";
-            	return download(url, {
-            		"part": "snippet"
-            	}, false, true, postdata);
-            }
-        }
-
-        var videoCategories = {
-            "list": function(args) {
-                var url = "https://www.googleapis.com/youtube/v3/videoCategories";
-                return download(url, args, false);
-            }
-        }
-
-        var videos = {
-            "list": function(args) {
-                var url = "https://www.googleapis.com/youtube/v3/videos";
-                return download(url, args, false);
-            },
-
-            "information": {
-                "Uploader": 'video.snippet.channelTitle',
-                //"Category": ''
-                //"Rating": '',
-                "Views": 'video.statistics.viewCount'
-                //"Duration": ''
-            }
-        }
-
-        function download(options) {
-            var headers = options.headers ? options.headers : {};
-
-            var args = options.args;
-            if (!args) args = {};
-            args.key = key;
-            args.maxResults = 50;
-
-            var path = options.path;
-            var url = path + encodeArgs(args);
-
-            if (options.apiV2) {
-                headers["GData-Version"] = "2.1";
-                headers["X-GData-Key"] = "key=AI39si7gfa8PEGC6qMb5Kk04aPInFlZVRIPZio6fNE9-0uwS4Qvo9dbhGxzeWIEQ8J4hMHGMtw2xOHuDGn3ped2EktTAVqCU9w";
-            }
-
-            if (authenticated) {
-                var access_token = plugin.cacheGet("Youtube-V3-OAuth2", "access_token");
-
-                if (!access_token) {
-                    access_token = plugin.cacheGet("Youtube-V3-OAuth2", "access_token");
-                }
-                access_token = access_token.join("");
-                headers.Authorization = v3_oauth_information.token_type + " " + access_token;
-            }
-
-            for (var i in args)
-                d(i + ": " + args[i]);
-
-            for (var i in headers) {
-                if (i != "Authorization")
-                    d(i + ": " + headers[i]);
-            }
-
-
-            try {
-                var data = null;
-                var post = options.post;
-                var postdata = options.postdata;
-                if (!post)
-                    data = showtime.httpGet(url, {}, headers);
-                else {
-                    headers["Content-Type"] = "application/json";
-                    data = showtime.httpPost(url, postdata, null, headers);
-                }
-                return {
-                    response: showtime.JSONDecode(data.toString()),
-                    headers: data.headers
-                };
-            }
-            catch(ex) {
-                debug(ex);
-                var reconnecting = options.reconnecting;
-                if (!reconnecting && ex == "Error: Authentication without realm" && authenticated) {
-                    debug("Authentication failed. Trying refreshing token.");
-                    var response = showtime.JSONDecode(showtime.httpReq("https://accounts.google.com/o/oauth2/token", {
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        postdata: {
-                            'client_id': client_id,
-                            'client_secret': client_secret,
-                            'refresh_token': v3_oauth_information.refresh_token,
-                            'grant_type': 'refresh_token'
-                        }
-                    }).toString());
-                    return download(options);
-                }
-                return {
-                    error: "Failed to parse request: " + ex
-                };
-            }
-        }
-
+    
+    settings.createDivider('User Settings');
 
     var api = new Youtube_API();
+
+    var apiV3 = new YoutubeV3();
+    apiV3.auth.init();
+
+    settings.createAction("loginV3", "Login to Youtube", function () {
+        if (apiV3.auth.request())
+            showtime.notify('Authenticated succesfully', 2);
+    });
+
 
     settings.createDivider("Developer Settings");
 
@@ -485,6 +270,125 @@
         });
     }
 
+    function startPage(page) {
+        ui.background = user_preferences.background;
+        pageMenu(page);
+
+        page.metadata.glwview = plugin.path + "views/array2.view";
+
+        var standard_feeds = [];
+        for (var i in api["standard_feeds"]) {
+            var entry = api["standard_feeds"][i];
+            standard_feeds.push({
+                url: plugin.getDescriptor().id + ':feed:' + escape(entry[1]) + ':' +escape('Standard Feeds'),
+                title: entry[0],
+                icon: entry[2]
+            });
+        }
+
+        var channel_feeds = [];
+        for (var i in api["channel_feeds"]) {
+            var entry = api["channel_feeds"][i];
+            channel_feeds.push({
+                url: plugin.getDescriptor().id + ':feed:' + escape(entry[1])+ ':' +escape('Channel Feeds'),
+                title: entry[0],
+                icon: entry[2]
+            });
+        }
+
+        var items = [];
+
+        if (apiV3.authenticated) {
+        	var args = {
+        		"part": "id,snippet,contentDetails",
+        		"home": true,
+        		"request": {
+        			"type": "activities",
+        			"subrequest": "list"
+        		}
+        	};
+       	 	items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('My Activity'), 'directory', {
+        		title: 'My Activity'
+        	}));
+        }
+
+        var args = {
+        	"part": "id,snippet",
+        	"regionCode": service.region != "all" ? service.region : "US",
+        	"request": {
+        		"type": "guideCategories",
+        		"subrequest": "list"
+        	}
+        };
+        items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Guide Categories'), 'directory', {
+        	title: 'Guide Categories', icon: plugin.path + "views/img/logos/explore.png"
+        }));
+
+        var args = {
+        	"part": "id,snippet",
+        	"regionCode": service.region != "all" ? service.region : "US",
+        	"request": {
+        		"type": "videoCategories",
+        		"subrequest": "list"
+        	}
+        };
+        items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Video Categories'), 'directory', {
+        	title: 'Video Categories', icon: plugin.path + "views/img/logos/explore.png"
+        }));
+        
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'standard_feeds:'+escape('Standard Feeds'), 'directory', {title: 'Standard Feeds', icon: plugin.path + "views/img/logos/feeds.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'channel_feeds:'+escape('Channel Feeds'), 'directory', {title: 'Channel Feeds', icon: plugin.path + "views/img/logos/channels.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':edu:'+escape('Youtube EDU'), 'directory', { title: 'Youtube EDU', icon: plugin.path + "views/img/logos/edu.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'live_feeds:'+escape('Youtube Live'), 'directory', {title: 'Youtube Live', icon: plugin.path + "views/img/logos/live.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'movie_feeds:'+escape('Youtube Movies'), 'directory', {title: 'Youtube Movies', icon: plugin.path + "views/img/logos/movies.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'show_feeds:'+escape('Youtube Shows'), 'directory', {title: 'Youtube Shows', icon: plugin.path + "views/img/logos/shows.png" }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':disco:null:'+escape('Youtube Disco'), 'directory', {title: 'Youtube Disco', icon: plugin.path + "views/img/logos/disco.png" }));
+        
+        if (apiV3.auth.authenticated)
+            items.push(page.appendItem(plugin.getDescriptor().id + ':user:default', 'directory', {title: 'User Profile', icon: plugin.path + "views/img/logos/user.png" }));
+    
+        try {
+            for (var i in items) {
+                items[i].id = i;
+            }
+
+            if (!main_menu_order.order) {
+                var items_tmp = page.getItems();
+                for(var i = 0; i < items_tmp.length; i++) {
+                    if (!items_tmp[i].id) delete items_tmp[i];
+                }
+                main_menu_order.order = showtime.JSONEncode(items_tmp);
+            }
+
+            main_menu_order.order;
+
+            var order = showtime.JSONDecode(main_menu_order.order);
+            for (var i in order) {
+                items[order[i].id].moveBefore(i);
+            }
+
+            page.reorderer = function(item, before) {
+                item.moveBefore(before);
+                var items = page.getItems();
+                for(var i = 0; i < items.length; i++) {
+                    if (!items[i].id) delete items[i];
+                }
+
+                main_menu_order.order = showtime.JSONEncode(items);
+            };
+        }
+        catch (ex) {
+            t("Error while parsing main menu order");
+            e(ex);
+        }
+
+        page.type = "directory";
+        page.contents = "items";
+        page.loading = false;
+
+        page.metadata.logo = logo;
+        page.metadata.title = "Youtube - Home Page";
+    }
 
     plugin.addURI(plugin.getDescriptor().id + ":oauth:confirm:(.*)", function (page, code) {
         page.type = "directory";
@@ -749,7 +653,7 @@
         items = [];
         items_tmp = [];
 	if (page.metadata) {
-	    page.metadata.apiAuthenticated = authenticated;
+	    page.metadata.apiAuthenticated = apiV3.auth.authenticated;
 	    pageMenu(page, page.items);
 	}
 
@@ -1142,7 +1046,7 @@
                         url += '_' + service.channelType;
                 }
                 
-                var doc = download({
+                var doc = apiV3.download({
                     "path": url,
                     "args": api.args_common,
                     "apiV2": true
@@ -1306,7 +1210,7 @@
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":user:(.*)", function(page, user) {
-        if (!authenticated && user == 'default') {
+        if (!apiV3.auth.authenticated && user == 'default') {
             showtime.trace('YOUTUBE: User must be authenticated to see this profile');
             page.error('User must be authenticated to see this profile');
             return;
@@ -1359,7 +1263,7 @@
         page.metadata.title = data.items[0].snippet.title;
         page.metadata.logo = data.items[0].snippet.thumbnails.default.url;
 
-        if (authenticated && user != 'default') {
+        if (apiV3.auth.authenticated && user != 'default') {
    	    if (!hasSubscribed(channelId)) {
                 var subscribeButton = page.appendAction("pageevent", "subscribeUser", false, {
       		    title: "Subscribe User"
@@ -1380,7 +1284,7 @@
 
         if (user == "default") {
             if (service.showNewSubscriptionVideos) {
-                var data = download({
+                var data = apiV3.download({
                     "path": 'https://gdata.youtube.com/feeds/api/users/' + user + '/newsubscriptionvideos',
                     "args": {
                         "alt": "json"
@@ -1602,7 +1506,7 @@
              
         if (user == "default") {
             if (service.showVideoRecommendations) {
-                var data = download({
+                var data = apiV3.download({
                     "path": 'https://gdata.youtube.com/feeds/api/users/' + user + '/recommendations',
                     "args": {
                         "alt": "json"
@@ -2294,7 +2198,7 @@
                 api.watchLater(videoId); 
             });
 
-            if (authenticated) {
+            if (apiV3.auth.authenticated) {
                 page.appendAction("pageevent", "addToPlaylist", true, {
                     title: 'Add to Playlist',
                     icon: plugin.path + "views/img/add.png",
@@ -3090,7 +2994,7 @@
             api.watchLater(this.id) 
         });
 
-        if (authenticated) {
+        if (apiV3.auth.authenticated) {
             var args = {
                 "videoId": item.id
             };
@@ -3294,6 +3198,332 @@
     	return subscribed;
     }
 
+    function YoutubeV3() {
+        var key = "AIzaSyCSDI9_w8ROa1UoE2CNIUdDQnUhNbp9XR4";
+
+        var auth = {
+            "client_id": "477107727317-bn1q4uorfi4vf941ro4musqmtai78u1t.apps.googleusercontent.com",
+            "client_secret": "5PsYdg4f72gk4z989mtFC7eL",
+            "authenticated": false,
+
+            "init": function() {
+                p("OAuth information found: " + (v3_oauth_information.access_token != null));
+                if (v3_oauth_information.access_token) {
+                    this.authenticated = true;
+                    var response = plugin.cacheGet("Youtube-V3-OAuth2", "access_token");
+                    if (!response) {
+                        var data = this.refreshToken();
+
+                        v3_oauth_information.access_token = data.access_token;
+                        v3_oauth_information.expires_in = data.expires_in;
+                        v3_oauth_information.token_type = data.token_type;
+
+                        plugin.cachePut("Youtube-V3-OAuth2", "access_token", v3_oauth_information.access_token, 
+                            parseInt(v3_oauth_information.expires_in));
+                        api.headers_common.Authorization = v3_oauth_information.token_type + " " + v3_oauth_information.access_token;
+
+                        response = plugin.cacheGet("Youtube-V3-OAuth2", "access_token").join("");
+
+                        p("Access token: " + response);
+                    }
+                }
+            },
+
+            "refreshToken": function() {
+                var response = showtime.JSONDecode(showtime.httpReq("https://accounts.google.com/o/oauth2/token", {
+                    postdata: {
+                        'client_id': this.client_id,
+                        'client_secret': this.client_secret,
+                        'refresh_token': v3_oauth_information.refresh_token,
+                        'grant_type': 'refresh_token'
+                    },
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }).toString());
+                return response;
+            },
+
+            "request": function() {
+                var response = showtime.JSONDecode(showtime.httpReq("https://accounts.google.com/o/oauth2/device/code", {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    postdata: {
+                        'client_id': this.client_id,
+                        'scope': 'https://www.googleapis.com/auth/youtube'
+                    }
+                }).toString());
+
+                v3_oauth_information.device_code = response.device_code;
+                v3_oauth_information.user_code = response.user_code;
+                v3_oauth_information.verification_url = response.verification_url;
+
+                t("URL: " + v3_oauth_information.verification_url);
+                t("User Code: " + v3_oauth_information.user_code);
+
+                var msg = 'Time limit: ' + parseInt(response.expires_in) / 60 + ' minutes.\nWebsite: ' + response.verification_url + '\nUser Code: ' + response.user_code + 
+                    '\n\n1. In a computer with Internet access, navigate to ' + response.verification_url +
+                    '\n2. It should show the Google logo and a box requesting a code from the device, \nin that box type the user code specified above' + 
+                    '\n3. If everything goes well, you should get to a page stating that Showtime Plugin Youtube \nrequests permission to access to the account.\n'+
+                    'If you want to use your account in Youtube, you have to authorize that access.' +
+                    '\n4. In case you accept, you should see a page stating that you authorized Showtime Plugin Youtube. \nCongratulations, now you can use the plugin fully, enjoy it.';
+
+                if (showtime.message(msg, true, false)) {
+                    var response = showtime.JSONDecode(showtime.httpReq("https://accounts.google.com/o/oauth2/token", {
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        postdata: {
+                            'client_id': this.client_id,
+                            'client_secret': this.client_secret,
+                            'code': v3_oauth_information.device_code,
+                            'grant_type': 'http://oauth.net/grant_type/device/1.0'
+                        }
+                    }).toString());
+
+                    if (response.error) {
+                        showtime.notify("Failed to authenticate user: " + response.error, 3, "");
+                        return false;
+                    }
+
+                    v3_oauth_information.access_token = response.access_token;
+                    v3_oauth_information.expires_in = response.expires_in;
+                    v3_oauth_information.token_type = response.token_type;
+                    v3_oauth_information.refresh_token = response.refresh_token;
+
+                    t("Authenticated succesfully");
+                    this.authenticated = true;
+                    plugin.cachePut("Youtube-V3-OAuth2", "access_token", v3_oauth_information.access_token,
+                        parseInt(v3_oauth_information.expires_in));
+                    return true;
+                }
+                return false;
+            }
+        };
+
+        var activities = {
+            "list": function(args) {
+                var url = "https://www.googleapis.com/youtube/v3/activities";
+                return download(url, args, false);
+            }            
+        }
+
+        var channels = {
+            "list": function(args) {
+                var url = "https://www.googleapis.com/youtube/v3/channels";
+                return download(url, args, false);
+            }            
+        }
+
+        var guideCategories = {
+            "list": function(args) {
+                var url = "https://www.googleapis.com/youtube/v3/guideCategories";
+                return download(url, args, false);
+            }            
+        }
+
+        var playlistItems = {
+            "list": function(args) {
+                var url = "https://www.googleapis.com/youtube/v3/playlistItems";
+                return download(url, args, false);
+            },
+
+            "insert": function(playlistId, videoId) {
+            	var json = {
+            		"snippet": {
+            			"playlistId": playlistId,
+            			"resourceId": {
+            				"kind": "youtube#video",
+            				"videoId": videoId
+            			}
+            		}
+            	};
+
+            	var postdata = showtime.JSONEncode(json);
+            	var url = "https://www.googleapis.com/youtube/v3/playlistItems";
+            	var data = download(url, {
+            		"part": "snippet"
+            	}, false, true, postdata);
+
+            	return !data.error && data.response.snippet.playlistId == playlistId;
+            }            
+        }
+
+        var playlists = {
+            "list": function(args) {
+                var url = "https://www.googleapis.com/youtube/v3/playlists";
+                return download(url, args, false);
+            },
+
+            "insert": function(title) {
+                var json = {
+                    "snippet": {
+                        "title": title
+                    }
+                };
+
+                var postdata = showtime.JSONEncode(json);
+                var url = "https://www.googleapis.com/youtube/v3/playlists";
+                var data = download(url, {
+                    "part": "snippet"
+                }, false, true, postdata);
+
+                return !data.error && data.response.snippet.title == title;
+            }        
+        }
+
+        var search = {
+            "list": function(args) {
+                var url = "https://www.googleapis.com/youtube/v3/search";
+                args.safeSearch = service.safeSearch;
+                if (service.region != "all")
+                	args.regionCode = service.region;
+                return download(url, args, false);
+            }            
+        }
+
+        var subscriptions = {
+            "list": function(args) {
+                var url = "https://www.googleapis.com/youtube/v3/subscriptions";
+                return download(url, args, false);
+            },
+
+            "insert": function(channelId) {
+            	var json = {
+            		"snippet": {
+            			"resourceId": {
+            				"kind": "youtube#channel",
+            				"channelId": channelId
+            			}
+            		}
+            	};
+
+            	var postdata = showtime.JSONEncode(json);
+            	var url = "https://www.googleapis.com/youtube/v3/subscriptions";
+            	return download(url, {
+            		"part": "snippet"
+            	}, false, true, postdata);
+            }          
+        }
+
+        var videoCategories = {
+            "list": function(args) {
+                var url = "https://www.googleapis.com/youtube/v3/videoCategories";
+                return download(url, args, false);
+            }            
+        }
+
+        var videos = {
+            "list": function(args) {
+                var url = "https://www.googleapis.com/youtube/v3/videos";
+                return download(url, args, false);
+            },
+
+            "information": {
+                "Uploader": 'video.snippet.channelTitle',
+                //"Category": ''
+                //"Rating": '',
+                "Views": 'video.statistics.viewCount'
+                //"Duration": ''
+            }
+        }
+
+        var download0 = function(options) {
+            var headers = options.headers ? options.headers : {};
+
+            var args = options.args;
+            if (!args) args = {};
+            args.key = key;
+            args.maxResults = 50;
+
+            var path = options.path;
+            var url = path + encodeArgs(args);
+
+            if (options.apiV2) {
+                headers["GData-Version"] = "2.1";
+                headers["X-GData-Key"] = "key=AI39si7gfa8PEGC6qMb5Kk04aPInFlZVRIPZio6fNE9-0uwS4Qvo9dbhGxzeWIEQ8J4hMHGMtw2xOHuDGn3ped2EktTAVqCU9w";
+            }
+
+            if (apiV3.auth.authenticated) {
+                var access_token = plugin.cacheGet("Youtube-V3-OAuth2", "access_token");
+
+                if (access_token == null) {
+                    apiV3.auth.init();
+                    access_token = plugin.cacheGet("Youtube-V3-OAuth2", "access_token");
+                }
+                access_token = access_token.join("");
+                headers.Authorization = v3_oauth_information.token_type + " " + access_token;
+            }
+
+            d("Preparing to parse request:");
+            d("URL: " + url);
+            d("Args: ");
+            for (var i in args)
+                d(i + ": " + args[i]);
+
+            d("Headers: ");
+            for (var i in headers) {
+                if (i != "Authorization")
+                    d(i + ": " + headers[i]);
+            }
+            d("Authorized user");
+
+            try {
+                var data = null;
+                var post = options.post;
+                var postdata = options.postdata;
+                if (!post)
+                    data = showtime.httpGet(url, {}, headers);
+                else {
+                    headers["Content-Type"] = "application/json";
+                    data = showtime.httpPost(url, postdata, null, headers);
+                }
+                return {
+                    response: showtime.JSONDecode(data.toString()),
+                    headers: data.headers
+                };
+            }
+            catch(ex) {
+                debug(ex);
+                var reconnecting = options.reconnecting;
+                if (!reconnecting && ex == "Error: Authentication without realm" && apiV3.auth.authenticated) {
+                    debug("Authentication failed. Trying refreshing token.");
+                    apiV3.auth.refreshToken();
+                    return download0(options);
+                }
+
+                return {
+                    error: "Failed to parse request: " + ex
+                };
+            }
+        }
+
+        var download = function(path, args, reconnecting, post, postdata) {
+            return download0({
+                "path": path,
+                "args": args,
+                "reconnecting": reconnecting,
+                "post": post,
+                "postdata": postdata
+            });
+        }
+
+        return {
+            "auth": auth,
+            "activities": activities,
+            "channels": channels,
+            "guideCategories": guideCategories,
+            "playlistItems": playlistItems,
+            "playlists": playlists,
+            "search": search,
+            "subscriptions": subscriptions,
+            "videoCategories": videoCategories,
+            "videos": videos,
+            "download": download0
+        }
+    }
+
     function encodeArgs(args) {
         var data = "?";
         for (var i in args) {
@@ -3362,7 +3592,7 @@
 
             item.addOptURL("Related Videos", plugin.getDescriptor().id + ":v3:request:" + escape(showtime.JSONEncode(args))+':'+escape('Related Videos'));
 
-            if (authenticated) {
+            if (apiV3.auth.authenticated) {
             	var args = {
             		"videoId": item.videoId
             	};
@@ -3422,14 +3652,23 @@
     }
 
     function pageControllerV3(page, loader) {
-        items = [], items_tmp = [];
+        items = [];
+        items_tmp = [];
+		/*if (page.metadata) {
+		    page.metadata.apiAuthenticated = api.apiAuthenticated;
+		    pageMenu(page, page.items);
+		}*/
+
         page.contents = 'list';
         var offset = 1;
         var total_items = 0;
         var max_items = service.entries;
 
+        //var items = [];
+
         function paginator() {
             var num = 0;
+
             var nextPageToken = null;
 
             while(total_items < max_items) {	
@@ -3470,7 +3709,7 @@
                             videoIds.push(videoId);
                     }
 
-                    var data1 = download({
+                    var data1 = apiV3.download({
                         "path": "https://www.googleapis.com/youtube/v3/videos",
                         "args": {
                             "part": "id,snippet,contentDetails,statistics,status,topicDetails",
@@ -3497,6 +3736,17 @@
 
                         if (service.advancedBrowseV3) {
                             var videoId = getVideoId(entry);
+                            /*if (entry.author && entry.author[0].name) {
+                                metadata.author = entry.author[0].name.$t;
+                            }*/
+
+                            /*if (entry.app$control && entry.app$control.yt$state) {
+                                if (entry.app$control.yt$state.name == "restricted" && entry.app$control.yt$state.reasonCode == "requesterRegion") metadata.restricted = true;
+                            }*/
+                    
+                            /*if (entry.media$group && entry.media$group.media$rating) {
+                                metadata.certification = entry.media$group.media$rating[0].$t.toString().toUpperCase();
+                            }*/
 
                             if (videoId) {
                                 var video = videoData[videoId];
@@ -3520,6 +3770,8 @@
                                 metadata.dislikes = parseInt(video.statistics.dislikeCount);
                                 metadata.likesPercentage = Math.round((metadata.likes / 
                                     (metadata.likes + metadata.dislikes)) * 100);
+                                /*metadata.likesPercentage_str = '<font size="3" color="99CC66"> ( ' + 
+                                    metadata.likesPercentage + '% )</font>';*/
                                 metadata.likesPercentage_str = metadata.likesPercentage + '%';
                                 metadata.rating = metadata.likesPercentage;
                             }
@@ -3530,6 +3782,18 @@
                         var videoTitle = entry.snippet.title;
 
                         var color = 'FFFFFF';
+                        /*if (country != "" && entry.media$group && entry.media$group.media$restriction) {
+                            var restriction = entry.media$group.media$restriction[0];
+                            if (restriction.type == 'country') {
+                                var countries = restriction.$t.split(' ');
+                                if (restriction.$t.indexOf(country) != -1 && restriction.relationship == 'deny') {
+                                    color = 'ffa500';
+                                }
+                                else if (restriction.relationship == 'allow' && entry.media$group.media$restriction.length == 1 && restriction.$t.indexOf(country) == -1) {
+                                    color = 'ffa500';
+                                }
+                            }
+                        }*/
                         var title = videoTitle;
                         if (metadata.duration)
                             title += ' (' + metadata.duration + ')';
@@ -3588,6 +3852,16 @@
                             '<font color="EEEEEE">' + lines + '...' + '</font>');
 
                         var images = [];
+                        /*if (entry.media$group && entry.media$group.media$thumbnail) {
+                            images = entry.media$group.media$thumbnail;
+                        }
+                        else if (entry.media$thumbnail && entry.media$thumbnail.url) {
+                            images.push({
+                                url: entry.media$thumbnail.url,
+                                width: 400,
+                                height: 400
+                            });
+                        }*/
                         images.push({
                         	width: 400,
                         	height: 400,
@@ -3739,6 +4013,12 @@
                             }, metadata);
                     	}
 
+                        /*if (entry.snippet.publishedAt) {
+                            // 2012-08-10T19:34:51.000Z
+                            var match = entry.snippet.publishedAt.$t.match("(.*)-(.*)-(.*)T(.*):(.*):([^.]*)");
+                            item.published = new Date(match[1], match[2], match[3], match[4], match[5], match[6]).getTime();
+                        }*/
+
                         item.index = c;
                         item.title = entry.title;
                         if (metadata.views)
@@ -3768,128 +4048,7 @@
         page.paginator = paginator;
     }
 
-    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-        ui.background = user_preferences.background;
-        pageMenu(page);
-
-        page.metadata.glwview = plugin.path + "views/array2.view";
-
-        var standard_feeds = [];
-        for (var i in api["standard_feeds"]) {
-            var entry = api["standard_feeds"][i];
-            standard_feeds.push({
-                url: plugin.getDescriptor().id + ':feed:' + escape(entry[1]) + ':' +escape('Standard Feeds'),
-                title: entry[0],
-                icon: entry[2]
-            });
-        }
-
-        var channel_feeds = [];
-        for (var i in api["channel_feeds"]) {
-            var entry = api["channel_feeds"][i];
-            channel_feeds.push({
-                url: plugin.getDescriptor().id + ':feed:' + escape(entry[1])+ ':' +escape('Channel Feeds'),
-                title: entry[0],
-                icon: entry[2]
-            });
-        }
-
-        var items = [];
-
-        if (authenticated) {
-        	var args = {
-        		"part": "id,snippet,contentDetails",
-        		"home": true,
-        		"request": {
-        			"type": "activities",
-        			"subrequest": "list"
-        		}
-        	};
-       	 	items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('My Activity'), 'directory', {
-        		title: 'My Activity'
-        	}));
-        }
-
-        var args = {
-        	"part": "id,snippet",
-        	"regionCode": service.region != "all" ? service.region : "US",
-        	"request": {
-        		"type": "guideCategories",
-        		"subrequest": "list"
-        	}
-        };
-        items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Guide Categories'), 'directory', {
-        	title: 'Guide Categories', icon: plugin.path + "views/img/logos/explore.png"
-        }));
-
-        var args = {
-        	"part": "id,snippet",
-        	"regionCode": service.region != "all" ? service.region : "US",
-        	"request": {
-        		"type": "videoCategories",
-        		"subrequest": "list"
-        	}
-        };
-        items.push(page.appendItem(plugin.getDescriptor().id + ':v3:request:' + escape(showtime.JSONEncode(args))+':'+escape('Video Categories'), 'directory', {
-        	title: 'Video Categories', icon: plugin.path + "views/img/logos/explore.png"
-        }));
-
-        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'standard_feeds:'+escape('Standard Feeds'), 'directory', {title: 'Standard Feeds', icon: plugin.path + "views/img/logos/feeds.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'channel_feeds:'+escape('Channel Feeds'), 'directory', {title: 'Channel Feeds', icon: plugin.path + "views/img/logos/channels.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':edu:'+escape('Youtube EDU'), 'directory', { title: 'Youtube EDU', icon: plugin.path + "views/img/logos/edu.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'live_feeds:'+escape('Youtube Live'), 'directory', {title: 'Youtube Live', icon: plugin.path + "views/img/logos/live.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'movie_feeds:'+escape('Youtube Movies'), 'directory', {title: 'Youtube Movies', icon: plugin.path + "views/img/logos/movies.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':mixfeeds:'+ 'show_feeds:'+escape('Youtube Shows'), 'directory', {title: 'Youtube Shows', icon: plugin.path + "views/img/logos/shows.png" }));
-        items.push(page.appendItem(plugin.getDescriptor().id + ':disco:null:'+escape('Youtube Disco'), 'directory', {title: 'Youtube Disco', icon: plugin.path + "views/img/logos/disco.png" }));
-
-        if (authenticated)
-            items.push(page.appendItem(plugin.getDescriptor().id + ':user:default', 'directory', {
-                    title: 'User Profile',
-                    icon: plugin.path + "views/img/logos/user.png"
-            }));
-
-        try {
-            for (var i in items) {
-                items[i].id = i;
-            }
-
-            if (!main_menu_order.order) {
-                var items_tmp = page.getItems();
-                for(var i = 0; i < items_tmp.length; i++) {
-                    if (!items_tmp[i].id) delete items_tmp[i];
-                }
-                main_menu_order.order = showtime.JSONEncode(items_tmp);
-            }
-
-            main_menu_order.order;
-
-            var order = showtime.JSONDecode(main_menu_order.order);
-            for (var i in order) {
-                items[order[i].id].moveBefore(i);
-            }
-
-            page.reorderer = function(item, before) {
-                item.moveBefore(before);
-                var items = page.getItems();
-                for(var i = 0; i < items.length; i++) {
-                    if (!items[i].id) delete items[i];
-                }
-
-                main_menu_order.order = showtime.JSONEncode(items);
-            };
-        }
-        catch (ex) {
-            t("Error while parsing main menu order");
-            e(ex);
-        }
-
-        page.type = "directory";
-        page.contents = "items";
-        page.loading = false;
-
-        page.metadata.logo = logo;
-        page.metadata.title = "Youtube - Home Page";
-    });
+    plugin.addURI(plugin.getDescriptor().id+":start", startPage);
 
     plugin.addSearcher("Youtube - Videos", logo, function(page, query) {
         try {
@@ -3991,6 +4150,7 @@
     });
 
     plugin.addSearcher("Youtube - Channels V3", logo, function(page, query) {
+        try {
             pageControllerV3(page, function(nextPageToken) {
             	var args = {
             		"part": "id,snippet",
@@ -3999,14 +4159,15 @@
             	};
             	if (nextPageToken)
             	args.pageToken = nextPageToken;
-                var url = "https://www.googleapis.com/youtube/v3/search";
-                args.safeSearch = service.safeSearch;
-                if (service.region != "all")
-                    args.regionCode = service.region;
-                var data = download(url, args, false);
+            	var data = apiV3.search.list(args);
             	data = data.response;
             	nextPageToken = data.nextPageToken;
                 return data;
             });
+        }
+        catch(err){
+            e('Search Youtube - Channels V3: ' + err)
+            d(err.stack);
+        }
     });
 })(this);
