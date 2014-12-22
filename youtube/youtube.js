@@ -1628,29 +1628,29 @@
             return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
         if (player != url) {
             if (service.enableDebug) showtime.print('player: '+ url);
-            var code = showtime.httpReq('http:'+url).toString();
+            var code = showtime.httpReq('http:' + url).toString();
             player = url;
             fnName = code.match(/signature=([^(]*)/);
             if (fnName)
                 fnName = fnName[1];
             else
                 fnName = code.match(/"signature",([^(]*)/)[1];
-            var re = new RegExp('function ' + fnName + '\\(([^}]*)');
-            var fnText = 'function ' + fnName + '(' + re.exec(code)[1] + '}';
+            var re = new RegExp('function ' + fnName + '\\(([^\}]*)');
+            var fnText = 'function ' + fnName + '(' + re.exec(code)[1] + '\}';
             outFn = fnText;
             var re = /[=|;]([^\(]*)/g;
             var match = re.exec(fnText);
             while (match) {
                 if (outFn.search('function '+match[1]+'\\(') == -1) { // check if we already included this function
-                    var re2 = new RegExp('function ' + match[1] + '\\(([^}]*)');
+                    var re2 = new RegExp('function ' + match[1] + '\\(([^\}]*)');
                     var match2 = re2.exec(code);
                     if (match2) {
                       outFn = 'function ' + match[1] + '(' + match2[1] + '};' + outFn;
                     } else { // look for vars
                         var varName = match[1].substr(0, match[1].indexOf('.'));
                         if (match[1].split('.').pop() != 'split')
-                            if (outFn.search('var '+varName+'=') == -1) { //check if we already included this var
-                                re2 = new RegExp('var ' + varName + '=([\\s\\S]*?)};');
+                            if (outFn.search('var ' + varName + '=') == -1) { //check if we already included this var
+                                re2 = new RegExp('var ' + varName + '=([\\s\\S]*?)\\};');
                                 match2 = re2.exec(code);
                                 if (match2) {
                                     outFn = 'var ' + varName + '=' + match2[1] + '};' + outFn;
@@ -1702,8 +1702,10 @@
 
 
     function getVideosList(page, id, number_items) {
-        var doc = showtime.httpReq('http://www.youtube.com/watch?v='+id, {}, {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1'   
+        var doc = showtime.httpReq('http://www.youtube.com/watch?v=' + id, {
+            headers:{
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1'
+            }
         }).toString();
 
         var titleMatch = doc.match(/<meta property="og:title" content="(.+?)">/);
@@ -1918,12 +1920,14 @@
     plugin.addURI(plugin.getDescriptor().id + ":video:simple:(.*)", function(page, id) {
         try {
             var video_url = getVideosList(page, id, 1);
+
             if (service.enableDebug) {
                 page.metadata.title = 'Streams list'
                 page.type = 'directory';
                 page.loading = false;
                 return;
             };
+
             if (typeof(video_url) == "string") {
                 page.error(video_url);
                 return;
@@ -4168,5 +4172,4 @@
             d(err.stack);
         }
     });
-
 })(this);
