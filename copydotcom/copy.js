@@ -206,7 +206,7 @@
                 var title = json[i].path.split('/');
                 title = json[i].name;
                 page.appendItem("copy:browse:" + escape(json[i].id), "directory", {
-                    title: new showtime.RichText(title)
+                    title: new showtime.RichText(title + (json[i].modified_time ? colorStr(new Date(json[i].modified_time * 1000), orange) : ''))
 	        });
                 page.entries++;
             }
@@ -223,7 +223,7 @@
                     url = 'navi-x:playlist:playlist:' + escape(url)
                 var type = json[i].mime_type.split('/')[0];
 	        page.appendItem(API + '/rest/files' + encodeURI(json[i].path), type, {
-	            title: new showtime.RichText(title + colorStr(bytesToSize(json[i].size), blue) + ' ' + new Date(json[i].modified_time * 1000))
+	            title: new showtime.RichText(title + colorStr(bytesToSize(json[i].size), blue) + ' ' + colorStr(new Date(json[i].modified_time * 1000), orange))
 	        });
                 page.entries++;
             }

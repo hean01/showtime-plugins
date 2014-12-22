@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "Copy.com",
 	"synopsis": "Sync, Protect and Share, Everywhere",
-	"version": "0.1.11",
+	"version": "0.1.12",
         "file": "copy.js",
 	"showtimeVersion": "4.7.507",
 	"type": "javascript",
