@@ -32,12 +32,12 @@
         return '<font color="' + color + '">' + str + '</font>';
     }
 
-    plugin.createService(plugin.getDescriptor().title, 'gdrive:browse:' + escape("'root' in parents") + ':Root', 'other', true, logo);
+    plugin.createService(plugin.getDescriptor().title, 'gdrive:browse:' + escape("'root' in parents") + ':' + escape(plugin.getDescriptor().title + ' Root'), 'other', true, logo);
   
     var store = plugin.createStore('authinfo', true);
 
     var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().synopsis);
-    settings.createAction('clearAuth', 'Unlink from' + plugin.getDescriptor().title + '...', function() {
+    settings.createAction('clearAuth', 'Unlink from ' + plugin.getDescriptor().title + '...', function() {
         store.refresh_token = '';
         showtime.notify('Showtime is unlinked from ' + plugin.getDescriptor().title, 3, '');
     });
@@ -184,6 +184,10 @@
         ls(page, unescape(path));
     });
 
+    function dateToHuman(s) {
+        return colorStr(s.split('T')[0] + ' ' + s.split('T')[1].substr(0, 8), orange)
+    }
+
     function ls(page, path) {
         var json;
         function processJSON() {
@@ -192,7 +196,7 @@
             for (var i in json.items) {
                 if (json.items[i].mimeType == 'application/vnd.google-apps.folder') {
                     page.appendItem("gdrive:browse:" + escape("'"+ json.items[i].id + "' in parents") + ':' + escape(json.items[i].title), "directory", {
-                        title: new showtime.RichText(json.items[i].title + colorStr(json.items[i].modifiedDate, orange))
+                        title: new showtime.RichText(json.items[i].title + dateToHuman(json.items[i].modifiedDate))
 	            });
                     page.entries++;
                 }
@@ -207,7 +211,7 @@
                     var type = json.items[i].mimeType.split('/')[0];
 
                     page.appendItem(url, 'video', {
-	                title: new showtime.RichText(json.items[i].title + colorStr(bytesToSize(json.items[i].fileSize ? json.items[i].fileSize : json.items[i].quotaBytesUsed), blue) + ' ' + json.items[i].modifiedDate),
+	                title: new showtime.RichText(json.items[i].title + colorStr(bytesToSize(json.items[i].fileSize ? json.items[i].fileSize : json.items[i].quotaBytesUsed), blue) + ' ' + dateToHuman(json.items[i].modifiedDate)),
                         icon: json.items[i].thumbnailLink ? json.items[i].thumbnailLink : json.items[i].iconLink
 	            });
                     page.entries++;
