@@ -24,10 +24,6 @@
 
     var authenticated = false;
     var logo = plugin.path + "logo.png";
-    var country = '';
-    var ui = {
-        background: null
-    };
 
     function setPageHeader(page, title) {
         page.type = "directory";
@@ -49,12 +45,12 @@
         red = 'EE0000',
         green = '008B45';
 
-    function colorStr(str, color) {
-        return '<font color="' + color + '"> (' + str + ')</font>';
-    }
-
     function coloredStr(str, color) {
         return '<font color="' + color + '">' + str + '</font>';
+    }
+
+    function colorStr(str, color) {
+        return coloredStr(' (' + str + ')', color);
     }
 
     var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "video", true, logo);
@@ -64,14 +60,10 @@
     // stores
     var v3_oauth_information = plugin.createStore('v3_oauth2', true);
     var store_lists = plugin.createStore('lists', true);
-    var user_preferences = plugin.createStore('user_preferences', true);
     var main_menu_order = plugin.createStore('main_menu_order', true);
 
     if (!main_menu_order.ready)
         main_menu_order.ready = "1";
-
-    if (!user_preferences.ready)
-        user_preferences.ready = "1";
 
     service.language = store_lists.language;
     if (!service.language)
@@ -304,10 +296,13 @@
             title: "Search in Youtube",
             itemtype: "video",
             handler: function(obj, nav) {
-                var title = obj.metadata.title;
+                var title = obj.metadata.title.toString();
                 title = title.replace(/<.+?>/g, "").replace(/\[.+?\]/g, "");
-                t("Search in Youtube: " + title);
-                nav.openURL(plugin.getDescriptor().id + ":feed:" + escape("https://gdata.youtube.com/feeds/api/videos?q=" + title) + ':');
+                nav.openURL(plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
+                    'part': 'snippet',
+                    'type': 'video',
+                    'q': title
+                })) + ':' + escape(title));
             }
         });
     }
@@ -357,7 +352,7 @@
         page.metadata.search = '';
         if (typeof Duktape == 'undefined')
             page.subscribe("page.metadata.search", function(v) {
-               page.metadata.search = v;
+                page.metadata.search = v;
             });
         else
             require('showtime/prop').subscribeValue(page.model.metadata.search, function(v) {
@@ -446,7 +441,7 @@
         page.type = "directory";
 
         var args = {
-            'part': 'snippet,contentDetails,brandingSettings,statistics,status',
+            'part': 'snippet,contentDetails,brandingSettings,statistics,status'
         };
         id == "default" ? args.mine = true : args.id = id;
         var data = download(page, '/channels', args);
@@ -468,7 +463,7 @@
         }
 
         if (data.items[0].brandingSettings) {
-showtime.print('\n\n' + showtime.JSONEncode(data.items[0].brandingSettings));
+            showtime.print('\n\n' + showtime.JSONEncode(data.items[0].brandingSettings));
             page.metadata.banner = data.items[0].brandingSettings.image.bannerTabletExtraHdImageUrl;
         }
 
@@ -515,26 +510,26 @@ showtime.print('\n\n' + showtime.JSONEncode(data.items[0].brandingSettings));
                 var newSubscriptionVideos = [];
                 for (var i in data.entry) {
 
-                        var it = data.entry[i];
-                        id = it.media$group.yt$videoid.$t;
+                    var it = data.entry[i];
+                    id = it.media$group.yt$videoid.$t;
 
-                        var images = [];
-                        if (it.media$group && it.media$group.media$thumbnail) {
-                            var images = it.media$group.media$thumbnail;
-                        }
-                        images.push({
-                            width: 400,
-                            height: 400,
-                            url: plugin.path + "views/img/nophoto.bmp"
-                        });
-                        images = "imageset:" + showtime.JSONEncode(images);
+                    var images = [];
+                    if (it.media$group && it.media$group.media$thumbnail) {
+                        var images = it.media$group.media$thumbnail;
+                    }
+                    images.push({
+                        width: 400,
+                        height: 400,
+                        url: plugin.path + "views/img/nophoto.bmp"
+                    });
+                    images = "imageset:" + showtime.JSONEncode(images);
 
-                        newSubscriptionVideos.push({
-                            title: it.title.$t,
-                            subtitle: it.author[0].name.$t,
-                            image: images,
-                            url: plugin.getDescriptor().id + ":video:" + id
-                        });
+                    newSubscriptionVideos.push({
+                        title: it.title.$t,
+                        subtitle: it.author[0].name.$t,
+                        image: images,
+                        url: plugin.getDescriptor().id + ":video:" + id
+                    });
                 }
 
                 if (newSubscriptionVideos.length > 0) {
@@ -562,9 +557,9 @@ showtime.print('\n\n' + showtime.JSONEncode(data.items[0].brandingSettings));
                 "playlistId": favoritesPlaylistId
             };
             var data = download(page, url, args);
-showtime.print('111');
+            showtime.print('111');
             var favorites = getItems(data.items);
-showtime.print('222');
+            showtime.print('222');
             if (favorites.length > 0) {
                 favorites.push({
                     title: "See More",
@@ -810,7 +805,6 @@ showtime.print('222');
                 }
             }
         }
-
         page.loading = false;
     });
 
@@ -958,7 +952,6 @@ showtime.print('222');
         "251": "opus 160bps"
     };
 
-
     function getVideosList(page, id, number_items) {
         var doc = showtime.httpReq('http://www.youtube.com/watch?v=' + id, {
             headers: {
@@ -971,7 +964,12 @@ showtime.print('222');
             var title = titleMatch[1];
 
         var encoded_url_map = '';
-        var json = showtime.JSONDecode(doc.match(/;ytplayer\.config\s*=\s*(\{.*?\});/)[1]);
+        var json = doc.match(/;ytplayer\.config\s*=\s*(\{.*?\});/);
+        if (json)
+             json = showtime.JSONDecode(json[1]);
+        else
+            return trim(doc.match(/id="unavailable-message" class="message">([\s\S]*?)</)[1]);
+
         if (json.args.url_encoded_fmt_stream_map)
             encoded_url_map = json.args.url_encoded_fmt_stream_map
         if (json.args.adaptive_fmts) encoded_url_map += ',' + json.args.adaptive_fmts;
@@ -1094,16 +1092,8 @@ showtime.print('222');
             }
         }
 
-        if (videos_list.length == 0) {
-            if (doc.indexOf('h1 id="unavailable-message" ') != -1) {
-                doc = doc.slice(doc.indexOf('h1 id="unavailable-message" '));
-                doc = doc.replace(/\n/g, '');
-                var error = doc.match(/class="message">(.+?)<\/h1>/);
-
-                return error[1];
-            }
-        }
-
+        if (videos_list.length == 0)
+            return trim(doc.match(/id="unavailable-message" class="message">([\s\S]*?)</)[1]);
         return videos_list;
     }
 
@@ -1278,14 +1268,14 @@ showtime.print('222');
 
         for (var title in apiV3.videos.information) {
             var code = apiV3.videos.information[title];
-                if (title == 'Rating') {
-                    /*page.metadata.rating;
-                    page.appendPassiveItem("rating", eval(element[1]));*/
-                } else {
-                    page.appendPassiveItem("label", eval(code), {
-                        title: title + ": "
-                    });
-                }
+            if (title == 'Rating') {
+                /*page.metadata.rating;
+                page.appendPassiveItem("rating", eval(element[1]));*/
+            } else {
+                page.appendPassiveItem("label", eval(code), {
+                    title: title + ": "
+                });
+            }
         }
 
         var durationString = video.contentDetails.duration;
@@ -1515,36 +1505,6 @@ showtime.print('222');
         playVideo(page, title, id, video_url);
     });
 
-    function getCatList(link) {
-        //var atom = new Namespace("http://www.w3.org/2005/Atom");
-        if (service.enableDebug)
-            showtime.print(link);
-
-        var data = valid_xml(showtime.httpGet(link).toString());
-        var list = [];
-        list.push(['all', 'All', true]);
-
-        for (var i in data.category) {
-            var entry = data.category[i];
-            var item = [entry.term, entry.label];
-            list.push(item);
-        }
-
-        var categories_str = '';
-        for (var i in list) {
-            var els = '';
-            for (var j in list[i]) {
-                els += "'" + list[i][j] + "',";
-            }
-            els = els.slice(0, els.length - 1);
-            categories_str += '[' + els + '],';
-        }
-
-        var res = "[" + categories_str.slice(0, categories_str.length - 1) + "]";
-
-        return res;
-    }
-
     function getTime(date) {
         var time = date.match('(.*)-(.*)-(.*)T(.*):(.*):(.*)..*Z');
         if (time) {
@@ -1720,46 +1680,6 @@ showtime.print('222');
         return unescape(string);
     }
 
-    function getUrlArgs(url) {
-        var link = url;
-
-        var result = {
-            url: link,
-            args: {}
-        };
-
-        var args = {};
-
-        if (link.indexOf('?') != -1) {
-            var args_tmp = url.slice(url.indexOf('?') + 1);
-            args_tmp = args_tmp.split('&');
-
-            for (var i in args_tmp) {
-                var arg = args_tmp[i];
-                var arg_tmp = arg.split('=');
-                args[arg_tmp[0]] = arg_tmp[1];
-            }
-
-            link = link.slice(0, link.indexOf('?'));
-        }
-
-        result.url = link;
-        result.args = args;
-        return result;
-    }
-
-    function insertionSort(array, field) {
-        for (var i = 0, j, tmp; i < array.length; ++i) {
-            tmp = array[i];
-
-            for (j = i - 1; j >= 0 && array[j][field] > tmp[field]; --j)
-                array[j + 1] = array[j];
-            array[j + 1] = tmp;
-        }
-
-        return array;
-    }
-
     function itemOptions(item, entry) {
         // TODO: Maximum resolution to be played
 
@@ -1853,7 +1773,6 @@ showtime.print('222');
     }
 
     function pageMenu(page) {
-        //page.metadata.background = ui.background;
         page.metadata.background = plugin.path + "views/img/background.png";
         page.metadata.backgroundAlpha = 0.5;
 
@@ -1945,15 +1864,12 @@ showtime.print('222');
     }
 
     function hasSubscribed(channelId) {
-        var args = {
+        var data = download(null, '/subscriptions', {
             "part": "snippet",
             "forChannelId": channelId,
             "mine": true
-        };
-
-        var data = apiV3.subscriptions.list(args);
-        var subscribed = !data.error && data.response.items.length == 1;
-        return subscribed;
+        });
+        return !data.error && data.items.length == 1;
     }
 
     function setVideoItemOptions(item, page) {
@@ -2012,9 +1928,8 @@ showtime.print('222');
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-        ui.background = user_preferences.background;
         pageMenu(page);
-         page.metadata.glwview = plugin.path + "views/array2.view";
+        page.metadata.glwview = plugin.path + "views/array2.view";
         page.type = "directory";
         page.contents = "items";
         page.metadata.logo = logo;
@@ -2071,7 +1986,7 @@ showtime.print('222');
             "part": "snippet",
             "q": "Education",
             "type": "channel",
-            "regionCode": service.region != "all" ? service.region : "US"
+            "regionCode": service.region
         })) + ':' + escape('Education'), 'directory', {
             title: 'Education',
             icon: plugin.path + "views/img/logos/edu.png"
@@ -2115,34 +2030,31 @@ showtime.print('222');
                 icon: plugin.path + "views/img/logos/user.png"
             }));
 
-            for (var i in items) {
-                items[i].id = i;
-            }
+        for (var i in items)
+            items[i].id = i;
 
-            if (!main_menu_order.order) {
-                var items_tmp = page.getItems();
-                for (var i = 0; i < items_tmp.length; i++) {
-                    if (!items_tmp[i].id) delete items_tmp[i];
-                }
-                main_menu_order.order = showtime.JSONEncode(items_tmp);
-            }
+        if (!main_menu_order.order) {
+            var items_tmp = page.getItems();
+            for (var i = 0; i < items_tmp.length; i++)
+                if (!items_tmp[i].id)
+                    delete items_tmp[i];
+            main_menu_order.order = showtime.JSONEncode(items_tmp);
+        }
 
-            main_menu_order.order;
+        main_menu_order.order;
 
-            var order = showtime.JSONDecode(main_menu_order.order);
-            for (var i in order) {
-                items[order[i].id].moveBefore(i);
-            }
+        var order = showtime.JSONDecode(main_menu_order.order);
+        for (var i in order)
+            items[order[i].id].moveBefore(i);
 
-            page.reorderer = function(item, before) {
-                item.moveBefore(before);
-                var items = page.getItems();
-                for (var i = 0; i < items.length; i++) {
-                    if (!items[i].id) delete items[i];
-                }
-
-                main_menu_order.order = showtime.JSONEncode(items);
-            };
+        page.reorderer = function(item, before) {
+            item.moveBefore(before);
+            var items = page.getItems();
+            for (var i = 0; i < items.length; i++)
+                if (!items[i].id)
+                    delete items[i];
+            main_menu_order.order = showtime.JSONEncode(items);
+        };
     });
 
     function download(page, url, args) {
@@ -2169,12 +2081,12 @@ showtime.print('222');
         page.metadata.logo = logo;
         page.metadata.title = new showtime.RichText(unescape(showtime.entityDecode(title)));
         page.metadata.background = plugin.path + "views/img/background.png";
-showtime.print(args);
+        showtime.print(args);
         scraper(page, url, showtime.JSONDecode(unescape(args)));
     });
 
     function durationToString(s) {
-showtime.print(s);
+        showtime.print(s);
         var duration = 0;
         if (s.match(/H/)) {
             duration += 3600 * s.match(/PT(.*)H/)[1];
@@ -2213,10 +2125,10 @@ showtime.print(s);
             for (var i in data.items) {
                 var entry = data.items[i];
                 var metadata = {};
-//showtime.print(showtime.JSONEncode(entry));
-//return;
+                showtime.print(showtime.JSONEncode(entry));
                 if (entry.contentDetails) {
-                    metadata.hd = entry.contentDetails.definition == "hd";
+                    if (entry.contentDetails.definition)
+                        metadata.hd = entry.contentDetails.definition == "hd";
                     if (entry.contentDetails.duration)
                         metadata.duration = metadata.runtime = durationToString(entry.contentDetails.duration);
                 }
@@ -2224,14 +2136,16 @@ showtime.print(s);
                 if (entry.statistics) {
                     metadata.views = entry.statistics.viewCount;
                     metadata.favorites = entry.statistics.favoriteCount;
-                    metadata.likes = parseInt(entry.statistics.likeCount);
-                    metadata.dislikes = parseInt(entry.statistics.dislikeCount);
-                    metadata.likesPercentage = Math.round((metadata.likes /
-                        (metadata.likes + metadata.dislikes)) * 100);
-                    metadata.likesPercentage_str = metadata.likesPercentage + '%';
-                    metadata.rating = metadata.likesPercentage;
+                    if (entry.statistics.likeCount) {
+                        metadata.likes = parseInt(entry.statistics.likeCount);
+                        metadata.dislikes = parseInt(entry.statistics.dislikeCount);
+                        metadata.likesPercentage = Math.round((metadata.likes /
+                            (metadata.likes + metadata.dislikes)) * 100);
+                        metadata.likesPercentage_str = metadata.likesPercentage + '%';
+                        metadata.rating = metadata.likesPercentage;
+                    }
                 }
-showtime.print(showtime.JSONEncode(entry));
+                showtime.print(showtime.JSONEncode(entry));
                 if (entry.snippet.thumbnails)
                     metadata.icon = entry.snippet.thumbnails.default.url;
 
@@ -2262,7 +2176,7 @@ showtime.print(showtime.JSONEncode(entry));
                         dateInfo = 'Published ';
                         if (entry.snippet.channelTitle)
                             dateInfo += 'by <font color="FFFF00">' + entry.snippet.channelTitle + '</font>';
-                        dateInfo += '<font color="99CC33"> ' +metadata.published;
+                        dateInfo += '<font color="99CC33"> ' + metadata.published;
                     }
                 }
                 if (metadata.updated) {
@@ -2375,13 +2289,13 @@ showtime.print(showtime.JSONEncode(entry));
                         }, metadata);
                     }
                 } else if (entry.kind == "youtube#channel") {
-                        var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id, "video", metadata);
-//                    } else {
-//                        var item = page.appendItem(plugin.getDescriptor().id + ":service:/search:" + escape(showtime.JSONEncode({
-//                            "part": "snippet",
-//                            "channelId": entry.id
-//                        })) + ':' + escape(title), "directory", metadata);
-//                    }
+                    var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id, "video", metadata);
+                    //                    } else {
+                    //                        var item = page.appendItem(plugin.getDescriptor().id + ":service:/search:" + escape(showtime.JSONEncode({
+                    //                            "part": "snippet",
+                    //                            "channelId": entry.id
+                    //                        })) + ':' + escape(title), "directory", metadata);
+                    //                    }
                 } else if (entry.kind == "youtube#playlist") { // playlists of a channel
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode({
                         "part": "snippet,contentDetails,status",
@@ -2423,7 +2337,7 @@ showtime.print(showtime.JSONEncode(entry));
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Videos', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'snippet,contentDetails,statistics,status',
+            'part': 'snippet',
             'type': 'video',
             'q': query
         });
@@ -2431,7 +2345,7 @@ showtime.print(showtime.JSONEncode(entry));
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Channels', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'snippet,contentDetails,statistics,status',
+            'part': 'snippet',
             'type': 'channel',
             'q': query
         });
@@ -2439,7 +2353,7 @@ showtime.print(showtime.JSONEncode(entry));
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Playlists', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'snippet,contentDetails,statistics,status',
+            'part': 'snippet',
             'type': 'playlist',
             'q': query
         });
