@@ -73,8 +73,9 @@
     if (!user_preferences.ready)
         user_preferences.ready = "1";
 
+    service.language = store_lists.language;
     if (!service.language)
-        service.language = 'en';
+        store_lists.language = service.language = 'en';
 
     function getLanguages() {
         var data = download(null, '/i18nLanguages', {
@@ -89,6 +90,7 @@
                 languages.push([data.items[i].snippet.hl, data.items[i].snippet.name]);
         }
         service.languages = languages;
+        store_lists.languages = showtime.JSONEncode(languages);
     }
 
     function getRegions() {
@@ -104,51 +106,26 @@
                 regions.push([data.items[i].snippet.gl, data.items[i].snippet.name]);
         }
         service.regions = regions;
+        store_lists.regions = showtime.JSONEncode(regions);
     }
 
     settings.createDivider('Language and region');
 
-    if (!service.languages)
-        getLanguages();
-
+    store_lists.languages ? service.languages = eval(store_lists.languages) : getLanguages();
     settings.createMultiOpt("language", "Language", service.languages, function(v) {
-        service.language = v;
+        store_lists.language = service.language = v;
     });
 
-    if (!service.regions)
-       getRegions();
+    store_lists.regions ? service.regions = eval(store_lists.regions) : getRegions();
 
     settings.createMultiOpt("region", "Region", service.regions, function(v) {
         service.region = v;
     });
-    settings.createAction("reloadLanguages", "Refresh language and region lists from Youtube ", function() {
-        var data = download(page, '/i18nLanguages', {
-            'part': 'snippet',
-            'hl': service.language
-        });
-        var languages = [];
-        for (var i in data.items) {
-            if (data.items[i].snippet.hl == service.language)
-                languages.push([data.items[i].snippet.hl, data.items[i].snippet.name, true]);
-            else
-                languages.push([data.items[i].snippet.hl, data.items[i].snippet.name]);
-        }
-        service.languages = languages;
-        service.regions = download(page, '/i18nRegions', {
-            'part': 'snippet',
-            'hl': service.language
-        });
-        var regions = [];
-        for (var i in data.items) {
-            if (data.items[i].snippet.gl == service.language)
-                regions.push([data.items[i].snippet.gl, data.items[i].snippet.name, true]);
-            else
-                regions.push([data.items[i].snippet.gl, data.items[i].snippet.name]);
-        }
-        service.regions = regions;
-
+    settings.createAction("reloadLanguages", "Update language and region lists from Youtube ", function() {
+        getLanguages();
+        getRegions();
+        showtime.notify("Language and region lists are updated. Reload Showtime. ", 3, "");
     });
-
 
     settings.createDivider('User Settings');
 
@@ -386,7 +363,7 @@
             require('showtime/prop').subscribeValue(page.model.metadata.search, function(v) {
                 page.metadata.search = v;
             });
-        page.appendAction("navopen", plugin.getDescriptor().id + ":searcher:videos:" + escape(page.metadata.search), true, {
+        page.appendAction("navopen", plugin.getDescriptor().id + ":searcher:video:" + escape(page.metadata.search), true, {
             title: "Search for Videos",
             icon: plugin.path + "views/img/search_videos.png",
             hidden: true,
@@ -418,23 +395,6 @@
         return obj;
     }
 
-    function parseThumbnail(item) {
-        var image = null;
-        if (item.snippet.thumbnails) {
-            if (item.snippet.thumbnails.maxres)
-                image = item.snippet.thumbnails.maxres.url;
-            else if (item.snippet.thumbnails.standard)
-                image = item.snippet.thumbnails.standard.url;
-            else if (item.snippet.thumbnails.high)
-                image = item.snippet.thumbnails.high.url;
-            else if (item.snippet.thumbnails.medium)
-                image = item.snippet.thumbnails.medium.url;
-            else if (item.snippet.thumbnails.default)
-                image = item.snippet.thumbnails.default.url;
-        }
-        return image;
-    }
-
     function getItems(items) {
         var arr = [];
 
@@ -443,14 +403,14 @@
 
             var args = {
                 title: it.snippet.title,
-                image: parseThumbnail(it)
+                image: it.snippet.thumbnails ? it.snippet.thumbnails.default.url : plugin.path + "views/img/nophoto.bmp"
             };
 
             if (it.kind == "youtube#playlistItem" && it.snippet.resourceId.kind == "youtube#video")
                 args.url = plugin.getDescriptor().id + ":video:" + it.snippet.resourceId.videoId;
             else if (it.kind == "youtube#playlist") {
                 args.url = plugin.getDescriptor().id + ":scraper:/playlistItems:" + escape(showtime.JSONEncode({
-                    "part": "snippet",
+                    "part": "snippet,contentDetails,status",
                     "playlistId": it.id
                 })) + ':' + escape(it.snippet.title);
             } else if (it.kind == "youtube#subscription" && it.snippet.resourceId.kind == "youtube#channel")
@@ -462,17 +422,11 @@
     }
 
     function parseChannelId(username) {
-        var data = apiV3.channels.list({
+        var data = download(page, '/channels', {
             "part": "id",
             "forUsername": username
         });
-
-        try {
-            return data.response.items[0].id;
-        } catch (ex) {
-            e(ex);
-            return username;
-        }
+        return data.items[0].id;
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":more:username:(.*)", function(page, username) {
@@ -492,7 +446,7 @@
         page.type = "directory";
 
         var args = {
-            "part": "snippet,contentDetails,brandingSettings"
+            'part': 'snippet,contentDetails,brandingSettings,statistics,status',
         };
         id == "default" ? args.mine = true : args.id = id;
         var data = download(page, '/channels', args);
@@ -513,8 +467,10 @@
             page.metadata.backgroundAvailable = true;
         }
 
-        if (data.items[0].brandingSettings)
+        if (data.items[0].brandingSettings) {
+showtime.print('\n\n' + showtime.JSONEncode(data.items[0].brandingSettings));
             page.metadata.banner = data.items[0].brandingSettings.image.bannerTabletExtraHdImageUrl;
+        }
 
         if (data.items[0].contentDetails) {
             var uploadsPlaylistId = data.items[0].contentDetails.relatedPlaylists.uploads;
@@ -602,12 +558,13 @@
         if (service.showFavorites && favoritesPlaylistId) {
             var url = '/playlistItems';
             var args = {
-                "part": "snippet",
+                "part": "snippet,contentDetails,status",
                 "playlistId": favoritesPlaylistId
             };
             var data = download(page, url, args);
+showtime.print('111');
             var favorites = getItems(data.items);
-
+showtime.print('222');
             if (favorites.length > 0) {
                 favorites.push({
                     title: "See More",
@@ -627,13 +584,10 @@
 
         if (id == "default") {
             if (service.showWatchLater) {
-                var data = apiV3.playlistItems.list({
-                    "part": "snippet",
+                var data = download(page, '/playlistItems', {
+                    "part": "snippet,contentDetails,status",
                     "playlistId": watchLaterPlaylistId
                 });
-
-                data = data.response;
-
                 var watchLater = getItems(data.items);
 
                 if (watchLater.length > 0) {
@@ -655,7 +609,7 @@
 
             if (service.showWatchHistory) {
                 var data = download(page, '/playlistItems', {
-                    "part": "snippet",
+                    "part": "snippet,contentDetails,status",
                     "playlistId": watchHistoryPlaylistId
                 });
 
@@ -680,7 +634,7 @@
 
             if (service.showLikes && likesPlaylistId) {
                 var data = download(page, '/playlistItems', {
-                    "part": "snippet",
+                    "part": "snippet,contentDetails,status",
                     "playlistId": likesPlaylistId
                 });
 
@@ -736,7 +690,7 @@
         if (service.showPlaylists) {
             var url = '/playlists';
             var args = {
-                "part": "snippet",
+                "part": "snippet,contentDetails,status",
                 "channelId": channelId
             };
 
@@ -815,7 +769,7 @@
 
         if (service.showUploads && uploadsPlaylistId) {
             var args = {
-                "part": "snippet",
+                "part": "snippet,contentDetails,status",
                 "playlistId": uploadsPlaylistId
             };
             var url = '/playlistItems';
@@ -1306,7 +1260,7 @@
 
         var videoId = id;
 
-        var data = apiV3.videos.list({
+        var data = download(page, '/videos', {
             "part": "snippet,contentDetails,statistics,status,topicDetails",
             "id": id
         });
@@ -1318,13 +1272,12 @@
 
         pageMenu(page);
 
-        var video = data.response.items[0];
+        var video = data.items[0];
 
         var events = false;
 
         for (var title in apiV3.videos.information) {
             var code = apiV3.videos.information[title];
-            try {
                 if (title == 'Rating') {
                     /*page.metadata.rating;
                     page.appendPassiveItem("rating", eval(element[1]));*/
@@ -1333,10 +1286,6 @@
                         title: title + ": "
                     });
                 }
-            } catch (err) {
-                showtime.trace('Video ' + id + ' doesn\'t have a ' + title + ' tag!');
-                e(err);
-            }
         }
 
         var durationString = video.contentDetails.duration;
@@ -1510,10 +1459,9 @@
                     listActions: true
                 });
                 page.onEvent('addToPlaylist', function() {
-                    var args = {
+                    page.redirect(plugin.getDescriptor().id + ':playlist:add:' + escape(showtime.JSONEncode({
                         "videoId": videoId
-                    };
-                    page.redirect(plugin.getDescriptor().id + ':playlist:add:' + escape(showtime.JSONEncode(args)));
+                    })));
                 });
             }
 
@@ -1539,7 +1487,7 @@
         args0 = showtime.JSONDecode(unescape(args0));
         if (args0.playlistId) {
             if (apiV3.playlistItems.insert(args0.playlistId, args0.videoId)) {
-                showtime.notify("Video added succesfully", 2);
+                showtime.notify("Video added successfully", 2);
             } else {
                 showtime.notify("There was one error while trying to add video", 3);
             }
@@ -1800,79 +1748,6 @@
         return result;
     }
 
-    function putUrlArgs(url, args) {
-        var link = url + '?';
-        var args_end = false;
-
-        for (var i in args) {
-            link += i + '=' + args[i] + '&';
-            args_end = true;
-        }
-
-        if (args_end)
-            link = link.slice(0, link.length - 1);
-
-        return link;
-    }
-
-    function date_string(date_str) {
-        var date1 = date_str;
-        var split = date1.split('-');
-        var day = split[2].slice(0, 2);
-        var month = split[1];
-        var year = split[0];
-
-        var date = day;
-        if (day.slice(1, 2) == '1' && day != '11') {
-            date += 'st';
-        } else if (day.slice(1, 2) == '2' && day != '12') {
-            date += 'nd';
-        } else if (day.slice(1, 2) == '3' && day != '13') {
-            date += 'rd';
-        } else date += 'th';
-
-        switch (month) {
-            case '01':
-                date += ' January';
-                break;
-            case '02':
-                date += ' February';
-                break;
-            case '03':
-                date += ' March';
-                break;
-            case '04':
-                date += ' April';
-                break;
-            case '05':
-                date += ' May';
-                break;
-            case '06':
-                date += ' June';
-                break;
-            case '07':
-                date += ' July';
-                break;
-            case '08':
-                date += ' August';
-                break;
-            case '09':
-                date += ' September';
-                break;
-            case '10':
-                date += ' October';
-                break;
-            case '11':
-                date += ' November';
-                break;
-            case '12':
-                date += ' December';
-                break;
-        }
-        date += ', ' + year;
-        return date;
-    }
-
     function insertionSort(array, field) {
         for (var i = 0, j, tmp; i < array.length; ++i) {
             tmp = array[i];
@@ -2081,17 +1956,6 @@
         return subscribed;
     }
 
-    function debug(message, id) {
-        if (!service.enableDebug) return;
-        if (!id) id = "YOUTUBE";
-        showtime.trace(message, id);
-    }
-
-    function d(message) {
-        if (!service.enableDebug) return;
-        showtime.trace(message, "YOUTUBE");
-    }
-
     function setVideoItemOptions(item, page) {
         if (item.channelId)
             item.addOptURL("More from this channel", plugin.getDescriptor().id + ':channel:' + item.channelId);
@@ -2147,47 +2011,15 @@
         return item;
     }
 
-    function getVideoId(entry) {
-        try {
-            if (entry.kind == "youtube#activity") {
-                var type = entry.snippet.type;
-                var params = entry.contentDetails[type];
-                if (type == "upload") {
-                    return params.videoId;
-                } else if (type == "like") {
-                    var resourceId = entry.contentDetails[type].resourceId.kind;
-                    if (resourceId == "youtube#video") {
-                        return params.resourceId.videoId;
-                    }
-                } else if (type == "favorite") {
-                    var resourceId = entry.contentDetails[type].resourceId.kind;
-                    if (resourceId == "youtube#video") {
-                        return params.resourceId.videoId;
-                    }
-                } else if (type == "recommendation") {
-                    var resourceId = entry.contentDetails[type].resourceId.kind;
-                    if (resourceId == "youtube#video") {
-                        return params.resourceId.videoId;
-                    }
-                }
-            } else if (entry.kind == "youtube#playlistItem") {
-                if (entry.snippet.resourceId.kind == "youtube#video") {
-                    return entry.snippet.resourceId.videoId;
-                }
-            } else if (entry.id && entry.id.kind && entry.id.kind == "youtube#video") {
-                return entry.id.videoId;
-            }
-        } catch (ex) {
-            e(ex);
-        }
-        return null;
-    }
-
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         ui.background = user_preferences.background;
         pageMenu(page);
-
-        page.metadata.glwview = plugin.path + "views/array2.view";
+         page.metadata.glwview = plugin.path + "views/array2.view";
+        page.type = "directory";
+        page.contents = "items";
+        page.metadata.logo = logo;
+        page.metadata.title = "Youtube - Home Page";
+        page.loading = false;
 
         var items = [];
 
@@ -2211,18 +2043,18 @@
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/videoCategories:' + escape(showtime.JSONEncode({
-            "part": "snippet",
-            "regionCode": service.region,
-            "hl": service.language
+            'part': 'snippet',
+            'regionCode': service.region,
+            'hl': service.language
         })) + ':' + escape('Video Categories'), 'directory', {
             title: 'Video Categories',
             icon: plugin.path + "views/img/logos/explore.png"
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/videos:' + escape(showtime.JSONEncode({
-            "part": "snippet",
-            "chart": "mostPopular",
-            "regionCode": service.region
+            'part': 'snippet,contentDetails,statistics,status',
+            'chart': 'mostPopular',
+            'regionCode': service.region
         })) + ':' + escape('Most Popular'), 'directory', {
             title: 'Most poular',
             icon: plugin.path + "views/img/logos/feeds.png"
@@ -2283,7 +2115,6 @@
                 icon: plugin.path + "views/img/logos/user.png"
             }));
 
-        try {
             for (var i in items) {
                 items[i].id = i;
             }
@@ -2312,17 +2143,6 @@
 
                 main_menu_order.order = showtime.JSONEncode(items);
             };
-        } catch (ex) {
-            t("Error while parsing main menu order");
-            e(ex);
-        }
-
-        page.type = "directory";
-        page.contents = "items";
-        page.loading = false;
-
-        page.metadata.logo = logo;
-        page.metadata.title = "Youtube - Home Page";
     });
 
     function download(page, url, args) {
@@ -2353,6 +2173,23 @@ showtime.print(args);
         scraper(page, url, showtime.JSONDecode(unescape(args)));
     });
 
+    function durationToString(s) {
+showtime.print(s);
+        var duration = 0;
+        if (s.match(/H/)) {
+            duration += 3600 * s.match(/PT(.*)H/)[1];
+            duration += 60 * s.match(/H(.*)M/)[1];
+            duration += +s.match(/M(.*)S/)[1];
+            return showtime.durationToString(duration);
+        }
+        if (s.match(/M/)) {
+            duration += 60 * s.match(/PT(.*)M/)[1];
+            duration += +s.match(/M(.*)S/)[1];
+            return showtime.durationToString(duration);
+        }
+        return showtime.durationToString(+s.match(/PT(.*)S/)[1]);
+    }
+
     function scraper(page, url, args) {
         page.entries = 0;
         var tryToSearch = true;
@@ -2365,66 +2202,44 @@ showtime.print(args);
                 page.appendPassiveItem('directory', '', {
                     title: 'This feed does not contain any item.'
                 });
-                return false;
+                return tryToSearch = false;
             }
 
             if (!page.entries && data.pageInfo && page.metadata)
                 page.metadata.title += ' (' + data.pageInfo.totalResults + ')'
 
             var c = 0;
-            var videoIds = [],
-                videoData = {};
-
-            if (service.advancedBrowseV3) {
-                for (var i in data.items) {
-                    var videoId = getVideoId(data.items[i]);
-                    if (videoId)
-                        videoIds.push(videoId);
-                }
-
-                var data1 = download(page, '/videos', {
-                    "part": "snippet,contentDetails,statistics,status,topicDetails",
-                    "id": videoIds.join(",")
-                });
-
-                for (var i in data1.items)
-                    videoData[video.id] = data1.items[i];
-            }
 
             for (var i in data.items) {
                 var entry = data.items[i];
                 var metadata = {};
-                if (service.advancedBrowseV3) {
-                    var videoId = getVideoId(entry);
-                    if (videoId) {
-                        var video = videoData[videoId];
-                        metadata.published = getDistanceTime(getTime(video.snippet.publishedAt));
-                        metadata.hd = video.contentDetails.definition == "hd";
-                        var durationString = video.contentDetails.duration;
-                        var match = durationString.match(/PT(.+?)M(.+?)S/);
-                        if (match) {
-                            var minutes = parseInt(match[1]);
-                            var seconds = parseInt(match[2]);
-                            metadata.duration = showtime.durationToString(minutes * 60 + seconds);
-                            metadata.runtime = metadata.duration;
-                        }
-                        metadata.views = video.statistics.viewCount;
-                        metadata.favorites = video.statistics.favoriteCount;
-                        metadata.likes = parseInt(video.statistics.likeCount);
-                        metadata.dislikes = parseInt(video.statistics.dislikeCount);
-                        metadata.likesPercentage = Math.round((metadata.likes /
-                            (metadata.likes + metadata.dislikes)) * 100);
-                        metadata.likesPercentage_str = metadata.likesPercentage + '%';
-                        metadata.rating = metadata.likesPercentage;
-                    }
-                } // advanced browse
-                metadata.icon = parseThumbnail(entry);
+//showtime.print(showtime.JSONEncode(entry));
+//return;
+                if (entry.contentDetails) {
+                    metadata.hd = entry.contentDetails.definition == "hd";
+                    if (entry.contentDetails.duration)
+                        metadata.duration = metadata.runtime = durationToString(entry.contentDetails.duration);
+                }
+
+                if (entry.statistics) {
+                    metadata.views = entry.statistics.viewCount;
+                    metadata.favorites = entry.statistics.favoriteCount;
+                    metadata.likes = parseInt(entry.statistics.likeCount);
+                    metadata.dislikes = parseInt(entry.statistics.dislikeCount);
+                    metadata.likesPercentage = Math.round((metadata.likes /
+                        (metadata.likes + metadata.dislikes)) * 100);
+                    metadata.likesPercentage_str = metadata.likesPercentage + '%';
+                    metadata.rating = metadata.likesPercentage;
+                }
+showtime.print(showtime.JSONEncode(entry));
+                if (entry.snippet.thumbnails)
+                    metadata.icon = entry.snippet.thumbnails.default.url;
+
                 var title = entry.snippet.title;
                 if (metadata.duration)
                     title += ' (' + metadata.duration + ')';
                 if (metadata.likesPercentage)
                     title += '<font color="99CC66"> (' + metadata.likesPercentage + '%)</font>';
-
                 metadata.title = new showtime.RichText(title);
 
                 var subtitle1 = '<font color="66CCFF">';
@@ -2440,15 +2255,16 @@ showtime.print(args);
                     subtitle1 += 'Likes: ' + metadata.likesPercentage_str;
                 subtitle1 += '</font>';
 
-                var dateInfo = '';
-                if (metadata.published) {
-                    dateInfo = 'Published ';
-                    var author = entry.snippet.channelTitle;
-                    if (author)
-                        dateInfo += 'by <font color="FFFF00">' + author + '</font><font color="99CC33"> ';
-                    dateInfo += metadata.published;
+                if (entry.snippet.publishedAt) {
+                    var dateInfo = '';
+                    metadata.published = entry.snippet.publishedAt.split('.')[0].split('T')[0] + ' ' + entry.snippet.publishedAt.split('.')[0].split('T')[1];
+                    if (metadata.published) {
+                        dateInfo = 'Published ';
+                        if (entry.snippet.channelTitle)
+                            dateInfo += 'by <font color="FFFF00">' + entry.snippet.channelTitle + '</font>';
+                        dateInfo += '<font color="99CC33"> ' +metadata.published;
+                    }
                 }
-
                 if (metadata.updated) {
                     if (metadata.published)
                         dateInfo += ' | ';
@@ -2465,7 +2281,7 @@ showtime.print(args);
                     lines += desc_split[i] + "\n";
 
                 metadata.description = new showtime.RichText(subtitle1 + "\n" + '<font color="99CC33">' +
-                    dateInfo + '</font>\n' + '<font color="EEEEEE">' + lines + '...' + '</font>');
+                    dateInfo + '</font>\n' + '<font color="EEEEEE">' + lines + '</font>');
 
                 var images = [];
                 images.push({
@@ -2480,8 +2296,7 @@ showtime.print(args);
                 });
                 images = "imageset:" + showtime.JSONEncode(images);
                 metadata.icon = images;
-                //showtime.print(entry.kind);
-                //showtime.print(entry.id.kind);
+                //showtime.print(entry.kind + (entry.id.kind ? ' - ' + entry.id.kind : ''));
                 //showtime.print(showtime.JSONEncode(entry));
                 if (entry.kind == "youtube#activity") {
                     var title = entry.snippet.title;
@@ -2525,13 +2340,12 @@ showtime.print(args);
 
                             metadata.title = "[PLAYLIST RECOMMENDATION] " + title;
                             var item = page.appendItem(plugin.getDescriptor().id + ":scraper:/playlistItems:" + escape(showtime.JSONEncode({
-                                    "part": "snippet",
+                                    "part": "snippet,contentDetails,status",
                                     "playlistId": playlistId
                                 })) + ':' + escape('Recommended Videos'), "directory",
                                 metadata);
                         } else if (resourceId == "youtube#channel") {
                             var channelId = entry.contentDetails[type].resourceId.channelId;
-
                             metadata.title = "[CHANNEL RECOMMENDATION] " + title;
                             var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + channelId, "directory", metadata);
                         }
@@ -2539,21 +2353,20 @@ showtime.print(args);
                         var resourceId = entry.contentDetails[type].resourceId.kind;
                         if (resourceId == "youtube#channel") {
                             var channelId = entry.contentDetails[type].resourceId.channelId;
-
                             metadata.title = "[SUBSCRIPTION] " + title;
                             var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + channelId, "directory", metadata);
                         }
                     }
                 } else if (entry.kind == "youtube#guideCategory") {
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:/channels:" + escape(showtime.JSONEncode({
-                        "part": "snippet,contentDetails",
-                        "categoryId": entry.id
+                        'part': 'snippet,contentDetails,statistics,status',
+                        'categoryId': entry.id
                     })) + ':' + escape(title), "directory", metadata);
-                } else if (entry.kind == "youtube#videoCategory") {
+                } else if (entry.kind == "youtube#videoCategory") { // of home screen
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
-                        "part": "snippet",
-                        "videoCategoryId": entry.id,
-                        "type": "video"
+                        'part': 'snippet',
+                        'videoCategoryId': entry.id,
+                        'type': 'video'
                     })) + ':' + escape(title), "directory", metadata);
                 } else if (entry.kind == "youtube#playlistItem") { // shows videos of playlist
                     if (entry.snippet.resourceId.kind == "youtube#video") {
@@ -2562,17 +2375,16 @@ showtime.print(args);
                         }, metadata);
                     }
                 } else if (entry.kind == "youtube#channel") {
-                    if (entry.contentDetails) {
-                        var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id, "directory", metadata);
-                    } else {
-                        var item = page.appendItem(plugin.getDescriptor().id + ":service:/search:" + escape(showtime.JSONEncode({
-                            "part": "snippet",
-                            "channelId": entry.id
-                        })) + ':' + escape(title), "directory", metadata);
-                    }
+                        var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id, "video", metadata);
+//                    } else {
+//                        var item = page.appendItem(plugin.getDescriptor().id + ":service:/search:" + escape(showtime.JSONEncode({
+//                            "part": "snippet",
+//                            "channelId": entry.id
+//                        })) + ':' + escape(title), "directory", metadata);
+//                    }
                 } else if (entry.kind == "youtube#playlist") { // playlists of a channel
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode({
-                        "part": "snippet",
+                        "part": "snippet,contentDetails,status",
                         "playlistId": entry.id
                     })) + ':' + escape(title), "video", metadata);
                 } else if (entry.kind == "youtube#video") {
@@ -2580,10 +2392,10 @@ showtime.print(args);
                         videoId: entry.id
                     }, metadata);
                 } else if (entry.id.kind == "youtube#channel") {
-                    var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id.channelId, "directory", metadata);
+                    var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id.channelId, "video", metadata);
                 } else if (entry.id.kind == "youtube#playlist") {
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode({
-                        "part": "snippet",
+                        "part": "snippet,contentDetails,status",
                         "playlistId": entry.id.playlistId
                     })) + ':' + escape(title), "video", metadata);
                 } else if (entry.id.kind == "youtube#video") {
@@ -2611,15 +2423,15 @@ showtime.print(args);
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Videos', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'snippet',
-            'type': 'videos',
+            'part': 'snippet,contentDetails,statistics,status',
+            'type': 'video',
             'q': query
         });
     });
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Channels', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'snippet',
+            'part': 'snippet,contentDetails,statistics,status',
             'type': 'channel',
             'q': query
         });
@@ -2627,7 +2439,7 @@ showtime.print(args);
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Playlists', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'snippet',
+            'part': 'snippet,contentDetails,statistics,status',
             'type': 'playlist',
             'q': query
         });
