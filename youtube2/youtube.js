@@ -76,37 +76,79 @@
     if (!service.language)
         service.language = 'en';
 
+    function getLanguages() {
+        var data = download(null, '/i18nLanguages', {
+            'part': 'snippet',
+            'hl': service.language
+        });
+        var languages = [];
+        for (var i in data.items) {
+            if (data.items[i].snippet.hl == service.language)
+                languages.push([data.items[i].snippet.hl, data.items[i].snippet.name, true]);
+            else
+                languages.push([data.items[i].snippet.hl, data.items[i].snippet.name]);
+        }
+        service.languages = languages;
+    }
+
+    function getRegions() {
+        var data = download(null, '/i18nRegions', {
+            'part': 'snippet',
+            'hl': service.language
+        });
+        var regions = [];
+        for (var i in data.items) {
+            if (data.items[i].snippet.gl == 'US')
+                regions.push([data.items[i].snippet.gl, data.items[i].snippet.name, true]);
+            else
+                regions.push([data.items[i].snippet.gl, data.items[i].snippet.name]);
+        }
+        service.regions = regions;
+    }
+
     settings.createDivider('Language and region');
 
-    var data = download(page, '/i18nLanguages', {
-        'part': 'snippet',
-        'hl': service.language
-    });
-    var languages = [];
-    for (var i in data.items) {
-        if (!languages)
-            languages.push([data.items[i].snippet.hl, data.items[i].snippet.name, true]);
-        else
-            languages.push([data.items[i].snippet.hl, data.items[i].snippet.name]);
-    }
-    settings.createMultiOpt("language", "Language", languages, function(v) {
+    if (!service.languages)
+        getLanguages();
+
+    settings.createMultiOpt("language", "Language", service.languages, function(v) {
         service.language = v;
     });
 
-    var data = download(page, '/i18nRegions', {
-        'part': 'snippet',
-        'hl': service.language
-    });
-    var regions = [];
-    for (var i in data.items) {
-        if (!regions)
-            regions.push([data.items[i].snippet.gl, data.items[i].snippet.name, true]);
-        else
-            regions.push([data.items[i].snippet.gl, data.items[i].snippet.name]);
-    }
-    settings.createMultiOpt("region", "Region", regions, function(v) {
+    if (!service.regions)
+       getRegions();
+
+    settings.createMultiOpt("region", "Region", service.regions, function(v) {
         service.region = v;
     });
+    settings.createAction("reloadLanguages", "Refresh language and region lists from Youtube ", function() {
+        var data = download(page, '/i18nLanguages', {
+            'part': 'snippet',
+            'hl': service.language
+        });
+        var languages = [];
+        for (var i in data.items) {
+            if (data.items[i].snippet.hl == service.language)
+                languages.push([data.items[i].snippet.hl, data.items[i].snippet.name, true]);
+            else
+                languages.push([data.items[i].snippet.hl, data.items[i].snippet.name]);
+        }
+        service.languages = languages;
+        service.regions = download(page, '/i18nRegions', {
+            'part': 'snippet',
+            'hl': service.language
+        });
+        var regions = [];
+        for (var i in data.items) {
+            if (data.items[i].snippet.gl == service.language)
+                regions.push([data.items[i].snippet.gl, data.items[i].snippet.name, true]);
+            else
+                regions.push([data.items[i].snippet.gl, data.items[i].snippet.name]);
+        }
+        service.regions = regions;
+
+    });
+
 
     settings.createDivider('User Settings');
 
@@ -319,55 +361,53 @@
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":search", function(page) {
+        page.metadata.glwview = plugin.path + "views/search.view";
+        page.type = "directory";
+        page.contents = "items";
         page.metadata.title = 'Youtube Search';
-        page.metadata.logo = plugin.path + "views/img/logos/music.png";
+        page.metadata.logo = logo;
 
         pageMenu(page, null, null);
 
-        page.metadata.search = "";
-        page.subscribe("page.model.metadata.search", function(v) {
-            page.metadata.search = v;
-        });
-        page.appendAction("navopen", plugin.getDescriptor().id + ":feed:" + escape("https://gdata.youtube.com/feeds/api/videos?q=" + page.metadata.search), true, {
+        page.metadata.search = '';
+        if (typeof Duktape == 'undefined')
+            page.subscribe("page.model.metadata.search", function(v) {
+               page.metadata.search = v;
+            });
+        else
+            require('showtime/prop').subscribeValue(page.model.metadata.search, function(v) {
+                page.metadata.search = v;
+            });
+        page.appendAction("navopen", plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
+            'part': 'snippet',
+            'type': 'videos',
+            'q': page.metadata.search
+        })) + ':' + escape(page.metadata.search), true, {
             title: "Search for Videos",
             icon: plugin.path + "views/img/search_videos.png",
             hidden: true,
             search: true
         });
-        page.appendAction("navopen", plugin.getDescriptor().id + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/snippets?q=" + page.metadata.search), true, {
-            title: "Search for Playlists",
-            icon: plugin.path + "views/img/search_playlists.png",
-            hidden: true,
-            search: true
-        });
-        page.appendAction("navopen", plugin.getDescriptor().id + ":feed:" + escape("https://gdata.youtube.com/feeds/api/channels?q=" + page.metadata.search), true, {
+        page.appendAction("navopen", plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
+            'part': 'snippet',
+            'type': 'channel',
+            'q': page.metadata.search
+        })) + ':' + escape(page.metadata.search), true, {
             title: "Search for Channels",
             icon: plugin.path + "views/img/search_channels.png",
             hidden: true,
             search: true
         });
-        page.metadata.glwview = plugin.path + "views/search.view";
-
-        page.type = "directory";
-        page.contents = "items";
-        page.loading = false;
-    });
-
-    plugin.addURI(plugin.getDescriptor().id + ":list:(.*)", function(page, list) {
-        page.metadata.title = 'Youtube Music';
-        page.metadata.logo = plugin.path + "views/img/logos/music.png";
-
-        pageMenu(page, null, null);
-
-        var entries = website.getPlaylist(list);
-
-        for (var i in entries) {
-            var item = entries[i];
-            page.appendItem(plugin.getDescriptor().id + ":video:" + item.id, "video", item);
-        }
-
-        page.type = "directory";
-        page.contents = "items";
+        page.appendAction("navopen", plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
+            'part': 'snippet',
+            'type': 'playlist',
+            'q': page.metadata.search
+        })) + ':' + escape(page.metadata.search), true, {
+            title: "Search for Playlists",
+            icon: plugin.path + "views/img/search_playlists.png",
+            hidden: true,
+            search: true
+        });
         page.loading = false;
     });
 
@@ -414,7 +454,7 @@
                 args.url = plugin.getDescriptor().id + ":video:" + it.snippet.resourceId.videoId;
             else if (it.kind == "youtube#playlist") {
                 args.url = plugin.getDescriptor().id + ":scraper:/playlistItems:" + escape(showtime.JSONEncode({
-                    "part": "id,snippet",
+                    "part": "snippet",
                     "playlistId": it.id
                 })) + ':' + escape(it.snippet.title);
             } else if (it.kind == "youtube#subscription" && it.snippet.resourceId.kind == "youtube#channel")
@@ -522,9 +562,9 @@
                 data = data.response.feed;
                 var newSubscriptionVideos = [];
                 for (var i in data.entry) {
-                    try {
+
                         var it = data.entry[i];
-                        var id = it.media$group.yt$videoid.$t;
+                        id = it.media$group.yt$videoid.$t;
 
                         var images = [];
                         if (it.media$group && it.media$group.media$thumbnail) {
@@ -543,10 +583,6 @@
                             image: images,
                             url: plugin.getDescriptor().id + ":video:" + id
                         });
-                    } catch (ex) {
-                        showtime.trace(ex, "YOUTUBE-ERROR");
-                        showtime.trace(ex.stack, "YOUTUBE-ERROR");
-                    }
                 }
 
                 if (newSubscriptionVideos.length > 0) {
@@ -570,7 +606,7 @@
         if (service.showFavorites && favoritesPlaylistId) {
             var url = '/playlistItems';
             var args = {
-                "part": "id,snippet",
+                "part": "snippet",
                 "playlistId": favoritesPlaylistId
             };
             var data = download(page, url, args);
@@ -596,7 +632,7 @@
         if (id == "default") {
             if (service.showWatchLater) {
                 var data = apiV3.playlistItems.list({
-                    "part": "id,snippet",
+                    "part": "snippet",
                     "playlistId": watchLaterPlaylistId
                 });
 
@@ -623,7 +659,7 @@
 
             if (service.showWatchHistory) {
                 var data = download(page, '/playlistItems', {
-                    "part": "id,snippet",
+                    "part": "snippet",
                     "playlistId": watchHistoryPlaylistId
                 });
 
@@ -648,7 +684,7 @@
 
             if (service.showLikes && likesPlaylistId) {
                 var data = download(page, '/playlistItems', {
-                    "part": "id,snippet",
+                    "part": "snippet",
                     "playlistId": likesPlaylistId
                 });
 
@@ -674,7 +710,7 @@
 
             if (service.showSubscriptions) {
                 var data = download(page, '/subscriptions', {
-                    "part": "id,snippet",
+                    "part": "snippet",
                     "mine": true
                 });
 
@@ -704,7 +740,7 @@
         if (service.showPlaylists) {
             var url = '/playlists';
             var args = {
-                "part": "id,snippet",
+                "part": "snippet",
                 "channelId": channelId
             };
 
@@ -741,7 +777,7 @@
                 var videoRecommendations = [];
                 for (var i in data.entry) {
                     var it = data.entry[i];
-                    var id = it.media$group.yt$videoid.$t;
+                    id = it.media$group.yt$videoid.$t;
                     var image = "http://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
 
                     var images = [];
@@ -783,7 +819,7 @@
 
         if (service.showUploads && uploadsPlaylistId) {
             var args = {
-                "part": "id,snippet",
+                "part": "snippet",
                 "playlistId": uploadsPlaylistId
             };
             var url = '/playlistItems';
@@ -1275,7 +1311,7 @@
         var videoId = id;
 
         var data = apiV3.videos.list({
-            "part": "id,snippet,contentDetails,statistics,status,topicDetails",
+            "part": "snippet,contentDetails,statistics,status,topicDetails",
             "id": id
         });
 
@@ -1403,7 +1439,7 @@
             }
 
             var args = showtime.JSONEncode({
-                "part": "id,snippet",
+                "part": "snippet",
                 "type": "video",
                 "relatedToVideoId": id
             });
@@ -1516,7 +1552,7 @@
         } else {
             pageControllerAddToPlaylist(page, args0, function(nextPageToken) {
                 var args = {
-                    "part": "id,snippet",
+                    "part": "snippet",
                     "mine": "true",
                     "maxResults": 50
                 };
@@ -2039,7 +2075,7 @@
 
     function hasSubscribed(channelId) {
         var args = {
-            "part": "id,snippet",
+            "part": "snippet",
             "forChannelId": channelId,
             "mine": true
         };
@@ -2091,7 +2127,7 @@
             });
 
             var args = {
-                "part": "id,snippet",
+                "part": "snippet",
                 "type": "video",
                 "relatedToVideoId": item.videoId
             };
@@ -2161,7 +2197,7 @@
 
         if (authenticated) {
             items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/activities:' + escape(showtime.JSONEncode({
-                "part": "id,snippet,contentDetails",
+                "part": "snippet,contentDetails",
                 "home": true
             })) + ':' + escape('My Activity'), 'directory', {
                 title: 'My Activity'
@@ -2170,31 +2206,33 @@
         }
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/guideCategories:' + escape(showtime.JSONEncode({
-            "part": "id,snippet",
-            "regionCode": service.region != "all" ? service.region : "US",
+            "part": "snippet",
+            "regionCode": service.region,
+            "hl": service.language
         })) + ':' + escape('Guide Categories'), 'directory', {
             title: 'Guide Categories',
             icon: plugin.path + "views/img/logos/explore.png"
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/videoCategories:' + escape(showtime.JSONEncode({
-            "part": "id,snippet",
-            "regionCode": service.region != "all" ? service.region : "US"
+            "part": "snippet",
+            "regionCode": service.region,
+            "hl": service.language
         })) + ':' + escape('Video Categories'), 'directory', {
             title: 'Video Categories',
             icon: plugin.path + "views/img/logos/explore.png"
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/videos:' + escape(showtime.JSONEncode({
-            "part": "id,snippet",
+            "part": "snippet",
             "chart": "mostPopular",
-            "regionCode": service.region != "all" ? service.region : "US"
+            "regionCode": service.region
         })) + ':' + escape('Most Popular'), 'directory', {
             title: 'Most poular',
             icon: plugin.path + "views/img/logos/feeds.png"
         }));
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            "part": "id,snippet",
+            "part": "snippet",
             "type": "channel"
         })) + ':' + escape('Channels'), 'directory', {
             title: 'Channels',
@@ -2202,7 +2240,7 @@
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            "part": "id,snippet",
+            "part": "snippet",
             "q": "Education",
             "type": "channel",
             "regionCode": service.region != "all" ? service.region : "US"
@@ -2212,32 +2250,32 @@
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            "part": "id,snippet",
+            "part": "snippet",
             "eventType": "live",
             "type": "video",
-            "regionCode": service.region != "all" ? service.region : "US"
+            "regionCode": service.region
         })) + ':' + escape('Live Broadcasts'), 'directory', {
             title: 'Live Broadcasts',
             icon: plugin.path + "views/img/logos/live.png"
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            "part": "id,snippet",
+            "part": "snippet",
             "type": "video",
             "videoDuration": "long",
             "videoType": "movie",
             //"videoCaption": "closedCaption",
-            "regionCode": service.region != "all" ? service.region : "US"
+            "regionCode": service.region
         })) + ':' + escape('Youtube Movies'), 'directory', {
             title: 'Youtube Movies',
             icon: plugin.path + "views/img/logos/movies.png"
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            "part": "id,snippet",
+            "part": "snippet",
             "type": "channel",
             "channelType": "show",
-            "regionCode": service.region != "all" ? service.region : "US"
+            "regionCode": service.region
         })) + ':' + escape('Youtube Shows'), 'directory', {
             title: 'Youtube Shows',
             icon: plugin.path + "views/img/logos/shows.png"
@@ -2292,9 +2330,9 @@
     });
 
     function download(page, url, args) {
-        page.loading = true;
-        if (service.region != "all")
-            args.regionCode = service.region;
+        if (page)
+            page.loading = true;
+        args.regionCode = service.region;
         args.safeSearch = service.safeSearch;
         args.key = key;
         args.maxResults = 50;
@@ -2303,7 +2341,8 @@
         var data = showtime.JSONDecode(showtime.httpReq(API + url, {
             args: args
         }));
-        page.loading = false;
+        if (page)
+            page.loading = false;
         return data;
     }
 
@@ -2332,7 +2371,7 @@
                 return false;
             }
 
-            if (!page.entries && data.pageInfo)
+            if (!page.entries && data.pageInfo && page.metadata)
                 page.metadata.title += ' (' + data.pageInfo.totalResults + ')'
 
             var c = 0;
@@ -2347,7 +2386,7 @@
                 }
 
                 var data1 = download(page, '/videos', {
-                    "part": "id,snippet,contentDetails,statistics,status,topicDetails",
+                    "part": "snippet,contentDetails,statistics,status,topicDetails",
                     "id": videoIds.join(",")
                 });
 
@@ -2489,7 +2528,7 @@
 
                             metadata.title = "[PLAYLIST RECOMMENDATION] " + title;
                             var item = page.appendItem(plugin.getDescriptor().id + ":scraper:/playlistItems:" + escape(showtime.JSONEncode({
-                                    "part": "id,snippet",
+                                    "part": "snippet",
                                     "playlistId": playlistId
                                 })) + ':' + escape('Recommended Videos'), "directory",
                                 metadata);
@@ -2510,12 +2549,12 @@
                     }
                 } else if (entry.kind == "youtube#guideCategory") {
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:/channels:" + escape(showtime.JSONEncode({
-                        "part": "id,snippet,contentDetails",
+                        "part": "snippet,contentDetails",
                         "categoryId": entry.id
                     })) + ':' + escape(title), "directory", metadata);
                 } else if (entry.kind == "youtube#videoCategory") {
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
-                        "part": "id,snippet",
+                        "part": "snippet",
                         "videoCategoryId": entry.id,
                         "type": "video"
                     })) + ':' + escape(title), "directory", metadata);
@@ -2530,13 +2569,13 @@
                         var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id, "directory", metadata);
                     } else {
                         var item = page.appendItem(plugin.getDescriptor().id + ":service:/search:" + escape(showtime.JSONEncode({
-                            "part": "id,snippet",
+                            "part": "snippet",
                             "channelId": entry.id
                         })) + ':' + escape(title), "directory", metadata);
                     }
                 } else if (entry.kind == "youtube#playlist") { // playlists of a channel
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode({
-                        "part": "id,snippet",
+                        "part": "snippet",
                         "playlistId": entry.id
                     })) + ':' + escape(title), "video", metadata);
                 } else if (entry.kind == "youtube#video") {
@@ -2547,7 +2586,7 @@
                     var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id.channelId, "directory", metadata);
                 } else if (entry.id.kind == "youtube#playlist") {
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode({
-                        "part": "id,snippet",
+                        "part": "snippet",
                         "playlistId": entry.id.playlistId
                     })) + ':' + escape(title), "video", metadata);
                 } else if (entry.id.kind == "youtube#video") {
@@ -2575,7 +2614,7 @@
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Videos', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'id,snippet',
+            'part': 'snippet',
             'type': 'videos',
             'q': query
         });
@@ -2583,7 +2622,7 @@
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Channels', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'id,snippet',
+            'part': 'snippet',
             'type': 'channel',
             'q': query
         });
@@ -2591,7 +2630,7 @@
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Playlists', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'id,snippet',
+            'part': 'snippet',
             'type': 'playlist',
             'q': query
         });
