@@ -47,7 +47,7 @@ widget(container_y, {
 				widget(array, {
 					$view.sizer = int(getWidth() / 100);
 
-					&clone.focused = focusedChild();
+					&clone.focused ?= select(isFocused(), focusedChild(), void);
 					.id = "array";
 					.border = $view.sizer * 3;
 					.Xspacing = $view.sizer;

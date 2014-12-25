@@ -360,6 +360,14 @@
         page.loading = false;
     });
 
+    plugin.addURI(plugin.getDescriptor().id + ":searcher:(.*):(.*)", function(page, type, query) {
+        page.redirect(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
+            'part': 'snippet',
+            'type': type,
+            'q': query
+        })) + ':' + escape(query));
+    });
+
     plugin.addURI(plugin.getDescriptor().id + ":search", function(page) {
         page.metadata.glwview = plugin.path + "views/search.view";
         page.type = "directory";
@@ -371,38 +379,26 @@
 
         page.metadata.search = '';
         if (typeof Duktape == 'undefined')
-            page.subscribe("page.model.metadata.search", function(v) {
+            page.subscribe("page.metadata.search", function(v) {
                page.metadata.search = v;
             });
         else
             require('showtime/prop').subscribeValue(page.model.metadata.search, function(v) {
                 page.metadata.search = v;
             });
-        page.appendAction("navopen", plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
-            'part': 'snippet',
-            'type': 'videos',
-            'q': page.metadata.search
-        })) + ':' + escape(page.metadata.search), true, {
+        page.appendAction("navopen", plugin.getDescriptor().id + ":searcher:videos:" + escape(page.metadata.search), true, {
             title: "Search for Videos",
             icon: plugin.path + "views/img/search_videos.png",
             hidden: true,
             search: true
         });
-        page.appendAction("navopen", plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
-            'part': 'snippet',
-            'type': 'channel',
-            'q': page.metadata.search
-        })) + ':' + escape(page.metadata.search), true, {
+        page.appendAction("navopen", plugin.getDescriptor().id + ":searcher:channel:" + escape(page.metadata.search), true, {
             title: "Search for Channels",
             icon: plugin.path + "views/img/search_channels.png",
             hidden: true,
             search: true
         });
-        page.appendAction("navopen", plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
-            'part': 'snippet',
-            'type': 'playlist',
-            'q': page.metadata.search
-        })) + ':' + escape(page.metadata.search), true, {
+        page.appendAction("navopen", plugin.getDescriptor().id + ":searcher:playlist:" + escape(page.metadata.search), true, {
             title: "Search for Playlists",
             icon: plugin.path + "views/img/search_playlists.png",
             hidden: true,
@@ -2353,6 +2349,7 @@
         page.metadata.logo = logo;
         page.metadata.title = new showtime.RichText(unescape(showtime.entityDecode(title)));
         page.metadata.background = plugin.path + "views/img/background.png";
+showtime.print(args);
         scraper(page, url, showtime.JSONDecode(unescape(args)));
     });
 
