@@ -1688,8 +1688,8 @@
 
             if (response.error) {
                 showtime.notify("Authentication failed: " + response.error, 3, "");
-                v3_oauth_information.access_token = authenticated = false;
-                return;
+                store.refresh_token = false;
+                return false;
             }
 
             store.refresh_token = response.refresh_token;
