@@ -159,7 +159,7 @@
 
     settings.createDivider('Video Settings');
 
-    settings.createBool("mode", "Advanced Youtube (Extra video features)", false, function(v) {
+    settings.createBool("mode", "Open additional videoinfo page", false, function(v) {
         if (v == '1')
             service.mode = 'advanced';
         else
@@ -203,26 +203,26 @@
     settings.createBool("showActivities", "Show Activities", true, function(v) {
         service.showActivities = v;
     });
+    settings.createBool("showWatchLater", "Show Watch Later", true, function(v) {
+        service.showWatchLater = v;
+    });
+    settings.createBool("showWatchHistory", "Show Watch History", true, function(v) {
+        service.showWatchHistory = v;
+    });
+    settings.createBool("showLikes", "Show Likes", true, function(v) {
+        service.showLikes = v;
+    });
+    settings.createBool("showSubscriptions", "Show Subscriptions", true, function(v) {
+        service.showSubscriptions = v;
+    });
+    settings.createBool("showPlaylists", "Show Playlists", true, function(v) {
+        service.showPlaylists = v;
+    });
     settings.createBool("showUploads", "Show Uploads", true, function(v) {
         service.showUploads = v;
     });
     settings.createBool("showFavorites", "Show Favorites", true, function(v) {
         service.showFavorites = v;
-    });
-    settings.createBool("showPlaylists", "Show Playlists", true, function(v) {
-        service.showPlaylists = v;
-    });
-    settings.createBool("showSubscriptions", "Show Subscriptions", true, function(v) {
-        service.showSubscriptions = v;
-    });
-    settings.createBool("showWatchHistory", "Show Watch History", true, function(v) {
-        service.showWatchHistory = v;
-    });
-    settings.createBool("showWatchLater", "Show Watch Later", true, function(v) {
-        service.showWatchLater = v;
-    });
-    settings.createBool("showLikes", "Show Likes", true, function(v) {
-        service.showLikes = v;
     });
 
     var items = [];
@@ -1150,6 +1150,11 @@
         var video = data.items[0];
 
         var events = false;
+
+        if (!data.items.length) {
+            page.error("Can't get video info...");
+            return;
+        }
         page.appendPassiveItem("label", data.items[0].snippet.channelTitle, {
             title: 'Uploader' + ": "
         });
