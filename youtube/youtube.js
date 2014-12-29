@@ -380,8 +380,8 @@
         };
         id == "mine" ? params.args.mine = true : params.args.id = id;
         var data = download(page, '/channels', params);
-        if (data.error) {
-            page.error(data.error);
+        if (data.error || showtime.JSONEncode(data) == '{}') {
+            page.error(data);
             return;
         }
         if (data.items.length == 0) {
@@ -468,7 +468,7 @@
 
         var lists_tmp = {};
 
-        if (id == "mine" && service.showActivities) { // new subscription > activity
+        if (id == "mine" && service.showActivities) { // activities (new subscriptions)
             var params = {
                 args: {
                     'part': 'snippet,contentDetails',
@@ -1897,17 +1897,23 @@
             } catch (err) {
                 showtime.print(err);
                 showtime.print('Refreshing access_token');
-                data = showtime.httpReq('https://www.googleapis.com/oauth2/v3/token', {
-                    postdata: {
-                        client_id: client_id,
-                        client_secret: client_secret,
-                        refresh_token: store.refresh_token,
-                        grant_type: 'refresh_token'
-                    }
-                });
-                store.access_token = showtime.JSONDecode(data).access_token;
-                //setHeaders();
-                params.headers['Authorization'] = store.token_type + ' ' + store.access_token;
+                try {
+                    data = showtime.httpReq('https://www.googleapis.com/oauth2/v3/token', {
+                        postdata: {
+                            client_id: client_id,
+                            client_secret: client_secret,
+                            refresh_token: store.refresh_token,
+                            grant_type: 'refresh_token'
+                        }
+                    });
+                    store.access_token = showtime.JSONDecode(data).access_token;
+                    //setHeaders();
+                    params.headers['Authorization'] = store.token_type + ' ' + store.access_token;
+                } catch(err) {
+                    if (page)
+                        page.loading = false;
+                    return err;
+                }
                 try {
                     data = showtime.JSONDecode(showtime.httpReq(API + url, params));
                 } catch (err) {
@@ -2125,9 +2131,10 @@
                         item = page.appendItem(plugin.getDescriptor().id + ":scraper:/playlistItems:" + escape(showtime.JSONEncode({
                                 args: {
                                     "part": "snippet,contentDetails,status",
-                                    "playlistId": playlistId
+                                    "playlistId": playlistId,
+                                    'maxResults': 50
                                 }
-                            })) + ':' + escape('Recommended Videos'), "directory",
+                            })) + ':' + escape(title), "directory",
                             metadata);
                     } else if (resourceId == "youtube#channel") {
                         item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.contentDetails[type].resourceId.channelId, "video", metadata);
@@ -2163,7 +2170,8 @@
                     item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode({
                         args: {
                             "part": "snippet,contentDetails,status",
-                            "playlistId": entry.id
+                            "playlistId": entry.id,
+                            'maxResults': 50
                         }
                     })) + ':' + escape(title), "video", metadata);
                 } else if (entry.kind == "youtube#video") {
@@ -2176,7 +2184,8 @@
                     item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode({
                         args: {
                             "part": "snippet,contentDetails,status",
-                            "playlistId": entry.id.playlistId
+                            "playlistId": entry.id.playlistId,
+                            'maxResults': 50
                         }
                     })) + ':' + escape(title), "video", metadata);
                 } else if (entry.id.kind == "youtube#video") { // of searcher
