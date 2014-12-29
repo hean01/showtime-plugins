@@ -9,7 +9,7 @@ widget(container_y, {
 		widget(container_x, {
 		widget(list_x, {
 			.spacing = 5;
-			&clone.focused = focusedChild();
+			&clone.focused ?= select(isFocused(), focusedChild(), void);
 			$view.change = changed($clone.focused, 1);
 		
 			cloner($page.model.actions, container_z, {

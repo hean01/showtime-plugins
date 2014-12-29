@@ -1,13 +1,13 @@
 {
 	"description": "<p>The best resource available on the Internet for Video sharing.<p>", 
 	"author": "F\u00e1bio Ferreira (facanferff), lprot",
-	"homepage": "https://github.com/facanferff/showtime-plugin-youtube", 
+	"homepage": "https://github.com/lprot/showtime-plugins/",
 	"title": "Youtube", 
 	"synopsis": "Youtube: Broadcast Yourself",
-	"version": "2.2.36",
+	"version": "3.0",
 	"file": "youtube.js", 
-	"showtimeVersion": "4.3.248", 
-	"type": "javascript", 
+	"showtimeVersion": "4.7.584",
+	"type": "ecmascript",
 	"id": "youtube",
 	"icon": "logo.png", 
 	"category": "video"
