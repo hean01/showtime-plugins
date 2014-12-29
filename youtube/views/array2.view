@@ -73,7 +73,7 @@ widget(container_y, {
 							widget(container_z, {
 								widget(image, {
 									height: $ui.size * 8;
-									source: $self.metadata.icon ?? "img/nophoto.bmp";
+									source: $self.metadata.icon ?? "img/nophoto.png";
 									color: iir(isFocused(), 4) + 0.4;
 									saturation: 1 - iir(isReady(), 10);
 								});

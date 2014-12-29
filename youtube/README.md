@@ -31,10 +31,6 @@ To search for content (videos, playlists or channels), use the Search available 
 To search for a specific user to see its profile, use the Search available in Showtime writing
 youtube:user:username:<username>, where <username> is the nickname used by that user to be identified by others.
 
-### Note 3:
-At the moment, Showtime can't play HTTP Live Streams like the ones that Youtube uses, but you can view the videos that were live streams and were processed. 
-Currently Live Streams despite being shown there, they will give you error 400 while Showtime can't support these links.
-
 ## Information for programmers
 ### Opening a video
 Starting version 2.2, the plugin supports a few more URI routes:

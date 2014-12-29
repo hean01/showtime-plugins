@@ -356,7 +356,7 @@
             var it = items[i];
             var args = {
                 title: it.snippet.title ? it.snippet.title : it.snippet.channelTitle,
-                image: it.snippet.thumbnails ? it.snippet.thumbnails.default.url : plugin.path + "views/img/nophoto.bmp"
+                image: it.snippet.thumbnails ? it.snippet.thumbnails.default.url : plugin.path + "views/img/nophoto.png"
             };
             if (it.kind == "youtube#playlistItem" && it.snippet.resourceId.kind == "youtube#video")
                 args.url = plugin.getDescriptor().id + ":video:" + it.snippet.resourceId.videoId;
@@ -398,7 +398,7 @@
         return data.items[0].id;
     }
 
-    plugin.addURI(plugin.getDescriptor().id + ":more:username:(.*)", function(page, username) {
+    plugin.addURI(plugin.getDescriptor().id + ":user:username:(.*)", function(page, username) {
         page.redirect(plugin.getDescriptor().id + ":channel:" + parseChannelId(username));
     });
 
@@ -1235,11 +1235,11 @@
             page.metadata.title = showtime.entityDecode(unescape(title));
 
             var quality_icon = {
-                "240p": plugin.path + "views/img/defaultscreen.bmp",
-                "360p": plugin.path + "views/img/defaultscreen.bmp",
-                "480p": plugin.path + "views/img/480.bmp",
-                "720p": plugin.path + "views/img/720.bmp",
-                "1080p": plugin.path + "views/img/1080.bmp"
+                "240p": plugin.path + "views/img/defaultres.png",
+                "360p": plugin.path + "views/img/defaultres.png",
+                "480p": plugin.path + "views/img/480.png",
+                "720p": plugin.path + "views/img/720.png",
+                "1080p": plugin.path + "views/img/1080.png"
             };
 
             var videos = [];
@@ -1250,7 +1250,7 @@
                 });
 
                 var image = quality_icon[item.quality];
-                if (!image || image == "") image = plugin.path + "views/img/nophoto.bmp";
+                if (!image || image == "") image = plugin.path + "views/img/nophoto.png";
                 videos.push({
                     title: item.quality,
                     image: image,
@@ -1263,7 +1263,7 @@
 
             var extras = [];
             extras.push({
-                title: 'Open channel',
+                title: 'View channel',
                 image: plugin.path + "views/img/logos/user.png",
                 url: plugin.getDescriptor().id + ':channel:' + channelId
             });
@@ -1311,8 +1311,8 @@
                 title: 'Related videos'
             });
             extras.push({
-                title: 'Related',
-                image: plugin.path + "views/img/nophoto.bmp",
+                title: 'Related videos',
+                image: plugin.path + "views/img/related.png",
                 url: plugin.getDescriptor().id + ":scraper:/search:" + escape(params) + ':' + escape('Related Videos')
             });
 
@@ -1324,7 +1324,7 @@
                     });
                     extras.push({
                         title: 'Responses',
-                        image: plugin.path + "views/img/nophoto.bmp",
+                        image: plugin.path + "views/img/nophoto.png",
                         url: plugin.getDescriptor().id + ':feed:' + escape('https://gdata.youtube.com/feeds/api/videos/' + id + '/responses') + ':Responses'
                     });
                 }
@@ -1340,17 +1340,7 @@
                 listActions: true
             });
             page.onEvent('like', function() {
-                var data = download(page, '/videos/rate', {
-                    args: {
-                        'id': videoId,
-                        'rating': 'like'
-                    },
-                    postdata: {}
-                });
-                if (showtime.JSONEncode(data) != '{}')
-                     showtime.notify("Like is added", 3);
-                else
-                     showtime.notify(data, 3);
+                rate(page, videoId, 'none');
             });
 
             page.appendAction("pageevent", "dislike", true, {
@@ -1359,17 +1349,7 @@
                 listActions: true
             });
             page.onEvent('dislike', function() {
-                var data = download(page, '/videos/rate', {
-                    method: 'POST',
-                    args: {
-                        'id': videoId,
-                        'rating': 'dislike'
-                    }
-                });
-                if (showtime.JSONEncode(data) != '{}')
-                     showtime.notify("Dislike is added", 3);
-                else
-                     showtime.notify(data, 3);
+                rate(page, videoId, 'dislike');
             });
 
             page.appendAction("pageevent", "none", true, {
@@ -1378,18 +1358,7 @@
                 listActions: true
             });
             page.onEvent('none', function() {
-                var data = download(page, '/videos/rate', {
-                    method: 'POST',
-                    args: {
-                        'id': videoId,
-                        'rating': 'none'
-                    }
-                });
-                if (showtime.JSONEncode(data) != '{}')
-                     showtime.notify("Likes are removed", 3);
-                else
-                     showtime.notify(data, 3);
-            });
+                rate(page, videoId, 'none');            });
 
             page.appendAction("pageevent", "addFavorite", true, {
                 title: 'Add to Favorites',
@@ -1422,18 +1391,18 @@
                 });
             }
 
-            page.appendAction("pageevent", "comment", true, {
-                title: 'Comment',
-                icon: plugin.path + "views/img/comment.png",
-                listActions: true
-            });
-            page.onEvent('comment', function() {
-                api.comment(videoId);
-            });
-            page.appendPassiveItem("video", '', {
-                title: 'Comment',
-                icon: plugin.path + "views/img/comment.png"
-            });
+            //page.appendAction("pageevent", "comment", true, {
+            //    title: 'Comment',
+            //    icon: plugin.path + "views/img/comment.png",
+            //    listActions: true
+            //});
+            //page.onEvent('comment', function() {
+            //    api.comment(videoId);
+            //});
+            //page.appendPassiveItem("video", '', {
+            //    title: 'Comment',
+            //    icon: plugin.path + "views/img/comment.png"
+            //});
         }
 
         events = true;
@@ -1504,25 +1473,63 @@
         return unescape(string);
     }
 
+    function rate(page, videoId, type) {
+        var data = download(page, '/videos/rate', {
+//            method: 'POST',
+            args: {
+                'id': videoId,
+                'rating': type
+            },
+            postdata: {}
+        });
+        if (showtime.JSONEncode(data) != '{}')
+            if (type != 'none')
+                showtime.notify('You set ' + type + ' to the video', 3);
+            else
+                showtime.notify('Removed like/dislike from the video', 3);
+        else
+            showtime.notify(data, 3);
+    }
+
     function itemOptions(item, entry) {
         // TODO: Maximum resolution to be played
 
-        item.addOptURL("More from this user", plugin.getDescriptor().id + ':more:username:' + item.author);
+        item.addOptURL("More from this user", plugin.getDescriptor().id + ':user:username:' + item.author);
 
         item.addOptAction("Like video", "like");
-        item.onEvent('like', function(item) {
-            api.like(this.id, "like");
-        });
+        if (typeof Duktape != 'undefined')
+            item.onEvent('like', function(item) {
+                rate(null, this.id, "like");
+            }.bind(item));
+        else
+            item.onEvent('like', function(item) {
+                rate(null, this.id, "like");
+            });
 
         item.addOptAction("Dislike video", "dislike");
-        item.onEvent('dislike', function(item) {
-            api.like(this.id, 'dislike')
-        });
+        if (typeof Duktape != 'undefined')
+            item.onEvent('dislike', function(item) {
+                rate(null, this.id, "dislike");
+            }.bind(item));
+        else
+            item.onEvent('dislike', function(item) {
+                rate(null, this.id, "dislike");
+            });
 
-        item.addOptAction("Comment video", "comment");
-        item.onEvent('comment', function(item) {
-            api.comment(this.id)
-        });
+        item.addOptAction("Remove likes", "none");
+        if (typeof Duktape != 'undefined')
+            item.onEvent('none', function(item) {
+                rate(null, this.id, "none");
+            }.bind(item));
+        else
+            item.onEvent('none', function(item) {
+                rate(null, this.id, "none");
+            });
+
+        //item.addOptAction("Comment video", "comment");
+        //item.onEvent('comment', function(item) {
+        //    api.comment(this.id)
+        //});
 
         item.addOptAction("Add to Favorites", "addFavorite");
         item.onEvent('addFavorite', function(item) {
@@ -1695,19 +1702,39 @@
 
         if (item.videoId) {
             item.addOptAction("Like video", "like");
-            item.onEvent('like', function(item) {
-                api.like(this.videoId, "like");
-            });
+            if (typeof Duktape != 'undefined')
+                item.onEvent('like', function(item) {
+                    rate(page, this.videoId, 'like');
+                }.bind(item));
+            else
+                item.onEvent('like', function(item) {
+                    rate(page, this.videoId, 'like');
+                });
 
             item.addOptAction("Dislike video", "dislike");
-            item.onEvent('dislike', function(item) {
-                api.like(this.videoId, 'dislike')
-            });
+            if (typeof Duktape != 'undefined')
+                item.onEvent('dislike', function(item) {
+                    rate(page, this.videoId, 'dislike');
+                }.bind(item));
+            else
+                item.onEvent('dislike', function(item) {
+                    rate(page, this.videoId, 'dislike');
+                });
 
-            item.addOptAction("Comment video", "comment");
-            item.onEvent('comment', function(item) {
-                api.comment(this.videoId)
-            });
+            item.addOptAction("Remove rating", "none");
+            if (typeof Duktape != 'undefined')
+                item.onEvent('none', function(item) {
+                    rate(page, this.videoId, 'none');
+                }.bind(item));
+            else
+                item.onEvent('none', function(item) {
+                    rate(page, this.videoId, 'none');
+                });
+
+            //item.addOptAction("Comment video", "comment");
+            //item.onEvent('comment', function(item) {
+            //    api.comment(this.videoId)
+            //});
 
             item.addOptAction("Add to Favorites", "addFavorite");
             item.onEvent('addFavorite', function(item) {
@@ -1836,20 +1863,6 @@
             icon: plugin.path + "views/img/logos/channels.png"
         }));
 
-        items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            args: {
-                "part": "snippet",
-                'regionCode': service.region,
-                'safeSearch': service.safeSearch,
-                'maxResults': 50,
-                "type": "channel",
-                "q": "Education"
-            }
-        })) + ':' + escape('Education'), 'directory', {
-            title: 'Education',
-            icon: plugin.path + "views/img/logos/edu.png"
-        }));
-
         items.push(page.appendItem(plugin.getDescriptor().id + ':live:' + escape('Live Broadcasts'), 'directory', {
             title: 'Live Broadcasts',
             icon: plugin.path + "views/img/logos/live.png"
@@ -1888,15 +1901,15 @@
         for (var i in items)
             items[i].id = i;
 
-        if (!main_menu_order.order) {
+        if (!main_menu_order.order || showtime.JSONDecode(main_menu_order.order).length > i) {
             var items_tmp = page.getItems();
             for (var i = 0; i < items_tmp.length; i++)
                 if (!items_tmp[i].id)
                     delete items_tmp[i];
             main_menu_order.order = showtime.JSONEncode(items_tmp);
         }
-
         var order = showtime.JSONDecode(main_menu_order.order);
+
         for (var i in order)
             items[order[i].id].moveBefore(i);
 
@@ -1934,9 +1947,10 @@
                 params.headers['Content-Type'] = 'application/json';
 
             try {
-                data = showtime.JSONDecode(showtime.httpReq(API + url, params));
+                data = showtime.httpReq(API + url, params);
+                if (data.toString().length)
+                    data = showtime.JSONDecode(data);
             } catch (err) {
-                showtime.print(err);
                 showtime.print('Refreshing access_token');
                 try {
                     data = showtime.httpReq('https://www.googleapis.com/oauth2/v3/token', {
@@ -1957,7 +1971,9 @@
                     return err;
                 }
                 try {
-                    data = showtime.JSONDecode(showtime.httpReq(API + url, params));
+                    data = showtime.httpReq(API + url, params);
+                    if (data.toString().length)
+                        data = showtime.JSONDecode(data);
                 } catch (err) {
                     if (page)
                         page.loading = false;
@@ -2145,7 +2161,7 @@
                 images.push({
                     width: 20,
                     height: 20,
-                    url: plugin.path + "views/img/nophoto.bmp"
+                    url: plugin.path + "views/img/nophoto.png"
                 });
                 images = "imageset:" + showtime.JSONEncode(images);
                 metadata.icon = images;
