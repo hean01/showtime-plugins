@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/lprot/showtime-plugins/",
 	"title": "Youtube", 
 	"synopsis": "Youtube: Broadcast Yourself",
-	"version": "3.0.6",
+	"version": "3.0.7",
 	"file": "youtube.js", 
 	"showtimeVersion": "4.7.588",
 	"type": "ecmascript",

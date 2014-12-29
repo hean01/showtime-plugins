@@ -1316,19 +1316,6 @@
                 url: plugin.getDescriptor().id + ":scraper:/search:" + escape(params) + ':' + escape('Related Videos')
             });
 
-            for (var i in video.link) {
-                var link = video.link[i];
-                if (link.rel == 'http://gdata.youtube.com/schemas/2007#video.responses') {
-                    page.appendAction("navopen", plugin.getDescriptor().id + ':feed:' + escape('https://gdata.youtube.com/feeds/api/videos/' + id + '/responses') + ':' + escape('Response videos'), true, {
-                        title: 'Response videos'
-                    });
-                    extras.push({
-                        title: 'Responses',
-                        image: plugin.path + "views/img/nophoto.png",
-                        url: plugin.getDescriptor().id + ':feed:' + escape('https://gdata.youtube.com/feeds/api/videos/' + id + '/responses') + ':Responses'
-                    });
-                }
-            }
             if (extras.length > 0)
                 page.appendPassiveItem("list", extras, {
                     title: "Extras"
@@ -1340,7 +1327,7 @@
                 listActions: true
             });
             page.onEvent('like', function() {
-                rate(page, videoId, 'none');
+                rate(page, videoId, 'like');
             });
 
             page.appendAction("pageevent", "dislike", true, {
@@ -1353,41 +1340,22 @@
             });
 
             page.appendAction("pageevent", "none", true, {
-                title: 'Remove likes',
+                title: 'Remove like/dislike',
                 icon: plugin.path + "views/img/top.png",
                 listActions: true
             });
             page.onEvent('none', function() {
-                rate(page, videoId, 'none');            });
-
-            page.appendAction("pageevent", "addFavorite", true, {
-                title: 'Add to Favorites',
-                icon: plugin.path + "views/img/favorite.png",
-                listActions: true
-            });
-            page.onEvent('addFavorite', function() {
-                api.addFavorite(videoId);
-            });
-
-            page.appendAction("pageevent", "watchLater", true, {
-                title: 'Add to Watch Later',
-                icon: plugin.path + "views/img/watch_later.png",
-                listActions: true
-            });
-            page.onEvent('watchLater', function() {
-                api.watchLater(videoId);
+                rate(page, videoId, 'none');
             });
 
             if (store.refresh_token) {
                 page.appendAction("pageevent", "addToPlaylist", true, {
-                    title: 'Add to Playlist',
+                    title: 'Add to Playlists...',
                     icon: plugin.path + "views/img/add.png",
                     listActions: true
                 });
                 page.onEvent('addToPlaylist', function() {
-                    page.redirect(plugin.getDescriptor().id + ':playlist:add:' + escape(showtime.JSONEncode({
-                        "videoId": videoId
-                    })));
+                    page.redirect(plugin.getDescriptor().id + ':addToPlaylists:' + escape(videoId));
                 });
             }
 
@@ -1409,29 +1377,69 @@
         page.loading = false;
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":playlist:add:(.*)", function(page, args0) {
-        args0 = showtime.JSONDecode(unescape(args0));
-        if (args0.playlistId) {
-            if (apiV3.playlistItems.insert(args0.playlistId, args0.videoId)) {
-                showtime.notify("Video added successfully", 2);
-            } else {
-                showtime.notify("There was one error while trying to add video", 3);
-            }
-            //page.redirect(args0.referrer);
-            page.redirect(plugin.getDescriptor().id + ":channel:mine");
-        } else {
-            pageControllerAddToPlaylist(page, args0, function(nextPageToken) {
-                var args = {
-                    "part": "snippet",
-                    "mine": "true",
-                    "maxResults": 50
-                };
-                if (nextPageToken)
-                    args.pageToken = nextPageToken;
-                var data = apiV3.playlists.list(args);
-                data = data.response;
+    plugin.addURI(plugin.getDescriptor().id + ":addToPlaylist:(.*):(.*)", function(page, playlistId, videoId) {
+       //unescape(videoId)
+        var data = download(page, '/playlistItems', {
+            args: {
+                part: 'snippet',
+                mine: true
+            },
+            postdata: showtime.JSONEncode({
+                snippet: {
+                    playlistId: unescape(playlistId),
+                    resourceId: {
+                        kind: 'youtube#video',
+                        videoId: unescape(videoId)
+                    },
+                    position: 0
+                }
+            })
+        });
 
-                return data;
+        if (showtime.JSONEncode(data) != '{}')
+            showtime.notify("Video is successfully added to selected playlist", 2);
+        else
+            showtime.notify(data, 2);
+        page.redirect(plugin.getDescriptor().id + ":channel:mine");
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":addToPlaylists:(.*)", function(page, videoId) {
+        setPageHeader(page, "Add video to User's Playlists");
+
+        //data.items[0].contentDetails.id
+        //data.items[0].contentDetails.relatedPlaylists
+        //id": "UC79olQw8423oIz3eVeGy5VQ",
+        //     "likes": "LL79olQw8423oIz3eVeGy5VQ",
+        //     "favorites": "FL79olQw8423oIz3eVeGy5VQ",
+        //     "uploads": "UU79olQw8423oIz3eVeGy5VQ",
+        //     "watchHistory": "HL79olQw8423oIz3eVeGy5VQ",
+        //     "watchLater": "WL79olQw8423oIz3eVeGy5VQ"
+        var data = download(page, '/channels', {
+            args: {
+                part: 'contentDetails',
+                mine: true
+            }
+        });
+        page.appendItem(plugin.getDescriptor().id + ':addToPlaylist:' + escape(data.items[0].contentDetails.relatedPlaylists.watchLater) + ':' + videoId, 'directory', {
+            title: 'Watch Later'
+        });
+        page.appendItem(plugin.getDescriptor().id + ':addToPlaylist:' + escape(data.items[0].contentDetails.relatedPlaylists.favorites) + ':' + videoId, 'directory', {
+            title: 'Favorites'
+        });
+
+        // List playlists
+        var data = download(page, '/playlists', {
+            args: {
+                part: 'snippet',
+                mine: true
+            }
+        });
+        for (var i in data.items) {
+            page.appendItem(plugin.getDescriptor().id + ':addToPlaylist:' + escape(data.items[0].id) + ':' + videoId, 'video', {
+                title: data.items[i].snippet.title,
+                icon: data.items[i].snippet.thumbnails.default.url,
+                description: 'Published at: ' + data.items[i].snippet.publishedAt +
+                    '\n' + data.items[i].snippet.description
             });
         }
     });
@@ -1516,7 +1524,7 @@
                 rate(null, this.id, "dislike");
             });
 
-        item.addOptAction("Remove likes", "none");
+        item.addOptAction("Remove like/dislike", "none");
         if (typeof Duktape != 'undefined')
             item.onEvent('none', function(item) {
                 rate(null, this.id, "none");
@@ -1531,24 +1539,8 @@
         //    api.comment(this.id)
         //});
 
-        item.addOptAction("Add to Favorites", "addFavorite");
-        item.onEvent('addFavorite', function(item) {
-            api.addFavorite(this.id)
-        });
-
-        item.addOptAction("Add to Watch Later", "watchLater");
-        item.onEvent('watchLater', function(item) {
-            api.watchLater(this.id)
-        });
-
-        if (store.refresh_token) {
-            var params = {
-                args: {
-                    "videoId": item.id
-                }
-            };
-            item.addOptURL("Add to Playlist", plugin.getDescriptor().id + ':playlist:add:' + escape(showtime.JSONEncode(params)));
-        }
+        if (store.refresh_token)
+            item.addOptURL("Add to Playlists...", plugin.getDescriptor().id + ':addToPlaylists:' + escape(item.id));
 
         for (var i in entry.link) {
             var link = entry.link[i];
@@ -1700,7 +1692,22 @@
         if (item.channelId)
             item.addOptURL("More from this channel", plugin.getDescriptor().id + ':channel:' + item.channelId);
 
+
         if (item.videoId) {
+            item.addOptURL("Related Videos", plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
+                args: {
+                    "part": "snippet",
+                    'regionCode': service.region,
+                    'safeSearch': service.safeSearch,
+                    'maxResults': 50,
+                    "type": "video",
+                    "relatedToVideoId": item.videoId
+                }
+            })) + ':' + escape('Related Videos'));
+
+            if (store.refresh_token)
+                item.addOptURL("Add to Playlists...", plugin.getDescriptor().id + ':addToPlaylists:' + escape(item.videoId));
+
             item.addOptAction("Like video", "like");
             if (typeof Duktape != 'undefined')
                 item.onEvent('like', function(item) {
@@ -1721,7 +1728,7 @@
                     rate(page, this.videoId, 'dislike');
                 });
 
-            item.addOptAction("Remove rating", "none");
+            item.addOptAction("Remove like/dislike", "none");
             if (typeof Duktape != 'undefined')
                 item.onEvent('none', function(item) {
                     rate(page, this.videoId, 'none');
@@ -1735,38 +1742,6 @@
             //item.onEvent('comment', function(item) {
             //    api.comment(this.videoId)
             //});
-
-            item.addOptAction("Add to Favorites", "addFavorite");
-            item.onEvent('addFavorite', function(item) {
-                api.addFavorite(this.videoId)
-            });
-
-            item.addOptAction("Add to Watch Later", "watchLater");
-            item.onEvent('watchLater', function(item) {
-                api.watchLater(this.videoId)
-            });
-
-            var params = {
-                args: {
-                    "part": "snippet",
-                    'regionCode': service.region,
-                    'safeSearch': service.safeSearch,
-                    'maxResults': 50,
-                    "type": "video",
-                    "relatedToVideoId": item.videoId
-                }
-            };
-
-            item.addOptURL("Related Videos", plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode(params)) + ':' + escape('Related Videos'));
-
-            if (store.refresh_token) {
-                var params = {
-                    args: {
-                        "videoId": item.videoId
-                    }
-                };
-                item.addOptURL("Add to Playlist", plugin.getDescriptor().id + ':playlist:add:/search:' + escape(showtime.JSONEncode(params)));
-            }
         }
     }
 
