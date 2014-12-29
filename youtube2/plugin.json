@@ -7,7 +7,7 @@
 	"version": "3.0",
 	"file": "youtube.js", 
 	"showtimeVersion": "4.3.248", 
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "youtube",
 	"icon": "logo.png", 
 	"category": "video"
