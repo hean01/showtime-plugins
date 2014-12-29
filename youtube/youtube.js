@@ -1340,7 +1340,17 @@
                 listActions: true
             });
             page.onEvent('like', function() {
-                api.like(videoId, "like");
+                var data = download(page, '/videos/rate', {
+                    args: {
+                        'id': videoId,
+                        'rating': 'like'
+                    },
+                    postdata: {}
+                });
+                if (showtime.JSONEncode(data) != '{}')
+                     showtime.notify("Like is added", 3);
+                else
+                     showtime.notify(data, 3);
             });
 
             page.appendAction("pageevent", "dislike", true, {
@@ -1349,7 +1359,36 @@
                 listActions: true
             });
             page.onEvent('dislike', function() {
-                api.like(videoId, 'dislike');
+                var data = download(page, '/videos/rate', {
+                    method: 'POST',
+                    args: {
+                        'id': videoId,
+                        'rating': 'dislike'
+                    }
+                });
+                if (showtime.JSONEncode(data) != '{}')
+                     showtime.notify("Dislike is added", 3);
+                else
+                     showtime.notify(data, 3);
+            });
+
+            page.appendAction("pageevent", "none", true, {
+                title: 'Remove likes',
+                icon: plugin.path + "views/img/top.png",
+                listActions: true
+            });
+            page.onEvent('none', function() {
+                var data = download(page, '/videos/rate', {
+                    method: 'POST',
+                    args: {
+                        'id': videoId,
+                        'rating': 'none'
+                    }
+                });
+                if (showtime.JSONEncode(data) != '{}')
+                     showtime.notify("Likes are removed", 3);
+                else
+                     showtime.notify(data, 3);
             });
 
             page.appendAction("pageevent", "addFavorite", true, {
@@ -1911,6 +1950,7 @@
                     store.access_token = showtime.JSONDecode(data).access_token;
                     //setHeaders();
                     params.headers['Authorization'] = store.token_type + ' ' + store.access_token;
+                    showtime.print('Got new access_token');
                 } catch(err) {
                     if (page)
                         page.loading = false;
@@ -2042,7 +2082,7 @@
                         metadata.rating = metadata.likesPercentage;
                     }
                 }
-                showtime.print(showtime.JSONEncode(entry));
+                //showtime.print(showtime.JSONEncode(entry));
                 if (entry.snippet.thumbnails)
                     metadata.icon = entry.snippet.thumbnails.default.url;
 
