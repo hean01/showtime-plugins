@@ -200,28 +200,28 @@
 
     settings.createDivider("My Channel");
 
-    settings.createBool("showUploads", "Show User Uploads", true, function(v) {
+    settings.createBool("showActivities", "Show Activities", true, function(v) {
+        service.showActivities = v;
+    });
+    settings.createBool("showUploads", "Show Uploads", true, function(v) {
         service.showUploads = v;
     });
-    settings.createBool("showFavorites", "Show User Favorites", true, function(v) {
+    settings.createBool("showFavorites", "Show Favorites", true, function(v) {
         service.showFavorites = v;
     });
-    settings.createBool("showPlaylists", "Show User Playlists", true, function(v) {
+    settings.createBool("showPlaylists", "Show Playlists", true, function(v) {
         service.showPlaylists = v;
     });
-    settings.createBool("showSubscriptions", "Show User Subscriptions", true, function(v) {
+    settings.createBool("showSubscriptions", "Show Subscriptions", true, function(v) {
         service.showSubscriptions = v;
     });
-    settings.createBool("showNewSubscriptionVideos", "Show User New Subscription Videos", true, function(v) {
-        service.showNewSubscriptionVideos = v;
-    });
-    settings.createBool("showWatchHistory", "Show User Watch History", true, function(v) {
+    settings.createBool("showWatchHistory", "Show Watch History", true, function(v) {
         service.showWatchHistory = v;
     });
-    settings.createBool("showWatchLater", "Show User Watch Later", true, function(v) {
+    settings.createBool("showWatchLater", "Show Watch Later", true, function(v) {
         service.showWatchLater = v;
     });
-    settings.createBool("showLikes", "Show User Likes", true, function(v) {
+    settings.createBool("showLikes", "Show Likes", true, function(v) {
         service.showLikes = v;
     });
 
@@ -361,7 +361,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":channel:(.*)", function(page, id) {
         page.loading = true;
         if (!store.refresh_token && id == 'mine') {
-            page.error('User must be authenticated to see this profile');
+            page.error('You need to login to Youtube in Settings.');
             return;
         }
 
@@ -465,7 +465,7 @@
 
         var lists_tmp = {};
 
-        if (id == "mine") { // new subscription > activity
+        if (id == "mine" && service.showActivities) { // new subscription > activity
             var params = {
                 args: {
                     'part': 'snippet,contentDetails',
@@ -503,6 +503,8 @@
                     'maxResults': 50
                 }
             };
+            if (id == 'mine')
+                params.method = 'GET';
             var data = download(page, url, params);
             var favorites = getItems(data.items);
             if (favorites.length > 0) {
@@ -1133,7 +1135,7 @@
 
         var data = download(page, '/videos', {
             args: {
-                "part": "snippet,contentDetails,statistics,status,topicDetails",
+                "part": "snippet,contentDetails,statistics,status",
                 "id": id
             }
         });
@@ -1148,30 +1150,15 @@
         var video = data.items[0];
 
         var events = false;
-
-        for (var title in apiV3.videos.information) {
-            var code = apiV3.videos.information[title];
-            if (title == 'Rating') {
-                /*page.metadata.rating;
-                page.appendPassiveItem("rating", eval(element[1]));*/
-            } else {
-                page.appendPassiveItem("label", eval(code), {
-                    title: title + ": "
-                });
-            }
-        }
-
-        var durationString = video.contentDetails.duration;
-        var match = durationString.match(/PT(.+?)M(.+?)S/);
-        if (match) {
-            var minutes = parseInt(match[1]);
-            var seconds = parseInt(match[2]);
-
-            page.appendPassiveItem("label", minutes + ":" + seconds, {
-                title: "Duration: "
-            });
-        }
-
+        page.appendPassiveItem("label", data.items[0].snippet.channelTitle, {
+            title: 'Uploader' + ": "
+        });
+        page.appendPassiveItem("label", data.items[0].statistics.viewCount, {
+            title: 'View count' + ": "
+        });
+        page.appendPassiveItem("label", durationToString(video.contentDetails.duration), {
+            title: "Duration: "
+        });
         page.appendPassiveItem("divider");
         page.appendPassiveItem("bodytext", new showtime.RichText(video.snippet.description));
 
@@ -1223,7 +1210,7 @@
 
             var extras = [];
             extras.push({
-                title: 'My Channel',
+                title: 'Open channel',
                 image: plugin.path + "views/img/logos/user.png",
                 url: plugin.getDescriptor().id + ':channel:' + channelId
             });
