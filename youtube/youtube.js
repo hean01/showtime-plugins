@@ -359,7 +359,7 @@
         for (var i in items) {
             var it = items[i];
             var args = {
-                title: it.snippet.title ? it.snippet.title : it.snippet.channelTitle,
+                title: (it.snippet.type ? it.snippet.type :(it.snippet.title ? it.snippet.title : it.snippet.channelTitle)),
                 image: it.snippet.thumbnails ? it.snippet.thumbnails.default.url : plugin.path + "views/img/nophoto.png"
             };
             if (it.kind == "youtube#playlistItem" && it.snippet.resourceId.kind == "youtube#video")
@@ -405,6 +405,12 @@
         return data.items[0].id;
     }
 
+    plugin.addURI(plugin.getDescriptor().id + ":feed:(.*)", function(page, param) {
+        var username = unescape(param).match(/http:\/\/gdata.youtube.com\/feeds\/api\/users\/([\s\S]*?)\/newsubscriptionvideos/);
+        if (user)
+            page.redirect(plugin.getDescriptor().id + ":user:username:" + parseChannelId(username[1]));
+    });
+
     plugin.addURI(plugin.getDescriptor().id + ":user:username:(.*)", function(page, username) {
         page.redirect(plugin.getDescriptor().id + ":channel:" + parseChannelId(username));
     });
@@ -413,24 +419,38 @@
         showtime.print(showtime.JSONEncode(data));
     }
 
-
     function sleep(ms) {
         ms += new Date().getTime();
         while (new Date() < ms) {}
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":channel:(.*)", function(page, id) {
-        page.loading = true;
-        if (!store.refresh_token && id == 'mine') {
+        page.metadata.background = plugin.path + "views/img/background.png";
+        page.metadata.backgroundAlpha = 0.5;
+
+        // My Channel needs user to be authed
+        if (id == 'mine' && !store.refresh_token) {
+            page.loading = false;
             page.error('You need to login to Youtube in Settings.');
             return;
         }
 
-        page.metadata.background = plugin.path + "views/img/background.png";
-        page.metadata.backgroundAlpha = 0.5;
         page.metadata.glwview = plugin.path + "views/user2.view";
         page.type = "directory";
 
+        // Check if id is mine
+        if (store.refresh_token && id != 'mine') {
+            var data = download(page, API + '/channels', {
+                args: {
+                    'part': 'id',
+                    'mine': true
+                }
+            });
+            if (data.items[0].id == id)
+                id = 'mine';
+        }
+
+        // Get channel data
         var params = {
             args: {
                 'part': 'snippet,contentDetails,brandingSettings,statistics,status'
@@ -438,14 +458,19 @@
         };
         id == "mine" ? params.args.mine = true : params.args.id = id;
         var data = download(page, API + '/channels', params);
-        if (data.error || showtime.JSONEncode(data) == '{}') {
-            page.error(data);
+
+        if (data.error) {
+            page.error(data.error);
             return;
         }
+
         if (data.items.length == 0) {
-            page.error("This channel contains no items.");
+            showtime.message("The channel is empty.", true, false);
             return;
         }
+
+        page.metadata.title = data.items[0].snippet.title;
+        page.metadata.logo = data.items[0].snippet.thumbnails.default.url;
 
         var hints = parseChannelHints(data);
         if (hints["watchpage.background.image.url"]) {
@@ -465,22 +490,21 @@
         }
 
         var channelId = data.items[0].id;
-
-        page.metadata.title = data.items[0].snippet.title;
-        page.metadata.logo = data.items[0].snippet.thumbnails.default.url;
+        var lists_tmp = {};
 
         // Subscribe/unsubscribe to the channel
         if (store.refresh_token && id != 'mine') {
             var data = download(page, API + '/subscriptions', {
                 args: {
-                    "part": "snippet",
-                    "mine": true,
-                    "forChannelId": id
+                    'part': 'snippet',
+                    'mine': true,
+                    'forChannelId': id
                 }
             });
 
+            var subscribeButton;
             if (data.pageInfo.totalResults == 0) {
-                var subscribeButton = page.appendAction("pageevent", "subscribeToTheChannel", false, {
+                page.appendAction("pageevent", "subscribeToTheChannel", false, {
                     title: "Subscribe to this channel"
                 });
 
@@ -498,14 +522,14 @@
                             }
                         })
                     });
-                    if (showtime.JSONEncode(data) != '{}') {
+                    if (!data.error) {
                         showtime.notify("You successfully subscribed to this channel", 2);
                         //page.redirect(plugin.getDescriptor().id + ':channel:' + id);
                     } else
-                        showtime.notify(data, 2);
+                        showtime.notify(data.error, 2);
                 });
             } else {
-                var subscribeButton = page.appendAction("pageevent", "unsubscribeFromTheChannel", false, {
+                page.appendAction("pageevent", "unsubscribeFromTheChannel", false, {
                     title: "Unsubscribe from this channel"
                 });
                 var subId = data.items[0].id;
@@ -517,26 +541,24 @@
                         }
                     });
 
-                    if (showtime.JSONEncode(data) != '{}') {
+                    if (!data.error) {
                         showtime.notify("You successfully unsubscribed from this channel", 2);
                         //page.redirect(plugin.getDescriptor().id + ':channel:' + id);
                     } else
-                        showtime.notify(data, 2);
+                        showtime.notify(data.error, 2);
                 });
             }
         }
 
-        var lists_tmp = {};
-
-        if (id == "mine" && service.showActivities) { // activities (new subscriptions)
+        if (service.showActivities) { // activities (new subscriptions)
             var params = {
                 args: {
                     'part': 'snippet,contentDetails',
-                    'home': true,
                     'regionCode': service.region,
                     'maxResults': 50
                 }
             }
+            id == 'mine' ? params.args.home = true : params.args.channelId = id;
             var data = download(page, API + '/activities', params);
             var activity = getItems(data.items);
 
@@ -547,7 +569,7 @@
                     url: plugin.getDescriptor().id + ":scraper:/activities:" + escape(showtime.JSONEncode(params)) + ':Activities'
                 });
 
-                if (id == "mine") page.appendPassiveItem("list", activity, {
+                page.appendPassiveItem("list", activity, {
                     title: "Activities"
                 });
                 lists_tmp.activity = {
@@ -1185,9 +1207,7 @@
             if (err == "Error: HTTP error: 404")
                 err = "The video is unavailable at this moment.";
 
-            e(err);
             page.error(err);
-            showtime.trace(err);
             return;
         }
 
@@ -1195,34 +1215,38 @@
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":video:advanced:(.*)", function(page, id) {
-        page.metadata.icon = "http://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
+        page.metadata.background = plugin.path + "views/img/background.png";
+        page.metadata.backgroundAlpha = 0.5;
         page.type = "directory";
         page.metadata.glwview = plugin.path + "views/video.view";
 
         var videoId = id;
-
-        var data = download(page, API + '/videos', {
+        var params = {
             args: {
                 "part": "snippet,contentDetails,statistics,status",
                 "id": id
             }
-        });
+        };
+        if (store.refresh_token)
+            params.method = 'GET';
+
+        page.loading = true;
+        var data = download(page, API + '/videos', params);
 
         if (data.error) {
             page.error(data.error);
             return;
         }
 
-        pageMenu(page);
-
-        var video = data.items[0];
-
-        var events = false;
-
         if (!data.items.length) {
             page.error("Can't get video info...");
             return;
         }
+
+        page.metadata.icon = data.items[0].snippet.thumbnails.default.url;
+        var video = data.items[0];
+        var events = false;
+
         page.appendPassiveItem("label", data.items[0].snippet.channelTitle, {
             title: 'Uploader' + ": "
         });
@@ -1288,34 +1312,6 @@
                 url: plugin.getDescriptor().id + ':channel:' + channelId
             });
 
-            for (var i in video.link) {
-                var feed = video.link[i];
-                if (feed.rel == "http://gdata.youtube.com/schemas/2007#video.trailer-for") {
-                    var match = feed.href.match('videos/([^?]*)');
-                    if (match) {
-                        page.appendAction("navopen", plugin.getDescriptor().id + ':video:' + escape(match[1]), true, {
-                            title: 'Movie'
-                        });
-                        extras.push({
-                            title: 'Movie',
-                            image: plugin.path + "views/img/logos/movies.png",
-                            url: plugin.getDescriptor().id + ':video:' + escape(match[1])
-                        });
-                    }
-                }
-
-                if (feed.rel == "http://gdata.youtube.com/schemas/2007#video.trailers") {
-                    page.appendAction("navopen", plugin.getDescriptor().id + ':feed:' + escape(feed.href) + ':Trailers', true, {
-                        title: 'Trailers'
-                    });
-                    extras.push({
-                        title: 'Trailers',
-                        image: plugin.path + "views/img/logos/trailers.png",
-                        url: plugin.getDescriptor().id + ':feed:' + escape(feed.href) + ':Trailers'
-                    });
-                }
-            }
-
             var params = showtime.JSONEncode({
                 args: {
                     "part": "snippet",
@@ -1341,34 +1337,34 @@
                     title: "Extras"
                 });
 
-            page.appendAction("pageevent", "like", true, {
-                title: 'Like',
-                icon: plugin.path + "views/img/like.png",
-                listActions: true
-            });
-            page.onEvent('like', function() {
-                rate(page, videoId, 'like');
-            });
-
-            page.appendAction("pageevent", "dislike", true, {
-                title: 'Dislike',
-                icon: plugin.path + "views/img/dislike.png",
-                listActions: true
-            });
-            page.onEvent('dislike', function() {
-                rate(page, videoId, 'dislike');
-            });
-
-            page.appendAction("pageevent", "none", true, {
-                title: 'Remove like/dislike',
-                icon: plugin.path + "views/img/top.png",
-                listActions: true
-            });
-            page.onEvent('none', function() {
-                rate(page, videoId, 'none');
-            });
-
             if (store.refresh_token) {
+                page.appendAction("pageevent", "like", true, {
+                    title: 'Like',
+                    icon: plugin.path + "views/img/like.png",
+                    listActions: true
+                });
+                page.onEvent('like', function() {
+                    rate(page, videoId, 'like');
+                });
+
+                page.appendAction("pageevent", "dislike", true, {
+                    title: 'Dislike',
+                    icon: plugin.path + "views/img/dislike.png",
+                    listActions: true
+                });
+                page.onEvent('dislike', function() {
+                    rate(page, videoId, 'dislike');
+                });
+
+                page.appendAction("pageevent", "none", true, {
+                    title: 'Remove like/dislike',
+                    icon: plugin.path + "views/img/top.png",
+                    listActions: true
+                });
+                page.onEvent('none', function() {
+                    rate(page, videoId, 'none');
+                });
+
                 page.appendAction("pageevent", "addToPlaylist", true, {
                     title: 'Add to Playlists...',
                     icon: plugin.path + "views/img/add.png",
@@ -1947,7 +1943,6 @@
                     data = showtime.JSONDecode(data);
                 } catch(err) {}
             } catch (err) {
-
                 showtime.print('Refreshing access_token');
                 try {
                     data = showtime.httpReq('https://www.googleapis.com/oauth2/v3/token', {
@@ -1965,17 +1960,17 @@
                 } catch(err) {
                     if (page)
                         page.loading = false;
-                    return err;
+                    return { error: err };
                 }
-                try {
+                try { // retrying the request with fresh token
                     data = showtime.httpReq(url, params);
                     try {
                         data = showtime.JSONDecode(data);
                     } catch(err) {}
                 } catch (err) {
-                    if (page)
-                        page.loading = false;
-                    return err;
+                    data = {
+                        error: err
+                    }
                 }
             }
         } else { // no auth request
@@ -1984,10 +1979,10 @@
                 try {
                     data = showtime.JSONDecode(data);
                 } catch(err) {}
-            } catch (err) {
-                if (page)
-                    page.loading = false;
-                return err;
+            } catch(err) {
+                data = {
+                    error: err
+                };
             }
         }
         if (page)
@@ -2177,7 +2172,7 @@
                     var type = entry.snippet.type;
                     var channelTitle = entry.snippet.channelTitle;
                     var cParams = entry.contentDetails[type];
-                    metadata.title = title;
+                    metadata.title = new showtime.RichText(coloredStr('[' + type + '] ', orange) +title);
                     if (cParams.resourceId)
                         var resourceId = entry.contentDetails[type].resourceId.kind;
                     if (resourceId == "youtube#video" || !cParams.resourceId) {
