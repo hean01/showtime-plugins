@@ -76,54 +76,66 @@
     if (!service.language)
         store_lists.language = service.language = 'en';
 
-    function getLanguages() {
-        var data = download(null, '/i18nLanguages', {
-            'part': 'snippet',
-            'hl': service.language
-        });
-        var languages = [];
+    function getLanguages(fromWhere) { // true - youtube, false - store
+        var data;
+        if (fromWhere) { // get from youtube
+            data = download(null, '/i18nLanguages', {
+                args: {
+                    'part': 'snippet',
+                    'hl': service.language
+                }
+            });
+            store_lists.languages = encodeURI(showtime.JSONEncode(data));
+        } else // read from store
+            data = showtime.JSONDecode(decodeURI(store_lists.languages));
+
+        service.languages = [];
         for (var i in data.items) {
             if (data.items[i].snippet.hl == service.language)
-                languages.push([data.items[i].snippet.hl, data.items[i].snippet.name, true]);
+                service.languages.push([data.items[i].snippet.hl, data.items[i].snippet.name, true]);
             else
-                languages.push([data.items[i].snippet.hl, data.items[i].snippet.name]);
+                service.languages.push([data.items[i].snippet.hl, data.items[i].snippet.name]);
         }
-        service.languages = languages;
-        store_lists.languages = showtime.JSONEncode(languages);
     }
 
-    function getRegions() {
-        var data = download(null, '/i18nRegions', {
-            'part': 'snippet',
-            'hl': service.language
-        });
-        var regions = [];
+    function getRegions(fromWhere) {
+        var data;
+        if (fromWhere) {
+            data = download(null, '/i18nRegions', {
+                args: {
+                    'part': 'snippet',
+                    'hl': service.language
+                }
+            });
+            store_lists.regions = encodeURI(showtime.JSONEncode(data));
+        } else
+            data = showtime.JSONDecode(decodeURI(store_lists.regions));
+
+        service.regions = [];
         for (var i in data.items) {
             if (data.items[i].snippet.gl == 'US')
-                regions.push([data.items[i].snippet.gl, data.items[i].snippet.name, true]);
+                service.regions.push([data.items[i].snippet.gl, data.items[i].snippet.name, true]);
             else
-                regions.push([data.items[i].snippet.gl, data.items[i].snippet.name]);
+                service.regions.push([data.items[i].snippet.gl, data.items[i].snippet.name]);
         }
-        service.regions = regions;
-        store_lists.regions = showtime.JSONEncode(regions);
     }
 
     settings.createDivider('Language and region');
 
-    store_lists.languages ? service.languages = eval(store_lists.languages) : getLanguages();
+    store_lists.languages ? getLanguages(false) : getLanguages(true);
     settings.createMultiOpt("language", "Language", service.languages, function(v) {
         store_lists.language = service.language = v;
     });
 
-    store_lists.regions ? service.regions = eval(store_lists.regions) : getRegions();
-
+    store_lists.regions ? getRegions(false) : getRegions(true);
     settings.createMultiOpt("region", "Region", service.regions, function(v) {
         service.region = v;
     });
+
     settings.createAction("reloadLanguages", "Update language and region lists from Youtube ", function() {
-        getLanguages();
-        getRegions();
-        showtime.notify("Language and region lists are updated. Reload Showtime. ", 3, "");
+        getLanguages(true);
+        getRegions(true);
+        showtime.notify("Language and region lists are updated. Reload Showtime to see new lists in settings. ", 5);
     });
 
     settings.createDivider('Browser Settings');
@@ -228,9 +240,11 @@
                 var title = obj.metadata.title.toString();
                 title = title.replace(/<.+?>/g, "").replace(/\[.+?\]/g, "");
                 nav.openURL(plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
-                    'part': 'snippet',
-                    'type': 'video',
-                    'q': title
+                    args: {
+                        'part': 'snippet',
+                        'type': 'video',
+                        'q': title
+                    }
                 })) + ':' + escape(title));
             }
         });
@@ -238,9 +252,11 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":searcher:(.*):(.*)", function(page, type, query) {
         page.redirect(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            'part': 'snippet',
-            'type': type,
-            'q': query
+            args: {
+                'part': 'snippet',
+                'type': type,
+                'q': query
+            }
         })) + ':' + escape(query));
     });
 
@@ -309,8 +325,10 @@
                 args.url = plugin.getDescriptor().id + ":video:" + it.snippet.resourceId.videoId;
             else if (it.kind == "youtube#playlist") {
                 args.url = plugin.getDescriptor().id + ":scraper:/playlistItems:" + escape(showtime.JSONEncode({
-                    "part": "snippet,contentDetails,status",
-                    "playlistId": it.id
+                    args: {
+                        "part": "snippet,contentDetails,status",
+                        "playlistId": it.id
+                    }
                 })) + ':' + escape(it.snippet.title);
             } else if (it.kind == "youtube#subscription" && it.snippet.resourceId.kind == "youtube#channel")
                 args.url = plugin.getDescriptor().id + ":channel:" + it.snippet.resourceId.channelId;
@@ -322,8 +340,10 @@
 
     function parseChannelId(username) {
         var data = download(page, '/channels', {
-            "part": "id",
-            "forUsername": username
+            args: {
+                "part": "id",
+                "forUsername": username
+            }
         });
         return data.items[0].id;
     }
@@ -332,9 +352,13 @@
         page.redirect(plugin.getDescriptor().id + ":channel:" + parseChannelId(username));
     });
 
+    function print(data) {
+        showtime.print(showtime.JSONEncode(data));
+    }
+
     plugin.addURI(plugin.getDescriptor().id + ":channel:(.*)", function(page, id) {
         page.loading = true;
-        if (!store.refresh_token && id == 'default') {
+        if (!store.refresh_token && id == 'mine') {
             page.error('User must be authenticated to see this profile');
             return;
         }
@@ -344,12 +368,14 @@
         page.metadata.glwview = plugin.path + "views/user2.view";
         page.type = "directory";
 
-        var args = {
-            'part': 'snippet,contentDetails,brandingSettings,statistics,status'
+        var params = {
+            args: {
+                'part': 'snippet,contentDetails,brandingSettings,statistics,status'
+            }
         };
-        id == "default" ? args.mine = true : args.id = id;
-        var data = download(page, '/channels', args, id == "default" ? true : false);
-        showtime.print(showtime.JSONEncode(data));
+        id == "mine" ? params.args.mine = true : params.args.id = id;
+        var data = download(page, '/channels', params);
+        //showtime.print(showtime.JSONEncode(data));
         if (data.error) {
             page.error(data.error);
             return;
@@ -381,32 +407,73 @@
         page.metadata.title = data.items[0].snippet.title;
         page.metadata.logo = data.items[0].snippet.thumbnails.default.url;
 
-        if (store.refresh_token && id != 'default') {
-            if (!hasSubscribed(channelId)) {
+        // Subscribe/unsubscribe to the channel
+        if (store.refresh_token && id != 'mine') {
+            var data = download(page, '/subscriptions', {
+                args: {
+                    "part": "snippet",
+                    "mine": true,
+                    "forChannelId": id
+                }
+            });
+
+            if (data.pageInfo.totalResults == 0) {
                 var subscribeButton = page.appendAction("pageevent", "subscribeToTheChannel", false, {
                     title: "Subscribe to this channel"
                 });
 
                 page.onEvent('subscribeToTheChannel', function() {
-                    var data = download(page, '/subscriptions.insert(channelId)');
-                    if (!data.error && data.response.snippet.resourceId.channelId == channelId)
-                        showtime.notify("Subscribed to the channel successfully", 2);
+                    var data = download(page, '/subscriptions', {
+                        args: {
+                            part: 'snippet'
+                        },
+                        postdata: showtime.JSONEncode({
+                            snippet: {
+                                resourceId: {
+                                    kind: 'youtube#subscription',
+                                    channelId: id
+                                }
+                            }
+                        })
+                    });
+                    if (showtime.JSONEncode(data) != '{}')
+                        showtime.notify("You successfully subscribed to this channel", 2);
                     else
-                        showtime.notify("Failed to subscribe to the channel", 2);
+                        showtime.notify(data, 2);
+                });
+            } else {
+                var subscribeButton = page.appendAction("pageevent", "unsubscribeFromTheChannel", false, {
+                    title: "Unsubscribe from this channel"
+                });
+                var subId = data.items[0].id;
+                page.onEvent('unsubscribeFromTheChannel', function() {
+                    var data = download(page, '/subscriptions', {
+                        method: 'DELETE',
+                        args: {
+                            'id': subId
+                        }
+                    });
+
+                    if (!data.error && data.response.snippet.resourceId.channelId == channelId)
+                        showtime.notify("You successfully unsubscribed from this channel", 2);
+                    else
+                        showtime.notify("Failed to unsubscribe from the channel", 2);
                 });
             }
         }
 
         var lists_tmp = {};
 
-        if (id == "default") {
+        if (id == "$mine") {
             if (service.showNewSubscriptionVideos) {
                 var data = download(page, '/subscriptions', {
-                    "part": "snippet,contentDetails",
-                    "mine": true
-                }, true);
+                    args: {
+                        "part": "snippet,contentDetails",
+                        "mine": true
+                    }
+                });
                 var newSubscriptionVideos = [];
-                showtime.print(showtime.JSONEncode(data));
+                //showtime.print(showtime.JSONEncode(data));
                 for (var i in data.items) {
                     var it = data.entry[i];
                     id = it.media$group.yt$videoid.$t;
@@ -437,7 +504,7 @@
                         url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + user + '/newsubscriptionvideos') + ':' + escape(page.metadata.title)
                     });
 
-                    if (user == "default") page.appendPassiveItem("list", newSubscriptionVideos, {
+                    if (user == "mine") page.appendPassiveItem("list", newSubscriptionVideos, {
                         title: "New Subscription Videos"
                     });
                     lists_tmp.newSubscriptionVideos = {
@@ -450,20 +517,22 @@
 
         if (service.showFavorites && favoritesPlaylistId) {
             var url = '/playlistItems';
-            var args = {
-                "part": "snippet,contentDetails,status",
-                "playlistId": favoritesPlaylistId
+            var params = {
+                args: {
+                    "part": "snippet,contentDetails,status",
+                    "playlistId": favoritesPlaylistId
+                }
             };
-            var data = download(page, url, args);
+            var data = download(page, url, params);
             var favorites = getItems(data.items);
             if (favorites.length > 0) {
                 favorites.push({
                     title: "See More",
                     image: plugin.path + "views/img/add.png",
-                    url: plugin.getDescriptor().id + ":scraper:" + url + ':' + escape(showtime.JSONEncode(args)) + ':' + escape(page.metadata.title)
+                    url: plugin.getDescriptor().id + ":scraper:" + url + ':' + escape(showtime.JSONEncode(params)) + ':' + escape(page.metadata.title)
                 });
 
-                if (id == "default") page.appendPassiveItem("list", favorites, {
+                if (id == "mine") page.appendPassiveItem("list", favorites, {
                     title: "Favorites"
                 });
                 lists_tmp.favorites = {
@@ -473,11 +542,13 @@
             }
         }
 
-        if (id == "default") {
+        if (id == "mine") {
             if (service.showWatchLater) {
                 var data = download(page, '/playlistItems', {
-                    "part": "snippet,contentDetails,status",
-                    "playlistId": watchLaterPlaylistId
+                    args: {
+                        "part": "snippet,contentDetails,status",
+                        "playlistId": watchLaterPlaylistId
+                    }
                 });
                 var watchLater = getItems(data.items);
 
@@ -488,7 +559,7 @@
                         url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + id + '/watch_later') + ':' + escape(page.metadata.title)
                     });
 
-                    if (id == "default") page.appendPassiveItem("list", watchLater, {
+                    if (id == "mine") page.appendPassiveItem("list", watchLater, {
                         title: "Watch Later"
                     });
                     lists_tmp.watchLater = {
@@ -500,8 +571,10 @@
 
             if (service.showWatchHistory) {
                 var data = download(page, '/playlistItems', {
-                    "part": "snippet,contentDetails,status",
-                    "playlistId": watchHistoryPlaylistId
+                    args: {
+                        "part": "snippet,contentDetails,status",
+                        "playlistId": watchHistoryPlaylistId
+                    }
                 });
 
                 var watchHistory = getItems(data.items);
@@ -513,7 +586,7 @@
                         url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + id + '/watch_history') + ':' + escape(page.metadata.title)
                     });
 
-                    if (id == "default") page.appendPassiveItem("list", watchHistory, {
+                    if (id == "mine") page.appendPassiveItem("list", watchHistory, {
                         title: "Watch History"
                     });
                     lists_tmp.watchHistory = {
@@ -525,8 +598,10 @@
 
             if (service.showLikes && likesPlaylistId) {
                 var data = download(page, '/playlistItems', {
-                    "part": "snippet,contentDetails,status",
-                    "playlistId": likesPlaylistId
+                    args: {
+                        "part": "snippet,contentDetails,status",
+                        "playlistId": likesPlaylistId
+                    }
                 });
 
                 var likes = getItems(data.items);
@@ -538,7 +613,7 @@
                         url: plugin.getDescriptor().id + ":feed:" + escape("https://gdata.youtube.com/feeds/api/playlists/" + likesPlaylistId) + ':' + escape(page.metadata.title)
                     });
 
-                    if (id == "default") page.appendPassiveItem("list", watchLater, {
+                    if (id == "mine") page.appendPassiveItem("list", watchLater, {
                         title: "Likes"
                     });
                     lists_tmp.likes = {
@@ -550,20 +625,24 @@
 
 
             if (service.showSubscriptions) {
-                var data = download(page, '/subscriptions', {
-                    "part": "snippet",
-                    "mine": true
-                });
+                var params = {
+                    args: {
+                        'part': 'snippet,contentDetails',
+                        'maxResults': 50,
+                        'mine': true
+                    }
+                }
+                var data = download(page, '/subscriptions', params);
                 var subscriptions = getItems(data.items);
 
                 if (subscriptions.length > 0) {
                     subscriptions.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + id + '/subscriptions') + ':' + escape(page.metadata.title)
+                        url: plugin.getDescriptor().id + ":scraper:/subscriptions:" + escape(showtime.JSONEncode(params)) + ':' + escape(page.metadata.title)
                     });
 
-                    if (id == "default") page.appendPassiveItem("list", subscriptions, {
+                    if (id == "mine") page.appendPassiveItem("list", subscriptions, {
                         title: "Subscriptions"
                     });
                     lists_tmp.subscriptions = {
@@ -572,27 +651,28 @@
                     };
                 }
             }
-        } // id=default
+        } // id=mine
 
         // Show playlists of the channel
         if (service.showPlaylists) {
             var url = '/playlists';
-            var args = {
-                "part": "snippet,contentDetails,status",
-                "channelId": channelId
+            var params = {
+                args: {
+                    "part": "snippet,contentDetails,status",
+                    "channelId": channelId
+                }
             };
-
-            var data = download(page, url, args);
+            var data = download(page, url, params);
             var playlists = getItems(data.items);
 
             if (playlists.length > 0) {
                 playlists.push({
                     title: "See More",
                     image: plugin.path + "views/img/add.png",
-                    url: plugin.getDescriptor().id + ":scraper:" + url + ':' + escape(showtime.JSONEncode(args)) + ':' + escape(page.metadata.title)
+                    url: plugin.getDescriptor().id + ":scraper:" + url + ':' + escape(showtime.JSONEncode(params)) + ':' + escape(page.metadata.title)
                 });
 
-                if (id == "default") page.appendPassiveItem("list", playlists, {
+                if (id == "mine") page.appendPassiveItem("list", playlists, {
                     title: "Playlists"
                 });
                 lists_tmp.playlists = {
@@ -602,10 +682,10 @@
             }
         }
 
-        if (id == "default") {
+        if (id == "$mine") {
             if (service.showVideoRecommendations) {
                 var data = download({
-                    "path": 'https://gdata.youtube.com/feeds/api/users/' + id + '/recommendations',
+                    "path": 'https://gdata.youtube.com/feeds/api/users/default/recommendations',
                     "args": {
                         "alt": "json"
                     },
@@ -644,7 +724,7 @@
                         url: plugin.getDescriptor().id + ":feed:" + escape('https://gdata.youtube.com/feeds/api/users/' + id + '/recommendations') + ':' + escape(page.metadata.title)
                     });
 
-                    if (id == "default") page.appendPassiveItem("list", videoRecommendations, {
+                    if (id == "mine") page.appendPassiveItem("list", videoRecommendations, {
                         title: "Video Recommendations"
                     });
                     lists_tmp.videoRecommendations = {
@@ -656,12 +736,14 @@
         }
 
         if (service.showUploads && uploadsPlaylistId) {
-            var args = {
-                "part": "snippet,contentDetails,status",
-                "playlistId": uploadsPlaylistId
+            var params = {
+                args: {
+                    "part": "snippet,contentDetails,status",
+                    "playlistId": uploadsPlaylistId
+                }
             };
             var url = '/playlistItems';
-            var data = download(page, url, args);
+            var data = download(page, url, params);
 
             var uploads = getItems(data.items);
 
@@ -669,10 +751,10 @@
                 uploads.push({
                     title: "See More",
                     image: plugin.path + "views/img/add.png",
-                    url: plugin.getDescriptor().id + ":scraper:" + url + ':' + escape(showtime.JSONEncode(args)) + ':' + escape(page.metadata.title)
+                    url: plugin.getDescriptor().id + ":scraper:" + url + ':' + escape(showtime.JSONEncode(params)) + ':' + escape(page.metadata.title)
                 });
 
-                if (id == "default") page.appendPassiveItem("list", uploads, {
+                if (id == "mine") page.appendPassiveItem("list", uploads, {
                     title: "Uploads"
                 });
                 lists_tmp.uploads = {
@@ -682,7 +764,7 @@
             }
         }
 
-        if (id != "default") {
+        if (id != "mine") {
             var lists = {
                 uploads: lists_tmp.uploads,
                 playlists: lists_tmp.playlists,
@@ -1125,8 +1207,10 @@
         var videoId = id;
 
         var data = download(page, '/videos', {
-            "part": "snippet,contentDetails,statistics,status,topicDetails",
-            "id": id
+            args: {
+                "part": "snippet,contentDetails,statistics,status,topicDetails",
+                "id": id
+            }
         });
 
         if (data.error) {
@@ -1247,19 +1331,21 @@
                 }
             }
 
-            var args = showtime.JSONEncode({
-                "part": "snippet",
-                "type": "video",
-                "relatedToVideoId": id
+            var params = showtime.JSONEncode({
+                args: {
+                    "part": "snippet",
+                    "type": "video",
+                    "relatedToVideoId": id
+                }
             });
 
-            page.appendAction("navopen", plugin.getDescriptor().id + ":scraper:/search:" + escape(args) + ':' + escape('Related Videos'), true, {
+            page.appendAction("navopen", plugin.getDescriptor().id + ":scraper:/search:" + escape(params) + ':' + escape('Related Videos'), true, {
                 title: 'Related videos'
             });
             extras.push({
                 title: 'Related',
                 image: plugin.path + "views/img/nophoto.bmp",
-                url: plugin.getDescriptor().id + ":scraper:/search:" + escape(args) + ':' + escape('Related Videos')
+                url: plugin.getDescriptor().id + ":scraper:/search:" + escape(params) + ':' + escape('Related Videos')
             });
 
             for (var i in video.link) {
@@ -1356,7 +1442,7 @@
                 showtime.notify("There was one error while trying to add video", 3);
             }
             //page.redirect(args0.referrer);
-            page.redirect(plugin.getDescriptor().id + ":channel:default");
+            page.redirect(plugin.getDescriptor().id + ":channel:mine");
         } else {
             pageControllerAddToPlaylist(page, args0, function(nextPageToken) {
                 var args = {
@@ -1442,10 +1528,12 @@
         });
 
         if (store.refresh_token) {
-            var args = {
-                "videoId": item.id
+            var params = {
+                args: {
+                    "videoId": item.id
+                }
             };
-            item.addOptURL("Add to Playlist", plugin.getDescriptor().id + ':playlist:add:' + escape(showtime.JSONEncode(args)));
+            item.addOptURL("Add to Playlist", plugin.getDescriptor().id + ':playlist:add:' + escape(showtime.JSONEncode(params)));
         }
 
         for (var i in entry.link) {
@@ -1594,15 +1682,6 @@
         });
     }
 
-    function hasSubscribed(channelId) {
-        var data = download(null, '/subscriptions', {
-            "part": "snippet",
-            "forChannelId": channelId,
-            "mine": true
-        });
-        return !data.error && data.items.length == 1;
-    }
-
     function setVideoItemOptions(item, page) {
         if (item.channelId)
             item.addOptURL("More from this channel", plugin.getDescriptor().id + ':channel:' + item.channelId);
@@ -1633,19 +1712,23 @@
                 api.watchLater(this.videoId)
             });
 
-            var args = {
-                "part": "snippet",
-                "type": "video",
-                "relatedToVideoId": item.videoId
+            var params = {
+                args: {
+                    "part": "snippet",
+                    "type": "video",
+                    "relatedToVideoId": item.videoId
+                }
             };
 
-            item.addOptURL("Related Videos", plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode(args)) + ':' + escape('Related Videos'));
+            item.addOptURL("Related Videos", plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode(params)) + ':' + escape('Related Videos'));
 
             if (store.refresh_token) {
-                var args = {
-                    "videoId": item.videoId
+                var params = {
+                    args: {
+                        "videoId": item.videoId
+                    }
                 };
-                item.addOptURL("Add to Playlist", plugin.getDescriptor().id + ':playlist:add:/search:' + escape(showtime.JSONEncode(args)));
+                item.addOptURL("Add to Playlist", plugin.getDescriptor().id + ':playlist:add:/search:' + escape(showtime.JSONEncode(params)));
             }
         }
     }
@@ -1709,9 +1792,11 @@
         }
         setPageHeader(page, 'My Activity');
         scraper(page, '/activities', {
-            "part": "snippet,contentDetails",
-            "home": true
-        }, true);
+            args: {
+                "part": "snippet,contentDetails",
+                "home": true
+            }
+        });
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
@@ -1731,82 +1816,110 @@
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/guideCategories:' + escape(showtime.JSONEncode({
-            "part": "snippet",
-            "regionCode": service.region,
-            "hl": service.language
+            args: {
+                "part": "snippet",
+                "regionCode": service.region,
+                "hl": service.language
+            }
         })) + ':' + escape('Guide Categories'), 'directory', {
             title: 'Guide Categories',
             icon: plugin.path + "views/img/logos/explore.png"
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/videoCategories:' + escape(showtime.JSONEncode({
-            'part': 'snippet',
-            'regionCode': service.region,
-            'hl': service.language
+            args: {
+                'part': 'snippet',
+                'regionCode': service.region,
+                'hl': service.language
+            }
         })) + ':' + escape('Video Categories'), 'directory', {
             title: 'Video Categories',
             icon: plugin.path + "views/img/logos/explore.png"
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/videos:' + escape(showtime.JSONEncode({
-            'part': 'snippet,contentDetails,statistics,status',
-            'chart': 'mostPopular',
-            'regionCode': service.region
+            args: {
+                'part': 'snippet,contentDetails,statistics,status',
+                'chart': 'mostPopular',
+                'maxResults': 50,
+                'regionCode': service.region
+            }
         })) + ':' + escape('Most Popular'), 'directory', {
             title: 'Most poular',
             icon: plugin.path + "views/img/logos/feeds.png"
         }));
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            "part": "snippet",
-            "type": "channel"
+            args: {
+                "part": "snippet",
+                'regionCode': service.region,
+                'safeSearch': service.safeSearch,
+                'maxResults': 50,
+                "type": "channel"
+            }
         })) + ':' + escape('Channels'), 'directory', {
             title: 'Channels',
             icon: plugin.path + "views/img/logos/channels.png"
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            "part": "snippet",
-            "q": "Education",
-            "type": "channel",
-            "regionCode": service.region
+            args: {
+                "part": "snippet",
+                'regionCode': service.region,
+                'safeSearch': service.safeSearch,
+                'maxResults': 50,
+                "type": "channel",
+                "q": "Education"
+            }
         })) + ':' + escape('Education'), 'directory', {
             title: 'Education',
             icon: plugin.path + "views/img/logos/edu.png"
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            "part": "snippet",
-            "eventType": "live",
-            "type": "video",
-            "regionCode": service.region
+            args: {
+                "part": "snippet",
+                'regionCode': service.region,
+                'safeSearch': service.safeSearch,
+                'maxResults': 50,
+                "eventType": "live",
+                "type": "video"
+            }
         })) + ':' + escape('Live Broadcasts'), 'directory', {
             title: 'Live Broadcasts',
             icon: plugin.path + "views/img/logos/live.png"
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            "part": "snippet",
-            "type": "video",
-            "videoDuration": "long",
-            "videoType": "movie",
-            //"videoCaption": "closedCaption",
-            "regionCode": service.region
+            args: {
+                "part": "snippet",
+                'regionCode': service.region,
+                'safeSearch': service.safeSearch,
+                'maxResults': 50,
+                "type": "video",
+                "videoDuration": "long",
+                "videoType": "movie",
+                //"videoCaption": "closedCaption"
+            }
         })) + ':' + escape('Youtube Movies'), 'directory', {
             title: 'Youtube Movies',
             icon: plugin.path + "views/img/logos/movies.png"
         }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
-            "part": "snippet",
-            "type": "channel",
-            "channelType": "show",
-            "regionCode": service.region
+            args: {
+                "part": "snippet",
+                'regionCode': service.region,
+                'safeSearch': service.safeSearch,
+                'maxResults': 50,
+                "type": "channel",
+                "channelType": "show"
+            }
         })) + ':' + escape('Youtube Shows'), 'directory', {
             title: 'Youtube Shows',
             icon: plugin.path + "views/img/logos/shows.png"
         }));
 
-        items.push(page.appendItem(plugin.getDescriptor().id + ':channel:default', 'directory', {
+        items.push(page.appendItem(plugin.getDescriptor().id + ':channel:mine', 'directory', {
             title: 'User Profile',
             icon: plugin.path + "views/img/logos/user.png"
         }));
@@ -1843,27 +1956,27 @@
         headersAreSet = true;
     };
 
-    function download(page, url, args, needAuth) {
+    function download(page, url, params) {
         if (page)
             page.loading = true;
 
-        args.regionCode = service.region;
-        args.key = key;
-        args.maxResults = 50;
-        showtime.print(url + ' ' + showtime.JSONEncode(args) + ' Auth: ' + needAuth + ' RToken: ' + store.refresh_token);
+        params.args.key = key;
+        showtime.print(url + ' ' + showtime.JSONEncode(params.args));
 
         var data;
 
-        if (needAuth) {
+        if (params.args.mine || params.args.home || params.postdata || params.method) { // auth requests
+            params.headers = {
+                'Authorization': store.token_type + ' ' + store.access_token
+            };
+            if (params.postdata)
+                params.headers['Content-Type'] = 'application/json';
+
             try {
-                data = showtime.JSONDecode(showtime.httpReq(API + url, {
-                    headers: {
-                        Authorization: store.token_type + ' ' + store.access_token
-                    },
-                    args: args
-                }));
+                data = showtime.JSONDecode(showtime.httpReq(API + url, params));
             } catch (err) {
-                showtime.print('Refreshing token');
+                showtime.print(err);
+                showtime.print('Refreshing access_token');
                 data = showtime.httpReq('https://www.googleapis.com/oauth2/v3/token', {
                     postdata: {
                         client_id: client_id,
@@ -1872,35 +1985,40 @@
                         grant_type: 'refresh_token'
                     }
                 });
-                showtime.print('RToken response: ' + data);
                 store.access_token = showtime.JSONDecode(data).access_token;
-                setHeaders();
-                data = showtime.JSONDecode(showtime.httpReq(API + url, {
-                    headers: {
-                        Authorization: store.token_type + ' ' + store.access_token
-                    },
-                    args: args
-                }));
+                //setHeaders();
+                params.headers['Authorization'] = store.token_type + ' ' + store.access_token;
+                try {
+                    data = showtime.JSONDecode(showtime.httpReq(API + url, params));
+                } catch (err) {
+                    if (page)
+                        page.loading = false;
+                    return err;
+                }
             }
-        } else {
-            data = showtime.JSONDecode(showtime.httpReq(API + url, {
-                args: args
-            }));
+        } else { // no auth request
+            try {
+                data = showtime.JSONDecode(showtime.httpReq(API + url, params));
+            } catch (err) {
+                if (page)
+                    page.loading = false;
+                return err;
+            }
         }
         if (page)
             page.loading = false;
         return data;
     }
 
-    plugin.addURI(plugin.getDescriptor().id + ":scraper:(.*):(.*):(.*)", function(page, url, args, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":scraper:(.*):(.*):(.*)", function(page, url, params, title) {
         //setPageHeader(page, title);
         page.type = "directory";
         page.contents = "items";
         page.metadata.logo = logo;
         page.metadata.title = new showtime.RichText(unescape(showtime.entityDecode(title)));
         page.metadata.background = plugin.path + "views/img/background.png";
-        showtime.print(args);
-        scraper(page, url, showtime.JSONDecode(unescape(args)));
+        print(showtime.JSONDecode(unescape(params)));
+        scraper(page, url, showtime.JSONDecode(unescape(params)));
     });
 
     function durationToString(s) {
@@ -1922,14 +2040,46 @@
         return showtime.durationToString(+s.match(/PT(.*)S/)[1]);
     }
 
-    function scraper(page, url, args, needAuth) {
+    function addSortHeader(page, url, params) {
+        if (url == '/search') {
+            var addParams = JSON.parse(JSON.stringify(params));
+            addParams.args.order = 'date';
+            page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+                escape(showtime.JSONEncode(addParams)) + ':' + escape('Order by Date'), "directory", {
+                    title: 'Order by Date'
+                });
+            addParams.args.order = 'rating';
+            page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+                escape(showtime.JSONEncode(addParams)) + ':' + escape('Order by Rating'), "directory", {
+                    title: 'Order by Rating'
+                });
+            addParams.args.order = 'relevance';
+            page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+                escape(showtime.JSONEncode(addParams)) + ':' + escape('Order by Relevance'), "directory", {
+                    title: 'Order by Relevance (default)'
+                });
+            addParams.args.order = 'videoCount';
+            page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+                escape(showtime.JSONEncode(addParams)) + ':' + escape('Order by Video count'), "directory", {
+                    title: 'Order by Video count'
+                });
+            addParams.args.order = 'viewCount';
+            page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+                escape(showtime.JSONEncode(addParams)) + ':' + escape('Order by View count'), "directory", {
+                    title: 'Order by View count'
+                });
+        }
+    }
+
+    function scraper(page, url, params) {
         page.entries = 0;
         var tryToSearch = true;
+        addSortHeader(page, url, params);
 
         function paginator() {
             if (!tryToSearch) return false;
-            var data = download(page, url, args, needAuth);
-            showtime.print(showtime.JSONEncode(data));
+            var data = download(page, url, params);
+            //showtime.print(showtime.JSONEncode(data));
             if (!page.entries && !data.items.length) {
                 page.appendPassiveItem('directory', '', {
                     title: 'This feed does not contain any item.'
@@ -2030,43 +2180,53 @@
                 });
                 images = "imageset:" + showtime.JSONEncode(images);
                 metadata.icon = images;
-                //showtime.print(entry.kind + (entry.id.kind ? ' - ' + entry.id.kind : ''));
+                showtime.print(entry.kind + (entry.id.kind ? ' - ' + entry.id.kind : ''));
                 //showtime.print(showtime.JSONEncode(entry));
                 if (entry.kind == "youtube#activity") {
                     var title = entry.snippet.title;
                     var type = entry.snippet.type;
                     var channelTitle = entry.snippet.channelTitle;
-                    var params = entry.contentDetails[type];
+                    var cParams = entry.contentDetails[type];
                     metadata.title = '[' + type + '] ' + title;
-                    showtime.print(showtime.JSONEncode(params));
-                    if (params.resourceId)
+                    showtime.print(showtime.JSONEncode(cParams));
+                    if (cParams.resourceId)
                         var resourceId = entry.contentDetails[type].resourceId.kind;
-                    if (resourceId == "youtube#video" || !params.resourceId) {
+                    if (resourceId == "youtube#video" || !cParams.resourceId) {
                         var item = addVideoItem(page, {
-                            videoId: params.resourceId ? params.resourceId.videoId : params.videoId,
+                            videoId: cParams.resourceId ? cParams.resourceId.videoId : cParams.videoId,
                             channelId: entry.snippet.channelId
                         }, metadata);
                     } else if (resourceId == "youtube#playlist") {
                         var playlistId = entry.contentDetails[type].resourceId.playlistId;
                         var item = page.appendItem(plugin.getDescriptor().id + ":scraper:/playlistItems:" + escape(showtime.JSONEncode({
-                                "part": "snippet,contentDetails,status",
-                                "playlistId": playlistId
+                                args: {
+                                    "part": "snippet,contentDetails,status",
+                                    "playlistId": playlistId
+                                }
                             })) + ':' + escape('Recommended Videos'), "directory",
                             metadata);
                     } else if (resourceId == "youtube#channel") {
                         var channelId = entry.contentDetails[type].resourceId.channelId;
                         var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + channelId, "directory", metadata);
                     }
-                } else if (entry.kind == "youtube#guideCategory") {
+                } else if (entry.kind == "youtube#guideCategory") { // category guide list
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:/channels:" + escape(showtime.JSONEncode({
-                        'part': 'snippet,contentDetails,statistics,status',
-                        'categoryId': entry.id
+                        args: {
+                            'part': 'snippet,contentDetails,statistics,status',
+                            'categoryId': entry.id,
+                            'maxResults': 50
+                        }
                     })) + ':' + escape(title), "directory", metadata);
                 } else if (entry.kind == "youtube#videoCategory") { // of home screen
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
-                        'part': 'snippet',
-                        'videoCategoryId': entry.id,
-                        'type': 'video'
+                        args: {
+                            'part': 'snippet',
+                            'regionCode': service.region,
+                            'safeSearch': service.safeSearch,
+                            'maxResults': 50,
+                            'videoCategoryId': entry.id,
+                            'type': 'video'
+                        }
                     })) + ':' + escape(title), "directory", metadata);
                 } else if (entry.kind == "youtube#playlistItem") { // shows videos of playlist
                     if (entry.snippet.resourceId.kind == "youtube#video") {
@@ -2078,21 +2238,25 @@
                     var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id, "video", metadata);
                 } else if (entry.kind == "youtube#playlist") { // playlists of a channel
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode({
-                        "part": "snippet,contentDetails,status",
-                        "playlistId": entry.id
+                        args: {
+                            "part": "snippet,contentDetails,status",
+                            "playlistId": entry.id
+                        }
                     })) + ':' + escape(title), "video", metadata);
                 } else if (entry.kind == "youtube#video") {
                     var item = addVideoItem(page, {
                         videoId: entry.id
                     }, metadata);
-                } else if (entry.id.kind == "youtube#channel") {
+                } else if (entry.id.kind == "youtube#channel") { // of searcher
                     var item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id.channelId, "video", metadata);
-                } else if (entry.id.kind == "youtube#playlist") {
+                } else if (entry.id.kind == "youtube#playlist") { // of searcher
                     var item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode({
-                        "part": "snippet,contentDetails,status",
-                        "playlistId": entry.id.playlistId
+                        args: {
+                            "part": "snippet,contentDetails,status",
+                            "playlistId": entry.id.playlistId
+                        }
                     })) + ':' + escape(title), "video", metadata);
-                } else if (entry.id.kind == "youtube#video") {
+                } else if (entry.id.kind == "youtube#video") { // of searcher
                     var item = addVideoItem(page, {
                         videoId: entry.id.videoId
                     }, metadata);
@@ -2108,7 +2272,7 @@
             }
             if (!data.nextPageToken)
                 return tryToSearch = false;
-            args.pageToken = data.nextPageToken;
+            params.args.pageToken = data.nextPageToken;
             return true;
         }
         paginator();
@@ -2117,25 +2281,40 @@
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Videos', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'snippet',
-            'type': 'video',
-            'q': query
+            args: {
+                'part': 'snippet',
+                'regionCode': service.region,
+                'safeSearch': service.safeSearch,
+                'maxResults': 50,
+                'type': 'video',
+                'q': query
+            }
         });
     });
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Channels', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'snippet',
-            'type': 'channel',
-            'q': query
+            args: {
+                'part': 'snippet',
+                'regionCode': service.region,
+                'safeSearch': service.safeSearch,
+                'maxResults': 50,
+                'type': 'channel',
+                'q': query
+            }
         });
     });
 
     plugin.addSearcher(plugin.getDescriptor().title + ' - Playlists', logo, function(page, query) {
         scraper(page, '/search', {
-            'part': 'snippet',
-            'type': 'playlist',
-            'q': query
+            args: {
+                'part': 'snippet',
+                'regionCode': service.region,
+                'safeSearch': service.safeSearch,
+                'maxResults': 50,
+                'type': 'playlist',
+                'q': query
+            }
         });
     });
 })(this);
