@@ -63,7 +63,45 @@
 
     settings.createDivider('User Settings');
     settings.createAction("loginV3", "Login to Youtube", function() {
-        login(true);
+    page.loading = true;
+        showtime.notify('Logging to Youtube. Please wait...', 3);
+        var response = showtime.JSONDecode(showtime.httpReq("https://accounts.google.com/o/oauth2/device/code", {
+            postdata: {
+                'client_id': client_id,
+                'scope': 'https://www.googleapis.com/auth/youtube'
+            }
+        }).toString());
+
+        var msg = 'Time limit: ' + parseInt(response.expires_in) / 60 + ' minutes.\nWebsite: ' + response.verification_url + '\nUser Code: ' + response.user_code +
+            '\n\n1. On a computer with Internet access, navigate browser to ' + response.verification_url +
+            '\n2. It should show the Google logo and a box requesting a code from the device, \nin that box type the user code specified above' +
+            '\n3. If everything goes well, you should get to a page stating that Showtime Plugin Youtube \nrequests permission to access to the account.\n' +
+            'If you want to use your account in Youtube, you have to authorize that access.' +
+            '\n4. In case you accept, you should see a page stating that you authorized Showtime Plugin Youtube. \nCongratulations, now you can use the plugin fully, enjoy it.';
+
+        if (showtime.message(msg, true, false)) {
+            var response = showtime.JSONDecode(showtime.httpReq("https://accounts.google.com/o/oauth2/token", {
+                postdata: {
+                    'client_id': client_id,
+                    'client_secret': client_secret,
+                    'code': response.device_code,
+                    'grant_type': 'http://oauth.net/grant_type/device/1.0'
+                }
+            }).toString());
+
+            if (response.error) {
+                showtime.notify("Authentication failed: " + response.error, 3, "");
+                store.refresh_token = false;
+                return false;
+            }
+
+            store.refresh_token = response.refresh_token;
+            store.access_token = response.access_token;
+            store.token_type = response.token_type;
+            showtime.notify('Authenticated successfully', 3);
+        }
+        //setHeaders();
+        return true;
     });
 
     settings.createAction('clearAuth', 'Unlink from ' + plugin.getDescriptor().title + '...', function() {
@@ -333,10 +371,17 @@
             } else if (it.kind == "youtube#subscription" && it.snippet.resourceId.kind == "youtube#channel") {
                 args.url = plugin.getDescriptor().id + ":channel:" + it.snippet.resourceId.channelId;
             } else if (it.kind == "youtube#activity") {
-                if (it.contentDetails[it.snippet.type].resourceId) // bs channels
-                    args.url = plugin.getDescriptor().id + ":channel:" + it.contentDetails[it.snippet.type].resourceId.channelId;
-                else
-                    args.url = plugin.getDescriptor().id + ":video:" + (it.contentDetails[it.snippet.type].resourceId ? it.contentDetails[it.snippet.type].resourceId.videoId : it.contentDetails[it.snippet.type].videoId);
+                if (it.contentDetails[it.snippet.type].resourceId) {// bs channels
+                    if (it.contentDetails[it.snippet.type].resourceId.kind == "youtube#video") {
+                        args.url = plugin.getDescriptor().id + ":video:" + it.contentDetails[it.snippet.type].resourceId.videoId;
+                    } else {
+                        if (it.contentDetails[it.snippet.type].resourceId.kind == "youtube#channel") {
+                            args.url = plugin.getDescriptor().id + ":channel:" + it.contentDetails[it.snippet.type].resourceId.channelId;
+                        }
+                    }
+                } else {
+                       args.url = plugin.getDescriptor().id + ":video:" + it.contentDetails[it.snippet.type].videoId;
+                }
             }
             arr.push(args);
         }
@@ -458,10 +503,10 @@
                         }
                     });
 
-                    if (!data.error && data.response.snippet.resourceId.channelId == channelId)
+                    if (showtime.JSONEncode(data) != '{}')
                         showtime.notify("You successfully unsubscribed from this channel", 2);
                     else
-                        showtime.notify("Failed to unsubscribe from the channel", 2);
+                        showtime.notify(data, 2);
                 });
             }
         }
@@ -1667,49 +1712,6 @@
         return item;
     }
 
-    function login(force) {
-        if (!force && store.refresh_token)
-            return true;
-
-        var response = showtime.JSONDecode(showtime.httpReq("https://accounts.google.com/o/oauth2/device/code", {
-            postdata: {
-                'client_id': client_id,
-                'scope': 'https://www.googleapis.com/auth/youtube'
-            }
-        }).toString());
-
-        var msg = 'Time limit: ' + parseInt(response.expires_in) / 60 + ' minutes.\nWebsite: ' + response.verification_url + '\nUser Code: ' + response.user_code +
-            '\n\n1. In a computer with Internet access, navigate to ' + response.verification_url +
-            '\n2. It should show the Google logo and a box requesting a code from the device, \nin that box type the user code specified above' +
-            '\n3. If everything goes well, you should get to a page stating that Showtime Plugin Youtube \nrequests permission to access to the account.\n' +
-            'If you want to use your account in Youtube, you have to authorize that access.' +
-            '\n4. In case you accept, you should see a page stating that you authorized Showtime Plugin Youtube. \nCongratulations, now you can use the plugin fully, enjoy it.';
-
-        if (showtime.message(msg, true, false)) {
-            var response = showtime.JSONDecode(showtime.httpReq("https://accounts.google.com/o/oauth2/token", {
-                postdata: {
-                    'client_id': client_id,
-                    'client_secret': client_secret,
-                    'code': response.device_code,
-                    'grant_type': 'http://oauth.net/grant_type/device/1.0'
-                }
-            }).toString());
-
-            if (response.error) {
-                showtime.notify("Authentication failed: " + response.error, 3, "");
-                store.refresh_token = false;
-                return false;
-            }
-
-            store.refresh_token = response.refresh_token;
-            store.access_token = response.access_token;
-            store.token_type = response.token_type;
-            showtime.notify('Authenticated successfully', 2);
-        }
-        //setHeaders();
-        return true;
-    }
-
     function addLive(page, type) {
         page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
             args: {
@@ -1743,6 +1745,11 @@
         page.loading = false;
 
         var items = [];
+
+        items.push(page.appendItem(plugin.getDescriptor().id + ':channel:mine', 'directory', {
+            title: 'My Channel',
+            icon: plugin.path + "views/img/logos/user.png"
+        }));
 
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/guideCategories:' + escape(showtime.JSONEncode({
             args: {
@@ -1837,11 +1844,6 @@
         })) + ':' + escape('Youtube Shows'), 'directory', {
             title: 'Youtube Shows',
             icon: plugin.path + "views/img/logos/shows.png"
-        }));
-
-        items.push(page.appendItem(plugin.getDescriptor().id + ':channel:mine', 'directory', {
-            title: 'My Channel',
-            icon: plugin.path + "views/img/logos/user.png"
         }));
 
         for (var i in items)
