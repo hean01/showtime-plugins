@@ -237,7 +237,6 @@
 
 
     settings.createDivider("My Channel");
-
     settings.createBool("showActivities", "Show Activities", true, function(v) {
         service.showActivities = v;
     });
@@ -261,6 +260,11 @@
     });
     settings.createBool("showFavorites", "Show Favorites", true, function(v) {
         service.showFavorites = v;
+    });
+
+    settings.createDivider("Debug");
+    settings.createBool("enableDebug", "Show Favorites", false, function(v) {
+        service.enableDebug = v;
     });
 
     var items = [];

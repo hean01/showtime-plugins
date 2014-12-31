@@ -6,7 +6,7 @@
 	"synopsis": "Youtube: Broadcast Yourself",
 	"version": "3.0.8",
 	"file": "youtube.js", 
-	"showtimeVersion": "4.7.588",
+	"showtimeVersion": "4.8",
 	"type": "ecmascript",
 	"id": "youtube",
 	"icon": "logo.png", 
