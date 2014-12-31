@@ -116,7 +116,7 @@
     function getLanguages(fromWhere) { // true - youtube, false - store
         var data;
         if (fromWhere) { // get from youtube
-            data = download(null, '/i18nLanguages', {
+            data = download(null, API + '/i18nLanguages', {
                 args: {
                     'part': 'snippet',
                     'hl': service.language
@@ -138,7 +138,7 @@
     function getRegions(fromWhere) {
         var data;
         if (fromWhere) {
-            data = download(null, '/i18nRegions', {
+            data = download(null, API + '/i18nRegions', {
                 args: {
                     'part': 'snippet',
                     'hl': service.language
@@ -361,13 +361,16 @@
             if (it.kind == "youtube#playlistItem" && it.snippet.resourceId.kind == "youtube#video")
                 args.url = plugin.getDescriptor().id + ":video:" + it.snippet.resourceId.videoId;
             else if (it.kind == "youtube#playlist") {
-                args.url = plugin.getDescriptor().id + ":scraper:/playlistItems:" + escape(showtime.JSONEncode({
+                var params = {
                     args: {
                         'part': 'snippet,contentDetails,status',
                         'playlistId': it.id,
                         'maxResults': 50
                     }
-                })) + ':' + escape(it.snippet.title);
+                };
+                if (store.refresh_token)
+                   params.method = 'GET';
+                args.url = plugin.getDescriptor().id + ":scraper:/playlistItems:" + escape(showtime.JSONEncode(params)) + ':' + escape(it.snippet.title);
             } else if (it.kind == "youtube#subscription" && it.snippet.resourceId.kind == "youtube#channel") {
                 args.url = plugin.getDescriptor().id + ":channel:" + it.snippet.resourceId.channelId;
             } else if (it.kind == "youtube#activity") {
@@ -389,7 +392,7 @@
     }
 
     function parseChannelId(username) {
-        var data = download(page, '/channels', {
+        var data = download(page, API + '/channels', {
             args: {
                 "part": "id",
                 "forUsername": username
@@ -404,6 +407,12 @@
 
     function print(data) {
         showtime.print(showtime.JSONEncode(data));
+    }
+
+
+    function sleep(ms) {
+        ms += new Date().getTime();
+        while (new Date() < ms) {}
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":channel:(.*)", function(page, id) {
@@ -424,7 +433,7 @@
             }
         };
         id == "mine" ? params.args.mine = true : params.args.id = id;
-        var data = download(page, '/channels', params);
+        var data = download(page, API + '/channels', params);
         if (data.error || showtime.JSONEncode(data) == '{}') {
             page.error(data);
             return;
@@ -458,7 +467,7 @@
 
         // Subscribe/unsubscribe to the channel
         if (store.refresh_token && id != 'mine') {
-            var data = download(page, '/subscriptions', {
+            var data = download(page, API + '/subscriptions', {
                 args: {
                     "part": "snippet",
                     "mine": true,
@@ -472,7 +481,7 @@
                 });
 
                 page.onEvent('subscribeToTheChannel', function() {
-                    var data = download(page, '/subscriptions', {
+                    var data = download(page, API + '/subscriptions', {
                         args: {
                             part: 'snippet'
                         },
@@ -485,9 +494,10 @@
                             }
                         })
                     });
-                    if (showtime.JSONEncode(data) != '{}')
+                    if (showtime.JSONEncode(data) != '{}') {
                         showtime.notify("You successfully subscribed to this channel", 2);
-                    else
+                        //page.redirect(plugin.getDescriptor().id + ':channel:' + id);
+                    } else
                         showtime.notify(data, 2);
                 });
             } else {
@@ -496,16 +506,17 @@
                 });
                 var subId = data.items[0].id;
                 page.onEvent('unsubscribeFromTheChannel', function() {
-                    var data = download(page, '/subscriptions', {
+                    var data = download(page, API + '/subscriptions', {
                         method: 'DELETE',
                         args: {
                             'id': subId
                         }
                     });
 
-                    if (showtime.JSONEncode(data) != '{}')
+                    if (showtime.JSONEncode(data) != '{}') {
                         showtime.notify("You successfully unsubscribed from this channel", 2);
-                    else
+                        //page.redirect(plugin.getDescriptor().id + ':channel:' + id);
+                    } else
                         showtime.notify(data, 2);
                 });
             }
@@ -522,7 +533,7 @@
                     'maxResults': 50
                 }
             }
-            var data = download(page, '/activities', params);
+            var data = download(page, API + '/activities', params);
             var activity = getItems(data.items);
 
             if (activity.length > 0) {
@@ -553,7 +564,7 @@
             };
             if (id == 'mine')
                 params.method = 'GET';
-            var data = download(page, url, params);
+            var data = download(page, API + url, params);
             var favorites = getItems(data.items);
             if (favorites.length > 0) {
                 favorites.push({
@@ -583,14 +594,14 @@
                     },
                     method: 'GET'
                 };
-                var data = download(page, url, params);
+                var data = download(page, API + url, params);
                 var watchLater = getItems(data.items);
 
                 if (watchLater.length > 0) {
                     watchLater.push({
                         title: "See More",
                         image: plugin.path + "views/img/add.png",
-                        url: plugin.getDescriptor().id + ":scraper:" + url + ':' + escape(showtime.JSONEncode(params)) + ':' + escape('Watch laterFavorites')
+                        url: plugin.getDescriptor().id + ":scraper:" + url + ':' + escape(showtime.JSONEncode(params)) + ':' + escape('Watch later')
                     });
 
                     if (id == "mine") page.appendPassiveItem("list", watchLater, {
@@ -613,7 +624,7 @@
                     },
                     method: 'GET'
                 };
-                var data = download(page, url, params);
+                var data = download(page, API + url, params);
                 var watchHistory = getItems(data.items);
 
                 if (watchHistory.length > 0) {
@@ -643,7 +654,7 @@
                     },
                     method: 'GET'
                 };
-                var data = download(page, url, params);
+                var data = download(page, API + url, params);
                 var likes = getItems(data.items);
 
                 if (likes.length > 0) {
@@ -671,7 +682,7 @@
                         'mine': true
                     }
                 }
-                var data = download(page, '/subscriptions', params);
+                var data = download(page, API + '/subscriptions', params);
                 var subscriptions = getItems(data.items);
 
                 if (subscriptions.length > 0) {
@@ -697,12 +708,14 @@
             var url = '/playlists';
             var params = {
                 args: {
-                    "part": "snippet,contentDetails,status",
-                    "channelId": channelId,
+                    'part': 'snippet,contentDetails,status',
+                    'channelId': channelId,
                     'maxResults': 50
                 }
             };
-            var data = download(page, url, params);
+            if (id == 'mine')
+                params.method = 'GET';
+            var data = download(page, API + url, params);
             var playlists = getItems(data.items);
 
             if (playlists.length > 0) {
@@ -723,6 +736,7 @@
         }
 
         if (service.showUploads && uploadsPlaylistId) {
+            var url = '/playlistItems';
             var params = {
                 args: {
                     "part": "snippet,contentDetails,status",
@@ -732,8 +746,8 @@
             };
             if (id == 'mine')
                 params.method = 'GET';
-            var url = '/playlistItems';
-            var data = download(page, url, params);
+
+            var data = download(page, API + url, params);
 
             var uploads = getItems(data.items);
 
@@ -918,11 +932,14 @@
     };
 
     function getVideosList(page, id, number_items) {
-        var doc = showtime.httpReq('http://www.youtube.com/watch?v=' + id, {
+        var params = {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1'
             }
-        }).toString();
+        };
+        if (store.refresh_token)
+            params.method = 'GET';
+        var doc = download(page, 'http://www.youtube.com/watch?v=' + id, params).toString();
 
         var titleMatch = doc.match(/<meta property="og:title" content="(.+?)">/);
         if (titleMatch)
@@ -1126,12 +1143,11 @@
 
             page.redirect(plugin.getDescriptor().id + ":video:stream:" + escape(title) + ":" + id + ":" + video_url);
         } catch (err) {
+            page.loading = false;
             if (err == "Error: HTTP error: 404")
                 err = "The video is unavailable at this moment.";
 
-            e(err);
             page.error(err);
-            showtime.trace(err);
             return;
         }
 
@@ -1181,7 +1197,7 @@
 
         var videoId = id;
 
-        var data = download(page, '/videos', {
+        var data = download(page, API + '/videos', {
             args: {
                 "part": "snippet,contentDetails,statistics,status",
                 "id": id
@@ -1379,7 +1395,7 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":addToPlaylist:(.*):(.*)", function(page, playlistId, videoId) {
        //unescape(videoId)
-        var data = download(page, '/playlistItems', {
+        var data = download(page, API + '/playlistItems', {
             args: {
                 part: 'snippet',
                 mine: true
@@ -1414,7 +1430,7 @@
         //     "uploads": "UU79olQw8423oIz3eVeGy5VQ",
         //     "watchHistory": "HL79olQw8423oIz3eVeGy5VQ",
         //     "watchLater": "WL79olQw8423oIz3eVeGy5VQ"
-        var data = download(page, '/channels', {
+        var data = download(page, API + '/channels', {
             args: {
                 part: 'contentDetails',
                 mine: true
@@ -1428,7 +1444,7 @@
         });
 
         // List playlists
-        var data = download(page, '/playlists', {
+        var data = download(page, API + '/playlists', {
             args: {
                 part: 'snippet',
                 mine: true
@@ -1482,7 +1498,7 @@
     }
 
     function rate(page, videoId, type) {
-        var data = download(page, '/videos/rate', {
+        var data = download(page, API + '/videos/rate', {
 //            method: 'POST',
             args: {
                 'id': videoId,
@@ -1909,12 +1925,13 @@
         if (page)
             page.loading = true;
 
-        params.args.key = key;
-        showtime.print(url + ' ' + showtime.JSONEncode(params.args));
+        if (params.args)
+            params.args.key = key;
+        showtime.print(url + ' ' + showtime.JSONEncode(params));
 
         var data;
 
-        if (params.args.mine || params.args.home || params.postdata || params.method) { // auth requests
+        if (params.method || params.args.mine || params.args.home || params.postdata) { // auth requests
             params.headers = {
                 'Authorization': store.token_type + ' ' + store.access_token
             };
@@ -1922,10 +1939,12 @@
                 params.headers['Content-Type'] = 'application/json';
 
             try {
-                data = showtime.httpReq(API + url, params);
-                if (data.toString().length)
+                data = showtime.httpReq(url, params);
+                try {
                     data = showtime.JSONDecode(data);
+                } catch(err) {}
             } catch (err) {
+
                 showtime.print('Refreshing access_token');
                 try {
                     data = showtime.httpReq('https://www.googleapis.com/oauth2/v3/token', {
@@ -1946,9 +1965,10 @@
                     return err;
                 }
                 try {
-                    data = showtime.httpReq(API + url, params);
-                    if (data.toString().length)
+                    data = showtime.httpReq(url, params);
+                    try {
                         data = showtime.JSONDecode(data);
+                    } catch(err) {}
                 } catch (err) {
                     if (page)
                         page.loading = false;
@@ -1957,7 +1977,10 @@
             }
         } else { // no auth request
             try {
-                data = showtime.JSONDecode(showtime.httpReq(API + url, params));
+                data = showtime.httpReq(url, params);
+                try {
+                    data = showtime.JSONDecode(data);
+                } catch(err) {}
             } catch (err) {
                 if (page)
                     page.loading = false;
@@ -2036,11 +2059,11 @@
 
         function paginator() {
             if (!tryToSearch) return false;
-            var data = download(page, url, params);
+            var data = download(page, API + url, params);
             //showtime.print(showtime.JSONEncode(data));
             if (!page.entries && !data.items.length) {
                 page.appendPassiveItem('directory', '', {
-                    title: 'This feed does not contain any item.'
+                    title: 'This list does not contain any item.'
                 });
                 return tryToSearch = false;
             }
@@ -2160,15 +2183,16 @@
                             channelId: entry.snippet.channelId
                         }, metadata);
                     } else if (resourceId == "youtube#playlist") {
-                        var playlistId = entry.contentDetails[type].resourceId.playlistId;
-                        item = page.appendItem(plugin.getDescriptor().id + ":scraper:/playlistItems:" + escape(showtime.JSONEncode({
-                                args: {
-                                    "part": "snippet,contentDetails,status",
-                                    "playlistId": playlistId,
-                                    'maxResults': 50
-                                }
-                            })) + ':' + escape(title), "directory",
-                            metadata);
+                        var inParam = {
+                            args: {
+                                "part": "snippet,contentDetails,status",
+                                "playlistId": entry.contentDetails[type].resourceId.playlistId,
+                                'maxResults': 50
+                            }
+                        }
+                        if (store.refresh_token)
+                            inParam.method = 'GET';
+                        item = page.appendItem(plugin.getDescriptor().id + ":scraper:/playlistItems:" + escape(showtime.JSONEncode(inParam)) + ':' + escape(title), "directory", metadata);
                     } else if (resourceId == "youtube#channel") {
                         item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.contentDetails[type].resourceId.channelId, "video", metadata);
                     }
@@ -2200,13 +2224,16 @@
                 } else if (entry.kind == "youtube#channel") {
                     item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id, "video", metadata);
                 } else if (entry.kind == "youtube#playlist") { // playlists of a channel
-                    item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode({
+                    var inParam = {
                         args: {
                             "part": "snippet,contentDetails,status",
                             "playlistId": entry.id,
                             'maxResults': 50
                         }
-                    })) + ':' + escape(title), "video", metadata);
+                    }
+                    if (store.refresh_token)
+                       inParam.method = 'GET'
+                    item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode(inParam)) + ':' + escape(title), "video", metadata);
                 } else if (entry.kind == "youtube#video") {
                     item = addVideoItem(page, {
                         videoId: entry.id
