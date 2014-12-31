@@ -1934,8 +1934,7 @@
         showtime.print(url + ' ' + showtime.JSONEncode(params));
 
         var data;
-
-        if (params.method || params.args.mine || params.args.home || params.postdata) { // auth requests
+        if (store.refresh_token && (params.method || params.args.mine || params.args.home || params.postdata)) { // auth requests
             params.headers = {
                 'Authorization': store.token_type + ' ' + store.access_token
             };
