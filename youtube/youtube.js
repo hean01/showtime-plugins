@@ -307,14 +307,13 @@
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":search", function(page) {
+        page.metadata.background = plugin.path + "views/img/background.png";
+        page.metadata.backgroundAlpha = 0.5;
         page.metadata.glwview = plugin.path + "views/search.view";
         page.type = "directory";
         page.contents = "items";
         page.metadata.title = 'Youtube Search';
         page.metadata.logo = logo;
-
-        pageMenu(page, null, null);
-
         page.metadata.search = '';
         if (typeof Duktape == 'undefined')
             page.subscribe("page.metadata.search", function(v) {
@@ -1548,97 +1547,6 @@
         }
     }
 
-    function pageMenu(page) {
-        page.metadata.background = plugin.path + "views/img/background.png";
-        page.metadata.backgroundAlpha = 0.5;
-
-        //page.metadata.font = "default";
-
-        page.appendAction("navopen", plugin.getDescriptor().id + ":search", true, {
-            title: "Search",
-            icon: plugin.path + "views/img/search.png"
-        });
-        page.appendAction("pageevent", "sortDateDec", true, {
-            title: "Sort by Date (Decrementing)",
-            icon: plugin.path + "views/img/sort_date_dec.png"
-        });
-        page.appendAction("pageevent", "sortViewsDec", true, {
-            title: "Sort by Views (Decrementing)",
-            icon: plugin.path + "views/img/sort_views_dec.png"
-        });
-        page.appendAction("pageevent", "sortAlphabeticallyInc", true, {
-            title: "Sort Alphabetically (Incrementing)",
-            icon: plugin.path + "views/img/sort_alpha_inc.png"
-        });
-        page.appendAction("pageevent", "sortAlphabeticallyDec", true, {
-            title: "Sort Alphabetically (Decrementing)",
-            icon: plugin.path + "views/img/sort_alpha_dec.png"
-        });
-        page.appendAction("pageevent", "sortDefault", true, {
-            title: "Sort as Default",
-            icon: plugin.path + "views/img/sort_default.png"
-        });
-
-        var sorts = [
-            ["sortAlphabeticallyInc", "Alphabetically (A->Z)"],
-            ["sortAlphabeticallyDec", "Alphabetically (Z->A)"],
-            ["sortViewsDec", "Views (decrementing)"],
-            ["sortDateDec", "Published (decrementing)"],
-            ["sortDefault", "Default", true]
-        ];
-
-        page.options.createMultiOpt("sort", "Sort by...", sorts, function(v) {
-            eval(v + "()");
-        });
-
-        function sortAlphabeticallyInc() {
-            var its = sort(items, "title", true);
-            pageUpdateItemsPositions(its);
-        }
-
-        function sortAlphabeticallyDec() {
-            var its = sort(items, "title", false);
-            pageUpdateItemsPositions(its);
-        }
-
-        function sortViewsDec() {
-            var its = sort(items, "views", false);
-            pageUpdateItemsPositions(its);
-        }
-
-        function sortDateDec() {
-            var its = sort(items, "date", false);
-            pageUpdateItemsPositions(its);
-        }
-
-        function sortDefault() {
-            for (var i in items_tmp) {
-                if (!items_tmp[i].orig_index) continue;
-                items[i].moveBefore(items_tmp[i].orig_index);
-            }
-        }
-
-        page.onEvent('sortAlphabeticallyInc', function() {
-            sortAlphabeticallyInc();
-        });
-
-        page.onEvent('sortAlphabeticallyDec', function() {
-            sortAlphabeticallyDec();
-        });
-
-        page.onEvent('sortViewsDec', function() {
-            sortViewsDec();
-        });
-
-        page.onEvent('sortDateDec', function() {
-            sortDateDec();
-        });
-
-        page.onEvent('sortDefault', function() {
-            sortDefault();
-        });
-    }
-
     function removeFromPlaylist(page, id) {
         var data = download(page, API + '/playlistItems', {
             method: 'DELETE',
@@ -1756,7 +1664,8 @@
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-        pageMenu(page);
+        page.metadata.background = plugin.path + "views/img/background.png";
+        page.metadata.backgroundAlpha = 0.5;
         page.metadata.glwview = plugin.path + "views/array2.view";
         page.type = "directory";
         page.contents = "items";
@@ -1851,6 +1760,12 @@
             title: 'Youtube Shows',
             icon: plugin.path + "views/img/logos/shows.png"
         }));
+
+        items.push(page.appendItem(plugin.getDescriptor().id + ':search:' + escape('Search'), 'directory', {
+            title: 'Search',
+            icon: plugin.path + "views/img/search.png"
+        }));
+
 
         for (var i in items)
             items[i].id = i;
