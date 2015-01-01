@@ -382,6 +382,8 @@
             } else if (it.kind == "youtube#subscription" && it.snippet.resourceId.kind == "youtube#channel") {
                 args.url = plugin.getDescriptor().id + ":channel:" + it.snippet.resourceId.channelId;
             } else if (it.kind == "youtube#activity") {
+                if (!it.contentDetails)
+                    continue;
                 if (it.contentDetails[it.snippet.type].resourceId) {// bs channels
                     if (it.contentDetails[it.snippet.type].resourceId.kind == "youtube#video") {
                         args.url = plugin.getDescriptor().id + ":video:" + it.contentDetails[it.snippet.type].resourceId.videoId;
@@ -2131,6 +2133,8 @@
                 } else if (entry.kind == "youtube#activity") {
                     var type = entry.snippet.type;
                     var channelTitle = entry.snippet.channelTitle;
+                    if (!entry.contentDetails)
+                        continue;
                     var cParams = entry.contentDetails[type];
                     metadata.title = new showtime.RichText(coloredStr('[' + type + '] ', orange) +title);
                     if (cParams.resourceId)
