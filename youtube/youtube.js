@@ -356,10 +356,12 @@
         return obj;
     }
 
-    function getItems(items) {
+    function getItems(items, filter) {
         var arr = [];
         for (var i in items) {
             var it = items[i];
+            if (filter && it.snippet.type && it.snippet.type != filter)
+                continue;
             var args = {
                 title: (it.snippet.type ? it.snippet.type :(it.snippet.title ? it.snippet.title : it.snippet.channelTitle)),
                 image: it.snippet.thumbnails ? it.snippet.thumbnails.default.url : plugin.path + "views/img/nophoto.png"
@@ -571,8 +573,8 @@
             }
             id == 'mine' ? params.args.home = true : params.args.channelId = id;
             var data = download(page, API + '/activities', params);
-            var activity = getItems(data.items);
 
+            var activity = getItems(data.items);
             if (activity.length > 0) {
                 activity.push({
                     title: "See More",
@@ -588,6 +590,26 @@
                     title: "Activities"
                 };
             }
+
+            var activity = getItems(data.items, 'upload');
+            if (activity.length > 0) {
+                activity.push({
+                    title: "See More",
+                    image: plugin.path + "views/img/add.png",
+                    url: plugin.getDescriptor().id + ":scraper:/activities:" + escape(showtime.JSONEncode(params)) + ':Activities'
+                });
+
+                page.appendPassiveItem("list", activity, {
+                    title: "Activities (Uploads only)"
+                });
+                lists_tmp.activity = {
+                    array: activity,
+                    title: "Activities (Uploads only)"
+                };
+            }
+
+
+
         }
 
         if (service.showFavorites && favoritesPlaylistId) {
