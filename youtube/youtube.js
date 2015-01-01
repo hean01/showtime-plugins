@@ -1765,7 +1765,7 @@ showtime.print('222222222222222');
             icon: plugin.path + "views/img/logos/shows.png"
         }));
 
-        items.push(page.appendItem(plugin.getDescriptor().id + ':search:' + escape('Search'), 'directory', {
+        items.push(page.appendItem(plugin.getDescriptor().id + ':search', 'directory', {
             title: 'Search',
             icon: plugin.path + "views/img/search.png"
         }));
