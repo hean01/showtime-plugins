@@ -416,14 +416,18 @@
                 "forUsername": username
             }
         });
+        if (!data.items.length)
+            return username;
         return data.items[0].id;
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":feed:(.*)", function(page, param) {
-        var username = unescape(param).match(/http:\/\/gdata.youtube.com\/feeds\/api\/users\/([\s\S]*?)\/newsubscriptionvideos/);
-        if (user)
-            page.redirect(plugin.getDescriptor().id + ":user:username:" + parseChannelId(username[1]));
+        var username = unescape(param).toString().match(/https:\/\/gdata\.youtube\.com\/feeds\/api\/users\/([\s\S]*?)\//);
+        if (username)
+            page.redirect(plugin.getDescriptor().id + ":channel:" + parseChannelId(username[1]));
     });
+
+
 
     plugin.addURI(plugin.getDescriptor().id + ":user:username:(.*)", function(page, username) {
         page.redirect(plugin.getDescriptor().id + ":channel:" + parseChannelId(username));
@@ -463,7 +467,7 @@
             if (data.items[0].id == id)
                 id = 'mine';
         }
-
+showtime.print('222222222222222');
         // Get channel data
         var params = {
             args: {
