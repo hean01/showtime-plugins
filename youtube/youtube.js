@@ -427,8 +427,6 @@
             page.redirect(plugin.getDescriptor().id + ":channel:" + parseChannelId(username[1]));
     });
 
-
-
     plugin.addURI(plugin.getDescriptor().id + ":user:username:(.*)", function(page, username) {
         page.redirect(plugin.getDescriptor().id + ":channel:" + parseChannelId(username));
     });
@@ -467,7 +465,7 @@
             if (data.items[0].id == id)
                 id = 'mine';
         }
-showtime.print('222222222222222');
+
         // Get channel data
         var params = {
             args: {
@@ -598,10 +596,19 @@ showtime.print('222222222222222');
 
             var activity = getItems(data.items, 'upload');
             if (activity.length > 0) {
+                var uploadsOnly = {
+                    args: {
+                        'part': 'snippet,contentDetails',
+                        'regionCode': service.region,
+                        'maxResults': 50,
+                        'upload': true
+                    }
+                }
+                id == 'mine' ? uploadsOnly.args.home = true : uploadsOnly.args.channelId = id;
                 activity.push({
                     title: "See More",
                     image: plugin.path + "views/img/add.png",
-                    url: plugin.getDescriptor().id + ":scraper:/activities:" + escape(showtime.JSONEncode(params)) + ':Activities'
+                    url: plugin.getDescriptor().id + ":scraper:/activities:" + escape(showtime.JSONEncode(uploadsOnly)) + ':Activities'
                 });
 
                 page.appendPassiveItem("list", activity, {
@@ -612,9 +619,6 @@ showtime.print('222222222222222');
                     title: "Activities (Uploads only)"
                 };
             }
-
-
-
         }
 
         if (service.showFavorites && favoritesPlaylistId) {
@@ -1210,9 +1214,6 @@ showtime.print('222222222222222');
             page.redirect(plugin.getDescriptor().id + ":video:stream:" + escape(title) + ":" + id + ":" + video_url);
         } catch (err) {
             page.loading = false;
-            if (err == "Error: HTTP error: 404")
-                err = "The video is unavailable at this moment.";
-
             page.error(err);
             return;
         }
@@ -1244,13 +1245,10 @@ showtime.print('222222222222222');
             video_url = video_url[0].video_url;
             playVideo(page, title, id, video_url);
         } catch (err) {
-            if (err == "Error: HTTP error: 404")
-                err = "The video is unavailable at this moment.";
-
+            page.loading = false;
             page.error(err);
             return;
         }
-
         page.loading = false;
     });
 
@@ -1417,23 +1415,9 @@ showtime.print('222222222222222');
                     page.redirect(plugin.getDescriptor().id + ':addToPlaylists:' + escape(videoId));
                 });
             }
-
-            //page.appendAction("pageevent", "comment", true, {
-            //    title: 'Comment',
-            //    icon: plugin.path + "views/img/comment.png",
-            //    listActions: true
-            //});
-            //page.onEvent('comment', function() {
-            //    api.comment(videoId);
-            //});
-            //page.appendPassiveItem("video", '', {
-            //    title: 'Comment',
-            //    icon: plugin.path + "views/img/comment.png"
-            //});
         }
-
         events = true;
-//        page.loading = false;
+        page.loading = false;
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":addToPlaylist:(.*):(.*)", function(page, playlistId, videoId) {
@@ -1463,15 +1447,6 @@ showtime.print('222222222222222');
 
     plugin.addURI(plugin.getDescriptor().id + ":addToPlaylists:(.*)", function(page, videoId) {
         setPageHeader(page, "Add video to User's Playlists");
-
-        //data.items[0].contentDetails.id
-        //data.items[0].contentDetails.relatedPlaylists
-        //id": "UC79olQw8423oIz3eVeGy5VQ",
-        //     "likes": "LL79olQw8423oIz3eVeGy5VQ",
-        //     "favorites": "FL79olQw8423oIz3eVeGy5VQ",
-        //     "uploads": "UU79olQw8423oIz3eVeGy5VQ",
-        //     "watchHistory": "HL79olQw8423oIz3eVeGy5VQ",
-        //     "watchLater": "WL79olQw8423oIz3eVeGy5VQ"
         var data = download(page, API + '/channels', {
             args: {
                 part: 'contentDetails',
@@ -1632,11 +1607,6 @@ showtime.print('222222222222222');
                 item.onEvent('none', function(item) {
                     rate(page, this.videoId, 'none');
                 });
-
-            //item.addOptAction("Comment video", "comment");
-            //item.onEvent('comment', function(item) {
-            //    api.comment(this.videoId)
-            //});
         }
     }
 
@@ -1735,7 +1705,7 @@ showtime.print('222222222222222');
             icon: plugin.path + "views/img/logos/channels.png"
         }));
 
-        items.push(page.appendItem(plugin.getDescriptor().id + ':live:' + escape('Live Broadcasts'), 'directory', {
+        items.push(page.appendItem(plugin.getDescriptor().id + ':live', 'directory', {
             title: 'Live Broadcasts',
             icon: plugin.path + "views/img/logos/live.png"
         }));
@@ -1775,7 +1745,6 @@ showtime.print('222222222222222');
             icon: plugin.path + "views/img/search.png"
         }));
 
-
         for (var i in items)
             items[i].id = i;
 
@@ -1800,13 +1769,6 @@ showtime.print('222222222222222');
             main_menu_order.order = showtime.JSONEncode(items);
         };
     });
-
-    function setHeaders() {
-        plugin.addHTTPAuth('https://youtube.com.*', function(req) {
-            req.setHeader('Authorization', store.token_type + ' ' + store.access_token);
-        });
-        headersAreSet = true;
-    };
 
     function download(page, url, params) {
         if (page)
@@ -1841,7 +1803,6 @@ showtime.print('222222222222222');
                         }
                     });
                     store.access_token = showtime.JSONDecode(data).access_token;
-                    //setHeaders();
                     params.headers['Authorization'] = store.token_type + ' ' + store.access_token;
                     showtime.print('Got new access_token');
                 } catch(err) {
@@ -1877,12 +1838,12 @@ showtime.print('222222222222222');
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":scraper:(.*):(.*):(.*)", function(page, url, params, title) {
+        page.metadata.background = plugin.path + "views/img/background.png";
         //setPageHeader(page, title);
         page.type = "directory";
         page.contents = "items";
         page.metadata.logo = logo;
         page.metadata.title = new showtime.RichText(unescape(showtime.entityDecode(title)));
-        page.metadata.background = plugin.path + "views/img/background.png";
         scraper(page, url, showtime.JSONDecode(unescape(params)));
     });
 
@@ -1944,6 +1905,10 @@ showtime.print('222222222222222');
         function paginator() {
             if (!tryToSearch) return false;
             var data = download(page, API + url, params);
+            if (data.error) {
+                page.error(data.error);
+                return tryToSearch = false;
+            }
             //showtime.print(showtime.JSONEncode(data));
             if (!page.entries && !data.items.length) {
                 page.appendPassiveItem('directory', '', {
@@ -1954,8 +1919,6 @@ showtime.print('222222222222222');
 
             if (!page.entries && data.pageInfo && page.metadata)
                 page.metadata.title += ' (' + data.pageInfo.totalResults + ')'
-
-            var c = 0;
 
             for (var i in data.items) {
                 var entry = data.items[i];
@@ -2056,6 +2019,8 @@ showtime.print('222222222222222');
                     }
                 } else if (entry.kind == "youtube#activity") {
                     var type = entry.snippet.type;
+                    if (params.args.upload && type != 'upload') // Activity uploads only filter
+                        continue;
                     var channelTitle = entry.snippet.channelTitle;
                     if (!entry.contentDetails)
                         continue;
@@ -2140,13 +2105,6 @@ showtime.print('222222222222222');
                         videoId: entry.id.videoId
                     }, metadata);
                 }
-                c++;
-                item.index = c;
-                item.title = entry.title;
-                if (metadata.views)
-                    item.views = parseInt(metadata.views);
-                if (entry.snippet.publishedAt)
-                    item.date = getTime(entry.snippet.publishedAt).getTime();
                 page.entries++;
             }
             if (!data.nextPageToken)
