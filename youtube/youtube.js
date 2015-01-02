@@ -435,6 +435,10 @@
         showtime.print(showtime.JSONEncode(data));
     }
 
+    function t(data) {
+        showtime.trace(showtime.JSONEncode(data));
+    }
+
     function sleep(ms) {
         ms += new Date().getTime();
         while (new Date() < ms) {}
@@ -1778,7 +1782,8 @@
                     if (page)
                         page.loading = false;
                     data = {};
-                    return data.error = err;
+                    data.error = err;
+                    return data;
                 }
                 try { // retrying the request with fresh token
                     data = showtime.httpReq(url, params);
