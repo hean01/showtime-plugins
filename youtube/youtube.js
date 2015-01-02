@@ -102,7 +102,6 @@
             store.token_type = response.token_type;
             showtime.notify('Authenticated successfully', 3);
         }
-        //setHeaders();
         return true;
     });
 
@@ -368,6 +367,9 @@
             if (it.kind == "youtube#playlistItem" && it.snippet.resourceId.kind == "youtube#video")
                 args.url = plugin.getDescriptor().id + ":video:" + it.snippet.resourceId.videoId;
             else if (it.kind == "youtube#playlist") {
+                if (it.contentDetails && !it.contentDetails.itemCount) // Don't show empty playlists
+                    continue;
+
                 var params = {
                     args: {
                         'part': 'snippet,contentDetails,status',
@@ -521,7 +523,6 @@
                     'forChannelId': id
                 }
             });
-
             var subscribeButton;
             if (data.pageInfo.totalResults == 0) {
                 page.appendAction("pageevent", "subscribeToTheChannel", false, {
@@ -1531,7 +1532,6 @@
         if (item.channelId)
             item.addOptURL("More from this channel", plugin.getDescriptor().id + ':channel:' + item.channelId);
 
-
         if (item.videoId) {
             item.addOptURL("Related Videos", plugin.getDescriptor().id + ":scraper:/search:" + escape(showtime.JSONEncode({
                 args: {
@@ -1884,7 +1884,7 @@
                 page.error(data.error);
                 return tryToSearch = false;
             }
-            //showtime.print(showtime.JSONEncode(data));
+            //print(data);
             if (!page.entries && !data.items.length) {
                 page.appendPassiveItem('directory', '', {
                     title: 'This list does not contain any item.'
@@ -1898,7 +1898,7 @@
             for (var i in data.items) {
                 var entry = data.items[i];
                 var metadata = {};
-                //showtime.print(showtime.JSONEncode(entry));
+                showtime.print(showtime.JSONEncode(entry));
                 if (entry.contentDetails) {
                     if (entry.contentDetails.definition)
                         metadata.hd = entry.contentDetails.definition == "hd";
@@ -2045,12 +2045,18 @@
                     if (entry.snippet.resourceId.kind == "youtube#video") {
                         metadata.playlistId = entry.id;
                         item = addVideoItem(page, {
-                            videoId: entry.snippet.resourceId.videoId
+                            videoId: entry.snippet.resourceId.videoId,
+                            channelId: entry.snippet.channelId
                         }, metadata);
                     }
                 } else if (entry.kind == "youtube#channel") {
                     item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id, "video", metadata);
                 } else if (entry.kind == "youtube#playlist") { // playlists of a channel
+                    if (entry.contentDetails) {
+                        if (!entry.contentDetails.itemCount) // Don't show empty playlists
+                            continue;
+                        metadata.title = entry.snippet.title + ' (' + entry.contentDetails.itemCount + ')'
+                    }
                     var inParam = {
                         args: {
                             "part": "snippet,contentDetails,status",
@@ -2060,10 +2066,11 @@
                     }
                     if (store.refresh_token)
                        inParam.method = 'GET'
-                    item = page.appendItem(plugin.getDescriptor().id + ":scraper:" + '/playlistItems:' + escape(showtime.JSONEncode(inParam)) + ':' + escape(title), "video", metadata);
+                    item = page.appendItem(plugin.getDescriptor().id + ':scraper:/playlistItems:' + escape(showtime.JSONEncode(inParam)) + ':' + escape(title), 'video', metadata);
                 } else if (entry.kind == "youtube#video") {
                     item = addVideoItem(page, {
-                        videoId: entry.id
+                        videoId: entry.id,
+                        channelId: entry.snippet.channelId
                     }, metadata);
                 } else if (entry.id.kind == "youtube#channel") { // of searcher
                     item = page.appendItem(plugin.getDescriptor().id + ':channel:' + entry.id.channelId, "video", metadata);
@@ -2077,7 +2084,8 @@
                     })) + ':' + escape(title), "video", metadata);
                 } else if (entry.id.kind == "youtube#video") { // of searcher
                     item = addVideoItem(page, {
-                        videoId: entry.id.videoId
+                        videoId: entry.id.videoId,
+                        channelId: entry.snippet.channelId
                     }, metadata);
                 }
                 page.entries++;

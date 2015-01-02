@@ -25,7 +25,7 @@ widget(container_y, {
 			height: $ui.size * 1 + $ui.size * 3 * !isVoid($page.model.actions);
 			cloner($page.model.actions, container_x, {
 				widget(label, {
-					focusable: true;
+					focusable: 0.1;
 					caption: $self.metadata.title;
 					TextStyleItem();
 					color: select(isFocused(), 1, 0.5);
