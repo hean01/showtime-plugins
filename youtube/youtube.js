@@ -996,6 +996,7 @@ showtime.print('222222222222222');
     };
 
     function getVideosList(page, id, number_items) {
+        page.loading = true;
         var params = {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1'
@@ -1004,6 +1005,7 @@ showtime.print('222222222222222');
         if (store.refresh_token)
             params.method = 'GET';
         var doc = download(page, 'http://www.youtube.com/watch?v=' + id, params).toString();
+        page.loading = true;
 
         var titleMatch = doc.match(/<meta property="og:title" content="(.+?)">/);
         if (titleMatch)
@@ -1144,6 +1146,7 @@ showtime.print('222222222222222');
     }
 
     function playVideo(page, title, id, video_url) {
+        page.type = "video";
         var url = unescape(unescape(video_url));
         var videoParams = {
             title: showtime.entityDecode(unescape(unescape(title))),
@@ -1167,7 +1170,6 @@ showtime.print('222222222222222');
         }
 
         page.source = "videoparams:" + showtime.JSONEncode(videoParams);
-        page.type = "video";
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":video:(.*)", function(page, id) {
@@ -1183,7 +1185,7 @@ showtime.print('222222222222222');
         page.loading = true;
         try {
             var video_url = getVideosList(page, id, 1);
-
+            page.loading = true;
             if (service.enableDebug) {
                 page.metadata.title = 'Streams list'
                 page.type = 'directory';
@@ -1214,7 +1216,6 @@ showtime.print('222222222222222');
             page.error(err);
             return;
         }
-
         page.loading = false;
     });
 
@@ -1222,6 +1223,7 @@ showtime.print('222222222222222');
         page.loading = true;
         try {
             var video_url = getVideosList(page, id, 1);
+            page.loading = true;
             if (service.enableDebug) {
                 page.metadata.title = 'Streams list'
                 page.type = 'directory';
@@ -1253,6 +1255,7 @@ showtime.print('222222222222222');
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":video:advanced:(.*)", function(page, id) {
+        page.loading = true;
         page.metadata.background = plugin.path + "views/img/background.png";
         page.metadata.backgroundAlpha = 0.5;
         page.type = "directory";
@@ -1268,7 +1271,6 @@ showtime.print('222222222222222');
         if (store.refresh_token)
             params.method = 'GET';
 
-        page.loading = true;
         var data = download(page, API + '/videos', params);
 
         if (data.error) {
@@ -1310,6 +1312,7 @@ showtime.print('222222222222222');
             page.loading = false;
             return;
         };
+
         if (typeof(videos_list) == "string") {
             page.error(videos_list);
         } else {
@@ -1339,6 +1342,7 @@ showtime.print('222222222222222');
                     url: plugin.getDescriptor().id + ':video:stream:' + escape(title) + ':' + escape(id) + ':' + item.video_url
                 });
             }
+
             page.appendPassiveItem("list", videos, {
                 title: "Video Playback"
             });
@@ -1375,6 +1379,7 @@ showtime.print('222222222222222');
                     title: "Extras"
                 });
 
+            var actions = [];
             if (store.refresh_token) {
                 page.appendAction("pageevent", "like", true, {
                     title: 'Like',
@@ -1428,7 +1433,7 @@ showtime.print('222222222222222');
         }
 
         events = true;
-        page.loading = false;
+//        page.loading = false;
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":addToPlaylist:(.*):(.*)", function(page, playlistId, videoId) {
