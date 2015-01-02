@@ -1508,29 +1508,6 @@
             showtime.notify(data, 3);
     }
 
-    function sort(items, field, reverse) {
-        if (items.length == 0) return null;
-
-        var its = [];
-        for (var i in items) {
-            items[i].orig_index = i;
-            its.push(items[i]);
-        }
-        its.sort(function(a, b) {
-            if (!b[field]) return null;
-            return b[field] > a[field]
-        });
-        if (reverse) its.reverse();
-
-        return its;
-    }
-
-    function pageUpdateItemsPositions(its) {
-        for (var i in its) {
-            items[its[i].orig_index].moveBefore(i);
-        }
-    }
-
     function removeFromPlaylist(page, id) {
         var data = download(page, API + '/playlistItems', {
             method: 'DELETE',
@@ -1748,25 +1725,17 @@
         for (var i in items)
             items[i].id = i;
 
-        if (!main_menu_order.order || showtime.JSONDecode(main_menu_order.order).length > i) {
+        if (!main_menu_order.order || showtime.JSONDecode(main_menu_order.order).length != (+i + 1)) {
             var items_tmp = page.getItems();
-            for (var i = 0; i < items_tmp.length; i++)
-                if (!items_tmp[i].id)
-                    delete items_tmp[i];
             main_menu_order.order = showtime.JSONEncode(items_tmp);
         }
         var order = showtime.JSONDecode(main_menu_order.order);
-
         for (var i in order)
             items[order[i].id].moveBefore(i);
 
         page.reorderer = function(item, before) {
             item.moveBefore(before);
-            var items = page.getItems();
-            for (var i = 0; i < items.length; i++)
-                if (!items[i].id)
-                    delete items[i];
-            main_menu_order.order = showtime.JSONEncode(items);
+            main_menu_order.order = showtime.JSONEncode(page.getItems());
         };
     });
 
@@ -1839,6 +1808,7 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":scraper:(.*):(.*):(.*)", function(page, url, params, title) {
         page.metadata.background = plugin.path + "views/img/background.png";
+        page.metadata.backgroundAlpha = 0.5;
         //setPageHeader(page, title);
         page.type = "directory";
         page.contents = "items";
