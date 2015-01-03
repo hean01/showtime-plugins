@@ -360,8 +360,12 @@
             var it = items[i];
             if (filter && it.snippet.type && it.snippet.type != filter)
                 continue;
+            var title = (it.snippet.type ? it.snippet.type :(it.snippet.title ? it.snippet.title : it.snippet.channelTitle));
+            if (filter)
+                title = (it.snippet.title ? it.snippet.title : it.snippet.channelTitle)
+
             var args = {
-                title: (it.snippet.type ? it.snippet.type :(it.snippet.title ? it.snippet.title : it.snippet.channelTitle)),
+                title: title,
                 image: it.snippet.thumbnails ? it.snippet.thumbnails.default.url : plugin.path + "views/img/nophoto.png"
             };
             if (it.kind == "youtube#playlistItem" && it.snippet.resourceId.kind == "youtube#video")
@@ -1872,6 +1876,28 @@
         }
     }
 
+    function getVideoId(entry) {
+            if (entry.kind == "youtube#activity") {
+                var type = entry.snippet.type;
+                var params = entry.contentDetails[type];
+                if (type == "upload")
+                    return params.videoId;
+                if (type == "like" || type == "favorite" || type == "recommendation" || type == "bulletin" || type == "playlistItem") {
+                    if (entry.contentDetails[type].resourceId.kind == "youtube#video")
+                        return params.resourceId.videoId;
+                }
+            }
+            else if (entry.kind == "youtube#playlistItem") {
+                if (entry.snippet.resourceId.kind == "youtube#video")
+                    return entry.snippet.resourceId.videoId;
+            }
+            else if (entry.id && entry.id.kind && entry.id.kind == "youtube#video") {
+                return entry.id.videoId;
+            }
+            //print(entry.kind + ' - ' + type + ' - ' + entry.contentDetails[type].resourceId.kind);
+        return null;
+    }
+
     function scraper(page, url, params) {
         page.entries = 0;
         var tryToSearch = true;
@@ -1895,10 +1921,44 @@
             if (!page.entries && data.pageInfo && page.metadata)
                 page.metadata.title += ' (' + data.pageInfo.totalResults + ')'
 
+            var idList = '', details, videoDetails = [];
+            // Making id list
+            for (var i in data.items)
+                !idList ? idList = getVideoId(data.items[i]) : idList += ',' + getVideoId(data.items[i]);
+            // Fetching info for that ids
+            if (idList) {
+                var rParams = {
+                    args: {
+                        'part': 'snippet,contentDetails,statistics,status',
+                        'id': idList
+                    }
+                };
+                if (store.refresh_token) // Auth if needed
+                    rParams.method = 'GET';
+                details = download(page, API + '/videos', rParams);
+
+                for (var i in details.items)
+                    videoDetails[details.items[i].id] = details.items[i];
+            };
+
             for (var i in data.items) {
-                var entry = data.items[i];
                 var metadata = {};
-                showtime.print(showtime.JSONEncode(entry));
+
+                var entry = data.items[i];
+                var index = getVideoId(entry);
+                if (videoDetails[index]) {
+                    metadata.hd = videoDetails[index].contentDetails.definition;
+                    metadata.duration = metadata.runtime = durationToString(videoDetails[index].contentDetails.duration);
+                    metadata.views = videoDetails[index].statistics.viewCount;
+                    metadata.favorites = videoDetails[index].statistics.favoriteCount;
+                    metadata.likes = parseInt(videoDetails[index].statistics.likeCount);
+                    metadata.dislikes = parseInt(videoDetails[index].statistics.dislikeCount);
+                    metadata.likesPercentage = Math.round((metadata.likes /
+                            (metadata.likes + metadata.dislikes)) * 100);
+                    metadata.likesPercentage_str = metadata.likesPercentage + '%';
+                    metadata.rating = metadata.likesPercentage;
+                }
+                //showtime.print(showtime.JSONEncode(entry));
                 if (entry.contentDetails) {
                     if (entry.contentDetails.definition)
                         metadata.hd = entry.contentDetails.definition == "hd";
