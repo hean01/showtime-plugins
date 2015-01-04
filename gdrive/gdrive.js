@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2014-2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -205,11 +205,13 @@
             // then files
             for (var i in json.items) {
                 if (json.items[i].mimeType != 'application/vnd.google-apps.folder') {
-                    var url = json.items[i].webContentLink;
+                    var url = '';
+                    if (json.items[i].webContentLink)
+                        url = json.items[i].webContentLink;
                     if (json.items[i].fileExtension && json.items[i].fileExtension.toUpperCase() == 'PLX')
                         url = 'navi-x:playlist:playlist:' + escape(url)
                     var type = json.items[i].mimeType.split('/')[0];
-
+                    if (!url) url = '';
                     page.appendItem(url, 'video', {
 	                title: new showtime.RichText(json.items[i].title + colorStr(bytesToSize(json.items[i].fileSize ? json.items[i].fileSize : json.items[i].quotaBytesUsed), blue) + ' ' + dateToHuman(json.items[i].modifiedDate)),
                         icon: json.items[i].thumbnailLink ? json.items[i].thumbnailLink : json.items[i].iconLink

@@ -642,6 +642,7 @@
         //addChannel(page, 'Москва 24', 'direct', 'hls:http://testlivestream.rfn.ru/live/smil:m24.smil/playlist.m3u8?auth=vh&cast_id=1661', '');
         addChannel(page, 'Москва 24', 'vgtrk', 'http://player.rutv.ru/iframe/datalive/id/1661/sid/m24', '');
         addChannel(page, 'РИА Новости', 'direct', 'hls:http://rian.cdnvideo.ru:1935/rr/stream20/index.m3u8', '');
+        addChannel(page, 'RBC', 'direct', 'hls:http://online.video.rbc.ru/online/rbctv_480p/index.m3u8');
         addChannel(page, 'RTД', 'direct', 'hls:http://62.213.85.137/rtdru/rtdru.m3u8', '');
         addChannel(page, 'Дождь', 'direct', 'hls:http://tvrain-video.ngenix.net/mobile/TVRain_1m.stream/playlist.m3u8', 'http://tvrain-st.cdn.ngenix.net/static/css/pub/images/logo-tvrain.png');
         addChannel(page, 'HD Media', 'direct', 'hls:http://serv02.vintera.tv:1935/push/hdmedia.stream/playlist.m3u8', '');
@@ -687,7 +688,6 @@
                   title: 'XXX'
               });
           }
-          addChannel(page, 'Brazileirinhas', 'direct', 'rtmp://edge-05.livestreamcast.org/Brasileirinhas/Brasileirinhas/ playpath=Brasileirinhas swfUrl=http://livestreamcast.org/jwplayer/jwplayer.flash.swf live=1 pageUrl=http://livestreamcast.org/embed.php?c=brasileirinhas&vw=100%&vh=100%"');
           addChannel(page, 'Hallo TV', 'direct', 'hls:http://83.169.58.38:1935/live/HalloTV1/playlist.m3u8', 'http://www.lyngsat-logo.com/logo/tv/hh/hallo_tv_at.jpg');
           addChannel(page, 'Visit-X', 'direct', 'rtmp://194.116.150.47/live//visitx.stream1', 'https://pbs.twimg.com/profile_images/1625623578/social_logo.jpg');
           //addChannel(page, 'Visit-X', 'direct', 'rtmp://194.116.150.47/live//visitx.stream2', 'https://pbs.twimg.com/profile_images/1625623578/social_logo.jpg');
