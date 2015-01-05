@@ -4,10 +4,10 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "icecast",
 	"synopsis": "Streaming directory -- streams & radios",
-	"version": "0.4.12",
+	"version": "0.5",
 	"file": "icecast.js",
 	"showtimeVersion": "4.5.28",
-	"type": "javascript",
+	"type": "ecmascript",
 	"id": "icecast",
 	"icon": "icecast_square.png",
 	"category": "music"

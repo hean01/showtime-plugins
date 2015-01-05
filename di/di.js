@@ -1,7 +1,7 @@
 /*
  *  Digitally Imported
  *
- *  Copyright (C) 2014 Henrik Andersson, lprot
+ *  Copyright (C) 2012-2015 Henrik Andersson, lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
     var logo = plugin.path + 'di_square.png';
     var BASE_URL = 'http://www.di.fm';
 
-    plugin.createService(pInfo.title, PREFIX + ':start', 'audio', true, logo);
+    plugin.createService(pInfo.title, PREFIX + ':start', 'music', true, logo);
 
     // Start page
     plugin.addURI(PREFIX + ':start', function(page) {

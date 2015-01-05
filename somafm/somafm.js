@@ -1,7 +1,7 @@
 /*
  *  soma fm
  *
- *  Copyright (C) 2012-2014 Henrik Andersson, lprot
+ *  Copyright (C) 2012-2015 Henrik Andersson, lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
     var BASE_URL = "http://www.somafm.com";
     var logo = plugin.path + "somafm.png";
 
-    plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "audio", true, logo);
+    plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "music", true, logo);
 
     function descr(s) {
         var tmp = s.match(/<p class="descr">([\S\s]*?)<dl>/);

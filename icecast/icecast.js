@@ -1,7 +1,7 @@
 /*
  *  icecast directory
  *
- *  Copyright (C) 2014 Henrik Andersson, lprot
+ *  Copyright (C) 2012-2015 Henrik Andersson, lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@
         store.list = "[]";
 
     // create plugin service
-    plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "audio", true, logo);
+    plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "music", true, logo);
 
     // create settins
     var settings = plugin.createSettings("icecast", logo, plugin.getDescriptor().synopsis);

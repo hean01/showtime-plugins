@@ -4,10 +4,10 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Shoutcast",
 	"synopsis": "SHOUTcast Radio - Listen to Free Online Radio Stations",
-	"version": "0.2.3",
+	"version": "0.3",
 	"file": "shoutcast.js",
-	"showtimeVersion": "4.5.28",
-	"type": "javascript",
+	"showtimeVersion": "4.8",
+	"type": "ecmascript",
 	"id": "shoutcast",
 	"icon": "logo.png",
 	"category": "music"

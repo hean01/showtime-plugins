@@ -1,7 +1,7 @@
 /*
  *  rad.io
  *
- *  Copyright (C) 2014 Henrik Andersson, lprot
+ *  Copyright (C) 2012-2015 Henrik Andersson, lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
         page.loading = false;
     }
 
-    var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "audio", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "music", true, logo);
 
     var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
     var store = plugin.createStore('favorites', true)

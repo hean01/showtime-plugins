@@ -1,7 +1,7 @@
 /*
  *  www.shoutcast.com plugin for Showtime
  *
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
         store.list = "[]";
 
     // create plugin service
-    plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "audio", true, logo);
+    plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "music", true, logo);
 
     // create settings
     var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
