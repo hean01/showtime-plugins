@@ -241,6 +241,9 @@
     settings.createBool("showActivities", "Show Activities", true, function(v) {
         service.showActivities = v;
     });
+    settings.createBool("showActivitiesUploadsOnly", "Show Activities (Uploads only)", true, function(v) {
+        service.showActivitiesUploadsOnly = v;
+    });
     settings.createBool("showWatchLater", "Show Watch Later", true, function(v) {
         service.showWatchLater = v;
     });
@@ -575,7 +578,7 @@
             }
         }
 
-        if (service.showActivities) { // activities (new subscriptions)
+        if (service.showActivities || service.showActivitiesUploadsOnly) { // activities (new subscriptions)
             var params = {
                 args: {
                     'part': 'snippet,contentDetails',
@@ -586,47 +589,51 @@
             id == 'mine' ? params.args.home = true : params.args.channelId = id;
             var data = download(page, API + '/activities', params);
 
-            var activity = getItems(data.items);
-            if (activity.length > 0) {
-                activity.push({
-                    title: "See More",
-                    image: plugin.path + "views/img/add.png",
-                    url: plugin.getDescriptor().id + ":scraper:/activities:" + escape(showtime.JSONEncode(params)) + ':Activities'
-                });
+            if (service.showActivities) {
+                var activity = getItems(data.items);
+                if (activity.length > 0) {
+                    activity.push({
+                        title: "See More",
+                        image: plugin.path + "views/img/add.png",
+                        url: plugin.getDescriptor().id + ":scraper:/activities:" + escape(showtime.JSONEncode(params)) + ':Activities'
+                    });
 
-                page.appendPassiveItem("list", activity, {
-                    title: "Activities"
-                });
-                lists_tmp.activity = {
-                    array: activity,
-                    title: "Activities"
-                };
+                    page.appendPassiveItem("list", activity, {
+                        title: "Activities"
+                    });
+                    lists_tmp.activity = {
+                        array: activity,
+                        title: "Activities"
+                    };
+                }
             }
 
-            var activity = getItems(data.items, 'upload');
-            if (activity.length > 0) {
-                var uploadsOnly = {
-                    args: {
-                        'part': 'snippet,contentDetails',
-                        'regionCode': service.region,
-                        'maxResults': 50,
-                        'upload': true
+            if (service.showActivitiesUploadsOnly) {
+                var activity = getItems(data.items, 'upload');
+                if (activity.length > 0) {
+                    var uploadsOnly = {
+                        args: {
+                            'part': 'snippet,contentDetails',
+                            'regionCode': service.region,
+                            'maxResults': 50,
+                            'upload': true
+                        }
                     }
-                }
-                id == 'mine' ? uploadsOnly.args.home = true : uploadsOnly.args.channelId = id;
-                activity.push({
-                    title: "See More",
-                    image: plugin.path + "views/img/add.png",
-                    url: plugin.getDescriptor().id + ":scraper:/activities:" + escape(showtime.JSONEncode(uploadsOnly)) + ':Activities'
-                });
+                    id == 'mine' ? uploadsOnly.args.home = true : uploadsOnly.args.channelId = id;
+                    activity.push({
+                        title: "See More",
+                        image: plugin.path + "views/img/add.png",
+                        url: plugin.getDescriptor().id + ":scraper:/activities:" + escape(showtime.JSONEncode(uploadsOnly)) + ':Activities'
+                    });
 
-                page.appendPassiveItem("list", activity, {
-                    title: "Activities (Uploads only)"
-                });
-                lists_tmp.activity = {
-                    array: activity,
-                    title: "Activities (Uploads only)"
-                };
+                    page.appendPassiveItem("list", activity, {
+                        title: "Activities (Uploads only)"
+                    });
+                    lists_tmp.activity = {
+                        array: activity,
+                        title: "Activities (Uploads only)"
+                    };
+                }
             }
         }
 
