@@ -585,6 +585,7 @@
         //addChannel(page, 'Europa Plus TV (RTMP)', 'direct', 'rtmp://europaplus.cdnvideo.ru/europaplus-live//mp4:eptv_main.sdp', 'http://www.europaplustv.com/images/europa_tv.png');
         addChannel(page, 'Europa Plus TV', 'direct', 'hls:http://europaplus.cdnvideo.ru/europaplus-live/mp4:eptv_main.sdp/playlist.m3u8', 'http://www.europaplustv.com/images/europa_tv.png');
         addChannel(page, 'OTV', 'jampo', 'otv');
+        addChannel(page, 'M1', 'sputniktv', 'http://sputniktv.in.ua/m1.html');
         //rtmp://212.26.132.86/live/mb_ua
         addChannel(page, 'Music Box UA', 'direct', 'hls:http://212.26.132.86/hls/mb_ua.m3u8', '');
         addChannel(page, 'Stars TV', 'direct', 'hls:http://starstv-live.e91-jw.insyscd.net/starstv.isml/QualityLevels(960000)/manifest(format=m3u8-aapl).m3u8', '');
@@ -635,6 +636,7 @@
         addChannel(page, '112', 'direct', 'hls:http://31.28.169.242/hls/live112.m3u8', 'http://112.ua/static/img/logo/112_ukr.png');
         addChannel(page, 'TET', 'jampo', 'tet', 'http://upload.wikimedia.org/wikipedia/ru/7/72/%D0%9B%D0%BE%D0%B3%D0%BE%D1%82%D0%B8%D0%BF_%D1%82%D0%B5%D0%BB%D0%B5%D0%BA%D0%BE%D0%BC%D0%BF%D0%B0%D0%BD%D0%B8%D0%B8_%D0%A2%D0%95%D0%A2.jpg');
         addChannel(page, '1+1', 'jampo', '1plus1', 'http://upload.wikimedia.org/wikipedia/commons/thumb/0/07/1_plus_1_logo.svg/200px-1_plus_1_logo.svg.png');
+        addChannel(page, '1+1 International', 'sputniktv', 'http://sputniktv.in.ua/11-international.html');
         addChannel(page, '2+2', 'seetv', '2plus2', 'http://2plus2.ua/img/header/logo.png');
         addChannel(page, 'НТН', 'jampo', 'ntn', 'http://upload.wikimedia.org/wikipedia/ru/6/61/Telekanal_ntn.png');
         //addChannel(page, 'ТВі', 'direct', 'rtmp://media.tvi.com.ua/live/_definst_//HLS4', 'http://tvi.ua/catalog/view/theme/new/image/logo.png');
@@ -645,16 +647,23 @@
         addChannel(page, 'Украина', 'trk', '', 'http://upload.wikimedia.org/wikipedia/commons/c/cc/Ua_white.jpg');
         addChannel(page, 'History', 'sputniktv', 'http://sputniktv.in.ua/history.html');
         addChannel(page, 'Travel Channel', 'sputniktv', 'http://sputniktv.in.ua/travel-channel.html');
+        addChannel(page, 'Travel+ Adventure', 'sputniktv', 'http://sputniktv.in.ua/travel-adventure.html');
         addChannel(page, 'Discovery Channel', 'jampo', 'discovery', 'http://upload.wikimedia.org/wikipedia/ru/thumb/4/46/Discovery_Channel_International.svg/200px-Discovery_Channel_International.svg.png');
         addChannel(page, 'National Geographic', 'jampo', 'ngrus');
         addChannel(page, 'Animal Planet', 'jampo', 'animalplanet');
+        addChannel(page, 'TV1000 Comedy', 'sputniktv', 'http://sputniktv.in.ua/tv1000comedy.html');
+        addChannel(page, 'Zoom', 'sputniktv', 'http://sputniktv.in.ua/zoom.html');
         addChannel(page, 'НЛО TV', 'sputniktv', 'http://sputniktv.in.ua/nlotv.html');
+        addChannel(page, 'OE', 'sputniktv', 'http://sputniktv.in.ua/oe.html');
         addChannel(page, 'MEGA', 'sputniktv', 'http://sputniktv.in.ua/mega.html', 'http://upload.wikimedia.org/wikipedia/uk/7/77/Logo_Mega.png');
         addChannel(page, 'K1', 'jampo', 'k1', 'http://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Logo_k1.png/244px-Logo_k1.png');
         addChannel(page, 'K2', 'jampo', 'k2', 'http://upload.wikimedia.org/wikipedia/ru/7/7e/Telekanal_k2.png');
         addChannel(page, 'QTV', 'sputniktv', 'http://sputniktv.in.ua/qtv.html', 'http://qtv.ua/images/default/logo.png');
         addChannel(page, 'Первый автомобильный', 'youtube', '', 'http://upload.wikimedia.org/wikipedia/ru/8/80/1auto_TV.jpg');
+        addChannel(page, 'Спорт 1', 'sputniktv', 'http://sputniktv.in.ua/sport-1-ukraina.html');
+        addChannel(page, 'Спорт 2', 'sputniktv', 'http://sputniktv.in.ua/sport-2-ukraina.html');
         addChannel(page, 'XSport', 'jampo', 'xsport', 'http://xsport.ua/bitrix/templates/xsport/images/logo.png');
+        addChannel(page, 'Tonis', 'sputniktv', 'http://sputniktv.in.ua/tonis.html');
         //addChannel(page, 'Гумор ТВ', 'ts', 'http://85.25.43.30:8232', '');
         //addChannel(page, 'Гумор ТВ', 'direct', 'rtmp://212.26.132.86/live/gumor_babai', '');
         addChannel(page, 'Гумор ТВ', 'direct', 'hls:http://212.26.132.86/hls/gumor_babai.m3u8', 'http://upload.wikimedia.org/wikipedia/uk/b/b1/Humor_logo.jpg');
@@ -698,6 +707,7 @@
         addChannel(page, 'Euronews', 'euronews', 'ru', 'http://ua.euronews.com/media/logo_222.gif');
         //http://tv.life.ru/index.m3u8
         addChannel(page, 'Life News', 'direct', 'hls:http://tv.life.ru/index.m3u8', 'http://lifenews.ru/assets/logo-0a3a75be3dcc15b6c6afaef4adab52dd.png');
+        addChannel(page, 'Life News (720p)', 'direct', 'hls:http://tv.life.ru/lifetv/720p/index.m3u8', 'http://lifenews.ru/assets/logo-0a3a75be3dcc15b6c6afaef4adab52dd.png');
         //addChannel(page, 'Россия 24', 'direct', 'hls:http://testlivestream.rfn.ru/live/smil:r24.smil/playlist.m3u8?auth=vh&cast_id=21', '');
         addChannel(page, 'Россия 24', 'vgtrk', 'http://player.rutv.ru/iframe/datalive/id/21/sid/r24', '');
         //addChannel(page, 'Россия 1', 'direct', 'hls:http://213.208.179.135/rr2/smil:rtp_r1_rr.smil/playlist.m3u8?auth=vh&cast_id=2961', '');
