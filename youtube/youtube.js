@@ -1675,6 +1675,18 @@
             }
         })) + ':' + escape('Most Popular'), 'directory', {
             title: 'Most popular',
+            icon: plugin.path + "views/img/logos/top.png"
+        }));
+        items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
+            args: {
+                "part": "snippet",
+                'regionCode': service.region,
+                'safeSearch': service.safeSearch,
+                'maxResults': 50,
+                "type": "video"
+            }
+        })) + ':' + escape('Videos'), 'directory', {
+            title: 'Videos',
             icon: plugin.path + "views/img/logos/feeds.png"
         }));
         items.push(page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' + escape(showtime.JSONEncode({
