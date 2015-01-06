@@ -1,7 +1,7 @@
 /*
  *  LubeTube - Showtime Plugin
  *
- *  Copyright (C) 2012-2014 Henrik Andersson, lprot
+ *  Copyright (C) 2012-2015 Henrik Andersson, lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,14 +49,14 @@
         var tryToSearch = true, url = '/pornstars/'
 
         function scraper(doc) {
-	    // 1-link, 2-icon, 3-title, 4-videos, 5-views
-            var re = /<li>[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?src="([\S\s]*?)" title="([\S\s]*?)"[\S\s]*?<p>Videos: ([\S\s]*?) \&nbsp; Views: ([\S\s]*?)<\/p>/g;
+	    // 1-numofvideos, 2-link, 3-icon, 4-title
+            var re = /<strong>([\S\s]*?)<\/strong>[\S\s]*?href="([\S\s]*?)"><img src="([\S\s]*?)" alt="([\S\s]*?)"/g;
             var match = re.exec(doc);
             while (match) {
-                page.appendItem(plugin.getDescriptor().id + ":pornstar:" + escape(match[1]) + ":" + escape(match[3]), "video", {
-                    title: new showtime.RichText(match[3] + colorStr(match[4], orange)),
-                    icon: match[2],
-                    description: new showtime.RichText(coloredStr('Views: ', orange) + match[5])
+                page.appendItem(plugin.getDescriptor().id + ":pornstar:" + escape(match[2]) + ":" + escape(match[4]), "video", {
+                    title: new showtime.RichText(match[4] + colorStr(match[1], orange)),
+                    icon: match[3],
+                    description: new showtime.RichText(coloredStr('Title: ', orange) + match[4])
                 });
                 page.entries++;
                 match = re.exec(doc);
@@ -68,17 +68,8 @@
             page.loading = true;
             var doc = showtime.httpReq(checkLink(url)).toString();
             page.loading = false;
-            var mp = doc.match(/<h2>Featured Pornstars<\/h2>([\S\s]*?)<\/ul>/);
-            if (mp) {
-                page.appendItem("", "separator", {
-                    title: 'Featured Pornstars'
-                });
-                scraper(mp[1]);
-                page.appendItem("", "separator", {
-                    title: doc.match(/<br class="clear" \/>[\S\s]*?<h2>([\S\s]*?)<\/h2>/)[1]
-                });
-            }
-            scraper(doc.substr(doc.lastIndexOf('<div class="seperator">')));
+            var mp = doc.match(/<ul class="gallery">([\S\s]*?)<\/ul>/);
+            scraper(mp);
             var next = doc.match(/<a class="next" href="([\S\s]*?)">Next<\/a>/);
             if (!next) return tryToSearch = false;
             url = next[1];
@@ -159,12 +150,12 @@
         var doc = showtime.httpReq(BASE_URL + "/categories").toString();
         page.loading = false;
         var mp = doc.match(/<ul class="gallery">([\S\s]*?)<\/ul>/)[1];
-	// 1-link, 2-numofvideos, 3-icon, 4-title
-        var re = /<li>[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?<\/i> ([\S\s]*?)<\/span>[\S\s]*?src="([\S\s]*?)" title="([\S\s]*?)"/g;
+        // 1-numofvideos, 2-link, 3-icon, 4-title
+        var re = /<strong>([\S\s]*?)<\/strong>[\S\s]*?href="([\S\s]*?)"><img src="([\S\s]*?)" alt="([\S\s]*?)"/g;
         var match = re.exec(mp);
         while (match) {
-            page.appendItem(plugin.getDescriptor().id + ":sorting:" + escape(match[4]) + ":" + escape(match[1]), "video", {
-                title: new showtime.RichText(match[4] + colorStr(match[2], blue)),
+            page.appendItem(plugin.getDescriptor().id + ":sorting:" + escape(match[4]) + ":" + escape(match[2]), "video", {
+                title: new showtime.RichText(match[4] + colorStr(match[1], orange)),
                 icon: match[3]
             });
             var match = re.exec(mp);

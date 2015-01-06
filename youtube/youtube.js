@@ -1320,12 +1320,6 @@
         });
 
         var videos_list = getVideosList(page, id, 'any');
-        if (service.enableDebug) {
-            page.metadata.title = 'Streams list'
-            page.type = 'directory';
-            page.loading = false;
-            return;
-        };
 
         if (typeof(videos_list) == "string") {
             page.error(videos_list);
@@ -1343,6 +1337,7 @@
 
             var videos = [];
             for (var i in videos_list) {
+print(item);
                 var item = videos_list[i];
                 page.appendAction("navopen", plugin.getDescriptor().id + ':video:stream:' + escape(title) + ':' + escape(id) + ':' + item.video_url, true, {
                     title: item.quality

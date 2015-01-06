@@ -1,7 +1,7 @@
 /**
  * kordonivkakino.net plugin for Showtime
  *
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -162,10 +162,9 @@
         page.loading = false;
 
         //1-icon, 2-description
-        var htmlBlock = doc.match(/dle_image_begin:([\s\S]*?)\|-->([\s\S]*?)<div style="clear/);
-        //showtime.print(htmlBlock[2]);
+        var htmlBlock = doc.match(/end -->[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?-->([\s\S]*?)<div style="clear/);
+        //showtime.print(unescape(url));
         dBlock = htmlBlock[2].replace(/<[^>]*>/g, '');
-
         var language = getAndClean('Язык');
         var duration = getAndClean('Продолжительность').replace(/\s/g,'');
         if (!duration) duration = getAndClean('Длительность').replace(/\s/g,'');
@@ -253,7 +252,7 @@
             }
             page.appendItem(params, 'video', {
                 title: unescape(title),
-                icon: htmlBlock[1],
+                icon: BASE_URL + htmlBlock[1],
                 duration: duration,
                 genre: genre,
                 year: year,
