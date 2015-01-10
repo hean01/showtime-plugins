@@ -67,12 +67,18 @@ var XML = require('showtime/xml');
         page.loading = false;
     });
 
-    // Play service by reference id
-    plugin.addURI(plugin.getDescriptor().id + ":streamById:(.*):(.*):(.*)", function(page, url, serviceName, serviceReference) {
+    plugin.addURI(plugin.getDescriptor().id + ":zapTo:(.*):(.*):(.*)", function(page, url, serviceName, serviceReference) {
+        setPageHeader(page, unescape(url) + ' - ' + unescape(serviceName));
+        page.loading = true;
+        var doc = showtime.httpReq(unescape(url) + '/web/zap?sRef=' + serviceReference);
+        page.loading = false;
+        doc = XML.parse(doc);
+        showtime.notify(doc.e2simplexmlresult.e2statetext, 3);
+
         var link = "videoparams:" + showtime.JSONEncode({
             title: unescape(serviceName),
             no_fs_scan: true,
-            canonicalUrl: plugin.getDescriptor().id + ':streamById:' + serviceName + ':' + serviceReference,
+            canonicalUrl: plugin.getDescriptor().id + ':zapTo:' + url + ':' + serviceName + ':' + serviceReference,
             sources: [{
                 url: unescape(url).replace('https:', 'http:') + ':8001/' + serviceReference,
                 mimetype: 'video/mp2t'
@@ -80,17 +86,6 @@ var XML = require('showtime/xml');
         });
         page.type = 'video'
         page.source = link;
-    });
-
-    plugin.addURI(plugin.getDescriptor().id + ":zapTo:(.*):(.*):(.*)", function(page, url, serviceName, serviceReference) {
-        setPageHeader(page, unescape(url) + ' - ' + unescape(serviceName));
-        page.loading = true;
-        var doc = showtime.httpReq(unescape(url) + '/web/zap?sRef=' + serviceReference);
-        page.loading = false;
-        doc = XML.parse(doc);
-        page.appendItem(plugin.getDescriptor().id + ":streamById:" + url + ':' + serviceName + ':' + serviceReference, "directory", {
-            title: doc.e2simplexmlresult.e2statetext
-        });
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":getServices:(.*):(.*):(.*)", function(page, url, serviceName, serviceReference) {
