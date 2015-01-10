@@ -45,7 +45,7 @@ var XML = require('showtime/xml');
             no_fs_scan: true,
             canonicalUrl: plugin.getDescriptor().id + ':streamFromCurrent',
             sources: [{
-                url: unescape(url) + ':8001/' + doc.e2currentserviceinformation.e2service.e2servicereference,
+                url: unescape(url).replace('https:', 'http:') + ':8001/' + doc.e2currentserviceinformation.e2service.e2servicereference,
                 mimetype: 'video/mp2t'
             }]
         });
