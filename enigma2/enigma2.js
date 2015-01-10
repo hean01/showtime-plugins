@@ -31,6 +31,19 @@ var XML = require('showtime/xml');
 	page.loading = false;
     }
 
+    var blue = '6699CC',
+        orange = 'FFA500',
+        red = 'EE0000',
+        green = '008B45';
+
+    function coloredStr(str, color) {
+        return '<font color="' + color + '">' + str + '</font>';
+    }
+
+    function colorStr(str, color) {
+        return coloredStr(' (' + str + ')', color);
+    }
+
     plugin.createService(slogan, plugin.getDescriptor().id + ":start", "tv", true, logo);
 
     var store = plugin.createStore('config', true);
@@ -54,6 +67,72 @@ var XML = require('showtime/xml');
         page.loading = false;
     });
 
+    // Play service by reference id
+    plugin.addURI(plugin.getDescriptor().id + ":streamById:(.*):(.*):(.*)", function(page, url, serviceName, serviceReference) {
+        var link = "videoparams:" + showtime.JSONEncode({
+            title: unescape(serviceName),
+            no_fs_scan: true,
+            canonicalUrl: plugin.getDescriptor().id + ':streamById:' + serviceName + ':' + serviceReference,
+            sources: [{
+                url: unescape(url).replace('https:', 'http:') + ':8001/' + serviceReference,
+                mimetype: 'video/mp2t'
+            }]
+        });
+        page.type = 'video'
+        page.source = link;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":zapTo:(.*):(.*):(.*)", function(page, url, serviceName, serviceReference) {
+        setPageHeader(page, unescape(url) + ' - ' + unescape(serviceName));
+        page.loading = true;
+        var doc = showtime.httpReq(unescape(url) + '/web/zap?sRef=' + serviceReference);
+        page.loading = false;
+        doc = XML.parse(doc);
+        page.appendItem(plugin.getDescriptor().id + ":streamById:" + url + ':' + serviceName + ':' + serviceReference, "directory", {
+            title: doc.e2simplexmlresult.e2statetext
+        });
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":getServices:(.*):(.*):(.*)", function(page, url, serviceName, serviceReference) {
+        setPageHeader(page, unescape(url) + ' - ' + unescape(serviceName));
+        page.loading = true;
+        var doc = showtime.httpReq(unescape(url) + '/web/getservices?sRef=' + serviceReference);
+        page.loading = false;
+        doc = XML.parse(doc);
+        var e2services = doc.e2servicelist.filterNodes('e2service');
+        for (var i = 0; i < e2services.length; i++) {
+             page.appendItem(plugin.getDescriptor().id + ":zapTo:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "directory", {
+                 title: e2services[i].e2servicename
+             });
+        }
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":bouquets:(.*)", function(page, url) {
+        setPageHeader(page, unescape(url) + ' - Bouquets');
+        page.loading = true;
+        var doc = showtime.httpReq(unescape(url) + '/web/getservices');
+        page.loading = false;
+        doc = XML.parse(doc);
+        var e2services = doc.e2servicelist.filterNodes('e2service');
+        for (var i = 0; i < e2services.length; i++) {
+             page.appendItem(plugin.getDescriptor().id + ":getServices:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "directory", {
+                 title: e2services[i].e2servicename
+             });
+        }
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":processReceiver:(.*)", function(page, url) {
+        setPageHeader(page, unescape(url));
+        page.appendItem(plugin.getDescriptor().id + ":streamFromCurrent:" + url, "video", {
+            title: 'Stream from the current channel',
+            icon: unescape(url) + '/grab?format=jpg&r=640'
+        });
+        page.appendItem(plugin.getDescriptor().id + ":bouquets:" + url, "directory", {
+            title: 'Bouquets'
+        });
+
+    });
+
     function showReceivers(page) {
         page.flush();
         if (!store.receivers) {
@@ -63,8 +142,23 @@ var XML = require('showtime/xml');
         } else {
             var receivers = store.receivers.split(',');
             for (var i in receivers) {
-                var item = page.appendItem(plugin.getDescriptor().id + ":streamFromCurrent:" + receivers[i], "directory", {
-                    title: unescape(receivers[i])
+                var description = '';
+                try {
+                    page.loading = true;
+                    var doc = showtime.httpReq(unescape(receivers[i]) + '/web/about');
+                    page.loading = false;
+                    doc = XML.parse(doc);
+                    description = coloredStr('Current service: ', orange) + doc.e2abouts.e2about.e2servicename +
+                        coloredStr('\nService provider: ', orange) + doc.e2abouts.e2about.e2serviceprovider +
+                        coloredStr('\nReceiver model: ', orange) + doc.e2abouts.e2about.e2model +
+                        coloredStr('\nFirmware version: ', orange) + doc.e2abouts.e2about.e2imageversion +
+                        coloredStr('\nEnigma version: ', orange) + doc.e2abouts.e2about.e2enigmaversion +
+                        coloredStr('\nWebif version: ', orange) + doc.e2abouts.e2about.e2webifversion
+                } catch(err) {}
+                var item = page.appendItem(plugin.getDescriptor().id + ":processReceiver:" + receivers[i], "video", {
+                    title: unescape(receivers[i]),
+                    icon: unescape(receivers[i]) + '/grab?format=jpg&r=640',
+                    description: new showtime.RichText(description)
                 });
                 item.id = +i;
                 item.title = unescape(receivers[i]);
