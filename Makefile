@@ -35,7 +35,8 @@ PLUGINS= \
         copydotcom.zip \
 	gdrive.zip \
         twitchtv.zip \
-        ted.zip
+        ted.zip \
+        enigma2.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

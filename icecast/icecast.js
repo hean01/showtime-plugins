@@ -80,6 +80,11 @@
         return '<font color="' + color + '"> (' + str + ')</font>';
     }
 
+    plugin.addURI(plugin.getDescriptor().id + ":video:(.*)", function(page, url) {
+        page.type = 'video';
+        page.source = unescape(url);
+    });
+
     function scrape_page(page, url, noReq, searcher) {
         page.entries = 0;
         var nextPage = '';
@@ -117,7 +122,7 @@
                 itemmd.format = match[1].match(/<p class="format"[\S\s]*?class="no-link" title="[\S\s]*?">([\S\s]*?)<span/)[1];
 
 	        // add item to showtime page
-	        var item = page.appendItem("icecast:" + BASE_URL + itemmd.url, "station", {
+	        var item = page.appendItem('icecast:' + BASE_URL + itemmd.url, "station", {
 		    title: new showtime.RichText(itemmd.station + colorStr(itemmd.format + " " + itemmd.bitrate, orange)),
 		    station: itemmd.station,
                     onair: trim(itemmd.current_track),
