@@ -44,6 +44,11 @@ var XML = require('showtime/xml');
         return coloredStr(' (' + str + ')', color);
     }
 
+    function trim(s) {
+        if (!s) return '';
+        return s.replace(/^\s+|\s+$/g, '');
+    };
+
     plugin.createService(slogan, plugin.getDescriptor().id + ":start", "tv", true, logo);
 
     var store = plugin.createStore('config', true);
@@ -109,6 +114,8 @@ var XML = require('showtime/xml');
         page.loading = false;
         doc = XML.parse(doc);
         var e2services = doc.e2servicelist.filterNodes('e2service');
+        if (e2services.length)
+            page.metadata.title += ' (' + e2services.length + ')';
         for (var i = 0; i < e2services.length; i++) {
              page.appendItem(plugin.getDescriptor().id + ":getServices:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "directory", {
                  title: e2services[i].e2servicename
@@ -124,9 +131,11 @@ var XML = require('showtime/xml');
         page.loading = false;
         doc = XML.parse(doc);
         var e2services = doc.e2servicelist.filterNodes('e2service');
+        if (e2services.length)
+            page.metadata.title += ' (' + e2services.length + ')';
         for (var i = 0; i < e2services.length; i++) {
              page.appendItem(plugin.getDescriptor().id + ":getServices:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "directory", {
-                 title: e2services[i].e2servicename
+                 title: trim(e2services[i].e2servicename)
              });
         }
     });
@@ -139,9 +148,11 @@ var XML = require('showtime/xml');
         page.loading = false;
         doc = XML.parse(doc);
         var e2services = doc.e2servicelist.filterNodes('e2service');
+        if (e2services.length)
+            page.metadata.title += ' (' + e2services.length + ')';
         for (var i = 0; i < e2services.length; i++) {
              page.appendItem(plugin.getDescriptor().id + ":zapTo:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "directory", {
-                 title: e2services[i].e2servicename
+                 title: trim(e2services[i].e2servicename)
              });
         }
     });
@@ -151,6 +162,9 @@ var XML = require('showtime/xml');
         page.appendItem(plugin.getDescriptor().id + ":streamFromCurrent:" + url, "video", {
             title: 'Stream from the current service',
             icon: unescape(url) + '/grab?format=jpg&r=640'
+        });
+        page.appendItem(unescape(url) + '/grab?format=jpg&r=720', "image", {
+            title: 'Screenshot from the current service'
         });
         page.appendItem(plugin.getDescriptor().id + ":bouquets:" + url, "directory", {
             title: 'Bouquets'
