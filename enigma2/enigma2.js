@@ -73,7 +73,7 @@ var XML = require('showtime/xml');
         var doc = showtime.httpReq(unescape(url) + '/web/zap?sRef=' + serviceReference);
         page.loading = false;
         doc = XML.parse(doc);
-        showtime.notify(doc.e2simplexmlresult.e2statetext, 3);
+        //showtime.notify(doc.e2simplexmlresult.e2statetext, 3);
 
         var link = "videoparams:" + showtime.JSONEncode({
             title: unescape(serviceName),
@@ -116,16 +116,51 @@ var XML = require('showtime/xml');
         }
     });
 
+    plugin.addURI(plugin.getDescriptor().id + ":providers:(.*)", function(page, url) {
+        setPageHeader(page, unescape(url) + ' - Providers');
+        page.loading = true;
+        var doc = showtime.httpReq(unescape(url) + '/web/getservices?sRef=' +
+            encodeURIComponent('1:7:1:0:0:0:0:0:0:0:(type == 1) || (type == 17) || (type == 195) || (type == 25) FROM PROVIDERS ORDER BY name'));
+        page.loading = false;
+        doc = XML.parse(doc);
+        var e2services = doc.e2servicelist.filterNodes('e2service');
+        for (var i = 0; i < e2services.length; i++) {
+             page.appendItem(plugin.getDescriptor().id + ":getServices:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "directory", {
+                 title: e2services[i].e2servicename
+             });
+        }
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":all:(.*)", function(page, url) {
+        setPageHeader(page, unescape(url) + ' - All services');
+        page.loading = true;
+        var doc = showtime.httpReq(unescape(url) + '/web/getservices?sRef=' +
+            encodeURIComponent('1:7:1:0:0:0:0:0:0:0:(type == 1) || (type == 17) || (type == 195) || (type == 25) ORDER BY name'));
+        page.loading = false;
+        doc = XML.parse(doc);
+        var e2services = doc.e2servicelist.filterNodes('e2service');
+        for (var i = 0; i < e2services.length; i++) {
+             page.appendItem(plugin.getDescriptor().id + ":zapTo:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "directory", {
+                 title: e2services[i].e2servicename
+             });
+        }
+    });
+
     plugin.addURI(plugin.getDescriptor().id + ":processReceiver:(.*)", function(page, url) {
         setPageHeader(page, unescape(url));
         page.appendItem(plugin.getDescriptor().id + ":streamFromCurrent:" + url, "video", {
-            title: 'Stream from the current channel',
+            title: 'Stream from the current service',
             icon: unescape(url) + '/grab?format=jpg&r=640'
         });
         page.appendItem(plugin.getDescriptor().id + ":bouquets:" + url, "directory", {
             title: 'Bouquets'
         });
-
+        page.appendItem(plugin.getDescriptor().id + ":providers:" + url, "directory", {
+            title: 'Providers'
+        });
+        page.appendItem(plugin.getDescriptor().id + ":all:" + url, "directory", {
+            title: 'All services'
+        });
     });
 
     function showReceivers(page) {
