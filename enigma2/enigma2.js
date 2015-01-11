@@ -49,7 +49,19 @@ var XML = require('showtime/xml');
         return s.replace(/^\s+|\s+$/g, '');
     };
 
-    plugin.createService(slogan, plugin.getDescriptor().id + ":start", "tv", true, logo);
+    var service = plugin.createService(slogan, plugin.getDescriptor().id + ":start", "tv", true, logo);
+
+    var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().synopsis);
+    settings.createDivider("Look & Feel");
+    settings.createBool("showScreenshot", "Show Screenshot", true, function(v) {
+        service.showScreenshot = v;
+    });
+    settings.createBool("showProviders", "Show Providers", true, function(v) {
+        service.showProviders = v;
+    });
+    settings.createBool("showAllServices", "Show All services", true, function(v) {
+        service.showAllServices = v;
+    });
 
     var store = plugin.createStore('config', true);
 
@@ -101,7 +113,7 @@ var XML = require('showtime/xml');
         doc = XML.parse(doc);
         var e2services = doc.e2servicelist.filterNodes('e2service');
         for (var i = 0; i < e2services.length; i++) {
-             page.appendItem(plugin.getDescriptor().id + ":zapTo:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "directory", {
+             page.appendItem(plugin.getDescriptor().id + ":zapTo:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "video", {
                  title: e2services[i].e2servicename
              });
         }
@@ -163,18 +175,23 @@ var XML = require('showtime/xml');
             title: 'Stream from the current service',
             icon: unescape(url) + '/grab?format=jpg&r=640'
         });
-        page.appendItem(unescape(url) + '/grab?format=jpg&r=720', "image", {
-            title: 'Screenshot from the current service'
-        });
+        if (service.showScreenshot)
+            page.appendItem(unescape(url) + '/grab?format=jpg&r=1080', "image", {
+                title: 'Screenshot from the current service'
+            });
+
         page.appendItem(plugin.getDescriptor().id + ":bouquets:" + url, "directory", {
             title: 'Bouquets'
         });
-        page.appendItem(plugin.getDescriptor().id + ":providers:" + url, "directory", {
-            title: 'Providers'
-        });
-        page.appendItem(plugin.getDescriptor().id + ":all:" + url, "directory", {
-            title: 'All services'
-        });
+        if (service.showProviders)
+            page.appendItem(plugin.getDescriptor().id + ":providers:" + url, "directory", {
+                title: 'Providers'
+            });
+
+        if (service.showAllServices)
+            page.appendItem(plugin.getDescriptor().id + ":all:" + url, "directory", {
+                title: 'All services'
+            });
     });
 
     function showReceivers(page) {

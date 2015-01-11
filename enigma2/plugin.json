@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "Enigma2",
 	"synopsis": "Streaming from Enigma2 receivers to Showtime Mediacenter",
-	"version": "0.1.5",
+	"version": "0.1.6",
 	"file": "enigma2.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
