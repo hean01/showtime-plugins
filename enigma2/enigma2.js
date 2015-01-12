@@ -70,7 +70,9 @@ var XML = require('showtime/xml');
         page.loading = true;
         var doc = showtime.httpReq(unescape(url) + '/web/getcurrent');
         doc = XML.parse(doc);
-        var link = "videoparams:" + showtime.JSONEncode({
+        page.loading = false;
+        page.type = 'video';
+        page.source = "videoparams:" + showtime.JSONEncode({
             title: doc.e2currentserviceinformation.e2service.e2servicename,
             no_fs_scan: true,
             canonicalUrl: plugin.getDescriptor().id + ':streamFromCurrent',
@@ -79,20 +81,15 @@ var XML = require('showtime/xml');
                 mimetype: 'video/mp2t'
             }]
         });
-        page.type = 'video'
-        page.source = link;
-        page.loading = false;
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":zapTo:(.*):(.*):(.*)", function(page, url, serviceName, serviceReference) {
-        setPageHeader(page, unescape(url) + ' - ' + unescape(serviceName));
         page.loading = true;
         var doc = showtime.httpReq(unescape(url) + '/web/zap?sRef=' + serviceReference);
-        page.loading = false;
         doc = XML.parse(doc);
-        //showtime.notify(doc.e2simplexmlresult.e2statetext, 3);
-
-        var link = "videoparams:" + showtime.JSONEncode({
+        page.type = 'video';
+        page.loading = false;
+        page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(serviceName),
             no_fs_scan: true,
             canonicalUrl: plugin.getDescriptor().id + ':zapTo:' + url + ':' + serviceName + ':' + serviceReference,
@@ -101,12 +98,10 @@ var XML = require('showtime/xml');
                 mimetype: 'video/mp2t'
             }]
         });
-        page.type = 'video'
-        page.source = link;
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":getServices:(.*):(.*):(.*)", function(page, url, serviceName, serviceReference) {
-        setPageHeader(page, unescape(url) + ' - ' + unescape(serviceName));
+        setPageHeader(page, unescape(url) + ' - ' + trim(unescape(serviceName)));
         page.loading = true;
         var doc = showtime.httpReq(unescape(url) + '/web/getservices?sRef=' + serviceReference);
         page.loading = false;
@@ -163,7 +158,7 @@ var XML = require('showtime/xml');
         if (e2services.length)
             page.metadata.title += ' (' + e2services.length + ')';
         for (var i = 0; i < e2services.length; i++) {
-             page.appendItem(plugin.getDescriptor().id + ":zapTo:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "directory", {
+             page.appendItem(plugin.getDescriptor().id + ":zapTo:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "video", {
                  title: trim(e2services[i].e2servicename)
              });
         }
