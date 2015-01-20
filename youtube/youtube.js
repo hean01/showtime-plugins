@@ -881,16 +881,6 @@
         return json;
     }
 
-    function getMaps(url) {
-        var hash, json = {},
-            hashes = url.split(/\&/);
-        for (var i = 0; i < hashes.length; i++) {
-            hash = hashes[i].split(/\=/);
-            json[hash[0]] = hash[1];
-        }
-        return json;
-    }
-
     var player = '',
         fnName = '',
         outFn = '';
@@ -1025,6 +1015,16 @@
         "251": "opus 160bps"
     };
 
+    function getMaps(url) {
+        var hash, json = {},
+            hashes = url.split(/\&/);
+        for (var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split(/\=/);
+            json[hash[0]] = hash[1];
+        }
+        return json;
+    }
+
     function getVideosList(page, id, number_items) {
         page.loading = true;
         var params = {
@@ -1034,7 +1034,7 @@
         };
         if (store.refresh_token)
             params.method = 'GET';
-        var doc = download(page, 'http://www.youtube.com/watch?v=' + id, params).toString();
+        var doc = download(page, 'http://www.youtube.com/watch?v=' + id + '&has_verified=1&bpctr=9999999999', params).toString();
         page.loading = true;
 
         var titleMatch = doc.match(/<meta property="og:title" content="(.+?)">/);
@@ -1043,15 +1043,15 @@
 
         var encoded_url_map = '';
         var json = doc.match(/;ytplayer\.config\s*=\s*(\{.*?\});/);
-        if (json)
-            json = showtime.JSONDecode(json[1]);
-        else
-            return trim(doc.match(/id="unavailable-message" class="message">([\s\S]*?)</)[1]);
-
-        if (json.args.url_encoded_fmt_stream_map)
-            encoded_url_map = json.args.url_encoded_fmt_stream_map
-        if (json.args.adaptive_fmts) encoded_url_map += ',' + json.args.adaptive_fmts;
-
+        if (json) {
+            json = json[1].replace(/\\U[0-9a-fA-F]{8}/g, '');
+            if (service.enableDebug)
+                showtime.trace(json);
+            json = showtime.JSONDecode(json);
+            if (json.args.url_encoded_fmt_stream_map)
+                encoded_url_map = json.args.url_encoded_fmt_stream_map
+            if (json.args.adaptive_fmts) encoded_url_map += ',' + json.args.adaptive_fmts;
+        }
         var age = false;
         if (doc.match(/player-age-gate-content">/)) {
             age = true;
@@ -1070,7 +1070,6 @@
             encoded_url_map = unescape(json.url_encoded_fmt_stream_map) + ',' + unescape(json.adaptive_fmts);
         }
         encoded_url_map = encoded_url_map.split(',');
-
         var quality_added = [];
         var videos_list_tmp = [];
         var videos_list = [];
@@ -1081,9 +1080,8 @@
         var resolution_strings = [
             '240p', '360p', '480p', '720p', '1080p'
         ];
-
         var links = [];
-        if (json.args && json.args.hlsvp) {
+        if (json && json.args && json.args.hlsvp) {
             var video_item = {
                 video_url: escape(json.args.hlsvp),
                 quality: "480p",
@@ -1130,27 +1128,22 @@
                 }
             }
         }
-
         if (links.length == 0)
-            debug("getVideoLinks Couldn't find url map or stream map.");
+            showtime.trace("getVideoLinks Couldn't find url map or stream map.");
         videos_list_tmp = links;
 
         var items = 0;
         for (var i in videos_list_tmp) {
             var item = videos_list_tmp[i];
-
             if (item.format == "hls") {
                 videos_list.push(item);
                 continue;
             }
-
             var j = resolutions.indexOf(item.quality);
             if (service.maximumResolution && j > parseInt(service.maximumResolution) || quality_added.indexOf(item.quality) != -1)
                 continue;
-
             if (service.minimumResolution && j < parseInt(service.minimumResolution))
                 break;
-
             var video_item_tmp = {};
 
             var formatVar = 'default';
@@ -1169,7 +1162,6 @@
                 items++;
             }
         }
-
         if (videos_list.length == 0)
             return trim(doc.match(/id="unavailable-message" class="message">([\s\S]*?)</)[1]);
         return videos_list;
@@ -1179,7 +1171,7 @@
         page.type = "video";
         var url = unescape(unescape(video_url));
         var videoParams = {
-            title: showtime.entityDecode(unescape(unescape(title))),
+            title: showtime.entityDecode(unescape(unescape(decodeURIComponent(title)))),
             canonicalUrl: plugin.getDescriptor().id + ':video:' + id,
             sources: [{
                 url: url
@@ -1235,9 +1227,8 @@
 
             var title = video_url[0].title;
             video_url = video_url[0].video_url;
-            //playVideo(page, title, id, video_url);
+            page.redirect(plugin.getDescriptor().id + ":video:stream:" + encodeURIComponent(title) + ":" + id + ":" + video_url);
 
-            page.redirect(plugin.getDescriptor().id + ":video:stream:" + escape(title) + ":" + id + ":" + video_url);
         } catch (err) {
             page.loading = false;
             page.error(err);
@@ -1267,7 +1258,7 @@
                 return;
             }
 
-            title = video_url[0].title;
+            title = encodeURIComponent(video_url[0].title);
             video_url = video_url[0].video_url;
             playVideo(page, title, id, video_url);
         } catch (err) {
@@ -1347,7 +1338,6 @@
 
             var videos = [];
             for (var i in videos_list) {
-print(item);
                 var item = videos_list[i];
                 page.appendAction("navopen", plugin.getDescriptor().id + ':video:stream:' + escape(title) + ':' + escape(id) + ':' + item.video_url, true, {
                     title: item.quality
