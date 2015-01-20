@@ -36,7 +36,8 @@ PLUGINS= \
 	gdrive.zip \
         twitchtv.zip \
         ted.zip \
-        enigma2.zip
+        enigma2.zip \
+        liveleak.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

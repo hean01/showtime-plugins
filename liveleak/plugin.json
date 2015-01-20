@@ -1,0 +1,14 @@
+{
+    "type": "ecmascript",
+    "id": "liveleak",
+    "file": "liveleak.js",
+    "showtimeVersion": "4.8",
+    "version": "0.2",
+    "author": "lprot",
+    "homepage": "https://github.com/lprot/showtime-plugins/",
+    "title": "LiveLeak",
+    "icon": "icon.gif",
+    "category": "video",
+    "synopsis": "LiveLeak.com - Redefining the Media",
+    "description": "<p>LiveLeak is a UK-based video sharing website that lets users post and share videos.<p>For additional info, visit: <a href=\"http://liveleak.com\">http://liveleak.com</a>"
+}
