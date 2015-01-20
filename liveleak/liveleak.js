@@ -48,14 +48,17 @@
         return s.replace(/(\r\n|\n|\r)/gm, "").replace(/(^\s*)|(\s*$)/gi, "").replace(/[ ]{2,}/gi, " ").replace(/\t/g, ' ');
     }
 
-    var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "tv", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "video", true, logo);
   
     plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString();
-
+        //console.log(unescape(url));
         var match = doc.match(/config: "([\S\s]*?)"/g);
-        if (match.length == 1) {
+        if (!match) { // youtube
+             match = doc.match(/<iframe[\S\s]*?src="([\S\s]*?)"/);
+             page.redirect('youtube:video:' + match[1]);
+        } else if (match.length == 1) {
             page.type = "video";
             var lnk = match[0].match(/hd_file_url=([\S\s]*?)&/);
             if (lnk)
@@ -95,8 +98,9 @@
         }
     });
 
-    function scraper(page, url) {
+    function scrape_videos(page, url) {
         var fromPage = 1, tryToSearch = true;
+        page.entries = 0;
         // 1-link, 2-icon, 3-title, 4-genres, 5-marks, 6-description, 7-info
         var re = /<div class="thumbnail_column"[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?src="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?title="Rating: ([\S\s]*?)"[\S\s]*?<div class="item_info_column">([\S\s]*?)<br \/>([\S\s]*?)<h4>([\S\s]*?)<\/div>/g;
 
@@ -115,6 +119,7 @@
                     description: new showtime.RichText(coloredStr('Description: ', orange) + trim(match[6]) + '\n' + trim(match[7]))
                 });
                 match = re.exec(doc);
+                page.entries++;
             }
             fromPage++;
             return true;
@@ -125,6 +130,11 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page)    {
         setPageHeader(page, plugin.getDescriptor().title + ' - Featured videos');
-        scraper(page, '/browse?featured=1');
+        scrape_videos(page, '/browse?featured=1');
+    });
+
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
+        setPageHeader(page, plugin.getDescriptor().title + ' - Videos');
+        scrape_videos(page, '/browse?q=' + encodeURIComponent(query));
     });
 })(this);
