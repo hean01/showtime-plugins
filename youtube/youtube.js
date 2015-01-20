@@ -1,7 +1,7 @@
 /**
  * Youtube plugin for Showtime
  *
- *  Copyright (C) 2011-2014 facanferff, lprot
+ *  Copyright (C) 2011-2015 facanferff, lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -907,7 +907,7 @@
             if (fnName)
                 fnName = fnName[1];
             else
-                fnName = code.match(/"signature",([^(]*)/)[1];
+                fnName = code.match(/"signature",([\s\S]*?)\(/)[1];
             var re = new RegExp('function ' + fnName + '\\(([^\}]*)');
             var fnText = 'function ' + fnName + '(' + re.exec(code)[1] + '\}';
             outFn = fnText;
