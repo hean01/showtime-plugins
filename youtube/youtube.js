@@ -898,6 +898,7 @@
     function unroll(age, url, a) {
         if (age)
             return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
+
         if (player != url) {
             if (service.enableDebug)
                 showtime.trace('player: ' + url);
@@ -908,8 +909,13 @@
                 fnName = fnName[1];
             else
                 fnName = code.match(/"signature",([\s\S]*?)\(/)[1];
-            var re = new RegExp('function ' + fnName + '\\(([^\}]*)');
+            if (service.enableDebug)
+                showtime.trace('function name is: ' + fnName);
+            var regexStr = ('function ' + fnName + '\\(([^\}]*)').replace(/\$/g, '\\$');
+            var re = new RegExp(regexStr);
             var fnText = 'function ' + fnName + '(' + re.exec(code)[1] + '\}';
+            if (service.enableDebug)
+                showtime.trace('function is: ' + fnText);
             outFn = fnText;
             var re = /[=|;]([^\(]*)/g;
             var match = re.exec(fnText);
