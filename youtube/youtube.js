@@ -899,7 +899,8 @@
         if (age)
             return a.substr(2, 61) + a[82] + a.substr(64, 18) + a[63];
         if (player != url) {
-            if (service.enableDebug) showtime.print('player: ' + url);
+            if (service.enableDebug)
+                showtime.trace('player: ' + url);
             var code = showtime.httpReq('http:' + url).toString();
             player = url;
             fnName = code.match(/signature=([^(]*)/);
@@ -933,13 +934,16 @@
                 match = re.exec(fnText);
             }
         }
-        if (service.enableDebug) showtime.print('a_in: ' + a);
+        if (service.enableDebug)
+            showtime.trace('a_in: ' + a);
         var result;
         try {
-            if (service.enableDebug) showtime.print(outFn);
+            if (service.enableDebug)
+                showtime.trace(outFn);
             result = eval(outFn + fnName + '(a)');
         } catch (err) {};
-        if (service.enableDebug) showtime.print('a_out: ' + result);
+        if (service.enableDebug)
+            showtime.trace('a_out: ' + result);
         return result;
     }
 
