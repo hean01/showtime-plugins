@@ -76,6 +76,12 @@
                     });
     });
 
+    function getTimestamp(str) {
+        if (!str) return 0;
+        var d = str.match(/\d+/g); // extract date parts
+        return +Date.UTC(d[0], d[1] - 1, d[2]) / 1000; // year, month, day
+    }
+
     plugin.addURI(plugin.getDescriptor().id + ":index:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, showtime.entityDecode(decodeURIComponent(title)));
         page.loading = true;
@@ -90,7 +96,8 @@
         while (match) {
             var match2 = re2.exec(match[1]);
             while (match2) {
-                var title = match[1].match(/<td class="bottomTableDate" rowspan="2">([\s\S]*?)<\/td>/)[1] + ' - ' + match[1].match(/itemprop="name">([\s\S]*?)<\/span>/)[1] + ' - ' + match2[2];
+                var date = match[1].match(/<td class="bottomTableDate" rowspan="2">([\s\S]*?)<\/td>/)[1];
+                var title = match[1].match(/itemprop="name">([\s\S]*?)<\/span>/)[1] + colorStr(date, orange) + ' ' + match2[2];
                 var link = showtime.entityDecode(match2[1]);
                 if (link.match(/yahoo-redir/))
                     link = plugin.getDescriptor().id + ':yahoo:' + link.match(/id=(.*)&/)[1] + ':' + link.match(/resolution=(.*)/)[1];
@@ -98,7 +105,7 @@
                     link = 'youtube:video:' + escape(link);
                 else {
                     link = "videoparams:" + showtime.JSONEncode({
-                        title: title,
+                        title: title.replace(/(<([^>]+)>)/ig, ''),
                         no_fs_scan: true,
                         sources: [{
                             url: link
@@ -106,8 +113,10 @@
                     });
                 }
                 page.appendItem(link, "video", {
-                    title: title,
+                    title: new showtime.RichText(title),
                     icon: icon,
+                    timestamp: getTimestamp(date),
+                    genre: match2[2],
                     description: description
                 });
                 match2 = re2.exec(match[1]);
@@ -124,7 +133,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            if (url == '/page')
+            if (url == '/page/')
                 var doc = showtime.httpReq(BASE_URL + url + fromPage + '/').toString();
             else
                 var doc = showtime.httpReq(BASE_URL + url).toString();
@@ -135,12 +144,16 @@
             var re = /<td class="indexTableTrailerImage">[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?src="([\s\S]*?)"[\s\S]*?alt="([\s\S]*?)"/g;
             if (blocks.length > 1) {
                 for (var i = 0; i < blocks.length; i++) {
+                    var sectionTitle = blocks[i].match(/class="mainHeading" colspan="5"><div>([\s\S]*?)<\/div>/)[1]
                     page.appendItem("", "separator", {
-                        title: blocks[i].match(/class="mainHeading" colspan="5"><div>([\s\S]*?)<\/div>/)[1]
+                        title: sectionTitle
                     });
                     var match = re.exec(blocks[i]);
                     while (match) {
-                        page.appendItem(plugin.getDescriptor().id + ":index:" + encodeURIComponent(match[1]) + ':' + encodeURIComponent(match[3]), "video", {
+                        var link = plugin.getDescriptor().id + ":index:" + encodeURIComponent(match[1]) + ':' + encodeURIComponent(match[3]);
+                        if (showtime.entityDecode(match[3]) == 'More...')
+                            link = plugin.getDescriptor().id + ":scrape:" + match[1].replace('/page/1/', '/page/') + ':' + encodeURIComponent(sectionTitle);
+                        page.appendItem(link, "video", {
                             title: showtime.entityDecode(match[3]),
                             icon: match[2]
                         });
@@ -192,7 +205,7 @@
             req.setHeader('User-Agent', 'QuickTime/7.6.2');
         });
         page.appendItem(plugin.getDescriptor().id + ':scrape:/page/:Latest', "directory", {
-            title: 'Latest'
+            title: 'Latest (Newest)'
         });
         page.appendItem(plugin.getDescriptor().id + ':library', "directory", {
             title: 'Library'
