@@ -137,14 +137,14 @@
                 var doc = showtime.httpReq(BASE_URL + url + fromPage + '/').toString();
             else
                 var doc = showtime.httpReq(BASE_URL + url).toString();
-            var blocks = doc.match(/class="mainHeading"([\s\S]*?)(<th|<\/table>)/g);
+            var blocks = doc.match(/mainHeading([\s\S]*?)(<th|<\/table>)/g);
             page.loading = false;
 
             // 1-link, 2-icon, 3-title
-            var re = /<td class="indexTableTrailerImage">[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?src="([\s\S]*?)"[\s\S]*?alt="([\s\S]*?)"/g;
+            var re = /indexTableTrailerImage[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?src="([\s\S]*?)"[\s\S]*?alt="([\s\S]*?)"/g;
             if (blocks.length > 1) {
                 for (var i = 0; i < blocks.length; i++) {
-                    var sectionTitle = blocks[i].match(/class="mainHeading" colspan="5"><div>([\s\S]*?)<\/div>/)[1]
+                    var sectionTitle = blocks[i].match(/mainHeading[\s\S]*?<div>([\s\S]*?)<\/div>/)[1]
                     page.appendItem("", "separator", {
                         title: sectionTitle
                     });
@@ -186,12 +186,29 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":library", function(page) {
         setPageHeader(page, 'Library');
-        page.loading = true;;
+        page.loading = true;
         var str = "#abcdefghijklmnopqrstuvxyz";
         for (var i = 0; i < str.length; i++) {
             page.appendItem(plugin.getDescriptor().id + ":scrape:/poster-library/" + str.charAt(i) + '/:Library - ' + str.charAt(i).toUpperCase(), "directory", {
                 title: str.charAt(i).toUpperCase()
             });
+	}
+        page.loading = false;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":academyAwards", function(page) {
+        setPageHeader(page, 'Academy Awards');
+        page.loading = true;
+        var doc = showtime.httpReq(BASE_URL + '/academy-awards/').toString();
+        doc = doc.match(/<div class="academy-awards-list">([\s\S]*?)<\/div>/)[1];
+        // 1-link, 2-title
+        var re = /<a href="([\s\S]*?)">([\s\S]*?)<\/a>/g;
+        var match = re.exec(doc);
+        while (match) {
+            page.appendItem(plugin.getDescriptor().id + ':scrape:' + match[1] + ':' + encodeURIComponent(match[2]), "directory", {
+                title: match[2]
+            });
+            match = re.exec(doc);
 	}
         page.loading = false;
     });
@@ -224,6 +241,9 @@
         });
         page.appendItem(plugin.getDescriptor().id + ':scrape:/netflix-new-releases/:New @ Netflix', "directory", {
             title: 'New @ Netflix'
+        });
+        page.appendItem(plugin.getDescriptor().id + ':academyAwards', "directory", {
+            title: 'Academy Awards'
         });
         scrape(page, '', plugin.getDescriptor().title + ' - Home');
     });
