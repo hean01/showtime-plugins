@@ -117,26 +117,45 @@
         page.loading = false;
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":scrape:(.*):(.*)", function(page, url, title) {
+    function scrape(page, url, title) {
         setPageHeader(page, decodeURIComponent(title));
         var fromPage = 1, tryToSearch = true;
 
         function loader() {
+            if (!tryToSearch) return false;
             page.loading = true;
             if (url == '/page')
                 var doc = showtime.httpReq(BASE_URL + url + fromPage + '/').toString();
             else
                 var doc = showtime.httpReq(BASE_URL + url).toString();
+            var blocks = doc.match(/class="mainHeading"([\s\S]*?)(<th|<\/table>)/g);
             page.loading = false;
+
             // 1-link, 2-icon, 3-title
             var re = /<td class="indexTableTrailerImage">[\s\S]*?<a href="([\s\S]*?)">[\s\S]*?src="([\s\S]*?)"[\s\S]*?alt="([\s\S]*?)"/g;
-            var match = re.exec(doc);
-            while (match) {
-                 page.appendItem(plugin.getDescriptor().id + ":index:" + encodeURIComponent(match[1]) + ':' + encodeURIComponent(match[3]), "video", {
-                     title: showtime.entityDecode(match[3]),
-                     icon: match[2]
-                 });
-                 match = re.exec(doc);
+            if (blocks.length > 1) {
+                for (var i = 0; i < blocks.length; i++) {
+                    page.appendItem("", "separator", {
+                        title: blocks[i].match(/class="mainHeading" colspan="5"><div>([\s\S]*?)<\/div>/)[1]
+                    });
+                    var match = re.exec(blocks[i]);
+                    while (match) {
+                        page.appendItem(plugin.getDescriptor().id + ":index:" + encodeURIComponent(match[1]) + ':' + encodeURIComponent(match[3]), "video", {
+                            title: showtime.entityDecode(match[3]),
+                            icon: match[2]
+                        });
+                        match = re.exec(blocks[i]);
+                    }
+                }
+            } else {
+                var match = re.exec(doc);
+                while (match) {
+                    page.appendItem(plugin.getDescriptor().id + ":index:" + encodeURIComponent(match[1]) + ':' + encodeURIComponent(match[3]), "video", {
+                        title: showtime.entityDecode(match[3]),
+                        icon: match[2]
+                    });
+                    match = re.exec(doc);
+                }
             }
             if (!doc.match(/Next &#8811;/))
                 return tryToSearch = false;
@@ -146,6 +165,10 @@
         loader();
         page.paginator = loader;
         page.loading = false;
+    }
+
+    plugin.addURI(plugin.getDescriptor().id + ":scrape:(.*):(.*)", function(page, url, title) {
+        scrape(page, url, title);
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":library", function(page) {
@@ -153,7 +176,7 @@
         page.loading = true;;
         var str = "#abcdefghijklmnopqrstuvxyz";
         for (var i = 0; i < str.length; i++) {
-            page.appendItem(plugin.getDescriptor().id + ":scrape:/poster-library/" + str.charAt(i) + '/:Library - ' + str.charAt(i).toUpperCase(), "video", {
+            page.appendItem(plugin.getDescriptor().id + ":scrape:/poster-library/" + str.charAt(i) + '/:Library - ' + str.charAt(i).toUpperCase(), "directory", {
                 title: str.charAt(i).toUpperCase()
             });
 	}
@@ -162,7 +185,6 @@
 
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-        setPageHeader(page, plugin.getDescriptor().title);
         plugin.addHTTPAuth('http://movietrailers.apple.com.*', function(req) {
             req.setHeader('User-Agent', 'QuickTime/7.6.2');
         });
@@ -190,5 +212,6 @@
         page.appendItem(plugin.getDescriptor().id + ':scrape:/netflix-new-releases/:New @ Netflix', "directory", {
             title: 'New @ Netflix'
         });
+        scrape(page, '', plugin.getDescriptor().title + ' - Home');
     });
 })(this);
