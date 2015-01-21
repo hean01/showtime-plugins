@@ -3,7 +3,7 @@
     "id": "liveleak",
     "file": "liveleak.js",
     "showtimeVersion": "4.8",
-    "version": "0.3",
+    "version": "0.3.1",
     "author": "lprot",
     "homepage": "https://github.com/lprot/showtime-plugins/",
     "title": "LiveLeak",

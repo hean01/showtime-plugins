@@ -113,7 +113,7 @@
             var match = re.exec(doc);
             while (match) {
                 page.appendItem(plugin.getDescriptor().id + ":play:" + escape(match[1]) + ':' + escape(match[3]), "video", {
-                    title: new showtime.RichText(match[5].match(/hd_video_icon/) ? coloredStr('HD ', orange) + match[3] : match[3]),
+                    title: new showtime.RichText(match[5].match(/hd_video_icon/) ? coloredStr('HD ', orange) + showtime.entityDecode(match[3]) : showtime.entityDecode(match[3])),
                     icon: match[2],
                     genre: match[4],
                     description: new showtime.RichText(coloredStr('Description: ', orange) + trim(match[6]) + '\n' + trim(match[7]))
