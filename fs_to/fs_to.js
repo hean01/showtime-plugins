@@ -1,7 +1,7 @@
 /**
  * brb.to plugin for Showtime
  *
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -135,7 +135,6 @@
         setPageHeader(page, title);
         page.loading = true;
         var response = showtime.httpReq(BASE_URL + url).toString();
-        page.loading = false;
 
         // Scrape icon
 	var icon = response.match(/<link rel="image_src" href="([^"]+)"/);
@@ -196,7 +195,6 @@
             page.metadata.title += ' | ' + htmlBlock[1];
         }
 
-        page.loading = false;
         playOnlineUrl = url;
         page.appendItem(plugin.getDescriptor().id + ":playOnline:" + escape(title), "video", {
             title: new showtime.RichText(title),
@@ -378,6 +376,7 @@
                 match = re.exec(commented);
             }
         }
+        page.loading = false;
     });
 
     function processAjax(page, url, folder, title) {
@@ -386,7 +385,6 @@
         var response = showtime.httpReq(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder).toString();
         response = response.substr(response.indexOf('class="filelist'), response.lastIndexOf('</ul>'));
         response = response.replace(/<ul class="filelist([\s\S]*?)<\/ul>/g, '');
-        page.loading = false;
         var re = /<li class="([^"]+)([\S\s]*?)(<\/li>|"  >)/g;
         var m = re.exec(response);
         folderList = [];
@@ -431,6 +429,7 @@
             }
             m = re.exec(response);
         }
+        page.loading = false;
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
@@ -532,7 +531,7 @@
         try {
              var doc = showtime.httpReq(url.substr(0,4) == 'http' ? unescape(url) + '?view=detailed'+param : BASE_URL + unescape(url) + '?view=detailed'+param).toString();
         } catch (err) {}
-        page.loading = false;
+
         if (doc) {
              if (populars == 'yes') {
                 var match = doc.match(/<div id="adsProxy-zone-section-glowadswide"><\/div>([\S\s]*?)<div class="b-clear">/);
@@ -559,6 +558,7 @@
             loader();
             page.paginator = loader;
         };
+        page.loading = false;
     });
 
     // Top 9
@@ -584,8 +584,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":comments", function(page) {
         setPageHeader(page, 'Обcуждаемые материалы');
         //1-link, 2-title, 3-icon, 4-type, 5-year, 6-country, 7-genres list,
-        //8-directors, 9-actors,
-        //10-positive/negative, 11-rating, 12-text, 13-nick,
+        //8-directors, 9-actors, 10-positive/negative, 11-rating, 12-text, 13-nick,
         //14-positive/negative, 15-rating, 16-text, 17-nick
         var re = /<a href="([\S\s]*?)"[\S\s]*?<span class="b-main__top-commentable-item-title-value">([\S\s]*?)<\/span>[\S\s]*?url\(([\S\s]*?)\);[\S\s]*?<span class="b-main__top-commentable-item-subsection">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-year-country">([\S\s]*?)<span class="b-main__new-item-attributes-delimiter"><\/span>([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-genre">([\S\s]*?)<span class="b-main__top-commentable-item-director">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-cast">([\S\s]*?)<\/span>[\S\s]*?class="b-main__top-commentable-item-comment m-main__top-commentable-item-comment_bg_([\S\s]*?)">[\S\s]*?<span class="b-main__top-commentable-item-comment-content-rating">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-text">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-name m-main__top-commentable-item-comment-content-name_">([\S\s]*?)<\/span>[\S\s]*?class="b-main__top-commentable-item-comment m-main__top-commentable-item-comment_bg_([\S\s]*?)">[\S\s]*?<span class="b-main__top-commentable-item-comment-content-rating">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-text">([\S\s]*?)<\/span>[\S\s]*?<span class="b-main__top-commentable-item-comment-content-name m-main__top-commentable-item-comment-content-name_">([\S\s]*?)<\/span>/g;
         var match = re.exec(comments);
@@ -641,7 +640,7 @@
         try {
             var doc = showtime.httpReq(BASE_URL + url).toString();
         } catch (err) {}
-        page.loading = false;
+
         if (doc) {
             var match = doc.match(/<div class="b-nowviewed">([\S\s]*?)<div class="b-clear">/);
             if (match)
@@ -675,8 +674,8 @@
             }
             loader();
             page.paginator = loader;
-            page.loading = false;
         }
+        page.loading = false;
     }
 
     // lists submenu
@@ -699,7 +698,6 @@
         setPageHeader(page, plugin.getDescriptor().synopsis);
         page.loading = true;
         response = showtime.httpReq(BASE_URL).toString();
-        page.loading = false;
 
         // Building menu
         if (response.match(/<link rel="canonical" href="http:\/\/cxz.to/)) { // cxz.to
@@ -768,6 +766,7 @@
             });
             indexer(page);
         }
+        page.loading = false;
     });
 
     plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {

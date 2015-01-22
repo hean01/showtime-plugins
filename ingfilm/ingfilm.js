@@ -1,7 +1,7 @@
 /**
  * ingfilm.ru plugin for Showtime
  *
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -84,6 +84,7 @@
 
     // Play links
     plugin.addURI(PREFIX + ":play:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
         page.type = "video";
         page.loading = true;
         switch (unescape(url).substr(0, 9)) {
@@ -265,7 +266,6 @@
             });
             match = re.exec(htmlBlock);
         }
-
         page.loading = false;
     });
 

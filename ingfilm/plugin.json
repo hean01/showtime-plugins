@@ -4,9 +4,10 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "ingfilm.ru",
 	"synopsis": "INGFILM.RU | HD Фильмы Онлайн",
-	"version": "0.1.9", "file": "ingfilm.js",
-	"showtimeVersion": "4.3.9",
-	"type": "javascript",
+	"version": "0.2",
+        "file": "ingfilm.js",
+	"showtimeVersion": "4.8",
+	"type": "ecmascript",
 	"id": "ingfilm.ru",
 	"icon": "logo.png",
 	"category": "video"
