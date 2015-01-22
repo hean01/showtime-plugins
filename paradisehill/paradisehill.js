@@ -1,7 +1,7 @@
 /**
- * paradisehill.tv plugin for Showtime
+ * paradisehill.tv plugin for Showtime Media Center
  *
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

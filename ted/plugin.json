@@ -1,9 +1,9 @@
 {
-    "type": "javascript",
+    "type": "ecmascript",
     "id": "ted",
     "file": "ted.js",
-    "showtimeVersion": "3.1",
-    "version": "1.0.2",
+    "showtimeVersion": "4.8",
+    "version": "1.1",
     "author": "lprot",
     "title": "TED Talks",
     "icon": "logo.png",

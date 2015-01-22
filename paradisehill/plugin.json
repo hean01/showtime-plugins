@@ -4,9 +4,10 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "paradisehill.tv",
 	"synopsis": "paradisehill.tv: PORNO FILMS ONLINE | You can watch video completely free of charge",
-	"version": "0.2.3", "file": "paradisehill.js",
-	"showtimeVersion": "4.5.146",
-	"type": "javascript",
+	"version": "0.3",
+        "file": "paradisehill.js",
+	"showtimeVersion": "4.8",
+	"type": "ecmascript",
 	"id": "paradisehill.tv",
 	"category": "video",
 	"icon": "logo.png"
