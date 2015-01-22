@@ -1,5 +1,5 @@
 /**
- * yts.re plugin for Showtime
+ * yts.re plugin for Showtime Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -65,7 +65,9 @@
     settings.createMultiOpt('baseurl', "Base URL", [
         ['://yts.re/api/', 'yts.re', true],
         ['://yify.unlocktorrent.com/api/', 'yify.unlocktorrent.com'],
-        ['://yts.im/api/', 'yts.im']
+        ['://yts.im/api/', 'yts.im'],
+        ['://yts.wf/api/', 'yts.wf'],
+        ['://yify.link/api/', 'yify.link']
         ], function(v) {
             service.baseurl = v;
     });
