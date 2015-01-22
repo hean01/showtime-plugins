@@ -215,10 +215,7 @@
 
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-        plugin.addHTTPAuth('http://movietrailers.apple.com.*', function(req) {
-            req.setHeader('User-Agent', 'QuickTime/7.6.2');
-        });
-        plugin.addHTTPAuth('http://trailers.apple.com.*', function(req) {
+        plugin.addHTTPAuth('(http|https)://.*\\.apple\\.com.*', function(req) {
             req.setHeader('User-Agent', 'QuickTime/7.6.2');
         });
         page.appendItem(plugin.getDescriptor().id + ':scrape:/page/:Latest', "directory", {
