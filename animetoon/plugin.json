@@ -1,0 +1,14 @@
+{
+    "description": "<p>Animetoon - Watch Cartoon Online<p>For additional information, visit <a href=\"http://www.animetoon.tv\">http://www.animetoon.tv</a>",
+    "author": "fdm",
+    "homepage": "http://github.com/lprot/showtime-plugins",
+    "title": "Animetoon",
+    "synopsis": "Watch Cartoon Online",
+    "version": "1.1",
+    "file": "animetoon.js",
+    "showtimeVersion": "4.8",
+    "type": "ecmascript",
+    "id": "animetoon",
+    "category": "video",
+    "icon": "animetoon.png"
+}
