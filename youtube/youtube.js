@@ -1829,6 +1829,10 @@
         return data;
     }
 
+    function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
     plugin.addURI(plugin.getDescriptor().id + ":scraper:(.*):(.*):(.*)", function(page, url, params, title) {
         page.metadata.background = plugin.path + "views/img/background.png";
         page.metadata.backgroundAlpha = 0.5;
@@ -1837,6 +1841,13 @@
         page.contents = "items";
         page.metadata.logo = logo;
         page.metadata.title = new showtime.RichText(unescape(showtime.entityDecode(title)));
+        if (url == '/playlistItems') {
+            page.options.createAction('shuffle', 'Shuffle playlist', function() {
+                var items = page.getItems();
+                for (var i=0; i < items.length; i++)
+                    items[getRandomInt(0, items.length)].moveBefore(getRandomInt(0, items.length));
+            });
+        }
         scraper(page, url, showtime.JSONDecode(unescape(params)));
     });
 
