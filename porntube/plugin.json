@@ -4,9 +4,10 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Porntube",
 	"synopsis": "Porntube: Watch FREE Porn Movies",
-	"version": "0.7.10", "file": "porntube.js",
-	"showtimeVersion": "4.3.9",
-	"type": "javascript",
+	"version": "0.8",
+        "file": "porntube.js",
+	"showtimeVersion": "4.8",
+	"type": "ecmascript",
 	"id": "porntube",
 	"icon": "logo.png",
 	"category": "video"
