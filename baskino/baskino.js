@@ -330,7 +330,7 @@
         page.loading = false;
     });
 
-    //Play HDSerials links
+    //Play HDSerials/moonwalk/serpens links
     plugin.addURI(plugin.getDescriptor().id + ":moonwalk:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         var html = showtime.httpReq(unescape(url)).toString();
@@ -430,10 +430,73 @@
         page.loading = false;
     });
 
+    var linksBlob;
+
+    plugin.addURI(plugin.getDescriptor().id + ":indexSeason:(.*):(.*)", function(page, title, blob) {
+        setPageHeader(page, decodeURIComponent(title));
+        page.loading = true;
+        var links = new Array();
+        var re = /"([0-9]+)":"([\S\s]*?)>"/g;
+        var match = re.exec(linksBlob);
+        while (match) {
+            // try vkinos links
+            var lnk = match[2].match(/<iframe [\S\s]*?src=\\"http:\\\/\\\/vki([\S\s]*?)\\"/);
+            if (lnk)
+                lnk = plugin.getDescriptor().id + ":vki:" + escape('http://vki'+lnk[1].replace(/\\/g, ''));
+            // try vk.com links
+            if (!lnk) {
+                lnk = match[2].match(/<iframe [\S\s]*?src=\\"http:\\\/\\\/vk([\S\s]*?)\\"/);
+                if (lnk) lnk = plugin.getDescriptor().id + ":vk:" + escape('http://vk'+lnk[1].replace(/\\/g, ''));
+            }
+            if (!lnk) { // try vk links
+                lnk = match[2].match(/<iframe [\S\s]*?src=\\"https:\\\/\\\/vk([\S\s]*?)\\"/);
+                if (lnk) lnk = plugin.getDescriptor().id + ":vk:" + escape('https://vk'+lnk[1].replace(/\\/g, ''));
+            }
+            if (!lnk) { // try megogo links
+                lnk = match[2].match(/<iframe [\S\s]*?src=\\"http:\\\/\\\/megogo.net(.*?)\\"/);
+                if (lnk) lnk = plugin.getDescriptor().id + ":megogo:" + escape('http://megogo.net'+lnk[1].replace(/\\/g, ''));
+            }
+            if (!lnk) { // try youtube links
+                lnk = match[2].match(/<iframe [\S\s]*?youtube(.*?)\\"/);
+                if (lnk) lnk = "youtube:video:" + escape(lnk[1].replace(/\\/g, '')+'"');
+            }
+            if (!lnk) { // try rutube links
+                lnk = match[2].match(/<iframe [\S\s]*?rutube(.*?)\\"/);
+                if (lnk) lnk = plugin.getDescriptor().id + ":rutube:" + escape('https://rutube'+lnk[1].replace(/\\/g, ''));
+            }
+            if (!lnk) { // try baskino links
+                lnk = match[2].match(/file: \\"([\S\s]*?)\\"/);
+                if (lnk) lnk = plugin.getDescriptor().id + ":bk:" + escape(lnk[1].replace(/\\/g, ''));
+            }
+            if (!lnk) { // try moonwalk links
+                lnk = match[2].match(/src=\\"(http:\\\/\\\/moonwalk.*?)"/);
+                if (lnk) lnk = plugin.getDescriptor().id + ":moonwalk:" + escape(lnk[1].replace(/\\/g, ''));
+            }
+            if (!lnk) { // try serpens links
+                lnk = match[2].match(/src=\\"(http:\\\/\\\/serpens.*?)"/);
+                if (lnk) lnk = plugin.getDescriptor().id + ":moonwalk:" + escape(lnk[1].replace(/\\/g, ''));
+            }
+            links[+match[1]] = lnk;
+            match = re.exec(linksBlob);
+        };
+
+        re = /<span onclick="showCode\(([0-9]+),this\);">([\S\s]*?)<\/span>/g;
+        var html = decodeURIComponent(blob);
+        match2 = re.exec(html);
+        while (match2) {
+            page.appendItem(links[match2[1]] + ":" + escape(decodeURIComponent(title) + ' - ' + match2[2]), 'video', {
+                title: match2[2]
+            });
+            match2 = re.exec(html);
+        };
+        page.loading = false;
+    });
+
+
     // Index page
     plugin.addURI(plugin.getDescriptor().id + ":index:(.*)", function(page, url) {
         page.loading = true;
-        var response = showtime.httpReq(unescape(url)).toString(), re;
+        response = showtime.httpReq(unescape(url)).toString();
         setPageHeader(page, response.match(/<title>(.*?)<\/title>/)[1].replace(' - смотреть онлайн бесплатно в хорошем качестве', ''));
         var description = trim(response.match(/<div class="description"[\S\s]*?<div id="[\S\s]*?">([\S\s]*?)<br\s\/>/)[1]);
         var title = response.match(/<td itemprop="name">([\S\s]*?)<\/td>/)[1];
@@ -461,68 +524,25 @@
         };
 
         if (timestamp) { // series
-            var links = new Array();
-            re = /"([0-9]+)":"([\S\s]*?)>"/g;
-            match = re.exec(response);
-            while (match) {
-                // try vkinos links
-                var lnk = match[2].match(/<iframe [\S\s]*?src=\\"http:\\\/\\\/vki([\S\s]*?)\\"/);
-                if (lnk)
-                    lnk = plugin.getDescriptor().id + ":vki:" + escape('http://vki'+lnk[1].replace(/\\/g, ''));
-                // try vk.com links
-                if (!lnk) {
-                    lnk = match[2].match(/<iframe [\S\s]*?src=\\"http:\\\/\\\/vk([\S\s]*?)\\"/);
-                    if (lnk) lnk = plugin.getDescriptor().id + ":vk:" + escape('http://vk'+lnk[1].replace(/\\/g, ''));
-                }
-                if (!lnk) { // try vk links
-                    lnk = match[2].match(/<iframe [\S\s]*?src=\\"https:\\\/\\\/vk([\S\s]*?)\\"/);
-                    if (lnk) lnk = plugin.getDescriptor().id + ":vk:" + escape('https://vk'+lnk[1].replace(/\\/g, ''));
-                }
-                if (!lnk) { // try megogo links
-                    lnk = match[2].match(/<iframe [\S\s]*?src=\\"http:\\\/\\\/megogo.net(.*?)\\"/);
-                    if (lnk) lnk = plugin.getDescriptor().id + ":megogo:" + escape('http://megogo.net'+lnk[1].replace(/\\/g, ''));
-                }
-                if (!lnk) { // try youtube links
-                    lnk = match[2].match(/<iframe [\S\s]*?youtube(.*?)\\"/);
-                    if (lnk) lnk = "youtube:video:" + escape(lnk[1].replace(/\\/g, '')+'"');
-                }
-                if (!lnk) { // try rutube links
-                    lnk = match[2].match(/<iframe [\S\s]*?rutube(.*?)\\"/);
-                    if (lnk) lnk = plugin.getDescriptor().id + ":rutube:" + escape('https://rutube'+lnk[1].replace(/\\/g, ''));
-                }
-                if (!lnk) { // try baskino links
-                    lnk = match[2].match(/file: \\"([\S\s]*?)\\"/);
-                    if (lnk) lnk = plugin.getDescriptor().id + ":bk:" + escape(lnk[1].replace(/\\/g, ''));
-                }
-                if (!lnk) { // try moonwalk links
-                    lnk = match[2].match(/src=\\"(http:\\\/\\\/moonwalk.*?)"/);
-                    if (lnk) lnk = plugin.getDescriptor().id + ":moonwalk:" + escape(lnk[1].replace(/\\/g, ''));
-                }
-                links[+match[1]] = lnk;
-                match = re.exec(response);
-            };
+            page.appendPassiveItem('video', {}, {
+                title: title,
+                icon: icon,
+                year: +year[2],
+                genre: genre,
+                duration: duration,
+                rating: rating,
+                timestamp: timestamp,
+                description: new showtime.RichText(coloredStr("Страна: ", orange) + country +
+                    coloredStr(" Слоган: ", orange) + slogan + "\n" + description)
+            });
+
+            linksBlob = response;
             re = /<div id="episodes-([0-9]+)"([\S\s]*?)<\/div>/g;
             match = re.exec(response);
             while (match) {
-                page.appendItem("", "separator", {
+                page.appendItem(plugin.getDescriptor().id + ":indexSeason:" + encodeURIComponent(title + ' - Сезон ' + match[1]) + ':' + encodeURIComponent(match[2]), 'directory', {
                     title: 'Сезон ' + match[1]
                 });
-                var re2 = /<span onclick="showCode\(([0-9]+),this\);">([\S\s]*?)<\/span>/g;
-                var match2 = re2.exec(match[2]);
-                while (match2) {
-                    page.appendItem(links[match2[1]] + ":" + escape(match2[2]), 'video', {
-                        title: match2[2],
-                        icon: icon,
-                        year: +year[2],
-                        genre: genre,
-                        duration: duration,
-                        rating: rating,
-                        timestamp: timestamp,
-                        description: new showtime.RichText(coloredStr("Страна: ", orange) +
-                            country + coloredStr(" Слоган: ", orange) + slogan + "\n" + description)
-                    });
-                    match2 = re2.exec(match[2]);
-                };
                 match = re.exec(response);
             };
         } else { // movie
@@ -698,21 +718,23 @@
         };
 
         //related
-        html = response.match(/<div class="related_news">([\S\s]*?)<\/li><\/ul>/)[1];
-        page.appendItem("", "separator", {
-            title: html.match(/<div class="mbastitle">([\S\s]*?)<\/div>/)[1]
-        });
-        // 1 - link, 2 - icon, 3 - title, 4 - quality
-        re = /<a href="([\S\s]*?)"><img src="([\S\s]*?)"[\S\s]*?\/><span>([\S\s]*?)<\/span>[\S\s]*?class="quality_type ([\S\s]*?)">/g;
-        match = re.exec(html);
-        while (match) {
-            page.appendItem(plugin.getDescriptor().id + ":index:" + escape(match[1]), 'video', {
-                title: new showtime.RichText((match[4] == "quality_hd" ? coloredStr("HD", orange) : coloredStr("DVD", orange)) + ' ' + match[3]),
-                icon: match[2]
+        html = response.match(/<div class="related_news">([\S\s]*?)<\/li><\/ul>/);
+        if (html) {
+            html = html[1];
+            page.appendItem("", "separator", {
+                title: html.match(/<div class="mbastitle">([\S\s]*?)<\/div>/)[1]
             });
-
+            // 1 - link, 2 - icon, 3 - title, 4 - quality
+            re = /<a href="([\S\s]*?)"><img src="([\S\s]*?)"[\S\s]*?\/><span>([\S\s]*?)<\/span>[\S\s]*?class="quality_type ([\S\s]*?)">/g;
             match = re.exec(html);
-        };
+            while (match) {
+                page.appendItem(plugin.getDescriptor().id + ":index:" + escape(match[1]), 'video', {
+                    title: new showtime.RichText((match[4] == "quality_hd" ? coloredStr("HD", orange) : coloredStr("DVD", orange)) + ' ' + match[3]),
+                    icon: match[2]
+                });
+                match = re.exec(html);
+            };
+        }
 
         //comments
         var tryToSearch = true, first = true;
