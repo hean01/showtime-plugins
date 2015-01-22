@@ -1,5 +1,5 @@
 /*
- *  Online TV
+ *  Online TV plugin for Showtime Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -189,6 +189,23 @@
                 canonicalUrl: plugin.getDescriptor().id + ':sputniktv:' + url + ':' + title,
                 sources: [{
                     url: 'hls:' + match[1]
+                }]
+            });
+        } else page.error("Sorry, can't get the link :(");
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":tivix:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
+        var resp = showtime.httpReq(unescape(url)).toString();
+        page.loading = false;
+        var match = resp.match(/file=([\S\s]*?)&/);
+        if (match) {
+            page.type = "video";
+            page.source = "videoparams:" + showtime.JSONEncode({
+                title: unescape(title),
+                canonicalUrl: plugin.getDescriptor().id + ':tivix:' + url + ':' + title,
+                sources: [{
+                    url: match[1].match('m3u8') ? 'hls:' + unescape(match[1]) : unescape(match[1])
                 }]
             });
         } else page.error("Sorry, can't get the link :(");
@@ -664,6 +681,7 @@
         addChannel(page, 'Спорт 2', 'sputniktv', 'http://sputniktv.in.ua/sport-2-ukraina.html');
         addChannel(page, 'XSport', 'jampo', 'xsport', 'http://xsport.ua/bitrix/templates/xsport/images/logo.png');
         addChannel(page, 'Tonis', 'sputniktv', 'http://sputniktv.in.ua/tonis.html');
+        addChannel(page, 'Tonis HD', 'ts', 'http://194.11.28.3:7070/udp/239.255.3.27:1234');
         //addChannel(page, 'Гумор ТВ', 'ts', 'http://85.25.43.30:8232', '');
         //addChannel(page, 'Гумор ТВ', 'direct', 'rtmp://212.26.132.86/live/gumor_babai', '');
         addChannel(page, 'Гумор ТВ', 'direct', 'hls:http://212.26.132.86/hls/gumor_babai.m3u8', 'http://upload.wikimedia.org/wikipedia/uk/b/b1/Humor_logo.jpg');
@@ -762,6 +780,59 @@
       }
     });
 
+    plugin.addURI(plugin.getDescriptor().id + ":indexTivix:(.*):(.*)", function(page, url, title) {
+        setPageHeader(page, decodeURIComponent(title));
+        var url = prefixUrl = 'http://tivix.net' + decodeURIComponent(url);
+        var tryToSearch = true, fromPage = 1;
+
+        function loader() {
+            if (!tryToSearch) return false;
+            page.loading = true;
+            var doc = showtime.httpReq(url).toString();
+            page.loading = false;
+            // 1-title, 2-url, 3-icon
+            var re = /<div class="all_tv" title="([\S\s]*?)">[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)"/g;
+            var match = re.exec(doc);
+            while (match) {
+                page.appendItem(plugin.getDescriptor().id + ":tivix:" + escape(match[2]) + ':' + escape(match[1]), "video", {
+                    title: match[1],
+                    icon: 'http://tivix.net' + match[3]
+                });
+                match = re.exec(doc);
+            }
+            var next = doc.match(/">Вперед<\/a>/);
+            if (!next)
+                return tryToSearch = false;
+            fromPage++;
+            url = prefixUrl + 'page/' + fromPage;;
+            return true;
+        }
+        loader();
+        page.paginator = loader;
+        page.loading = false;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":tivixStart", function(page) {
+        setPageHeader(page, 'Tivix');
+        page.loading = true;
+        var doc = showtime.httpReq('http://tivix.net').toString();
+        page.loading = false;
+        var re = /<div class="menuuuuuu"([\S\s]*?)<\/div>/g;
+        var menus = re.exec(doc);
+        var re2 = /<a href="([\S\s]*?)"[\S\s]*?>([\S\s]*?)<\/a>/g;
+        while (menus) {
+            var submenus = re2.exec(menus[1]);
+            while (submenus) {
+                page.appendItem(plugin.getDescriptor().id + ":indexTivix:" + encodeURIComponent(submenus[1]) + ':' + encodeURIComponent(submenus[2]), "directory", {
+	            title: submenus[2]
+                });
+                submenus = re2.exec(menus[1]);
+            }
+            menus = re.exec(doc);
+            page.appendItem("", "separator");
+        }
+    });
+
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, slogan);
@@ -789,5 +860,10 @@
 	page.appendItem(plugin.getDescriptor().id + ":category:Hungarian", "directory", {
 	    title: "Hungarian"
 	});
+        page.appendItem("", "separator");
+	page.appendItem(plugin.getDescriptor().id + ":tivixStart", "directory", {
+	    title: "TIVIX"
+	});
+
     });
 })(this);
