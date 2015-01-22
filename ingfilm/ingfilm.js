@@ -1,5 +1,5 @@
 /**
- * ingfilm.ru plugin for Showtime
+ * ingfilm.ru plugin for Showtime Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -88,6 +88,8 @@
         page.type = "video";
         page.loading = true;
         switch (unescape(url).substr(0, 9)) {
+            case 'http://bd':
+            case 'http://se':
             case 'http://mo':
                     var html = showtime.httpReq(unescape(url)).toString();
                     var link = showtime.JSONDecode(showtime.httpReq('http://moonwalk.cc/sessions/create_session', {
@@ -179,7 +181,7 @@
                 });
             }
 
-            if (match[18].substr(0, 9) == 'http://mo' && match[18].match(/serial/)) { // handle as series
+            if (match[18].match(/serial/)) { // handle as series
                 var html = showtime.httpReq(match[18]).toString();
                 var block = html.match(/<select id="season"([\s\S]*?)<\/select>/);
                 //1-value, 2-title
