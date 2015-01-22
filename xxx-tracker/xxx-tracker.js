@@ -1,7 +1,7 @@
 /**
- * xxx-tracker.com plugin for Showtime
+ * xxx-tracker.com plugin for Showtime Media Center
  *
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,7 +53,6 @@
         setPageHeader(page, plugin.getDescriptor().synopsis);
         page.loading = true;
         var doc = showtime.httpReq(BASE_URL + '/top').toString();
-        page.loading = false;
         doc = doc.match(/<div id="index">([\s\S]*?)<\/div>/);
         if (doc) {
            var re = /<h2>([\s\S]*?)<\/h2>([\s\S]*?)<\/table>/g;
@@ -84,8 +83,6 @@
            }
 
         }
-    });
-
-    plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
+        page.loading = false;
     });
 })(this);

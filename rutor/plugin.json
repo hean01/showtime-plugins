@@ -4,9 +4,10 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "rutor.org",
 	"synopsis": "rutor.org :: Свободный торрент трекер",
-	"version": "0.1.7", "file": "rutor.js",
-	"showtimeVersion": "4.7.90",
-	"type": "javascript",
+	"version": "0.2",
+        "file": "rutor.js",
+	"showtimeVersion": "4.8",
+	"type": "ecmascript",
 	"icon": "logo.png",
 	"id": "rutor",
 	"category": "video"

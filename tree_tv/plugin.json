@@ -4,9 +4,10 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Tree.tv",
 	"synopsis": "Tree.tv - online фильмы - новинки кино в хорошем качестве смотреть бесплатно без регистрации онлайн",
-	"version": "0.4.8", "file": "treetv.js",
-	"showtimeVersion": "4.5.146",
-	"type": "javascript",
+	"version": "0.5",
+        "file": "treetv.js",
+	"showtimeVersion": "4.8",
+	"type": "ecmascript",
 	"id": "tree.tv",
 	"category": "video",
 	"icon": "logo.png"

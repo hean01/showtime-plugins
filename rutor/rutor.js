@@ -1,7 +1,7 @@
 /**
- * rutor.org plugin for Showtime
+ * rutor.org plugin for Showtime Media Center
  *
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -72,7 +72,6 @@
         setPageHeader(page, plugin_info.synopsis);
         page.loading = true;
         var doc = showtime.httpReq(BASE_URL + '/top').toString();
-        page.loading = false;
         doc = doc.match(/<div id="index">([\s\S]*?)<!-- bottom banner -->/);
         if (doc) {
            var re = /<h2>([\s\S]*?)<\/h2>([\s\S]*?)<\/table>/g;
@@ -84,8 +83,8 @@
                scraper(page, match[2]);
                match = re.exec(doc[1]);
            }
-
         }
+        page.loading = false;
     });
 
     function searcherScraper(page, doc) {
