@@ -48,9 +48,16 @@
         page.loading = true;
         var doc = showtime.httpReq(BASE_URL + decodeURIComponent(link)).toString();
         page.loading = false;
+
+        var description = trim(doc.match(/<p class='talk-description' lang='[\s\S]*?'>([\s\S]*?)<\/p>/)[1]);
+        page.appendItem(doc.match(/"stream":"([\s\S]*?)"/)[1], "video", {
+            title: new showtime.RichText(coloredStr('HLS ', orange) + decodeURIComponent(title)),
+            description: description
+        });
+
         page.appendItem(doc.match(/"high":"([\s\S]*?)"/)[1], "video", {
-            title: showtime.entityDecode(decodeURIComponent(title)),
-            description: trim(doc.match(/<p class='talk-description' lang='[\s\S]*?'>([\s\S]*?)<\/p>/)[1])
+            title: new showtime.RichText(coloredStr('MP4 ', orange) + showtime.entityDecode(decodeURIComponent(title))),
+            description: description
         });
 
         var json = showtime.JSONDecode(doc.match(/"subtitledDownloads":([\s\S]*?),"audioDownload"/)[1]);
@@ -102,11 +109,15 @@
             if (!doc.match(/rel="next"/))
                 return tryToSearch = false;
             pageNum++;
-            param = '&page=' + pageNum;
+            if (url.match(/\?/))
+                param = '&page=' + pageNum;
+            else
+                param = '?page=' + pageNum;
             return true;
         }
         loader();
         page.paginator = loader;
+       page.loading = false;
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":index:(.*):(.*)", function(page, sort, title) {
