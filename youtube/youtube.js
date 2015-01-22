@@ -1,5 +1,5 @@
 /**
- * Youtube plugin for Showtime
+ * Youtube plugin for Showtime Media Center
  *
  *  Copyright (C) 2011-2015 facanferff, lprot
  *
@@ -1859,34 +1859,63 @@
         return showtime.durationToString(+s.match(/PT(.*)S/)[1]);
     }
 
+    plugin.addURI(plugin.getDescriptor().id + ":durationFilter:(.*):(.*)", function(page, addParams, title) {
+        setPageHeader(page, 'Filter by duration');
+        title = unescape(title);
+        addParams = showtime.JSONDecode(unescape(addParams));
+        addParams.args.videoDuration = 'any';
+        page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+            escape(showtime.JSONEncode(addParams)) + ':' + escape(title + ' (Duration: Any)'), "directory", {
+                title: 'Any - Do not filter video search results based on their duration.'
+        });
+        addParams.args.videoDuration = 'long';
+        page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+            escape(showtime.JSONEncode(addParams)) + ':' + escape(title + ' (Duration: Long)'), "directory", {
+                title: 'Long - Only include videos longer than 20 minutes'
+        });
+        addParams.args.videoDuration = 'medium';
+        page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+            escape(showtime.JSONEncode(addParams)) + ':' + escape(title + ' (Duration: Medium)'), "directory", {
+                title: 'Medium - Only include videos that are between four and 20 minutes long'
+        });
+        addParams.args.videoDuration = 'short';
+        page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+            escape(showtime.JSONEncode(addParams)) + ':' + escape(title + ' (Duration: Short)'), "directory", {
+                title: 'Short - Only include videos that are less than four minutes long'
+        });
+    });
+
     function addSortHeader(page, url, params) {
         if (url == '/search') {
             var addParams = showtime.JSONDecode(showtime.JSONEncode(params));
+            var route = ':scraper:/search:';
+            if (addParams.args.type == 'video')
+                route =  ':durationFilter:'
             addParams.args.order = 'date';
-            page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+            page.appendItem(plugin.getDescriptor().id + route +
                 escape(showtime.JSONEncode(addParams)) + ':' + escape('Order by Date'), "directory", {
                     title: 'Order by Date'
-                });
+            });
             addParams.args.order = 'rating';
-            page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+            page.appendItem(plugin.getDescriptor().id + route +
                 escape(showtime.JSONEncode(addParams)) + ':' + escape('Order by Rating'), "directory", {
                     title: 'Order by Rating'
-                });
+            });
             addParams.args.order = 'relevance';
-            page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+            page.appendItem(plugin.getDescriptor().id + route +
                 escape(showtime.JSONEncode(addParams)) + ':' + escape('Order by Relevance'), "directory", {
                     title: 'Order by Relevance (default)'
-                });
+            });
             addParams.args.order = 'videoCount';
-            page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+            page.appendItem(plugin.getDescriptor().id + route +
                 escape(showtime.JSONEncode(addParams)) + ':' + escape('Order by Video count'), "directory", {
                     title: 'Order by Video count'
-                });
+            });
             addParams.args.order = 'viewCount';
-            page.appendItem(plugin.getDescriptor().id + ':scraper:/search:' +
+            page.appendItem(plugin.getDescriptor().id + route +
                 escape(showtime.JSONEncode(addParams)) + ':' + escape('Order by View count'), "directory", {
                     title: 'Order by View count'
-                });
+            });
         }
     }
 
