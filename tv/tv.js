@@ -114,67 +114,28 @@
         store.list = "[]";
     }
 
+    var API = 'https://www.googleapis.com/youtube/v3',
+        key = "AIzaSyCSDI9_w8ROa1UoE2CNIUdDQnUhNbp9XR4"
+
     plugin.addURI(plugin.getDescriptor().id + ":youtube:(.*)", function(page, title) {
-        var resp, match, match2, match3;
-
-        // get videolink by id
-        function playVideo(page, id) {
-            page.loading = true;
-            resp = showtime.httpReq("https://www.youtube.com/watch?v=" + id[1]).toString();
-            page.loading = false;
-            // get the link
-            match = resp.match(/"hlsvp": "([\S\s]*?)"/);
-            if (!match) { // try to get the link from the main search results
-                page.loading = true;
-                resp = showtime.httpReq("https://www.youtube.com/watch?v=" + match2[1]).toString();
-                page.loading = false;
-                // getting the link
-                match = resp.match(/"hlsvp": "([\S\s]*?)"/);
-            }
-            if (match) {
-                page.type = "video";
-                page.source = "videoparams:" + showtime.JSONEncode({
-                    title: unescape(title),
-                    canonicalUrl: plugin.getDescriptor().id + ':youtube:' + title,
-                    sources: [{
-                        url: "hls:" + match[1].replace(/\\\//g, '/')
-                    }]
-                });
-            } else page.error("Sorry, can't get channel's link :(");
-        }
-
         // search for the channel
         page.loading = true;
-        resp = showtime.httpReq("https://www.youtube.com/results?search_query=" + unescape(title).replace(/\s/g, '+')).toString();
-        page.loading = false;
-        // looking for user's page
-        match = resp.match(/<a href="\/user\/([\S\s]*?)"/);
-        match2 = resp.match(/\/watch\?v=([\S\s]*?)"/); // scraping direct link
-        match3 = resp.match(/<a href="\/channel\/([\S\s]*?)"/);
-        if (match) { // try to get the link via user's page
-            page.loading = true;
-            resp = showtime.httpReq("https://www.youtube.com/user/" + match[1]).toString();
-            page.loading = false;
-            var match = resp.match(/\/watch\?v=([\S\s]*?)"/);
-            if (match) {
-                //showtime.print("Got link via user's page");
-                playVideo(page, match);
-            }
-        } else {
-            if (match3) { // try to get the link via channel's page
-                page.loading = true;
-                resp = showtime.httpReq("https://www.youtube.com/channel/" + match3[1]).toString();
-                page.loading = false;
-                var match = resp.match(/\/watch\?v=([\S\s]*?)"/);
-                if (match) {
-                   //showtime.print("Got the link via channel's page");
-                   playVideo(page, match);
+        try {
+            doc = showtime.httpReq(API + '/search', {
+                args: {
+                    part: 'snippet',
+                    type: 'video',
+                    q: unescape(title),
+                    maxResults: 1,
+                    eventType: 'live',
+                    key: key
                 }
-            } else {
-                if (match2) // try to play direct link
-                    playVideo(page, match2);
-              }
+            }).toString();
+            page.redirect('youtube:video:' + showtime.JSONDecode(doc).items[0].id.videoId);
+        } catch(err) {
+            page.error("Sorry, can't get channel's link :(");
         }
+        page.loading = false;
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":sputniktv:(.*):(.*)", function(page, url, title) {
