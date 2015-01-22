@@ -4,10 +4,10 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Dropbox",
 	"synopsis": "Dropbox – Your stuff, anywhere",
-	"version": "0.5.2",
+	"version": "0.6",
         "file": "dropbox.js",
-	"showtimeVersion": "3.1.163",
-	"type": "javascript",
+	"showtimeVersion": "4.8",
+	"type": "ecmascript",
 	"id": "dropbox",
 	"icon": "logo.png",
 	"category": "video"

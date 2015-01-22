@@ -1,7 +1,7 @@
 /**
  * filmezz.eu plugin for Showtime
  *
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -49,16 +49,10 @@
     var service = plugin.createService("filmezz.eu", plugin.getDescriptor().id + ":start", "video", true, logo);
 
     // Search IMDB ID by title
-    function getIMDBid(title) {
-        var resp = showtime.httpReq('http://www.google.com/search?q=imdb+' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
-        var re = /http:\/\/www.imdb.com\/title\/(tt\d+).*?<\/a>/;
-        var imdbid = re.exec(resp);
-        if (imdbid) imdbid = imdbid[1];
-        else {
-            re = /http:\/\/<b>imdb<\/b>.com\/title\/(tt\d+).*?\//;
-            imdbid = re.exec(resp);
-            if (imdbid) imdbid = imdbid[1];
-        }
+    function getIMDBid(page, title) {
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        if (imdbid) return imdbid[1];
         return imdbid;
     };
 
@@ -117,11 +111,22 @@
         var doc = showtime.httpReq(checkLink(unescape(url)), {
             noFollow: true
         });
-
         doc = showtime.httpReq(checkLink(doc.headers.Location), {
             noFollow: true
         });
         switch (unescape(hoster)) {
+            case 'Streamin.To':
+                url = showtime.httpReq(doc.toString().match(/<IFRAME SRC="([\S\s]*?)"/)[1]).toString();
+                url = url.match(/streamer: "([\S\s]*?)"/)[1] + '/mp4:' + url.match(/file: "([\S\s]*?)"/)[1];
+                break;
+            case 'Letwatch.us':
+                url = showtime.httpReq(doc.toString().match(/<IFRAME SRC="([\S\s]*?)"/)[1]).toString();
+                url = url.match(/<script type='text\/javascript'>eval\(function([\S\s]*?)\}\(([\S\s]*?)<\/script>/);
+                var decryptedUrl;
+                eval('try { function decryptParams' + url[1] +
+                    '}; decryptedUrl = (decryptParams(' + url[2] + '} catch (err) {}');
+                url = decryptedUrl.match(/file:"([\S\s]*?)"/)[1];
+                break;
             case 'Vidzi.tv':
                 url = 'hls:' + showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/file: "([\S\s]*?)"/)[1];
                 break;
@@ -258,6 +263,7 @@
 
     // Index page
     plugin.addURI(plugin.getDescriptor().id + ":index:(.*)", function(page, url) {
+        page.loading = true;
         var doc = showtime.httpReq(checkLink(unescape(url))).toString();
         var info = doc.match(/<img id="kep" alt="([\S\s]*?)" src="([\S\s]*?)"/);
         setPageHeader(page, trim(doc.match(/<div class="boxup">([\S\s]*?)<\/div>/)[1]));
@@ -397,7 +403,6 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().synopsis);
-
         page.appendItem(plugin.getDescriptor().id + ':mostviewed', 'directory', {
             title: 'Legnézettebb filmek'
         });
