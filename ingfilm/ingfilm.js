@@ -85,20 +85,18 @@
     // Play links
     plugin.addURI(PREFIX + ":play:(.*):(.*)", function(page, url, title) {
         page.loading = true;
-        page.type = "video";
-        page.loading = true;
         switch (unescape(url).substr(0, 9)) {
             case 'http://bd':
             case 'http://se':
             case 'http://mo':
-                    var html = showtime.httpReq(unescape(url)).toString();
-                    var link = showtime.JSONDecode(showtime.httpReq('http://moonwalk.cc/sessions/create_session', {
-                        postdata: {
-                            'video_token': html.match(/video_token: '([\s\S]*?)'/)[1],
-                            'video_secret': html.match(/video_secret: '([\s\S]*?)'/)[1]
-                        }
-                    }));
-                    link = 'hls:' + link['manifest_m3u8']
+                var html = showtime.httpReq(unescape(url)).toString();
+                var link = showtime.JSONDecode(showtime.httpReq('http://moonwalk.cc/sessions/create_session', {
+                    postdata: {
+                        'video_token': html.match(/video_token: '([\s\S]*?)'/)[1],
+                        'video_secret': html.match(/video_secret: '([\s\S]*?)'/)[1]
+                    }
+                }));
+                link = 'hls:' + link['manifest_m3u8']
                 break;
             case 'http://vk':
             case 'https://v':
@@ -120,6 +118,7 @@
                 break;
         }
         page.loading = false;
+        page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             canonicalUrl: PREFIX + ':play:' + url + ':' + title,
@@ -146,6 +145,23 @@
         return genre;
     }
 
+    plugin.addURI(PREFIX + ":listSeason:(.*):(.*):(.*)", function(page, link, series, title) {
+        setPageHeader(page, unescape(title));
+        page.loading = true;
+        var video = showtime.httpReq(unescape(link) + '?season=' + series + '&episode=1').toString();
+        var videos = video.match(/<select id="episode"([\s\S]*?)<\/select>/);
+        //1-value, 2-title
+        var re = /value="([\s\S]*?)">([\s\S]*?)<\/option>/g;
+        video = re.exec(videos[1])
+        while (video) {
+            page.appendItem(PREFIX + ':play:' + link + escape('?season=' + series + '&episode=' + video[1]) + ':' + escape(unescape(title) + ' - ' + video[2]), 'video', {
+                title: unescape(title) + ' - ' + video[2]
+            });
+            video = re.exec(videos[1])
+        }
+        page.loading = false;
+    });
+
     plugin.addURI(PREFIX + ":indexItem:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
@@ -161,7 +177,7 @@
             function addItem(link, title, simpleTitle) {
                 genres = match[4];
                 actors = match[17];
-                page.appendItem(PREFIX + ':play:' + escape(link) + ":" + escape(simpleTitle), 'video', {
+                page.appendItem(link + ":" + escape(simpleTitle), 'video', {
                     title: new showtime.RichText(title),
                     icon: checkLink(match[1]),
                     genre: getGenres(genres),
@@ -188,22 +204,12 @@
                 var re = /value="([\s\S]*?)">([\s\S]*?)<\/option>/g;
                 var series = re.exec(block[1])
                 while (series) {
-                    page.appendItem("", "separator", {
-	                title: series[2]
-    	            });
-                    var video = showtime.httpReq(match[18]+'?season='+series[1]+'&episode=1').toString();
-                    var videos = video.match(/<select id="episode"([\s\S]*?)<\/select>/);
-                    //1-value, 2-title
-                    var re2 = /value="([\s\S]*?)">([\s\S]*?)<\/option>/g;
-                    video = re2.exec(videos[1])
-                    while (video) {
-                        addItem(match[18]+'?season='+series[1]+'&episode='+video[1], series[2] + ' - ' + video[2], series[2] + ' - ' + video[2]);
-                        video = re2.exec(videos[1])
-                    }
+                    addItem(PREFIX + ':listSeason:' + escape(match[18]) + ':' + series[1], series[2], series[2]);
                     series = re.exec(block[1])
                 }
             } else
-                 addItem(match[18], blueStr(match[7]) + ' ' + match[2], match[2]);
+                 addItem(PREFIX + ':play:' + escape(match[18]), blueStr(match[7]) + ' ' + match[2], match[2]);
+
         };
 
         if (genres) {
