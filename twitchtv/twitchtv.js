@@ -302,9 +302,6 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":past:(.*):(.*)", function (page, name, display_name) {
         setPageHeader(page, plugin.getDescriptor().title + ' - Past broadcasts for: ' + decodeURIComponent(display_name));
-        page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/' + name));
-        page.loading = false;
         var url = API + '/channels/' + name + '/videos?broadcasts=true';
         var tryToSearch = true;
 

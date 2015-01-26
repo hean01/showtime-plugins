@@ -1,7 +1,7 @@
 ﻿/**
  * TED Talks plugin for Showtime Media Center
  *
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -62,9 +62,14 @@
                  });
                  first = false;
              }
-             page.appendItem(json[i].high, "video", {
-                 title: json[i].name
-             });
+             if (json[i].high)
+                 page.appendItem(json[i].high, "video", {
+                     title: json[i].name
+                 });
+             else
+                 page.appendItem(json[i].low, "video", {
+                     title: json[i].name
+                 });
         }
     });
 
