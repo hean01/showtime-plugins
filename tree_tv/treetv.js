@@ -208,11 +208,8 @@
         };
         loader();
         page.paginator = loader;
-        if (page.entries == 0) {
-            page.appendPassiveItem('video', '', {
-                title: "По заданному запросу ничего не найдено"
-            });
-        }
+        if (page.entries == 0)
+            page.error("По заданному запросу ничего не найдено");
     }
 
     plugin.addURI(PREFIX + ":scrapeSmall:(.*):(.*):(.*)", function(page, url, title, paginator) {
@@ -378,7 +375,7 @@
                 title: 'Жанр'
             });
             //1-value, 2-param name, 3-razdel, 4-name
-            re2 = /<a class="fast_search" rev="([\s\S]*?)" rel="([\s\S]*?)" data-href="([\s\S]*?)" href="#">([\s\S]*?)<\/a>/g;
+            re2 = /<a class="fast_search" rev="([\s\S]*?)" rel="([\s\S]*?)" data-module="([\s\S]*?)" href="#">([\s\S]*?)<\/a>/g;
             match = re2.exec(genres);
             while (match) {
                 page.appendItem(PREFIX + ":scrapeSmall:" + escape(BASE_URL + '/search/index/index/janrs/'+match[1]+'/janr_first/'+match[1]+'/razdel/'+match[3]+'/page/')+':'+escape('Отбор по жанру '+trim(match[4]))+':1', 'directory', {
