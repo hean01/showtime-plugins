@@ -65,7 +65,6 @@
 
     settings.createDivider('User Settings');
     settings.createAction("loginV3", "Login to Youtube", function() {
-    page.loading = true;
         showtime.notify('Logging to Youtube. Please wait...', 3);
         var response = showtime.JSONDecode(showtime.httpReq("https://accounts.google.com/o/oauth2/device/code", {
             postdata: {
