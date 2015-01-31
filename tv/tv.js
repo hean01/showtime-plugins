@@ -175,11 +175,15 @@
         var match = resp.match(/file=([\S\s]*?)&/);
         if (match) {
             page.type = "video";
+            if (match[1].match(/rtmp/))
+                url = unescape(match[1]) + ' swfUrl=http://tivix.net' + resp.match(/data="(.*)"/)[1] + ' pageUrl=' + unescape(url);
+            else
+                url = match[1].match('m3u8') ? 'hls:' + unescape(match[1]) : unescape(match[1]);
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: unescape(title),
                 canonicalUrl: plugin.getDescriptor().id + ':tivix:' + url + ':' + title,
                 sources: [{
-                    url: match[1].match('m3u8') ? 'hls:' + unescape(match[1]) : unescape(match[1])
+                    url: url
                 }]
             });
         } else page.error("Sorry, can't get the link :(");
