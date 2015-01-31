@@ -108,10 +108,23 @@
 
     var store = plugin.createStore('favorites', true)
     if (!store.list) {
-        store.version = "1";
-        store.background = "";
-        store.title = "tv » My Favorites";
         store.list = "[]";
+    }
+
+    function addToFavoritesOption(item, link, title, icon) {
+        item.link = link;
+        item.title = title;
+        item.icon = icon;
+        item.onEvent("addFavorite", function(item) {
+            var entry = showtime.JSONEncode({
+                link: encodeURIComponent(this.link),
+                title: encodeURIComponent(this.title),
+                icon: encodeURIComponent(this.icon)
+            });
+            store.list = showtime.JSONEncode([entry].concat(eval(store.list)));
+            showtime.notify("'" + this.title + "' has been added to My Favorites.", 2);
+        }.bind(item));
+	item.addOptAction("Add '" + title + "' to My Favorites", "addFavorite");
     }
 
     var API = 'https://www.googleapis.com/youtube/v3',
@@ -378,33 +391,7 @@
             title: title,
             icon: icon
         });
-
-        item.link = link;
-        item.title = title;
-        item.icon = icon;
-
-        if (typeof Duktape != 'undefined') {
-            item.onEvent("addFavorite", function(item) {
-                var entry = showtime.JSONEncode({
-	            link: this.link,
-                    title: this.title,
-                    icon: this.icon
-	        });
-                store.list = showtime.JSONEncode([entry].concat(eval(store.list)));
-	        showtime.notify("'" + this.title + "' has been added to My Favorites.", 2);
-	    }.bind(item));
-        } else {
-            item.onEvent("addFavorite", function(item) {
-                var entry = showtime.JSONEncode({
-	            link: this.link,
-                    title: this.title,
-                    icon: this.icon
-	        });
-                store.list = showtime.JSONEncode([entry].concat(eval(store.list)));
-	        showtime.notify("'" + this.title + "' has been added to My Favorites.", 2);
-	    });
-        }
-	item.addOptAction("Add '" + title + "' to My Favorites", "addFavorite");
+        addToFavoritesOption(item, link, title, icon);
     }
 
     function fill_fav(page) {
@@ -417,15 +404,15 @@
         var pos = 0;
 	for (var i in list) {
 	    var itemmd = showtime.JSONDecode(list[i]);
-	    var item = page.appendItem(itemmd.link, "video", {
-       		title: itemmd.title,
-		icon: itemmd.icon
+	    var item = page.appendItem(decodeURIComponent(itemmd.link), "video", {
+       		title: decodeURIComponent(itemmd.title),
+		icon: decodeURIComponent(itemmd.icon)
 	    });
-	    item.addOptAction("Remove '" + itemmd.title + "' from My Favorites", pos);
+	    item.addOptAction("Remove '" + decodeURIComponent(itemmd.title) + "' from My Favorites", pos);
 
 	    item.onEvent(pos, function(item) {
 		var list = eval(store.list);
-		showtime.notify("'" + showtime.JSONDecode(list[item]).title + "' has been removed from My Favorites.", 2);
+		showtime.notify("'" + decodeURIComponent(showtime.JSONDecode(list[item]).title) + "' has been removed from My Favorites.", 2);
 	        list.splice(item, 1);
 		store.list = showtime.JSONEncode(list);
                 page.flush();
@@ -749,10 +736,14 @@
             var re = /<div class="all_tv" title="([\S\s]*?)">[\S\s]*?<a href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)"/g;
             var match = re.exec(doc);
             while (match) {
-                page.appendItem(plugin.getDescriptor().id + ":tivix:" + escape(match[2]) + ':' + escape(match[1]), "video", {
-                    title: match[1],
-                    icon: 'http://tivix.net' + match[3]
+                var link = plugin.getDescriptor().id + ":tivix:" + escape(match[2]) + ':' + escape(match[1]);
+                var title = match[1];
+                var icon = 'http://tivix.net' + match[3];
+                var item = page.appendItem(link, "video", {
+                    title: title,
+                    icon: icon
                 });
+                addToFavoritesOption(item, link, title, icon);
                 match = re.exec(doc);
             }
             var next = doc.match(/">Вперед<\/a>/);
