@@ -1,5 +1,5 @@
 /**
- * Baskino.com plugin for Showtime
+ * Baskino.com plugin for Showtime Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -337,7 +337,7 @@
         var link = showtime.JSONDecode(showtime.httpReq('http://moonwalk.cc/sessions/create_session', {
             postdata: {
                 'video_token': html.match(/video_token: '([\s\S]*?)'/)[1],
-                'video_secret': html.match(/video_secret: '([\s\S]*?)'/)[1]
+                'access_key': html.match(/access_key: '([\s\S]*?)'/)[1]
             }
         }));
         link = 'hls:' + link['manifest_m3u8']

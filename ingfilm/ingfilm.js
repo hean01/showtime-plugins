@@ -18,7 +18,6 @@
  */
 
 (function(plugin) {
-    var PREFIX = 'ingfilm';
     var BASE_URL = 'http://ingfilm.ru';
     var logo = plugin.path + "logo.png";
 
@@ -36,6 +35,7 @@
     function checkLink(url) {
         return url.substr(0, 4) == 'http' ? url : BASE_URL + (url[1] == '/' ? url : '/' + url);
     }
+
     function unicode2win1251(str) {
         if (str == 0) return 0;
         var result = "";
@@ -72,7 +72,7 @@
         page.loading = false;
     }
 
-    var service = plugin.createService(plugin.getDescriptor().id, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "video", true, logo);
 
     // Search IMDB ID by title
     function getIMDBid(title) {
@@ -83,7 +83,7 @@
     };
 
     // Play links
-    plugin.addURI(PREFIX + ":play:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         switch (unescape(url).substr(0, 9)) {
             case 'http://bd':
@@ -93,7 +93,7 @@
                 var link = showtime.JSONDecode(showtime.httpReq('http://moonwalk.cc/sessions/create_session', {
                     postdata: {
                         'video_token': html.match(/video_token: '([\s\S]*?)'/)[1],
-                        'video_secret': html.match(/video_secret: '([\s\S]*?)'/)[1]
+                        'access_key': html.match(/access_key: '([\s\S]*?)'/)[1]
                     }
                 }));
                 link = 'hls:' + link['manifest_m3u8']
@@ -121,7 +121,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            canonicalUrl: PREFIX + ':play:' + url + ':' + title,
+            canonicalUrl: plugin.getDescriptor().id + ':play:' + url + ':' + title,
             imdbid: getIMDBid(title),
             sources: [{
                 url: link
@@ -145,7 +145,7 @@
         return genre;
     }
 
-    plugin.addURI(PREFIX + ":listSeason:(.*):(.*):(.*)", function(page, link, series, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":listSeason:(.*):(.*):(.*)", function(page, link, series, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
         var video = showtime.httpReq(unescape(link) + '?season=' + series + '&episode=1').toString();
@@ -154,7 +154,7 @@
         var re = /value="([\s\S]*?)">([\s\S]*?)<\/option>/g;
         video = re.exec(videos[1])
         while (video) {
-            page.appendItem(PREFIX + ':play:' + link + escape('?season=' + series + '&episode=' + video[1]) + ':' + escape(unescape(title) + ' - ' + video[2]), 'video', {
+            page.appendItem(plugin.getDescriptor().id + ':play:' + link + escape('?season=' + series + '&episode=' + video[1]) + ':' + escape(unescape(title) + ' - ' + video[2]), 'video', {
                 title: unescape(title) + ' - ' + video[2]
             });
             video = re.exec(videos[1])
@@ -162,7 +162,7 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":indexItem:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":indexItem:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
         var htmlBlock = showtime.httpReq(unescape(url)).toString();
@@ -204,11 +204,11 @@
                 var re = /value="([\s\S]*?)">([\s\S]*?)<\/option>/g;
                 var series = re.exec(block[1])
                 while (series) {
-                    addItem(PREFIX + ':listSeason:' + escape(match[18]) + ':' + series[1], series[2], series[2]);
+                    addItem(plugin.getDescriptor().id + ':listSeason:' + escape(match[18]) + ':' + series[1], series[2], series[2]);
                     series = re.exec(block[1])
                 }
             } else
-                 addItem(PREFIX + ':play:' + escape(match[18]), blueStr(match[7]) + ' ' + match[2], match[2]);
+                 addItem(plugin.getDescriptor().id + ':play:' + escape(match[18]), blueStr(match[7]) + ' ' + match[2], match[2]);
 
         };
 
@@ -220,7 +220,7 @@
             var re = /<a href="([\s\S]*?)">([\s\S]*?)<\/a>/g;
             var gMatch = re.exec(genres);
             while (gMatch) {
-                page.appendItem(PREFIX + ':listGenre:' + escape(gMatch[1]) + ":" + escape(gMatch[2]), 'directory', {
+                page.appendItem(plugin.getDescriptor().id + ':listGenre:' + escape(gMatch[1]) + ":" + escape(gMatch[2]), 'directory', {
                     title: gMatch[2]
                 });
                 gMatch = re.exec(genres)
@@ -233,7 +233,7 @@
         var re = /<a href="([\s\S]*?)">([\s\S]*?)<\/a>/g;
         var gMatch = re.exec(actors);
             while (gMatch) {
-                page.appendItem(PREFIX + ':listGenre:' + escape(gMatch[1]) + ":" + escape(gMatch[2]), 'directory', {
+                page.appendItem(plugin.getDescriptor().id + ':listGenre:' + escape(gMatch[1]) + ":" + escape(gMatch[2]), 'directory', {
                     title: gMatch[2]
                 });
                 gMatch = re.exec(actors)
@@ -248,7 +248,7 @@
             var re = /<div class="rel-news-image">[\S\s]*?<a href="([\S\s]*?)"><img src="([\S\s]*?)" alt="([\S\s]*?)"><\/a>/g;
             var match = re.exec(related[1]);
             while (match) {
-                page.appendItem(PREFIX + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: match[3],
                     icon: checkLink(match[2])
                 });
@@ -277,20 +277,20 @@
         page.loading = false;
     });
 
-    plugin.addURI(PREFIX + ":showGenres:(.*)", function(page, htmlBlock) {
+    plugin.addURI(plugin.getDescriptor().id + ":showGenres:(.*)", function(page, htmlBlock) {
         setPageHeader(page, plugin.getDescriptor().synopsis);
         htmlBlock = unescape(htmlBlock);
 	var re = /<a href="([\s\S]*?)">([\s\S]*?)<\/a>/g;
         var match = re.exec(htmlBlock);
 	while (match) {
-            page.appendItem(PREFIX + ':listGenre:' + escape(match[1]) + ":" + escape(match[2]), 'directory', {
+            page.appendItem(plugin.getDescriptor().id + ':listGenre:' + escape(match[1]) + ":" + escape(match[2]), 'directory', {
                 title: match[2]
             });
 	    match = re.exec(htmlBlock);
 	};
     });
 
-    plugin.addURI(PREFIX + ":listGenre:(.*):(.*)", function(page, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":listGenre:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
         v = showtime.httpReq(checkLink(unescape(url))).toString();
@@ -320,7 +320,7 @@
             var re = /<a href="([\S\s]*?)"><img src="([\S\s]*?)" alt="([\S\s]*?)"><\/a>[\S\s]*?style="display:inline;">([\S\s]*?)<\/div>[\S\s]*?<div class="main-news-janr">([\S\s]*?)<\/div>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>/g;
             var match = re.exec(htmlBlock[1]);
             while (match) {
-                page.appendItem(PREFIX + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText(match[3]),
                     icon: checkLink(match[2]),
                     genre: getGenres(match[5]),
@@ -333,7 +333,7 @@
         }
     }
 
-    plugin.addURI(PREFIX + ":start", function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().synopsis);
         var showAuthCredentials = false;
         while (1) {
@@ -359,7 +359,7 @@
         // genres
         var htmlBlock = v.match(/<div class="janr-block-content">([\S\s]*?)<div style/)
         if (htmlBlock) {
-            page.appendItem(PREFIX + ':showGenres:' + escape(htmlBlock[1]), 'directory', {
+            page.appendItem(plugin.getDescriptor().id + ':showGenres:' + escape(htmlBlock[1]), 'directory', {
                 title: 'Жанры'
             });
         }
@@ -375,7 +375,7 @@
             var re = /<div class="news-new-news-image">[\S\s]*?<a href="([\S\s]*?)"><img src="([\S\s]*?)" alt="([\S\s]*?)"><\/a>[\S\s]*?<div class="news-new-news-content" style="display: none; ">([\S\s]*?)<div/g;
             var match = re.exec(htmlBlock[1]);
             while (match) {
-                page.appendItem(PREFIX + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
+                page.appendItem(plugin.getDescriptor().id + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
                     title: new showtime.RichText(match[3]),
                     icon: checkLink(match[2]),
                     description: showtime.entityDecode(trim(match[4]))
