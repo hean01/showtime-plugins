@@ -1,5 +1,5 @@
 /**
- * brb.to plugin for Showtime
+ * fs.to plugin for Showtime Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -18,7 +18,7 @@
  */
 
 (function(plugin) {
-    var BASE_URL = 'http://brb.to';
+    var BASE_URL = 'http://fs.to';
     var logo = plugin.path + "logo.jpg";
 
     var folderList = [];
@@ -32,7 +32,7 @@
         }
         page.type = "directory";
         page.contents = "items";
-        page.loading = false;
+        page.loading = true;
     }
 
     // remove multiple, leading or trailing spaces and line feeds
@@ -127,13 +127,13 @@
             });
             m = re.exec(screens);
         };
+        page.loading = false;
     });
 
     // Appends the item and lists it's root folder
     plugin.addURI(plugin.getDescriptor().id + ":listRoot:(.*):(.*)", function(page, url, title) {
         title = unescape(title).replace(/(<([^>]+)>)/ig).replace(/undefined/g,'');
         setPageHeader(page, title);
-        page.loading = true;
         var response = showtime.httpReq(BASE_URL + url).toString();
 
         // Scrape icon
@@ -142,7 +142,7 @@
 
         // Scrape description
 	var description = response.match(/<p class="item-decription [^"]+">([\S\s]*?)<\/p>/);
-	if (description) description = coloredStr("\nОписание: ", orange) + description[1]; else description = '';
+	if (description) description = coloredStr("Описание: ", orange) + description[1]; else description = '';
 
         // Scrape duration
         var duration = response.match(/itemprop="duration"[\S\s]*?>([\S\s]*?)<\/span>/);
@@ -225,7 +225,6 @@
         } // Scrape screenshots
 
         var what_else = response.match(/<div class="b-posters">([\S\s]*?)<div class="clear">/);
-        var commented = response.match(/<div class="b-item-material-comments__content">([\S\s]*?)<div class="b-item-material-comments__footer">/);
 
         // list files/folders
         page.loading = true;
@@ -358,30 +357,41 @@
         }
 
         // Show comments
+        var commented = response.match(/linkreview: '\/review\/(.*)'/);
         if (commented) {
-            commented = commented[1];
+            var tryToSearch = true, id = commented[1], counter = 0;;
 
-            page.appendItem("", "separator", {
-                title: commented.match(/<p class="b-item-material-comments__count">([\S\s]*?)<\/p>/)[1].replace('<span itemprop="reviewCount">', '').replace('</span>', '').replace('  ', ' ')
-            });
-            // 1-icon, 2-nick, 3-datetime, 4-positive, 5-negative, 6-description
-            re = /url\('([\S\s]*?)'\);[\S\s]*?<span itemprop="reviewer">([\S\s]*?)<\/span>[\S\s]*?datetime="[\S\s]*?">([\S\s]*?)<\/time>[\S\s]*?<span class="b-item-material-comments__item-answer-value">([\S\s]*?)<\/span>[\S\s]*?<span class="b-item-material-comments__item-answer-value">([\S\s]*?)<\/span>[\S\s]*?itemprop="description">([\S\s]*?)<\/div>/g;
-            var match = re.exec(commented);
-            while (match) {
-                page.appendPassiveItem('video', '', {
-                    title: new showtime.RichText(trim(match[2]) + ' (' + coloredStr(match[4], green) + ' / ' + coloredStr(match[5], red) + ') ' + trim(match[3])),
-                    icon: match[1].replace('/3/', '/1/'),
-                    description: new showtime.RichText(match[6])
-                });
-                match = re.exec(commented);
+            function loader() {
+                if (!tryToSearch) return false;
+                commented = showtime.httpReq(BASE_URL + '/review/list/' + id + '?loadedcount=' + counter).toString();
+                if (!counter)
+                    page.appendItem("", "separator", {
+                        title: commented.match(/<p class="b-item-material-comments__count">([\S\s]*?)<\/p>/)[1].replace('<span itemprop="reviewCount">', '').replace('</span>', '').replace('  ', ' ')
+                    });
+
+                // 1-icon, 2-nick, 3-datetime, 4-positive, 5-negative, 6-description
+                re = /url\('([\S\s]*?)'\);[\S\s]*?<span itemprop="reviewer">([\S\s]*?)<\/span>[\S\s]*?datetime="[\S\s]*?">([\S\s]*?)<\/time>[\S\s]*?<span class="b-item-material-comments__item-answer-value">([\S\s]*?)<\/span>[\S\s]*?<span class="b-item-material-comments__item-answer-value">([\S\s]*?)<\/span>[\S\s]*?itemprop="description">([\S\s]*?)<\/div>/g;
+                var match = re.exec(commented);
+                while (match) {
+                    page.appendPassiveItem('video', '', {
+                        title: new showtime.RichText(trim(match[2]) + ' (' + coloredStr(match[4], green) + ' / ' + coloredStr(match[5], red) + ') ' + trim(match[3])),
+                        icon: match[1].replace('/3/', '/1/'),
+                        description: new showtime.RichText(match[6])
+                    });
+                    match = re.exec(commented);
+                    counter++;
+                }
+                if (commented.match(/data-count="end"/)) return tryToSearch = false;
+                return true;
             }
+            loader();
+            page.paginator = loader;
         }
         page.loading = false;
     });
 
     function processAjax(page, url, folder, title) {
         page.loading = true;
-        //showtime.print(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
         var response = showtime.httpReq(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder).toString();
         response = response.substr(response.indexOf('class="filelist'), response.lastIndexOf('</ul>'));
         response = response.replace(/<ul class="filelist([\s\S]*?)<\/ul>/g, '');
@@ -412,16 +422,20 @@
                     });
                 }
             } else {
-                if (m[1] == "folder" && m[2].indexOf("m-current") == -1) {
+                if (m[1].indexOf("folder") > -1 && m[2].indexOf("m-current") == -1) {
                     // 1-lang/type, 2-folderID
-                    var n = m[2].match(/class="link-([\S\s]*?)title" rel="\{parent_id: (.*)\}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)<\/span>/);
+                    var n = m[2].match(/class="link-([\S\s]*?)title" rel="\{parent_id: (.*)\}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="material-[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="material-[\S\s]*?">([^\<]+)<\/span>/);
                     if (n) {
-                        page.appendItem(plugin.getDescriptor().id + ":listFolder:" + escape(url) + ":" + n[2].replace(/\'/g, '') + ":" + escape(unescape(title)), "directory", {
-                            title: new showtime.RichText(coloredStr(n[1].replace('simple ', '').replace('subtype ', '').replace('m-', ''), orange) + trim(n[3]) + ' (' + n[4] +'<font color="6699CC"> (' + n[5] + ')</font> ' + n[6] + " " + n[7])
+                        var id = n[2];
+                        if (n[2].indexOf(',') > -1)
+                            id = n[2].substr(0, n[2].indexOf(','));
+showtime.print(n[4]);
+                        page.appendItem(plugin.getDescriptor().id + ":listFolder:" + escape(url) + ":" + id.replace(/\'/g, '') + ":" + title, "directory", {
+                            title: new showtime.RichText(coloredStr(n[1].replace('simple ', '').replace('subtype ', '').replace('m-', ''), orange) + trim(n[3]) + ' ' + colorStr(n[4], orange) + ' ' + colorStr(n[5], blue) + ' ' + n[6])
                         });
                     } else {
-                        n = m[2].match(/link-([\S\s]*?)title" rel="\{parent_id: (.*)\}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-size">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)<\/span>/);
-                        page.appendItem(plugin.getDescriptor().id + ":listFolder:" + escape(url) + ":" + n[2].replace(/\'/g, '') + ":" + escape(unescape(title)), "directory", {
+                        n = m[2].match(/link-([\S\s]*?)title" rel="\{parent_id: (.*)\}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-details">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)<\/span>/);
+                        page.appendItem(plugin.getDescriptor().id + ":listFolder:" + escape(url) + ":" + id.replace(/\'/g, '') + ":" + escape(unescape(title)), "directory", {
                             title: new showtime.RichText(coloredStr(n[1].replace('simple ', '').replace('subtype ', '').replace('m-', ''), orange) + trim(n[3]) + '<font color="6699CC"> (' + n[4] + ')</font> ' + n[5] + " " + n[6])
                         });
                     }
@@ -435,6 +449,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
         setPageHeader(page, unescape(title));
         processAjax(page, url, folder, title);
+        page.loadng = false;
     });
 
     // Search IMDB ID by title
@@ -527,7 +542,6 @@
     plugin.addURI(plugin.getDescriptor().id + ":index:(.*):(.*):(.*):(.*)", function(page, url, title, populars, param) {
         if (param == 'noparam') param = ''; // workaround for ps3 regex quirks
         setPageHeader(page, unescape(title));
-        page.loading = true;
         try {
              var doc = showtime.httpReq(url.substr(0,4) == 'http' ? unescape(url) + '?view=detailed'+param : BASE_URL + unescape(url) + '?view=detailed'+param).toString();
         } catch (err) {}
@@ -601,10 +615,12 @@
             });
             match = re.exec(comments);
         }
+        page.loading = false;
     });
 
     var response;
     function indexer(page) {
+        page.loading = true;
         // 1-link, 2-icon, 3-title, 4-qualities(for films),
         // 5-votes+, 6-votes-, 7-year/country, 8-genre/actors, 9-description
         var re = /<a class="b-poster-detail__link" href="([\S\s]*?)">[\S\s]*?<img src="([\S\s]*?)" alt='([\S\s]*?)' width=([\S\s]*?)<span class="b-poster-detail__vote-positive">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__vote-negative">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__field">([\S\s]*?)<\/span>[\S\s]*?<span class="b-poster-detail__description">([\S\s]*?)<\/span>/g;
@@ -633,6 +649,7 @@
             });
             match = re.exec(response);
         }
+        page.loading = false;
     }
 
     function processScroller(page, url) {
@@ -696,7 +713,6 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().synopsis);
-        page.loading = true;
         response = showtime.httpReq(BASE_URL).toString();
 
         // Building menu
