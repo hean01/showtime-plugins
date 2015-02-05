@@ -38,7 +38,7 @@
         }
         page.type = "directory";
         page.contents = "items";
-        page.loading = false;
+        page.loading = true;
     }
 
     var genres = [
@@ -121,6 +121,7 @@
 
         function loader() {
             if (!offset) return false;
+            page.loading = true;
             var c = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'v2/list_movies.json', {
                 args: [{
                     limit: 40,
@@ -130,44 +131,20 @@
                     order_by: service.order
                 }, query]
             }));
+            page.loading = false;
             if (offset == 1 && page.metadata)
                page.metadata.title += ' (' + c.data.movie_count + ')';
 
             for (var i in c.data.movies) {
-                var mov = c.data.movies[i];
-                var item = page.appendItem(PREFIX + ':movie:' + mov.id, "video", {
-                    title: new showtime.RichText(mov.title + ' ' + coloredStr(concatEntity(mov.torrents, 'quality'), orange)),
-                    icon: mov.medium_cover_image,
-                    year: +mov.year,
-                    rating: mov.rating * 10,
-                    duration: mov.runtime,
-                    genre: concat(mov.genres),
-                    description: new showtime.RichText(coloredStr('Seeds: ', orange) + coloredStr(concatEntity(mov.torrents, 'seeds'), green) +
-                        coloredStr('\nPeers: ', orange) + coloredStr(concatEntity(mov.torrents, 'peers'), red) + ' ' +
-                        coloredStr('\nUploaded: ', orange) + concatEntity(mov.torrents, 'date_uploaded') +
-                        coloredStr('\nSize: ', orange) + concatEntity(mov.torrents, 'size') +
-                        coloredStr('\nMPA rating: ', orange) + mov.mpa_rating +
-                        coloredStr('\nLanguage: ', orange) + mov.language +
-                        coloredStr('\nState: ', orange) + mov.state
-                    )
-
-                });
-                page.entries++;
+                addMovieItem(page, c.data.movies[i]);
                 if (count && page.entries > count) return offset = false;
-
-                if (service.enableMetadata) {
-                   item.bindVideoMetadata({
-                       imdb: mov.imdb_code
-                   });
-                }
             }
             offset++;
             return c.data.movies && c.data.movies.length > 0;
         }
-        page.loading = true;
         loader();
-        page.loading = false;
         page.paginator = loader;
+        page.loading = false;
     }
 
     plugin.addURI(PREFIX + ":genre:(.*)", function(page, genre) {
@@ -175,6 +152,7 @@
         browseItems(page, {
             genre: genre
         });
+        page.loading = false;
     });
 
     plugin.addURI(PREFIX + ":genres", function(page, genre) {
@@ -184,6 +162,7 @@
                title: genres[i]
             });
         }
+        page.loading = false;
     });
 
     plugin.addURI(PREFIX + ":newest", function(page) {
@@ -191,6 +170,7 @@
         browseItems(page, {
             sort: 'peers'
         });
+        page.loading = false;
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
@@ -215,6 +195,7 @@
         browseItems(page, {
             sort: 'peers'
         });
+        page.loading = false;
     });
 
     plugin.addURI(PREFIX + ":list:(.*)", function(page, query) {
@@ -222,6 +203,7 @@
         browseItems(page, {
             keywords: query
         });
+        page.loading = false;
     });
 
     // Search IMDB ID by title
@@ -232,10 +214,37 @@
         return imdbid;
     };
 
+    function addMovieItem(page, mov) {
+        var item = page.appendItem(PREFIX + ':movie:' + mov.id, "video", {
+            title: new showtime.RichText(mov.title + ' ' + coloredStr(concatEntity(mov.torrents, 'quality'), orange)),
+            icon: mov.medium_cover_image,
+            year: +mov.year,
+            rating: mov.rating * 10,
+            duration: mov.runtime,
+            genre: concat(mov.genres),
+            description: new showtime.RichText(coloredStr('Seeds: ', orange) + coloredStr(concatEntity(mov.torrents, 'seeds'), green) +
+                coloredStr('\nPeers: ', orange) + coloredStr(concatEntity(mov.torrents, 'peers'), red) + ' ' +
+                coloredStr('\nUploaded: ', orange) + concatEntity(mov.torrents, 'date_uploaded') +
+                coloredStr('\nSize: ', orange) + concatEntity(mov.torrents, 'size') +
+                coloredStr('\nMPA rating: ', orange) + mov.mpa_rating +
+                coloredStr('\nLanguage: ', orange) + mov.language +
+                coloredStr('\nState: ', orange) + mov.state
+            )
+        });
+        page.entries++;
+        if (service.enableMetadata) {
+            item.bindVideoMetadata({
+                imdb: mov.imdb_code
+            });
+        }
+    }
+
     plugin.addURI(PREFIX + ":movie:(.*)", function(page, id) {
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'v2/movie_details.json?movie_id=' + id + '&with_images=true&with_cast=true'));
         setPageHeader(page, json.data.title);
+        page.metadata.background = json.data.images.background_image;
+        page.metadata.backgroundAlpha = 0.3;
         for (var i in json.data.torrents) {
             var link = json.data.torrents[i].url.match(/(\/torrent\/download(.*))/);
             if (link)
@@ -245,7 +254,7 @@
 
             var vparams = "videoparams:" + showtime.JSONEncode({
                 title: json.data.title,
-                canonicalUrl: PREFIX + ":movie:" + id,
+                canonicalUrl: PREFIX + ':movie:' + id + ':' + json.data.torrents[i].quality,
                 imdbid: json.data.imdb_code, //getIMDBid(json.MovieTitle),
                 no_fs_scan: true,
                 sources: [{
@@ -253,9 +262,8 @@
                 }]
 	    });
 
-            page.background = json.data.images.background_image;
             page.appendItem(vparams, "video", {
-                 title: new showtime.RichText(json.data.title + ' ' + coloredStr(json.data.torrents[i].quality, orange)),
+                 title: new showtime.RichText(coloredStr(json.data.torrents[i].quality, orange) + ' ' + json.data.title),
                  year: +json.data.year,
                  duration: json.data.runtime * 60,
                  rating: +json.data.rating * 10,
@@ -296,7 +304,6 @@
             page.appendItem(PREFIX + ':list:' + escape(json.data.actors[i].name), "video", {
                 title: json.data.actors[i].name + ' as ' + json.data.actors[i].character_name,
                 icon: json.data.actors[i].medium_image
-
             });
         }
 
@@ -310,11 +317,22 @@
             });
         }
 
-        page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'v2/movie_comments.json?movie_id=' + id));
-        page.loading = false;
-
+        // Suggestions
+        json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'v2/movie_suggestions.json?movie_id=' + id));
         var first = true;
+        for (var i in json.data.movie_suggestions) {
+            if (first) {
+                page.appendItem("", "separator", {
+	            title: 'Suggestions:'
+           	});
+                first = false;
+            };
+            addMovieItem(page, json.data.movie_suggestions[i]);
+        }
+
+        // Comments
+        json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'v2/movie_comments.json?movie_id=' + id));
+        first = true;
         for (var i in json.data.comments) {
             if (first) {
                 page.appendItem("", "separator", {
@@ -329,6 +347,7 @@
                    coloredStr('\nLike Count: ', orange) + json.data.comments[i].like_count)
             });
         }
+        page.loading = false;
     });
 
     plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {

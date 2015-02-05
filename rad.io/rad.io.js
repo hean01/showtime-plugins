@@ -1,5 +1,5 @@
 /*
- *  rad.io
+ *  radio.net plugin for Showtime Media Center
  *
  *  Copyright (C) 2012-2015 Henrik Andersson, lprot
  *
@@ -17,10 +17,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 (function(plugin) {
-    var BASE_URL = "http://www.rad.io/info/";
-    var logo = plugin.path + "rad.io.png";
+    var BASE_URL = "https://api.radio.net/info/v2";
+    var logo = plugin.path + "logo.png";
 
     function setPageHeader(page, title) {
         if (page.metadata) {
@@ -44,7 +43,7 @@
         page.loading = false;
     }
 
-    var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "music", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "music", true, logo);
 
     var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
     var store = plugin.createStore('favorites', true)
@@ -195,6 +194,7 @@
     });
 
     function getJSON(url) {
+showtime.print(BASE_URL + url);
         return showtime.JSONDecode(showtime.httpReq(BASE_URL + url));
     }
 

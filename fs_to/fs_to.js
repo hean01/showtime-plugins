@@ -429,7 +429,6 @@
                         var id = n[2];
                         if (n[2].indexOf(',') > -1)
                             id = n[2].substr(0, n[2].indexOf(','));
-showtime.print(n[4]);
                         page.appendItem(plugin.getDescriptor().id + ":listFolder:" + escape(url) + ":" + id.replace(/\'/g, '') + ":" + title, "directory", {
                             title: new showtime.RichText(coloredStr(n[1].replace('simple ', '').replace('subtype ', '').replace('m-', ''), orange) + trim(n[3]) + ' ' + colorStr(n[4], orange) + ' ' + colorStr(n[5], blue) + ' ' + n[6])
                         });

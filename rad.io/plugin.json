@@ -1,14 +1,14 @@
 {
-	"description": "<p>rad.io<p>Listen to Radio, Webradio and Internet Radio online: rad.io - simply listen.</p><p>For more information, visit <a href=\"http://www.rad.io\">http://www.rad.io</a>",
+	"description": "<p>radio.net<p>Listen to Radio, Webradio and Internet Radio online: rad.io - simply listen.</p><p>For more information, visit <a href=\"http://www.rad.io\">http://www.rad.io</a>",
         "author": "Henrik Andersson, lprot",
 	"homepage": "http://github.com/lprot/showtime-plugins",
-	"title": "rad.io",
+	"title": "radio.net",
 	"synopsis": "Listen to Radio, Webradio and Internet Radio online: rad.io - simply listen.",
-	"version": "0.4",
+	"version": "0.4.1",
 	"file": "rad.io.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
 	"id": "rad.io",
-	"icon": "rad.io.png",
+	"icon": "logo.png",
 	"category": "music"
 }
