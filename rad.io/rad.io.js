@@ -18,7 +18,7 @@
  */
 
 (function(plugin) {
-    var BASE_URL = "https://api.radio.net/info/v2";
+    var BASE_URL = "http://rad.io/info/";
     var logo = plugin.path + "logo.png";
 
     function setPageHeader(page, title) {
@@ -194,8 +194,11 @@
     });
 
     function getJSON(url) {
-showtime.print(BASE_URL + url);
-        return showtime.JSONDecode(showtime.httpReq(BASE_URL + url));
+        return showtime.JSONDecode(showtime.httpReq(BASE_URL + url, {
+            headers: {
+                'User-Agent': 'radio.de 1.9.1 rv:37 (iPhone; iPhone OS 5.0; de_DE)'
+            }
+        }));
     }
 
     // Handle hardcoded lists
