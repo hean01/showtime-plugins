@@ -1,5 +1,5 @@
 /*
- *  Digitally Imported
+ *  Digitally Imported plugin for Showtime Media Center
  *
  *  Copyright (C) 2012-2015 Henrik Andersson, lprot
  *
@@ -33,15 +33,16 @@
 	page.metadata.logo = logo;
 	page.metadata.title = pInfo.title;
         page.loading = true;
-	var doc = showtime.httpReq(BASE_URL).toString().match(/\.Channels = ([\S\s]*?);/)[1];
+	var doc = showtime.httpReq(BASE_URL + '/channels').toString().match(/start\(([\S\s]*?)\)/)[1];
         page.loading = false;
         var json = showtime.JSONDecode(doc);
-        for (var i in json) {
-            var icon = json[i].images.default.match(/(^[^\{]*)/)[1];
-	    page.appendItem('icecast:http://listen.di.fm/public3/'+ json[i].key + '.pls', 'station', {
-		station: json[i].name,
-		title: json[i].name,
-		description: json[i].description_short,
+        for (var i in json.channels) {
+            var entity = json.channels[i];
+            var icon = entity.images.default.match(/(^[^\{]*)/)[1];
+	    page.appendItem('icecast:http://listen.di.fm/public3/'+ entity.key + '.pls', 'station', {
+		station: entity.name,
+		title: entity.name,
+		description: entity.description_short,
 		icon: icon.substr(0, 4) == 'http' ? icon : 'http:' + icon + '?size=150x150',
 		album_art: icon.substr(0, 4) == 'http' ? icon : 'http:' + icon + '?size=150x150',
 		album: ''
