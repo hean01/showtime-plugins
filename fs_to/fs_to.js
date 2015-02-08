@@ -230,7 +230,10 @@
         page.loading = true;
         try {
             processAjax(page, url, 0, title);
-        } catch(err) {}
+        } catch(err) {
+            showtime.trace(err);
+        }
+
         if (iteminfo) {
             // Show year
             var year = iteminfo.match(/Год:[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/);
@@ -365,8 +368,11 @@
                 if (!tryToSearch) return false;
                 commented = showtime.httpReq(BASE_URL + '/review/list/' + id + '?loadedcount=' + counter).toString();
                 if (!counter)
+                    var count = commented.match(/<p class="b-item-material-comments__count">([\S\s]*?)<\/p>/);
+                    if (!count)
+                        return tryToSearch = false;
                     page.appendItem("", "separator", {
-                        title: commented.match(/<p class="b-item-material-comments__count">([\S\s]*?)<\/p>/)[1].replace('<span itemprop="reviewCount">', '').replace('</span>', '').replace('  ', ' ')
+                        title: count[1].replace('<span itemprop="reviewCount">', '').replace('</span>', '').replace('  ', ' ')
                     });
 
                 // 1-icon, 2-nick, 3-datetime, 4-positive, 5-negative, 6-description
@@ -390,19 +396,54 @@
         page.loading = false;
     });
 
-    function processAjax(page, url, folder, title) {
+    function getId(id) {
+        if (id.indexOf(',') > -1)
+            id = id.substr(0, id.indexOf(','));
+        return id.replace(/\'/g, '');
+    }
+
+    function getQualities(blob) {
+        // 1-filter value, 2-visual name
+        var re = /name="([\s\S]*?)">([\s\S]*?)<\/a>/g;
+        var match = re.exec(blob);
+        var first = true;
+        var out = [];
+        while (match) {
+            var item = {
+                filter: match[1],
+                name: match[2]
+            };
+            out.push(item)
+            match = re.exec(blob);
+        }
+        if (!out.length)
+            out.push({
+                filter: '0',
+                name: ''
+            });
+        return out;
+    }
+
+    function processAjax(page, url, folder, title, quality) {
         page.loading = true;
+        //showtime.print(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
         var response = showtime.httpReq(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder).toString();
         response = response.substr(response.indexOf('class="filelist'), response.lastIndexOf('</ul>'));
         response = response.replace(/<ul class="filelist([\s\S]*?)<\/ul>/g, '');
+        // 1-type(folder/file), 2-body
         var re = /<li class="([^"]+)([\S\s]*?)(<\/li>|"  >)/g;
         var m = re.exec(response);
         folderList = [];
         var pos = 0;
         while (m) {
             if (m[1].indexOf("file") > -1) {
+                if (quality != '0'  && m[1].match(/b-file-new m-file-new_type_video (.*)\s/)[1] != quality) {
+                    m = re.exec(response);
+                    continue;
+                }
                 var flv_link = "";
-                if (m[2].match(/a href="([^"]+)/)) flv_link = m[2].match(/a href="([^"]+)/)[1];
+                if (m[2].match(/a href="([^"]+)/))
+                    flv_link = m[2].match(/a href="([^"]+)/)[1];
                 var name = m[2].match(/span class="[\S\s]*?filename-text".?>([\S\s]*?)<\/span>/)[1];
                 var size = m[2].match(/span class="[\S\s]*?material-size">([\S\s]*?)<\/span>/)[1];
                 var direct_link = m[2].match(/" href="([^"]+)/)[1];
@@ -413,29 +454,42 @@
                         directlink: direct_link
                     });
                     page.appendItem(plugin.getDescriptor().id + ":play:" + escape(name) + ':' + pos, 'video', {
-                        title: new showtime.RichText(name + '<font color="6699CC"> (' + size + ')</font>')
+                        title: new showtime.RichText(name + ' ' + colorStr(size, blue))
                     });
                     pos++;
                 } else {
                     page.appendItem(BASE_URL + direct_link, getType(direct_link.split('.').pop()), {
-                        title: new showtime.RichText(name + '<font color="6699CC"> (' + size + ')</font>')
+                        title: new showtime.RichText(name + ' ' + colorStr(size, blue))
                     });
                 }
             } else {
                 if (m[1].indexOf("folder") > -1 && m[2].indexOf("m-current") == -1) {
-                    // 1-lang/type, 2-folderID
-                    var n = m[2].match(/class="link-([\S\s]*?)title" rel="\{parent_id: (.*)\}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="material-[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="material-[\S\s]*?">([^\<]+)<\/span>/);
+                    // 1-folder mark, 2-lang/type, 3-folderID, 4-title, 5-qualities, 6-details, 7-size, 8-date
+                    var n = m[2].match(/class="b-folder-mark([\S\s]*?)"[\S\s]*?class="link-([\S\s]*?)title" rel="\{parent_id: (.*)\}"[\S\s]*?>([\S\s]*?)<\/a>([\S\s]*?)<\/div>[\S\s]*?<span class="material-[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="material-[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="material-[\S\s]*?">([^\<]+)<\/span>/);
                     if (n) {
-                        var id = n[2];
-                        if (n[2].indexOf(',') > -1)
-                            id = n[2].substr(0, n[2].indexOf(','));
-                        page.appendItem(plugin.getDescriptor().id + ":listFolder:" + escape(url) + ":" + id.replace(/\'/g, '') + ":" + title, "directory", {
-                            title: new showtime.RichText(coloredStr(n[1].replace('simple ', '').replace('subtype ', '').replace('m-', ''), orange) + trim(n[3]) + ' ' + colorStr(n[4], orange) + ' ' + colorStr(n[5], blue) + ' ' + n[6])
-                        });
+                        var mark = n[1].replace(' m-', '');
+                        var qualities = getQualities(n[5]);
+                        for (var i in qualities) {
+                            page.appendItem(plugin.getDescriptor().id + ":listFolder:" + escape(url) + ":" + getId(n[3]) + ":" + escape(unescape(title)) + ':' + qualities[i].filter, "directory", {
+                                title: new showtime.RichText((mark ? coloredStr(mark, orange) + ' ' : '') +
+                                    coloredStr(n[2].replace('simple ', '').replace('subtype ', '').replace('m-', ''), orange) +
+                                    trim(n[4]) + ' ' +
+                                    (qualities[i].name ? coloredStr(qualities[i].name, blue) + ' ' : '') +
+                                    colorStr(n[6], orange) + ' ' +
+                                    colorStr(n[7], blue) + ' ' +
+                                    n[8])
+                            });
+                        }
                     } else {
-                        n = m[2].match(/link-([\S\s]*?)title" rel="\{parent_id: (.*)\}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-details">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)<\/span>/);
-                        page.appendItem(plugin.getDescriptor().id + ":listFolder:" + escape(url) + ":" + id.replace(/\'/g, '') + ":" + escape(unescape(title)), "directory", {
-                            title: new showtime.RichText(coloredStr(n[1].replace('simple ', '').replace('subtype ', '').replace('m-', ''), orange) + trim(n[3]) + '<font color="6699CC"> (' + n[4] + ')</font> ' + n[5] + " " + n[6])
+                        // 1-lang/type, 2-folderID, 3-title, 4-details, 5-size, 6-date
+                        n = m[2].replace('<span class="material-size"></span>', '').match(/link-([\S\s]*?)title" rel="\{parent_id: (.*)\}"[\S\s]*?>([\S\s]*?)<\/a>[\S\s]*?<span class="material-[\S\s]*?">([\S\s]*?)<\/span>[\S\s]*?<span class="material-details">([^\<]+)[\S\s]*?<span class="material-date">([^\<]+)<\/span>/);
+                        var lang = n[1].replace('simple ', '').replace('subtype ', '').replace('m-', '');
+                        page.appendItem(plugin.getDescriptor().id + ":listFolder:" + escape(url) + ":" + getId(n[2]) + ":" + escape(unescape(title)) + ':0', "directory", {
+                            title: new showtime.RichText((lang ? coloredStr(lang, orange) + ' ' : '') +
+                                trim(n[3]) + ' ' +
+                                colorStr(n[4], orange) + ' ' +
+                                colorStr(n[5], blue) + ' ' +
+                                n[6])
                         });
                     }
                 }
@@ -445,10 +499,9 @@
         page.loading = false;
     }
 
-    plugin.addURI(plugin.getDescriptor().id + ":listFolder:(.*):(.*):(.*)", function(page, url, folder, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":listFolder:(.*):(.*):(.*):(.*)", function(page, url, folder, title, quality) {
         setPageHeader(page, unescape(title));
-        processAjax(page, url, folder, title);
-        page.loadng = false;
+        processAjax(page, url, folder, title, quality);
     });
 
     // Search IMDB ID by title

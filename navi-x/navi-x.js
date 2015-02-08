@@ -1,7 +1,7 @@
 /**
- * Navi-X plugin for showtime by facanferff (Fábio Ferreira / facanferff.showtime@hotmail.com)
+ * Navi-X plugin for Showtime Media Center
  *
- *  Copyright (C) 2012-2014 facanferff, lprot
+ *  Copyright (C) 2012-2015 facanferff, lprot
  * 
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -3688,12 +3688,11 @@
     }
 
     function showPlaylist(page, filename) {
-showtime.print(filename.list);
         var list = showtime.JSONDecode(filename.list);
         var link;
         for (var i in list) {
+             var type = '';
              switch (list[i].type) {
-                 var type = '';
                  case 'playlist':
                      link = ':showPlaylist:' + list[i].URL;
                      break;
@@ -3707,7 +3706,6 @@ showtime.print(filename.list);
                      break;
              }
              page.appendItem(getDescriptor().id + link, 'video', {
-<font color=\"5AD1B5\">[Playlist]</font>
                  title: new showtime.RichText(type + list[i].name),
                  icon: list[i].thumb,
                  timestamp: list[i].date ? getTimestamp(list[i].date) : null,
@@ -3763,19 +3761,8 @@ showtime.print(filename.list);
                 result = imdb.getList(this.path);
             else if (type == 'search')
                 result = this.parseSearch();
-            /*else if (type == 'opml')
-                result = playlist.load_opml_10(URL, mediaitem)*/
             else //assume playlist file
                 result = this.parsePLX();
-
-            /*if (result == -1) { //error
-                result.message = "This playlist requires a newer Navi-X version";
-                return result;
-            }
-            else if (result == -2) { //error
-                result.message = "Cannot open file.";
-                return result;
-            }*/
 
             if (result.error) { //failure
                 result.message = 'NAVI-X: Failed to parse playlist';
@@ -3824,9 +3811,7 @@ showtime.print(filename.list);
             return 0; //success
         }
 
-
-        this.showPageRender = function(page, current_page, start_pos, showErrors)
-        {
+        this.showPageRender = function(page, current_page, start_pos, showErrors) {
             if (showErrors == undefined) showErrors = true;
             this.current_page = current_page;
 
@@ -3843,10 +3828,6 @@ showtime.print(filename.list);
                 this.name = playlist_details[2];
             }
 
-            /*page.appendItem(PREFIX + ':playlist:screen', "directory", {
-                title: new showtime.RichText('Playlist Features')
-            });*/
-
             if (!this.list) {
                 if (showErrors)
                     page.error("Invalid result.");
@@ -3859,8 +3840,7 @@ showtime.print(filename.list);
                 return;
             }
 
-            for (var i = current_page*page_size; i < this.list.length; i++)
-            {
+            for (var i = current_page*page_size; i < this.list.length; i++) {
                 var m = this.list[i];
                 if (parseInt(m.version) <= parseInt(plxVersion)) {
                     if (server && !server.authenticated() && m.URL === 'My Playlists' || m.URL === 'http://www.navixtreme.com/playlist/mine.plx')
@@ -4051,6 +4031,7 @@ showtime.print(filename.list);
      }
 
     plugin.addURI(PREFIX + ":start", function(page) {
+        page.loading = true;
         if (service.enableLogin) {
             try {
                 // Try to parse some possible previous authentications and check if adult content value changed
@@ -4072,11 +4053,8 @@ showtime.print(filename.list);
 
         // Show Home Items
         showPlaylist(page, store.homeitems);
-
-//showtime.print(showtime.JSONEncode(playlist));
         playlist = new Playlist(page, home_URL, new MediaItem());
         var result = playlist.loadPlaylist(home_URL);
-
         page.loading = false;
     });
 })(this);
