@@ -1168,16 +1168,14 @@
 
     function playVideo(page, title, id, video_url) {
         page.type = "video";
-        var url = unescape(unescape(video_url));
         var videoParams = {
-            title: showtime.entityDecode(unescape(unescape(decodeURIComponent(title)))),
+            title: unescape(title),
             canonicalUrl: plugin.getDescriptor().id + ':video:' + id,
             sources: [{
-                url: url
+                url: unescape(video_url)
             }],
             subtitles: []
         }
-
         var subs = unescape(id);
         var re = /\:(.*)\:(.*)/g;
         var match = re.exec(subs);
@@ -1189,7 +1187,6 @@
             });
             match = re.exec(subs);
         }
-
         page.source = "videoparams:" + showtime.JSONEncode(videoParams);
     }
 
@@ -1224,10 +1221,9 @@
                 return;
             }
 
-            var title = video_url[0].title;
+            var title = showtime.entityDecode(unescape(video_url[0].title));
             video_url = video_url[0].video_url;
             page.redirect(plugin.getDescriptor().id + ":video:stream:" + encodeURIComponent(title) + ":" + id + ":" + video_url);
-
         } catch (err) {
             page.loading = false;
             page.error(err);
@@ -1256,10 +1252,7 @@
                 page.error("No video links found. Try to adjust the minimum/maximum resolutions or Video Format in Settings.");
                 return;
             }
-
-            title = encodeURIComponent(video_url[0].title);
-            video_url = video_url[0].video_url;
-            playVideo(page, title, id, video_url);
+            playVideo(page, unescape(video_url[0].title), id, unescape(video_url[0].video_url));
         } catch (err) {
             page.loading = false;
             page.error(err);
@@ -1324,7 +1317,7 @@
         if (typeof(videos_list) == "string") {
             page.error(videos_list);
         } else {
-            var title = videos_list[0].title;
+            var title = showtime.entityDecode(unescape(videos_list[0].title));
             page.metadata.title = showtime.entityDecode(unescape(title));
 
             var quality_icon = {
@@ -1338,7 +1331,7 @@
             var videos = [];
             for (var i in videos_list) {
                 var item = videos_list[i];
-                page.appendAction("navopen", plugin.getDescriptor().id + ':video:stream:' + escape(title) + ':' + escape(id) + ':' + item.video_url, true, {
+                page.appendAction("navopen", plugin.getDescriptor().id + ':video:stream:' + encodeURIComponent(title) + ':' + escape(id) + ':' + item.video_url, true, {
                     title: item.quality
                 });
 
@@ -1347,7 +1340,7 @@
                 videos.push({
                     title: item.quality,
                     image: image,
-                    url: plugin.getDescriptor().id + ':video:stream:' + escape(title) + ':' + escape(id) + ':' + item.video_url
+                    url: plugin.getDescriptor().id + ':video:stream:' + encodeURIComponent(title) + ':' + escape(id) + ':' + item.video_url
                 });
             }
 
@@ -1489,7 +1482,7 @@
 
     // We need to use this function so we can pass the correct title of video
     plugin.addURI(plugin.getDescriptor().id + ":video:stream:(.*):(.*):(.*)", function(page, title, id, video_url) {
-        playVideo(page, title, id, video_url);
+        playVideo(page, decodeURIComponent(title), id, unescape(video_url));
     });
 
     function getTime(date) {
