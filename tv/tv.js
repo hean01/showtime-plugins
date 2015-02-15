@@ -156,6 +156,8 @@
         var resp = showtime.httpReq(unescape(url)).toString();
         page.loading = false;
         var match = resp.match(/file=([\S\s]*?)"/);
+        if (!match)
+           match = resp.match(/value="src=([\S\s]*?)&/)
         if (match) {
             page.type = "video";
             page.source = "videoparams:" + showtime.JSONEncode({
