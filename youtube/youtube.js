@@ -44,7 +44,8 @@
     var blue = '6699CC',
         orange = 'FFA500',
         red = 'EE0000',
-        green = '008B45';
+        green = '008B45',
+        malibu = '66CCFF';
 
     function coloredStr(str, color) {
         return '<font color="' + color + '">' + str + '</font>';
@@ -1997,10 +1998,11 @@
                     metadata.duration = metadata.runtime = durationToString(videoDetails[index].contentDetails.duration);
                     metadata.views = videoDetails[index].statistics.viewCount;
                     metadata.favorites = videoDetails[index].statistics.favoriteCount;
-                    metadata.likes = parseInt(videoDetails[index].statistics.likeCount);
-                    metadata.dislikes = parseInt(videoDetails[index].statistics.dislikeCount);
-                    metadata.likesPercentage = Math.round((metadata.likes /
-                            (metadata.likes + metadata.dislikes)) * 100);
+                    metadata.likes = +videoDetails[index].statistics.likeCount;
+                    metadata.dislikes = +videoDetails[index].statistics.dislikeCount;
+                    metadata.comments = +videoDetails[index].statistics.commentCount;
+                    metadata.likesPercentage = metadata.likes + metadata.dislikes;
+                    metadata.likesPercentage ? metadata.likesPercentage = Math.round(metadata.likes / metadata.likesPercentage  * 100) : 0;
                     metadata.likesPercentage_str = metadata.likesPercentage + '%';
                     metadata.rating = metadata.likesPercentage;
                 }
@@ -2016,10 +2018,11 @@
                     metadata.views = entry.statistics.viewCount;
                     metadata.favorites = entry.statistics.favoriteCount;
                     if (entry.statistics.likeCount) {
-                        metadata.likes = parseInt(entry.statistics.likeCount);
-                        metadata.dislikes = parseInt(entry.statistics.dislikeCount);
-                        metadata.likesPercentage = Math.round((metadata.likes /
-                            (metadata.likes + metadata.dislikes)) * 100);
+                        metadata.likes = +entry.statistics.likeCount;
+                        metadata.dislikes = +entry.statistics.dislikeCount;
+                        metadata.comments = +entry.statistics.commentCount;
+                        metadata.likesPercentage = metadata.likes + metadata.dislikes;
+                        metadata.likesPercentage ? metadata.likesPercentage = Math.round(metadata.likes / metadata.likesPercentage  * 100) : 0;
                         metadata.likesPercentage_str = metadata.likesPercentage + '%';
                         metadata.rating = metadata.likesPercentage;
                     }
@@ -2037,18 +2040,12 @@
 
                 metadata.title = new showtime.RichText(title);
 
-                var subtitle1 = '<font color="66CCFF">';
-                if (metadata.views)
-                    subtitle1 += 'Views: ' + metadata.views;
-                if (metadata.views && metadata.favorites)
-                    subtitle1 += ' | ';
-                if (metadata.favorites)
-                    subtitle1 += 'Favorites: ' + metadata.favorites;
-                if (metadata.likesPercentage_str && (metadata.views || metadata.favorites))
-                    subtitle1 += ' | ';
-                if (metadata.likesPercentage_str)
-                    subtitle1 += 'Likes: ' + metadata.likesPercentage_str;
-                subtitle1 += '</font>';
+                var subtitle1 = '';
+                subtitle1 += metadata.views ? coloredStr('Views: ', malibu) + metadata.views : '';
+                subtitle1 += metadata.favorites ? coloredStr(' Favorites: ', malibu) + metadata.favorites : '';
+                subtitle1 += metadata.likes ? coloredStr(' Likes: ', malibu) + metadata.likes : '';
+                subtitle1 += metadata.dislikes ? coloredStr(' Dislikes: ', malibu) + metadata.dislikes : '';
+                subtitle1 += metadata.comments ? coloredStr(' Comments: ', malibu) + metadata.comments : '';
 
                 if (entry.snippet.publishedAt) {
                     var dateInfo = '';
