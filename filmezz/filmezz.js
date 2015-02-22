@@ -1,5 +1,5 @@
 /**
- * filmezz.eu plugin for Showtime
+ * filmezz.eu plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -115,17 +115,31 @@
             noFollow: true
         });
         switch (unescape(hoster)) {
+            //case 'Videoget.eu':
+            //    url = showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/btn-free' href='([\S\s]*?)'/);
+            //    url = showtime.httpReq(url[1]).toString();
+            //    url = url.match(/<td class="first share-file-table-header">[\S\s]*?<a href="([\S\s]*?)"/)[1];
+            //    break;
+            case 'Flashx.tv':
+                url = showtime.httpReq(doc.toString().match(/<IFRAME SRC="([\S\s]*?)"/)[1]).toString();
+                url = url.match(/,\{file: "([\S\s]*?)"/)[1];
+                break;
             case 'Streamin.To':
                 url = showtime.httpReq(doc.toString().match(/<IFRAME SRC="([\S\s]*?)"/)[1]).toString();
                 url = url.match(/streamer: "([\S\s]*?)"/)[1] + '/mp4:' + url.match(/file: "([\S\s]*?)"/)[1];
                 break;
             case 'Letwatch.us':
                 url = showtime.httpReq(doc.toString().match(/<IFRAME SRC="([\S\s]*?)"/)[1]).toString();
-                url = url.match(/<script type='text\/javascript'>eval\(function([\S\s]*?)\}\(([\S\s]*?)<\/script>/);
-                var decryptedUrl;
-                eval('try { function decryptParams' + url[1] +
-                    '}; decryptedUrl = (decryptParams(' + url[2] + '} catch (err) {}');
-                url = decryptedUrl.match(/file:"([\S\s]*?)"/)[1];
+                var tmp = url.match(/file:"([\S\s]*?)"/);
+                if (tmp)
+                    url = tmp[1]
+                else {
+                    url = url.match(/<script type='text\/javascript'>eval\(function([\S\s]*?)\}\(([\S\s]*?)<\/script>/);
+                    var decryptedUrl;
+                    eval('try { function decryptParams' + url[1] +
+                        '}; decryptedUrl = (decryptParams(' + url[2] + '} catch (err) {}');
+                    url = decryptedUrl.match(/file:"([\S\s]*?)"/)[1];
+                }
                 break;
             case 'Vidzi.tv':
                 url = 'hls:' + showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/file: "([\S\s]*?)"/)[1];
@@ -242,7 +256,7 @@
                 break;
             default:
                 page.loading = false;
-                page.error("Can't get the link. Sorry :(");
+                page.error("Can't get the link. For '" + unescape(hoster) + "'. Sorry :(");
                 return;
         }
         page.loading = false;
