@@ -1,5 +1,5 @@
 /**
- * fs.to plugin for Showtime Media Center
+ * fs.to plugin for Movian
  *
  *  Copyright (C) 2015 lprot
  *
@@ -246,7 +246,7 @@
                 });
             } else { // handle as serials
                 year = iteminfo.match(/показа:[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>[\S\s]*?<span>([\S\s]*?)<\/span>/);
-                if (year) {
+                if (year && !year[2].match(/span/)) {
                     page.appendItem("", "separator", {
                         title: 'Год'
                     });
@@ -841,39 +841,49 @@
 	page.entries = 0;
 	var fromPage = 0, tryToSearch = true;
 	
-	// 1-link,2-image,3-title,4-genres,5-positive rating,6-negative rating, 7-description
-	var re = /<a href="([\S\s]{0,200}?)"[\S\s]{0,200}?<img src="([\S\s]*?)"[\S\s]*?results-item-title">([\S\s]*?)<\/span>[\S\s]*?results-item-genres">([\S\s]*?)<\/span>[\S\s]*?results-item-rating-positive">([\S\s]*?)<\/span>[\S\s]*?results-item-rating-negative">([\S\s]*?)<\/span>[\S\s]*?results-item-description">([\S\s]*?)<\/span>/g;
+	// 1-link, 2-icon, 3-title, 4-subsection, 5-genres, 6-likes, 7-dislikes, 8-description
+	var re = /<a href="([\S\s]*?)"[\S\s]*?<img src="([\S\s]*?)"[\S\s]*?results-item-title">([\S\s]*?)<\/span>[\S\s]*?results-item-subsection">([\S\s]*?)<\/span>([\S\s]*?)item-rating[\S\s]*?results-item-rating-positive">([\S\s]*?)<\/span>[\S\s]*?results-item-rating-negative">([\S\s]*?)<\/span>[\S\s]*?results-item-description">([\S\s]*?)<\/span>/g;
 	
 	function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-	    var response = showtime.httpReq(BASE_URL + "/search.aspx?search=" + query.replace(/\s/g, '\+') + (fromPage ? "&page=" + fromPage : '')).toString();
+	    var response = showtime.httpReq(BASE_URL + '/search.aspx', {
+                args: {
+                   search: query,
+                   page: fromPage ? fromPage : ''
+                }
+            }).toString();
+            response = response.match(/<div class="b-search-page__results">([\S\s]*?)<\/div>/);
 	    page.loading = false;
-	    var match = re.exec(response);
-	    while (match) {
-                var rate = match[5] - match[6];
-                // positve rate = green, negative = red, zero = white
-	        if (rate > 0)
-		    rate = colorStr('+' + rate.toString(), green);
-	        else
-                    if (rate < 0)
-		        rate = colorStr(rate, red);
+            if (response) {
+                var match = re.exec(response[1]);
+                while (match) {
+                    var genres = match[5].match(/item-genres">([\S\s]*?)<\/span>/);
+                    genres ? genres = ' ' + colorStr(genres[1], orange) : genres = '';
+                    var rate = match[6] - match[7];
+                    // positve rate = green, negative = red, zero = white
+	            if (rate > 0)
+		        rate = colorStr('+' + rate.toString(), green);
 	            else
-		        rate = colorStr(rate, white);
+                        if (rate < 0)
+		            rate = colorStr(rate, red);
+                        else
+                            rate = '';
 
-		page.appendItem(plugin.getDescriptor().id + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
-                    title: new showtime.RichText(rate + ' ' + match[3]),
-                    icon: match[2].replace('/5/', '/2/'),
-                    genre: new showtime.RichText(match[4]),
-                    description: new showtime.RichText(coloredStr('Описание: ', orange) + match[7])
-                });
-                page.entries++;
-                match = re.exec(response);
-            };
-            if (!response.match(/<b>Следующая страница<\/b>/))
-                return tryToSearch = false;
-            fromPage++;
-            return true;
+                    page.appendItem(plugin.getDescriptor().id + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
+                        title: new showtime.RichText(rate + ' ' + match[3]),
+                        icon: match[2].replace('/5/', '/2/'),
+                        genre: new showtime.RichText(match[4] + genres),
+                        description: new showtime.RichText('('+coloredStr(match[6], green)+'/'+coloredStr(match[7], red) + ') ' + coloredStr(' Описание: ', orange) + match[8])
+                    });
+                    page.entries++;
+                    match = re.exec(response[1]);
+                };
+                if (!response[1].match(/<b>Следующая страница<\/b>/))
+                   return tryToSearch = false;
+                fromPage++;
+                return true;
+            }
 	};
 	loader();
 	page.paginator = loader;
