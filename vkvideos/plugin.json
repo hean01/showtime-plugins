@@ -1,0 +1,14 @@
+{
+	"id": "vkvideos",
+	"version": "0.3",
+	"type": "ecmascript",
+	"author": "Buksa, lprot",
+	"showtimeVersion": "4.8",
+	"title": "VK Videos",
+	"synopsis": "Search videos in VK service",
+	"description":"<p>This plugin allows to search for VK Videos</p>",
+	"homepage":"https://github.com/lprot/showtime-plugins",
+	"category": "video",
+	"icon": "logo.png",
+	"file": "vkvideos.js"
+}
