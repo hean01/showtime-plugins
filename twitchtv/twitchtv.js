@@ -1,7 +1,7 @@
 ﻿/**
- * TwitchTV plugin for Showtime Media Center
+ * TwitchTV plugin for Movian Media Center
  *
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2015 lprot
  *  Based on the plugin of Fábio Ferreira (facanferff)
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -155,6 +155,8 @@
             }
             page.loading = false;
             for (var i in json.top) {
+                if (!json.top[i].game.name) // db errors?
+                    continue;
                 page.appendItem(plugin.getDescriptor().id + ":game:" + encodeURIComponent(json.top[i].game.name), "video", {
                     title: new showtime.RichText(json.top[i].game.name + coloredStr(' (' + json.top[i].viewers + ')', orange)),
                     icon: json.top[i].game.box.large,
