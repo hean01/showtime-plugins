@@ -49,7 +49,7 @@
     var service = plugin.createService("filmezz.eu", plugin.getDescriptor().id + ":start", "video", true, logo);
 
     // Search IMDB ID by title
-    function getIMDBid(page, title) {
+    function getIMDBid(title) {
         var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
         var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
         if (imdbid) return imdbid[1];

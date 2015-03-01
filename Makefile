@@ -40,7 +40,8 @@ PLUGINS= \
         liveleak.zip \
         hdtrailers.zip \
         animetoon.zip \
-        vkvideos.zip
+        vkvideos.zip \
+        revision3.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"
