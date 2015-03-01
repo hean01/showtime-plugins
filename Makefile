@@ -41,7 +41,7 @@ PLUGINS= \
         hdtrailers.zip \
         animetoon.zip \
         vkvideos.zip \
-        revision3.zip
+        discoverydn.zip
 
 %.zip:
 	@echo "Bundle plugin '$*'"

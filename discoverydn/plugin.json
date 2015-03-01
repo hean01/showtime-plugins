@@ -1,0 +1,14 @@
+{
+    "type": "ecmascript",
+    "id": "discoverydn",
+    "file": "discoverydn.js",
+    "showtimeVersion": "4.8",
+    "version": "0.1",
+    "author": "lprot",
+    "title": "Discovery DN",
+    "icon": "logo.png",
+    "synopsis": "Discovery Digital Networks: Original video programming for passionate audiences.",
+    "description": "Welcome to Discovery Digital Networks, creators of innovative and thought-provoking videos covering the most entertaining stories on the internet. Exploring technology, entertainment, animals, science, adventure, and more, we reveal the world in a whole new light. We nourish your thirst for entertainment and satisfy your curiosity. Learn more on <a href=\"https://discoverydn.com\">discoverydn.com</a>",
+    "homepage": "https://github.com/lprot/showtime-plugins/",
+    "category": "video"
+}
