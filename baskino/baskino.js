@@ -1,5 +1,5 @@
 /**
- * Baskino.com plugin for Showtime Media Center
+ * Baskino.com plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -182,7 +182,7 @@
     });
 
     // Search IMDB ID by title
-    function getIMDBid(page, title) {
+    function getIMDBid(title) {
         var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
         var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
         if (imdbid) return imdbid[1];
@@ -225,7 +225,7 @@
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             canonicalUrl: plugin.getDescriptor().id + ':vki:' + url + ':' + title,
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(unescape(title)),
             sources: [{
                 url: link
             }]
@@ -252,7 +252,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(unescape(title)),
             canonicalUrl: plugin.getDescriptor().id + ':vk:' + url + ':' + title,
             sources: [{
                 url: link[1]
@@ -267,7 +267,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(unescape(title)),
             canonicalUrl: plugin.getDescriptor().id + ':bk:' + url + ':' + title,
             sources: [{
                 url: unescape(url)
@@ -287,7 +287,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(unescape(title)),
             sources: [{
                 url: showtime.JSONDecode(unhash(v, hash1, hash2)).playlist[0].file
             }]
@@ -304,7 +304,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(unescape(title)),
             sources: [{
                 url: showtime.JSONDecode(unhash(v, hash1, hash2))
             }]
@@ -322,7 +322,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(unescape(title)),
             sources: [{
                 url: "hls:" + unhash(url, hash1, hash2).replace('manifest.f4m', 'master.m3u8')
             }]
@@ -344,7 +344,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(unescape(title)),
             canonicalUrl: plugin.getDescriptor().id + ':moonwalk:' + url + ':' + title,
             sources: [{
                 url: link
@@ -368,7 +368,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(sign.title),
-            imdbid: getIMDBid(sign.title),
+            imdbid: getIMDBid(unescape(sign.title)),
             canonicalUrl: plugin.getDescriptor().id + ":megogo:" + url,
             sources: [{
                 url: sign.src
@@ -384,7 +384,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(unescape(title)),
             canonicalUrl: plugin.getDescriptor().id + ":gidtv:" + url + ':' + title,
             sources: [{
                 url: doc.match(/setFlash\('([\s\S]*?)\s/)[1].replace(/manifest.f4m/,'index.m3u8')
@@ -406,7 +406,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(unescape(title)),
             sources: [{
                 url: 'hls:' + link[1]
             }]
@@ -421,7 +421,7 @@
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(unescape(title)),
             canonicalUrl: plugin.getDescriptor().id + ":hdgo:" + url + ':' + title,
             sources: [{
                 url: doc.match(/<source src="([\s\S]*?)"/)[1]
@@ -631,7 +631,7 @@
                         url: match[1]
                     }],
                     title: title,
-                    imdbid: getIMDBid(escape(title))
+                    imdbid: getIMDBid(title)
                 };
                 link = "videoparams:" + showtime.JSONEncode(videoparams);
                 addItem(num ? 'Оригинал' : 'MP4 плеер' );
