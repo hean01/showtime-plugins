@@ -58,7 +58,7 @@
         } else {
             var videoId = doc.match(/\'video_id\', (.*)\)/)[1];
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/getPlaylist.json?api_key=ba9c741bce1b9d8e3defcc22193f3651b8867e62&codecs=h264&video_id=' + videoId));
-            var link = 'hls:' + json.items[0].media.h264.hls.url
+            var link = json.items[0].media.h264.hd.url
             page.type = "video";
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: decodeURIComponent(title),
@@ -83,8 +83,8 @@
             page.appendItem("", "separator", {
                 title: 'Featured'
             });
-            page.appendItem(plugin.getDescriptor().id + ':play:' + escape(featured[1]) + ':' + encodeURIComponent(featured[3]), "video", {
-                title: featured[3],
+            page.appendItem(plugin.getDescriptor().id + ':play:' + escape(featured[1]) + ':' + encodeURIComponent(showtime.entityDecode(featured[3])), "video", {
+                title: showtime.entityDecode(featured[3]),
                 icon: featured[2],
                 description: showtime.entityDecode(featured[4])
             });
