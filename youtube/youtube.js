@@ -1,5 +1,5 @@
 /**
- * Youtube plugin for Showtime Media Center
+ * Youtube plugin for Movian Media Center
  *
  *  Copyright (C) 2011-2015 facanferff, lprot
  *
@@ -1187,6 +1187,21 @@
                 title: 'External subtitles'
             });
             match = re.exec(subs);
+        }
+
+        // Get closed captions
+        if (!videoParams.subtitles.length) {
+            subs = showtime.httpReq('http://video.google.com/timedtext?type=list&v=' + id);
+            re = /lang_code="([\s\S]*?)" lang_original="([\s\S]*?)"/g;
+            match = re.exec(subs);
+            while (match) {
+                videoParams.subtitles.push({
+                    url: 'http://www.youtube.com/api/timedtext?v=' + id + '&lang=' + match[1],
+                    language: match[2],
+                    title: 'Youtube Closed Captions (' + match[1] + ')'
+                });
+                match = re.exec(subs);
+            }
         }
         page.source = "videoparams:" + showtime.JSONEncode(videoParams);
     }
