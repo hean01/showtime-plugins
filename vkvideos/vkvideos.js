@@ -64,6 +64,43 @@
         scraper(page, unescape(query));
     });
 
+    plugin.addURI(plugin.getDescriptor().id + ":moreFromTheOwner:(.*)", function(page, id) {
+        page.contents = "items";
+        page.type = "directory";
+        page.metadata.logo = logo;
+        page.entries = 0;
+
+        function loader() {
+            page.loading = true;
+            var JSON = showtime.JSONDecode(showtime.httpReq(API + '/video.get', {
+                args: {
+                    uid: id,
+                    count: 200,
+                    offset: page.entries,
+                    adult: service.adult,
+                    access_token: access_token
+                }
+            }));
+            page.loading = false;
+            for (var i in JSON.response) {
+                if (!JSON.response[i].vid)
+                    continue;
+                var item = page.appendItem(plugin.getDescriptor().id + ":play:" + escape(JSON.response[i].player) + ':' + encodeURIComponent(JSON.response[i].title), "video", {
+                    title: showtime.entityDecode(unescape(JSON.response[i].title)),
+                    icon: JSON.response[i].image_medium,
+                    duration: JSON.response[i].duration,
+                    timestamp: JSON.response[i].date,
+                    description: new showtime.RichText(coloredStr('Title: ', orange) + showtime.entityDecode(unescape(JSON.response[i].title)) + (JSON.response[i].description ? '\n' + coloredStr('Description: ', orange) + JSON.response[i].description : ''))
+                });
+                page.entries++;
+            }
+            return JSON.response;
+        };
+        loader();
+        page.paginator = loader;
+        page.loading = false;
+    });
+
     function scraper(page, query) {
         page.contents = "items";
         page.type = "directory";
@@ -74,7 +111,6 @@
             page.loading = true;
             var JSON = showtime.JSONDecode(showtime.httpReq(API + '/video.search', {
                 args: {
-                    debug: true,
                     q: query,
                     sort: 0, // 0 - date, 1 - duration, 2 - relevance
                     count: 200,
@@ -85,15 +121,21 @@
             }));
             page.loading = false;
             for (var i in JSON.response) {
-                page.appendItem(plugin.getDescriptor().id + ":play:" + escape(JSON.response[i].player) + ':' + encodeURIComponent(JSON.response[i].title), "video", {
+                var item = page.appendItem(plugin.getDescriptor().id + ":play:" + escape(JSON.response[i].player) + ':' + encodeURIComponent(JSON.response[i].title), "video", {
                     title: showtime.entityDecode(unescape(JSON.response[i].title)),
                     icon: JSON.response[i].image_medium,
                     duration: JSON.response[i].duration,
                     timestamp: JSON.response[i].date,
                     description: new showtime.RichText(coloredStr('Title: ', orange) + showtime.entityDecode(unescape(JSON.response[i].title)) + (JSON.response[i].description ? '\n' + coloredStr('Description: ', orange) + JSON.response[i].description : ''))
                 });
+
+                item.owner_id = JSON.response[i].owner_id;
+	        item.onEvent("moreFromTheOwner", function(item) {
+		    page.redirect(plugin.getDescriptor().id + ":moreFromTheOwner:" + this.owner_id);
+	        }.bind(item));
+                item.addOptAction("More from this user", "moreFromTheOwner");
+                page.entries++;
             }
-            page.entries++;
             return JSON.response.length;
         };
         loader();
