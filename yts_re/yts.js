@@ -67,8 +67,7 @@
         ['://yify.unlocktorrent.com/api/', 'yify.unlocktorrent.com'],
         ['://yts.im/api/', 'yts.im'],
         ['://yts.wf/api/', 'yts.wf'],
-        ['://yify.link/api/', 'yify.link'],
-        ['://yts.re/api/', 'yts.re']
+        ['://yify.link/api/', 'yify.link']
         ], function(v) {
             service.baseurl = v;
     });
