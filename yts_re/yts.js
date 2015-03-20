@@ -1,5 +1,5 @@
 /**
- * yts.re plugin for Showtime Media Center
+ * yts.re plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -63,11 +63,12 @@
     });
 
     settings.createMultiOpt('baseurl', "Base URL", [
-        ['://yts.re/api/', 'yts.re', true],
+        ['://yts.to/api/', 'yts.to', true],
         ['://yify.unlocktorrent.com/api/', 'yify.unlocktorrent.com'],
         ['://yts.im/api/', 'yts.im'],
         ['://yts.wf/api/', 'yts.wf'],
-        ['://yify.link/api/', 'yify.link']
+        ['://yify.link/api/', 'yify.link'],
+        ['://yts.re/api/', 'yts.re']
         ], function(v) {
             service.baseurl = v;
     });
