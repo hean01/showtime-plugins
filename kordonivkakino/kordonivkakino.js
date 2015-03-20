@@ -1,5 +1,5 @@
 /**
- * kordonivkakino.net plugin for Showtime
+ * kordonivkakino.net plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -159,10 +159,9 @@
         setPageHeader(page, unescape(title));
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString().replace(/\n/g, '|||').replace(/<br \/>/g, '|||');
-        page.loading = false;
 
         //1-icon, 2-description
-        var htmlBlock = doc.match(/end -->[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?-->([\s\S]*?)<div style="clear/);
+        var htmlBlock = doc.match(/end-->[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?-->([\s\S]*?)<div style="clear/);
         //showtime.print(unescape(url));
         dBlock = htmlBlock[2].replace(/<[^>]*>/g, '');
         var language = getAndClean('Язык');
@@ -367,6 +366,7 @@
                 match = re.exec(htmlBlock[1]);
             }
         }
+        page.loading = false;
     });
 
     var doc;
@@ -384,10 +384,10 @@
             while (match) {
                 page.appendItem(plugin.getDescriptor().id + ":indexItem:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[2])), 'video', {
                     title: showtime.entityDecode(match[2]),
-                    description: new showtime.RichText(coloredStr('Название: ', orange) + match[2] +
-                    coloredStr('<br>Просмотров: ', orange) + match[4]),
                     rating: +match[5],
-                    icon: match[3].indexOf('http') ? BASE_URL + match[3] : match[3]
+                    icon: match[3].indexOf('http') ? BASE_URL + match[3] : match[3],
+                    description: new showtime.RichText(coloredStr('Название: ', orange) + match[2] +
+                        (match[4] ? coloredStr('<br>Просмотров: ', orange) + match[4] : ''))
                 });
                 match = re.exec(doc);
                 page.entries++;
@@ -424,27 +424,11 @@
         var re = /<a href="([\s\S]*?)" class="menu-link">([\s\S]*?)<\/a>/g;
         var match = re.exec(htmlBlock[1]);
         while (match) {
-            page.appendItem(plugin.getDescriptor().id + ":indexFolder:" + escape(match[1]) + ":" + escape(trim(match[2])), 'directory', {
-                title: trim(match[2])
-            });
+            if (match[2] != 'Фильмы онлайн' && match[2] != 'Каналы Для Взрослых')
+                page.appendItem(plugin.getDescriptor().id + ":indexFolder:" + escape(match[1]) + ":" + escape(trim(match[2])), 'directory', {
+                    title: trim(match[2])
+                });
             match = re.exec(htmlBlock[1]);
-        }
-
-        //most popular
-        page.appendItem("", "separator", {
-            title: 'Популярное'
-        });
-
-        //1-icon, 2-title, 3-link
-        re = /<div class="article-news">[\s\S]*?<img src="([\s\S]*?)" alt="([\s\S]*?)">[\s\S]*?<a href="([\s\S]*?)">/g;
-        match = re.exec(doc);
-        while (match) {
-            page.appendItem(plugin.getDescriptor().id + ":indexItem:" + escape(match[3]) + ":" + escape(trim(showtime.entityDecode(match[2]))), 'video', {
-                title: trim(showtime.entityDecode(match[2])),
-                icon: match[1],
-                description: new showtime.RichText(coloredStr('Название: ', orange) + trim(match[2]))
-            });
-            match = re.exec(doc);
         }
 
         page.appendItem("", "separator", {
