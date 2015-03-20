@@ -1,5 +1,5 @@
 /*
- *  Digitally Imported plugin for Showtime Media Center
+ *  Digitally Imported plugin for Movian Media Center
  *
  *  Copyright (C) 2012-2015 Henrik Andersson, lprot
  *
@@ -18,22 +18,18 @@
  */
 
 (function(plugin) {
-    var pInfo = plugin.getDescriptor();
-    var PREFIX = pInfo.id;
     var logo = plugin.path + 'di_square.png';
-    var BASE_URL = 'http://www.di.fm';
 
-    plugin.createService(pInfo.title, PREFIX + ':start', 'music', true, logo);
+    plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ':start', 'music', true, logo);
 
-    // Start page
-    plugin.addURI(PREFIX + ':start', function(page) {
+    plugin.addURI(plugin.getDescriptor().id + ':start', function(page) {
 	page.type = 'directory';
 	page.metadata.glwview = plugin.path + 'views/array.view';
 	page.contents = 'items';
 	page.metadata.logo = logo;
-	page.metadata.title = pInfo.title;
+	page.metadata.title = plugin.getDescriptor().title;
         page.loading = true;
-	var doc = showtime.httpReq(BASE_URL + '/channels').toString().match(/start\(([\S\s]*?)\)/)[1];
+	var doc = showtime.httpReq('http://www.di.fm/channels').toString().match(/start\(([\S\s]*?)\);/)[1];
         page.loading = false;
         var json = showtime.JSONDecode(doc);
         for (var i in json.channels) {

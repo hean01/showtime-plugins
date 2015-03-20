@@ -1,7 +1,7 @@
 /**
  * Docu.im plugin for Showtime
  *
- *  Copyright (C) 2014 lprot
+ *  Copyright (C) 2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,7 +52,6 @@
         dec = tmp_arr.join('');
         return dec;
     }
-
 
     function setPageHeader(page, title) {
         if (page.metadata) {
@@ -161,15 +160,13 @@
     plugin.addURI(PREFIX + ":index:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
-        var response = showtime.httpReq(BASE_URL + unescape(url)) + '';
+        var response = showtime.httpReq(BASE_URL + unescape(url)).toString();
         page.loading = false;
-        var match
-        while (!match) match = getRegex().exec(response);
+        var match = rgex.exec(response);
         var year = +match[8];
         var icon = match[1];
         var description = new showtime.RichText(getDescription(match));
         var movieID = unescape(url).match(/[\S\s]*?([\d+^\?]+)/i)[1];
-//print(Duktape.info(response));
         if (showtime.entityDecode(response).match(/<div id='season-switch-items'>/)) { // serials
             var re = /<a class='season'>([\S\s]*?)<\/a>/g;
             match = re.exec(response);
@@ -227,6 +224,7 @@
             page.loading = true;
             var json = showtime.JSONDecode(unhash(showtime.httpReq(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=1')));
             page.loading = false;
+showtime.print(showtime.JSONEncode(json));
             re = /audioIndex=\{(.*?)\}/;
             var tracks = re.exec(json.playlist[0].file)[1].split(';');
             re = /\[(.*?)\]/;
@@ -355,14 +353,10 @@
             trim(showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>/g, '\n'));
     }
 
-    function getRegex() {
-        // 1-poster, 2-likes, 3-views, 4-comments, 5-link, 6-title, 7-altTitle, 8-year, 9-description
-        return /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/g;
-    }
+    var rgex = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/g;
 
     function addItems(page, blob) {
-        var re = getRegex();
-        var match = re.exec(blob);
+        var match = rgex.exec(blob);
         while (match) {
             page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(titleJoin(match[6], match[7])), 'video', {
                 title: new showtime.RichText(titleJoin(match[6], match[7])),
@@ -370,7 +364,7 @@
                 year: +match[8],
                 description: new showtime.RichText(getDescription(match))
             });
-            match = re.exec(blob);
+            match = rgex.exec(blob);
             page.entries++;
         };
     }
