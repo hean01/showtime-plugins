@@ -1,4 +1,6 @@
 ﻿/**
+ * Copy.com plugin for Movian Media Center
+ *
  *  Copyright (C) 2015 lprot, w00fer
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -59,7 +61,7 @@
                         'oauth_consumer_key="' + CONSUMER_KEY + '", ' +
                         'oauth_signature="' + CONSUMER_SECRET + '&", ' +
                         'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
-                        'oauth_timestamp="' + new Date().getTime() + '", ' +
+                        'oauth_timestamp="' + new Date().getTime() / 1000 + '", ' +
                         'oauth_callback="oob"'
                     }
             }).toString();
@@ -118,7 +120,7 @@
                         'oauth_consumer_key="' + CONSUMER_KEY + '", ' +
                         'oauth_signature_method="PLAINTEXT", ' +
                         'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
-                        'oauth_timestamp="' + new Date().getTime() + '", ' +
+                        'oauth_timestamp="' + new Date().getTime() / 1000 + '", ' +
                         'oauth_version="1.0", ' +
                         'oauth_token="' + tokens[1] + '", ' +
                         'oauth_signature="' + CONSUMER_SECRET + '&' + requestTokenSecret + '"'
@@ -147,7 +149,7 @@
                 req.setHeader('Authorization', 'OAuth oauth_consumer_key="' + CONSUMER_KEY + '", ' +
                         'oauth_signature_method="PLAINTEXT", ' +
                         'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
-                        'oauth_timestamp="' + new Date().getTime() + '", ' +
+                        'oauth_timestamp="' + new Date().getTime() / 1000 + '", ' +
                         'oauth_version="1.0", ' +
                         'oauth_token="' + store.access_token + '", ' +
                         'oauth_signature="' + CONSUMER_SECRET + '&' + store.access_secret + '"');
@@ -161,6 +163,7 @@
             page.loading = false;
         } catch(err) {
             store.access_token = '';
+            showtime.trace(err);
             return setHeader = false;
         }
         return 1;

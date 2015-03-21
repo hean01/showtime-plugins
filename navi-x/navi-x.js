@@ -124,12 +124,17 @@
                 server.adultContent();
             }
         }
-        catch (ex) { e(ex); showtime.notify('Error while authenticating and parsing default playlists', 2); }
+        catch (ex) {
+            e(ex);
+            showtime.notify('Error while authenticating and parsing default playlists', 2);
+        }
     });
     
     settings.createDivider('Tracking Settings');
 
-    settings.createBool("historyTracking", "Enable History Tracking (local, My History in Navi-X's homepage)", true, function (v) { service.historyTracking = v; });
+    settings.createBool("historyTracking", "Enable History Tracking (local, My History in Navi-X's homepage)", true, function (v) {
+        service.historyTracking = v;
+    });
     
     plugin.addURI(PREFIX + ":text:(.*):(.*)", function(page, title, url) {
         page.type = "item";
@@ -3311,15 +3316,16 @@
         }
 
         this.exist_user_playlist = function (name) {
-            if (user_playlists[name] && user_playlists[name] != "") {
+            if (user_playlists[name] && user_playlists[name] != "")
                 return true;
-            } else { return false; }
+            else
+                return false;
         }
 
         this.add_to_playlist = function (playlist, item) {
             if (!item)
                 return false;
-
+showtime.print(showtime.JSONEncode(item));
             // Attempt to remove the item from playlist, if it doesn't exist the function called will return
             this.remove_from_playlist(playlist, item);
 
@@ -3344,7 +3350,10 @@
 
                 return true;
             }
-            catch (ex) { showtime.trace("Error while adding item to playlist: " + ex); return false; }
+            catch (ex) {
+                showtime.trace("Error while adding item to playlist: " + ex);
+                return false;
+            }
         }
 
         this.exist_in_playlist = function (playlist, item) {
