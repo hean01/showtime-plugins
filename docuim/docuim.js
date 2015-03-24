@@ -1,5 +1,5 @@
 /**
- * Docu.im plugin for Showtime
+ * Docu.im plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -156,12 +156,17 @@
         };
     });
 
+    // 1-icon, 2-rating, 3-views, 4-comments, 5-link, 6-title, 7-orig_title, 8-year, 9-description
+    var rgex = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>([\S\s]*?)<\/div>/g;
+
     // Index links
     plugin.addURI(PREFIX + ":index:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, unescape(title));
         page.loading = true;
+        showtime.print(BASE_URL + unescape(url));
         var response = showtime.httpReq(BASE_URL + unescape(url)).toString();
         page.loading = false;
+
         var match = rgex.exec(response);
         var year = +match[8];
         var icon = match[1];
@@ -191,7 +196,11 @@
                     });
                     for (n in json.playlist) {
                         re2 = /\[(.*?)\]/;
-                        var links = re2.exec(json.playlist[n].file)[1].split(',');
+                        var links = re2.exec(json.playlist[n].file);
+                        if (links)
+                            links = links[1].split(',')
+                        else
+                            links = json.playlist[n].file;
                         var link = links[0];
                         if (trim(links[i]) != '') link = links[i];
                         var videoparams = {
@@ -224,11 +233,14 @@
             page.loading = true;
             var json = showtime.JSONDecode(unhash(showtime.httpReq(BASE_URL + '/movie/player/' + movieID + '/playlist.txt?season=1')));
             page.loading = false;
-showtime.print(showtime.JSONEncode(json));
             re = /audioIndex=\{(.*?)\}/;
             var tracks = re.exec(json.playlist[0].file)[1].split(';');
             re = /\[(.*?)\]/;
-            var links = re.exec(json.playlist[0].file)[1].split(',');
+            var links = re.exec(json.playlist[0].file);
+            if (links)
+                links = links[1].split(',')
+            else
+                links = json.playlist[0].file;
             var link = links[0];
             for (i in tracks) {
                 if (trim(tracks[i]) == "") continue;
@@ -236,9 +248,10 @@ showtime.print(showtime.JSONEncode(json));
                     title: 'Аудиодорожка ' + i
                 });
                 if (trim(links[i]) != '') link = links[i];
+                var hls = json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/audioIndex=\{(.*?)\}/, "audioIndex=" + tracks[i]);
                 var videoparams = {
                     sources: [{
-                        url: json.playlist[0].file.replace(/\[(.*?)\]/, link).replace(/audioIndex=\{(.*?)\}/, "audioIndex=" + tracks[i])
+                        url: hls.match('m3u8') ? 'hls:' + hls : hls
                     }],
                     title: unescape(title),
                     canonicalUrl: PREFIX + ':index:' + url + ':' + title + ':' + json.playlist[0].id + ':' + i,
@@ -264,11 +277,11 @@ showtime.print(showtime.JSONEncode(json));
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
+        setPageHeader(page, plugin.getDescriptor().synopsis);
         page.appendItem(PREFIX + ':latest', 'directory', {
             title: 'Новинки',
             icon: logo
         });
-        setPageHeader(page, plugin.getDescriptor().synopsis);
         page.appendItem(PREFIX + ':indexPage:/movies', 'directory', {
             title: 'Фильмы',
             icon: logo
@@ -285,7 +298,6 @@ showtime.print(showtime.JSONEncode(json));
             title: 'Сейчас смотрят',
             icon: logo
         });
-
         page.appendItem("", "separator", {
             title: 'Сейчас смотрят:'
         });
@@ -352,8 +364,6 @@ showtime.print(showtime.JSONEncode(json));
             coloredStr(' Комментариев: ', orange) + trim(match[4]) + '\n' +
             trim(showtime.entityDecode(showtime.entityDecode(match[9])).replace(/<br \/>/g, '\n'));
     }
-
-    var rgex = /<div class='movie full clearfix'>[\S\s]*?src="(.*?)"[\S\s]*?title='Рейтинг'><\/i>(.*?)<span[\S\s]*?title='Просмотров'><\/i>(.*?)<span[\S\s]*?title='Комментариев'><\/i>(.*?)<\/div>[\S\s]*?<a href='(.*?)'>([\S\s]*?)<\/a>[\S\s]*?<a href='.*?'>([\S\s]*?)<\/a>[\S\s]*?class='heading'>Год : <\/span> <span><a href='.*?'>(.*?)<\/a>[\S\s]*?<span class='heading'>([\S\s]*?)<\/div>/g;
 
     function addItems(page, blob) {
         var match = rgex.exec(blob);
