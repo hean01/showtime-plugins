@@ -187,9 +187,9 @@
             video = v.match(/videoURL=([^&]+)/)[1];
         } else if (v.match(/rutube.ru\/(?:.*\/)?([a-f0-9]+)/)) { //rutube.ru
             var id = (/rutube.ru\/(?:.*\/)?([a-f0-9]+)/.exec(v)[1]);
-            url = 'http://rutube.ru/api/play/trackinfo/' + id + '?no_404=true&format=json';
-            JSON = showtime.JSONDecode(showtime.httpGet(url));
-            video = JSON.video_balancer.m3u8;
+            url = 'http://rutube.ru/api/play/options/' + id + '/?format=json';
+            JSON = showtime.JSONDecode(showtime.httpReq(url));
+            video = 'hls:' + JSON.video_balancer.m3u8;
         } else if (v.match(/megogo.net\/b\/embedplayer\/[^']+/)) { // megogo
             url = (/megogo.net\/b\/embedplayer\/[^']+/.exec(v)).toString()
             v = showtime.httpReq('http://' + url + '?_stV=', {
@@ -212,7 +212,7 @@
                      l: ''
                 }
             })
-            video = v.match(/<src>(.+?)manifest.f4m<\/src>/)[1] + 'playlist.m3u8'
+            video = 'hls:' + v.match(/<src>(.+?)manifest.f4m<\/src>/)[1] + 'playlist.m3u8'
         } else if (v.match(/var vars = (.+)/)) {
             var JSON = showtime.JSONDecode(v.match(/var vars = (.+)/)[1]);
             switch (service.Resolution) {
@@ -243,7 +243,7 @@
             }
         } else if (v.match(/<iframe id="video_player"([\s\S]*?)<\/iframe>/)) {
             var link = v.match(/<iframe id="video_player"([\s\S]*?)<\/iframe>/)[1].match(/src="([\s\S]*?)"/)[1];
-            page.redirect('youtube:video:'+escape(link));
+            page.redirect('youtube:video:' + escape(link));
             //video = 'youtube:video:'+escape(link);
         }
 
