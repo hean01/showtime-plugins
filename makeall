@@ -1,0 +1,14 @@
+#!/bin/bash
+
+for i in ./* ; do
+  BASENAME="$(basename $i)"
+  CHANGED=$(git status "./$BASENAME" --porcelain)
+  if [ -d "$i" ] && [ ! -z "$CHANGED" ] && [ "$BASENAME" != "plugins" ]; then
+    echo "Bundle plugin $BASENAME.zip..."
+    rm -f "./plugins/$BASENAME.zip"
+    cd $BASENAME
+    zip -r9 "../plugins/$BASENAME.zip" * -x *.js\~
+    cd ..
+  fi
+done
+git commit -a
