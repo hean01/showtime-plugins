@@ -114,20 +114,13 @@
     settings.createBool("enableLogin", "Enable Login", true, function (v) {
         service.enableLogin = v;
     });
-    settings.createBool("adultContent", "Adult Content", false, function (v) { service.adult = v; });
+    settings.createBool("adultContent", "Adult Content", false, function (v) {
+        service.adult = v;
+    });
 
     settings.createAction("login", "Login to http://navixtreme.com", function () {
-        try {
-            server.init();
-            if (server.login()) {
-                showtime.notify("Authenticated succesfully", 2);
-                server.adultContent();
-            }
-        }
-        catch (ex) {
-            e(ex);
-            showtime.notify('Error while authenticating and parsing default playlists', 2);
-        }
+        user_settings['nxid'] = null;
+        server.login();
     });
     
     settings.createDivider('Tracking Settings');
@@ -140,7 +133,7 @@
         page.type = "item";
         page.metadata.background = plugin.path + "views/img/background.png";
     
-        var content = showtime.httpGet(unescape(url)).toString();
+        var content = showtime.httpReq(unescape(url)).toString();
         page.appendPassiveItem("bodytext", new showtime.RichText(content));
     
         page.metadata.title = unescape(title)
@@ -3005,19 +2998,6 @@
         this.user_id = '';
         this.username = '';
 
-        this.init = function () {
-            if (user_settings) {
-                if (user_settings['nxid'] && user_settings['nxid'] != '') {
-                    this.user_id = user_settings['nxid'];
-                    showtime.trace('Found user ID');
-                }
-                if (user_settings['username'] && user_settings['username'] != '') {
-                    this.username = user_settings['username'];
-                    showtime.trace('Authenticated as: ' + this.username);
-                }
-            }
-        }
-
         this.authenticated = function() {
             if (this.user_id != '')
                 return true;
@@ -3025,21 +3005,38 @@
         };
 
         this.login = function () {
-            if(this.authenticated())      
+            if (user_settings['nxid']) {
+                showtime.trace('Found user ID');
+                this.user_id = user_settings['nxid'];
+
+                showtime.trace('Authenticated as: ' + this.username);
+                this.username = user_settings['username'];
+
+                var data = showtime.httpReq("http://www.navixtreme.com/cgi-bin/adult_prefs.cgi", {
+                    args: {
+                        'value': service.adult
+                    },
+                    headers: {
+                        'cookie': 'nxid=' + this.user_id
+                    }
+                });
+                showtime.trace("NAVI-X: " + data);
+                user_settings['adult'] = service.adult;
                 return true;
-                
-            var reason = "Login to http://navixtreme.com";    
-            var do_query = false;    
+            }
+
+            var reason = "Login to http://navixtreme.com";
+            var do_query = false;
+            if (!user_settings['nxid'])
+                do_query = true;
+
             while(1) { 
                 this.credentials = plugin.getAuthCredentials("Navi-X", reason, do_query);
 
-                if(!this.credentials) {	
-                    if(!do_query) {	  
-                        do_query = true;	  
-                        continue;
-                    }	
-                    return false;
-                }      
+                if (!this.credentials) {
+                    do_query = true;
+                    continue;
+                }
 
                 if (this.credentials.rejected) {
                     return false;
@@ -3054,47 +3051,31 @@
                 }
 
                 try {
-                    var v = showtime.httpPost("http://www.navixtreme.com/login/", {
-                        'username':this.credentials.username,
-                        'password':this.credentials.password
-                    }, {}, {
-                        'User-Agent': 'Showtime Navi-X ' + version 
+                    var v = showtime.httpReq("http://www.navixtreme.com/login/", {
+                        args: {
+                            'username': this.credentials.username,
+                            'password': this.credentials.password
+                        }
                     });
-
                     var lines = v.toString().split("\n");
                     this.user_id = lines[0];
                     
                     if (this.user_id != '') {
-                        showtime.trace('Logged in to Navi-X as user: ' + this.credentials.username);
-
+                        showtime.notify('You successfully logged as user: ' + this.credentials.username, 2);
                         user_settings['nxid'] = this.user_id;
                         user_settings['username'] = this.credentials.username;
-
                         return true;
-                    }
-                    else {
+                    } else {
                         reason = "Wrong username/password.";
                         continue;
                     }
                 }
-                catch (ex) { e(ex); showtime.trace('Navixtreme: Error while authenticating user.'); return false; }
+                catch (ex) {
+                    e(ex);
+                    showtime.trace('Navixtreme: Error while authenticating user.');
+                    return false;
+                }
             }
-        };
-
-        this.adultContent = function () {
-            if (!this.authenticated()) return false;
-
-            if (!user_settings['adult'] || (user_settings['adult'] != value)) {
-                var value = (service.adult) ? '1' : '0';
-                var data = showtime.httpGet("http://www.navixtreme.com/cgi-bin/adult_prefs.cgi", { 'value': value }, {
-                    'cookie': 'nxid=' + this.user_id,
-                    'User-Agent': 'Showtime Navi-X ' + version 
-                });
-                showtime.trace("NAVI-X: " + data);
-                user_settings['adult'] = value;
-                return true;
-            }
-            return false;
         };
 
         this.existInPlaylist = function(item, playlist_name) {
@@ -3244,8 +3225,10 @@
             var playlist_id = '';
 
             if (!use_old) {
-                var data = showtime.httpGet('http://www.navixtreme.com/playlist/mine.plx', null, {
-                    'cookie': 'nxid=' + this.user_id
+                var data = showtime.httpGet('http://www.navixtreme.com/playlist/mine.plx', {
+                    headers: {
+                        'cookie': 'nxid=' + this.user_id
+                    }
                 });
             }
             else {
@@ -3407,7 +3390,7 @@ showtime.print(showtime.JSONEncode(item));
             var result = {};
 
             try {
-                var data = showtime.httpGet(link).toString().replace(/\r?\n/, '');
+                var data = showtime.httpReq(link).toString().replace(/\r?\n/, '');
                 
                 var title = data.match("<title>(.+?)</title>")[1];
                 playlist.title = title;
@@ -3657,11 +3640,10 @@ showtime.print(showtime.JSONEncode(item));
         page.loading = true;
         if (service.enableLogin) {
             try {
-                // Try to parse some possible previous authentications and check if adult content value changed
-                server.init();
-                server.adultContent();
+                server.login();
             } catch (ex) {
-                e(ex); showtime.notify('Error while authenticating and parsing default playlists', 2);
+                e(ex);
+                showtime.notify('Error while authenticating and parsing default playlists', 2);
             }
         }
 
