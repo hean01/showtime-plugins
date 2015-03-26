@@ -168,6 +168,8 @@
         page.loading = false;
 
         var match = rgex.exec(response);
+        if (!match) // retry
+            match = rgex.exec(response);
         var year = +match[8];
         var icon = match[1];
         var description = new showtime.RichText(getDescription(match));
@@ -367,6 +369,9 @@
 
     function addItems(page, blob) {
         var match = rgex.exec(blob);
+        if (!match) // retry
+            match = rgex.exec(blob);
+
         while (match) {
             page.appendItem(PREFIX + ':index:' + escape(match[5]) + ':' + escape(titleJoin(match[6], match[7])), 'video', {
                 title: new showtime.RichText(titleJoin(match[6], match[7])),
