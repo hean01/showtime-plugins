@@ -18,9 +18,10 @@
  */
 
 (function(plugin) {
-    var API = 'https://api.vkontakte.ru/method',
+    var API = 'https://api.vk.com/method',
         logo = plugin.path + 'logo.png',
-        access_token = '2bdd2fc3bc43ed9d1a6d0c45fe22bc9c86a083d883406adc3f9d77403c85b8df4ba1e63d173ca764deb7c';
+        access_token = '2bdd2fc3bc43ed9d1a6d0c45fe22bc9c86a083d883406adc3f9d77403c85b8df4ba1e63d173ca764deb7c',
+        APIver = '5.28';
 
     var blue = "6699CC", orange = "FFA500";
 
@@ -69,7 +70,6 @@
         page.type = "directory";
         page.metadata.logo = logo;
         page.entries = 0;
-
         function loader() {
             page.loading = true;
             var JSON = showtime.JSONDecode(showtime.httpReq(API + '/video.get', {
@@ -78,19 +78,20 @@
                     count: 200,
                     offset: page.entries,
                     adult: service.adult,
-                    access_token: access_token
+                    access_token: access_token,
+                    v: APIver
                 }
             }));
             page.loading = false;
-            for (var i in JSON.response) {
-                if (!JSON.response[i].vid)
-                    continue;
-                var item = page.appendItem(plugin.getDescriptor().id + ":play:" + escape(JSON.response[i].player) + ':' + encodeURIComponent(JSON.response[i].title), "video", {
-                    title: showtime.entityDecode(unescape(JSON.response[i].title)),
-                    icon: JSON.response[i].image_medium,
-                    duration: JSON.response[i].duration,
-                    timestamp: JSON.response[i].date,
-                    description: new showtime.RichText(coloredStr('Title: ', orange) + showtime.entityDecode(unescape(JSON.response[i].title)) + (JSON.response[i].description ? '\n' + coloredStr('Description: ', orange) + JSON.response[i].description : ''))
+            for (var i in JSON.response.items) {
+                var item = page.appendItem(plugin.getDescriptor().id + ":play:" + escape(JSON.response.items[i].player) + ':' + encodeURIComponent(JSON.response.items[i].title), "video", {
+                    title: showtime.entityDecode(unescape(JSON.response.items[i].title)),
+                    icon: JSON.response.items[i].photo_320,
+                    duration: JSON.response.items[i].duration,
+                    timestamp: JSON.response.items[i].adding_date,
+                    description: new showtime.RichText(coloredStr('Title: ', orange) +
+                        showtime.entityDecode(unescape(JSON.response.items[i].title)) +
+                        (JSON.response.items[i].description ? '\n' + coloredStr('Description: ', orange) + JSON.response.items[i].description : ''))
                 });
                 page.entries++;
             }
@@ -116,27 +117,30 @@
                     count: 200,
                     offset: page.entries,
                     adult: service.adult,
-                    access_token: access_token
+                    access_token: access_token,
+                    v: APIver
                 }
             }));
             page.loading = false;
-            for (var i in JSON.response) {
-                var item = page.appendItem(plugin.getDescriptor().id + ":play:" + escape(JSON.response[i].player) + ':' + encodeURIComponent(JSON.response[i].title), "video", {
-                    title: showtime.entityDecode(unescape(JSON.response[i].title)),
-                    icon: JSON.response[i].image_medium,
-                    duration: JSON.response[i].duration,
-                    timestamp: JSON.response[i].date,
-                    description: new showtime.RichText(coloredStr('Title: ', orange) + showtime.entityDecode(unescape(JSON.response[i].title)) + (JSON.response[i].description ? '\n' + coloredStr('Description: ', orange) + JSON.response[i].description : ''))
+            for (var i in JSON.response.items) {
+                var item = page.appendItem(plugin.getDescriptor().id + ":play:" + escape(JSON.response.items[i].player) + ':' + encodeURIComponent(JSON.response.items[i].title), "video", {
+                    title: showtime.entityDecode(unescape(JSON.response.items[i].title)),
+                    icon: JSON.response.items[i].photo_320,
+                    duration: JSON.response.items[i].duration,
+                    timestamp: JSON.response.items[i].date,
+                    description: new showtime.RichText(coloredStr('Title: ', orange) +
+                        showtime.entityDecode(unescape(JSON.response.items[i].title)) +
+                        (JSON.response.items[i].description ? '\n' + coloredStr('Description: ', orange) + JSON.response.items[i].description : ''))
                 });
 
-                item.owner_id = JSON.response[i].owner_id;
+                item.owner_id = JSON.response.items[i].owner_id;
 	        item.onEvent("moreFromTheOwner", function(item) {
 		    page.redirect(plugin.getDescriptor().id + ":moreFromTheOwner:" + this.owner_id);
 	        }.bind(item));
                 item.addOptAction("More from this user", "moreFromTheOwner");
                 page.entries++;
             }
-            return JSON.response.length;
+            return JSON.response.items.length;
         };
         loader();
         page.paginator = loader;
