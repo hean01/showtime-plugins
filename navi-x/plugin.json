@@ -3,7 +3,7 @@
         "id": "navi-x",
         "file": "navi-x.js",
         "showtimeVersion": "4.8",
-        "version": "1.2.4",
+        "version": "1.2.5",
 	"description": "<p>Navi-xtreme exists for one purpose - to add content to Navi-X, the (IMHO) best media-portal script for XBMC. It makes it easy for you to share your media links with the world while constantly auto-removing dead links.<p>",
 	"author": "F\u00e1bio Ferreira (facanferff), lprot",
 	"homepage": "https://github.com/lprot/showtime-plugins/",

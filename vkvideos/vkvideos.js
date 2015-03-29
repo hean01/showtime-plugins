@@ -180,7 +180,7 @@
         page.loading = true;
         var video = null;
         var v = showtime.httpReq(unescape(url)).toString();
-        showtime.print(unescape(url));
+        //showtime.print(unescape(url));
 
         //molodejj.tv
         if (v.match(/player.molodejj.tv[^']+/)) {
@@ -245,10 +245,12 @@
                     video = JSON.url240;
                     break;
             }
-        } else if (v.match(/<iframe id="video_player"([\s\S]*?)<\/iframe>/)) {
+        } else if (v.match(/<iframe id="video_player"([\s\S]*?)<\/iframe>/)) { // old api
             var link = v.match(/<iframe id="video_player"([\s\S]*?)<\/iframe>/)[1].match(/src="([\s\S]*?)"/)[1];
             page.redirect('youtube:video:' + escape(link));
             //video = 'youtube:video:'+escape(link);
+        } else if (v.match(/youtube/)) {
+            page.redirect('youtube:video:' + url);
         }
 
         if (video) {
@@ -265,8 +267,10 @@
             var error = v.match(/<div class="light_cry_dog"><\/div>([\s\S]*?)<\/div>/);
             if (error)
                 page.error(showtime.entityDecode(error[1].replace(/(<([^>]+)>)/ig, '').replace(/(?:(?:^|\n)\s+|\s+(?:$|\n))/g,'').replace(/\s+/g,' ')));
-            else
+            else {
+                showtime.trace(unescape(url));
                 page.error("Can't get the link. Sorry :(");
+            }
         }
 
         page.metadata.logo = logo;
