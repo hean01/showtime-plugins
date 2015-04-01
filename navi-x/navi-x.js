@@ -128,7 +128,6 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":playlist:(.*):(.*)", function(page, type, url) {
         page.metadata.background = plugin.path + "views/img/background.png";
-        page.loading = true;
 
         if (service.customViews) {
             addPageOptions(page); // Page Menu
@@ -143,8 +142,6 @@
 
         playlist = new Playlist(page, mediaitem.URL, mediaitem);
         var result = playlist.loadPlaylist(mediaitem.URL);
-
-        page.loading = false;
 
         if (service.verbose)
             showtime.trace(result.message);
@@ -259,7 +256,6 @@
         this.logo = 'none';
         if (this.mediaitem.thumb != 'default')
             this.logo = this.mediaitem.thumb;
-        //
         this.title = '';
         this.type = 'playlist';
         this.description = '';
@@ -274,7 +270,6 @@
 
         this.parseSearch = function() {
             var search = showtime.textDialog('Search: ' + this.mediaitem.name, true, false);
-
             var result = {};
 			
             if (search.rejected) {
@@ -289,7 +284,9 @@
                 result.errorMsg = 'Empty search string.';
                 return result;
             }
-    
+
+            page.loading = true;
+
             //get the search type:
             var index = this.mediaitem.type.indexOf(":");
             var search_type;
@@ -297,10 +294,9 @@
                 search_type = item.type.slice(index+1);
             else
                 search_type = '';
-		
             var fn;
             var mediaitem;
-		
+
             //youtube search
             if (this.mediaitem.type == 'search_youtube') {
                 fn = searchstring.replace(/ /g,'+');
@@ -316,12 +312,13 @@
                 this.mediaitem=new MediaItem();
                 this.mediaitem.URL = URL;
                 this.mediaitem.type = 'rss:video';
-                this.mediaitem.name = 'Search results: ' + searchstring;
+                this.mediaitem.name = page.metadata.title = 'Searching for: ' + searchstring;
                 this.mediaitem.processor = this.mediaitem.processor;
+                page.loading = false;
                 return this.loadPlaylist(this.mediaitem.URL);
             }
             else { //generic search
-                fn = searchstring.replace(/ /g,'+');   
+                fn = searchstring.replace(/ /g,'+');
                 var URL = this.mediaitem.URL;
                 var proc = this.mediaitem.list_processor;
                 this.mediaitem = new MediaItem();
@@ -331,36 +328,31 @@
                     this.mediaitem.type = search_type;
                 else //default
                     this.mediaitem.type = 'playlist';
-					
-                this.mediaitem.name = 'Search results: ' + searchstring;
+                this.mediaitem.name = page.metadata.title = 'Searching for: ' + searchstring;
                 if (proc) {
                     p("TEST");
                     this.mediaitem.list_processor = proc + searchstring;
                     return this.loadPlaylist(null);
                 }
-                return
-                    this.parsePLX();
+                var results = this.parsePLX();
+                page.loading = false;
+                return results;
             }
-
             return -1;
         }
 
         this.parsePLX = function() {
             var result = {};
             var content = "";
-
-            if (this.content) {
+            if (this.content)
                 content = this.content;
-            }
             else if (this.path.slice(0, 8) != "store://") {
                 content = downloader.getRemote(this.path);
-
                 if (content.error) {
                     result.error = true;
                     return result;
                 }
-            }
-            else {
+            } else {
                 var file = store[this.path.slice(8)];
                 if (!file.list || file.list == "[]") {
                     result.error = false;
@@ -381,7 +373,6 @@
                 result.error = false;
                 return result;
             }
-
             if (content == "") {
                 result.error = true;
                 result.errorMsg = content.error;
@@ -1126,9 +1117,8 @@
                 this.path = this.mediaitem.URL;
 
             var type = GetType(this.mediaitem, 0);
-
             var result = {};
-            
+
             if (type == "search" && this.mediaitem.list_processor) {
                 var search = showtime.textDialog('Search: ' + this.mediaitem.name, true, false);
 
@@ -1151,6 +1141,7 @@
                 type = "playlist";
                 this.path = "local";
             }
+
             if (type == "playlist" && this.mediaitem.list_processor) {
                 mediaitem.processor = this.mediaitem.list_processor;
 
@@ -1164,7 +1155,7 @@
 
             //load the playlist  
             if (type == 'rss_flickr_daily') 
-                result = this.parseFlickr();         
+                result = this.parseFlickr();
             else if (type.slice(0,3) == 'rss')
                 result = this.parseRSS();
             else if (type.slice(0,4) == 'atom')
@@ -1173,9 +1164,8 @@
                 result = imdb.getList(this.path);
             else if (type == 'search')
                 result = this.parseSearch();
-            else {//assume playlist file
+            else
                 result = this.parsePLX();
-            }
 
             if (result.error) { //failure
                 result.message = 'NAVI-X: Failed to parse playlist';
