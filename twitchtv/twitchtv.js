@@ -334,6 +334,43 @@
         page.paginator = loader;
     });
 
+    plugin.addURI(plugin.getDescriptor().id + ":user:(.*)", function (page, query) {
+        setPageHeader(page, query);
+        var tryToSearch = true, first = true;
+        var url = API + '/search/channels?q=' + encodeURIComponent(query) + '&limit=' + itemsPerPage;
+        function loader() {
+            if (!tryToSearch) return false;
+            page.loading = true;
+            var json = showtime.JSONDecode(showtime.httpReq(url));
+            page.loading = false;
+            if (first && page.metadata) {
+                page.metadata.title +=  ' (' + json._total + ')';
+                first = false;
+            }
+            for (var i in json.channels) {
+                page.appendItem(plugin.getDescriptor().id + ':channel:' + encodeURIComponent(json.channels[i].name) + ':' + encodeURIComponent(json.channels[i].display_name), 'video', {
+                    title: json.channels[i].display_name + (json.channels[i].game ? ' - ' + json.channels[i].game : ''),
+                    icon: json.channels[i].logo,
+                    description: new showtime.RichText((json.channels[i].views ? coloredStr('\nChannel views: ', orange) + json.channels[i].views : '') +
+                        coloredStr('\nCreated at: ', orange) + json.channels[i].created_at +
+                        coloredStr('\nUpdated at: ', orange) + json.channels[i].updated_at +
+                        (json.channels[i].mature ? coloredStr('\nMature: ', orange) + json.channels[i].mature : '') +
+                        (json.channels[i].language ? coloredStr('\nLanguage: ', orange) + json.channels[i].language : '') +
+                        (json.channels[i].followers ? coloredStr('\nFollowers: ', orange) + json.channels[i].followers : '') +
+                        (json.channels[i].status ? coloredStr('\nStatus: ', orange) + json.channels[i].status : '')
+                    )
+                });
+                page.entries++;
+            }
+            if (json.channels.length == 0)
+                return tryToSearch = false;
+            url = json['_links'].next;
+            return true;
+        }
+        loader();
+        page.paginator = loader;
+    });
+
     plugin.addURI(plugin.getDescriptor().id + ":channel:(.*):(.*)", function (page, name, display_name) {
         setPageHeader(page, plugin.getDescriptor().title + ' - ' + decodeURIComponent(display_name));
         page.entries = 0;
