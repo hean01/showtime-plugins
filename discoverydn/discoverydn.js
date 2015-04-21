@@ -56,7 +56,7 @@
             page.type = "video";
             page.source = 'youtube:video:' + escape('https:' + doc.match(/<iframe id="yt-iframe"[\s\S]*?src="([\s\S]*?)"/)[1]);
         } else {
-            var videoId = doc.match(/\'video_id\', (.*)\)/)[1];
+            var videoId = doc.match(/\'video_id\', (\d+)/)[1];
             var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/getPlaylist.json?api_key=ba9c741bce1b9d8e3defcc22193f3651b8867e62&codecs=h264&video_id=' + videoId));
             var link = json.items[0].media.h264.hd.url
             page.type = "video";
@@ -94,11 +94,11 @@
             title: 'Menu'
         });
         // 1 - url, 2 - title
-        var re = /<li class="item navItem">[\s\S]*?<a class="" href="([\s\S]*?)" data-track-attrs=\'\{"Tab": "([\s\S]*?)"\}\'>/g;
+        var re = /<li class="item navItem">[\s\S]*?<a class="" href="([\s\S]*?)"[\s\S]*?data-track-attrs=\'\{"Tab": "([\s\S]*?)"\}\'>/g;
         var match = re.exec(doc);
         while (match) {
             page.appendItem(plugin.getDescriptor().id + ':index:' + escape(match[1]) + ':' + encodeURIComponent(match[2]), "directory", {
-                title: match[2]
+                title: match[2].replace(/\\\'/g, "'")
             });
             match = re.exec(doc);
         }
@@ -109,7 +109,7 @@
         var tryToSearch = true, offset = 0;
 
         // 1 - icon, 2 - title, 3 - url, 4 - description, 5 - show's name, 6 - show's url, 7 - time
-        var re = /class="episode[\s\S]*?src="([\s\S]*?)"[\s\S]*?<a rel="([\s\S]*?)" href="([\s\S]*?)">[\s\S]*?<p class="description">([\s\S]*?)<\/p>[\s\S]*?rel="([\s\S]*?)" href="([\s\S]*?)"[\s\S]*?class="time">([\s\S]*?)<\/time>/g;
+        var re = /class="episode[\s\S]*?src="([\s\S]*?)"[\s\S]*?<a rel="([\s\S]*?)" href="([\s\S]*?)">[\s\S]*?<p class="description">([\s\S]*?)<\/p>[\s\S]*?rel="([\s\S]*?)"[\s\S]*?href="([\s\S]*?)"[\s\S]*?class="time">([\s\S]*?)<\/time>/g;
 
         function loader() {
             if (!tryToSearch) return false;
@@ -195,7 +195,7 @@
             var tryToSearch = true, offset = 0;
 
             // 1 - icon, 2 - title, 3 - url, 4 - description, 5 - show's name, 6 - show's url, 7 - time
-            var re = /class="episode [\s\S]*?data-src="([\s\S]*?)"[\s\S]*?<a rel="([\s\S]*?)" href="([\s\S]*?)">[\s\S]*?<p class="description">([\s\S]*?)<\/p>[\s\S]*?rel="([\s\S]*?)" href="([\s\S]*?)"[\s\S]*?class="time">([\s\S]*?)<\/time>/g;
+            var re = /class="episode [\s\S]*?data-src="([\s\S]*?)"[\s\S]*?<a rel="([\s\S]*?)"[\s\S]*?href="([\s\S]*?)">[\s\S]*?<p class="description">([\s\S]*?)<\/p>[\s\S]*?rel="([\s\S]*?)"[\s\S]*?href="([\s\S]*?)"[\s\S]*?class="time">([\s\S]*?)<\/time>/g;
 
             function loader() {
                 if (!tryToSearch) return false;
