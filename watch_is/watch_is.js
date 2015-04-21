@@ -1,5 +1,5 @@
 /**
- * watch.is plugin for Showtime
+ * watch.is plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -151,7 +151,7 @@
 		}]
 	    });
 	    page.appendItem(vparams, 'video', {
-		title: new showtime.RichText(type+" "+v.match(/<title>([\S\s]*?)<\/title>/)[1]),
+		title: new showtime.RichText(coloredStr(type, blue) + " " + v.match(/<title>([\S\s]*?)<\/title>/)[1]),
 		icon: v.match(/<poster>([\S\s]*?)<\/poster>/)[1],
 		genre: v.match(/<genre>([\S\s]*?)<\/genre>/)[1],
 		year: parseInt(v.match(/<year>([\S\s]*?)<\/year>/)[1]),
@@ -164,20 +164,25 @@
 	    page.loading = false;
 	}
         var v = showtime.httpReq(BASE_URL + '/api/watch/' + unescape(url).match(/[\S\s]*?([\d+]+)/i)[1]).toString();
-        var tmp = v.match(/<hdrtmp>([\S\s]*?)<\/hdrtmp>/);
-	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], coloredStr("HD RTMP", blue));
-        tmp = v.match(/<rtmp>([\S\s]*?)<\/rtmp>/);
-	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], coloredStr("SD RTMP", blue));
+        //showtime.print(v);
+        var tmp = v.match(/<hdhls>([\S\s]*?)<\/hdhls>/);
+	if (tmp)
+            addItem(tmp[1], 'HD HLS');
+
         tmp = v.match(/<hdvideo>([\S\s]*?)<\/hdvideo>/);
+	if (tmp)
+            addItem(tmp[1], 'HD MP4');
+
+        tmp = v.match(/<hls>([\S\s]*?)<\/hls>/);
+	if (tmp)
+            addItem(tmp[1], 'SD HLS');
+
+        tmp = v.match(/<video>([\S\s]*?)<\/video>/);
+	if (tmp)
+            addItem(tmp[1], 'SD MP4');
 
 	var html = showtime.httpReq(BASE_URL + unescape(url)).toString();
-        addItem(html.match(/<video src="([\S\s]*?)"/)[1], coloredStr("SD HLS", blue));
 	page.loading = false;
-
-	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], coloredStr("HD MP4", blue));
-        tmp = v.match(/<video>([\S\s]*?)<\/video>/);
-	if (tmp && !showtime.probe(tmp[1]).result) addItem(tmp[1], coloredStr("SD MP4", blue));
-	addItem(html.match(/file:"([^"]+)/)[1], coloredStr("SD FILE", blue));
 
 	// 1-icon, 2-nick, 3-age, 4-date/time, 5-comment
 	var re = /<div class="avatar"><a href="[\s\S]*?"><img src="([\s\S]*?)"[\s\S]*?<strong>([\s\S]*?)<\/strong>[\s\S]*?<div class="sex">([\s\S]*?)<\/span>[\s\S]*?<div class="date">([\s\S]*?)<\/div>[\s\S]*?<div class="comment" id="[\s\S]*?">([\s\S]*?)<\/div>/g;
