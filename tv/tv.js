@@ -228,13 +228,20 @@
         page.loading = true;
         var resp = showtime.httpReq(unescape(url)).toString();
         page.loading = false;
-        var match = resp.match(/file=([\S\s]*?)&/);
-        if (match) {
-            page.type = "video";
+        var re = /file=([\S\s]*?)&/g;
+        var match = re.exec(resp);
+        while (match) {
+            if (showtime.probe(match[1]).result) {
+                match = re.exec(resp);
+                continue;
+            }
             if (match[1].match(/rtmp/))
                 url = unescape(match[1]) + ' swfUrl=http://tivix.net' + resp.match(/data="(.*)"/)[1] + ' pageUrl=' + unescape(url);
             else
                 url = match[1].match('m3u8') ? 'hls:' + unescape(match[1]) : unescape(match[1]);
+
+
+            page.type = "video";
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: unescape(title),
                 canonicalUrl: plugin.getDescriptor().id + ':tivix:' + url + ':' + title,
@@ -242,7 +249,17 @@
                     url: url
                 }]
             });
-        } else page.error("Sorry, can't get the link :(");
+            return;
+        }
+
+        // try to get youtube link
+        match = resp.match(/\.com\/v\/([\S\s]*?)(\?|=)/);
+        if (match) {
+            page.redirect('youtube:video:' + match[1]);
+            return;
+        }
+
+        page.error("Sorry, can't get the link :(");
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":uatoday:(.*):(.*)", function(page, url, title) {
