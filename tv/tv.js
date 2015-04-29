@@ -958,7 +958,6 @@
 		link: decodeURIComponent(itemmd.link)
 	    });
 	    item.addOptAction("Remove '" + decodeURIComponent(itemmd.title) + "' playlist from the list", pos);
-
 	    item.onEvent(pos, function(item) {
 		var list = eval(playlists.list);
 		showtime.notify("'" + decodeURIComponent(showtime.JSONDecode(list[item]).title) + "' has been removed from from the list.", 2);
@@ -967,6 +966,7 @@
                 page.flush();
                 page.redirect(plugin.getDescriptor().id + ':start');
 	    });
+            pos++;
 	}
     }
 
@@ -1055,9 +1055,13 @@
         });
         page.options.createAction('addPlaylist', 'Add M3U playlist', function() {
             var result = showtime.textDialog('Enter the URL to the playlist like:\n' +
-                'http://bit.ly/1EQ9iWy', true, true);
+                'http://bit.ly/1EQ9iWy or just bit.ly/1EQ9iWy or 1EQ9iWy', true, true);
             if (!result.rejected && result.input) {
                 var link = result.input;
+                if (!link.match(/\./))
+                    link = 'http://bit.ly/' + link;
+                if (!link.match(/:\/\//))
+                    link = 'http://' + link;
                 var result = showtime.textDialog('Enter the name of the playlist:', true, true);
                 if (!result.rejected && result.input) {
                     var entry = showtime.JSONEncode({
