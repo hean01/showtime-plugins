@@ -27,7 +27,6 @@
 	page.contents = "items";
 	page.metadata.logo = logo;
 	page.metadata.title = title;
-	page.loading = false;
     }
 
     var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
@@ -119,6 +118,11 @@
     var store = plugin.createStore('favorites', true)
     if (!store.list) {
         store.list = "[]";
+    }
+
+    var playlists = plugin.createStore('playlists', true)
+    if (!playlists.list) {
+        playlists.list = "[]";
     }
 
     function addToFavoritesOption(item, link, title, icon) {
@@ -938,6 +942,74 @@
         page.metadata.title = page.metadata.title + ' (' + counter + ')'
     });
 
+    function showPlaylist(page) {
+	var list = eval(playlists.list);
+
+        if (!list || !list.toString()) {
+            page.appendPassiveItem("directory", '', {
+                title: "You can add M3U playlists via the page menu"
+            });
+        }
+        var pos = 0;
+	for (var i in list) {
+	    var itemmd = showtime.JSONDecode(list[i]);
+	    var item = page.appendItem(plugin.getDescriptor().id + ":browse:" + itemmd.link + ':' + itemmd.title, "directory", {
+       		title: decodeURIComponent(itemmd.title),
+		link: decodeURIComponent(itemmd.link)
+	    });
+	    item.addOptAction("Remove '" + decodeURIComponent(itemmd.title) + "' playlist from the list", pos);
+
+	    item.onEvent(pos, function(item) {
+		var list = eval(playlists.list);
+		showtime.notify("'" + decodeURIComponent(showtime.JSONDecode(list[item]).title) + "' has been removed from from the list.", 2);
+	        list.splice(item, 1);
+		playlists.list = showtime.JSONEncode(list);
+                page.flush();
+                page.redirect(plugin.getDescriptor().id + ':start');
+	    });
+	}
+    }
+
+    plugin.addURI(plugin.getDescriptor().id + ":browse:(.*):(.*)", function(page, pl, title) {
+        setPageHeader(page, decodeURIComponent(title));
+        page.loading = true;
+        var respond = showtime.httpReq(decodeURIComponent(pl)).toString();
+        page.loading = false;
+        //respond = respond.substr(respond.lastIndexOf('#EXTM3U'), respond.length);
+
+        var num = 0;
+        if (respond.match(/#EXTGRP:/)) {
+            // 1-title, 3-group, 5-url
+            var re = /#EXTINF:.*,(.*?)(\r\n|\n)#EXTGRP:(.*?)(\r\n|\n)(.*)(\r\n|\n|$)/g;
+            var m = re.exec(respond);
+            while (m) {
+                var url = m[5].match(/m3u8/) ? 'hls:' + m[5].trim() : m[5].trim();
+                page.appendItem(url, "video", {
+                    title: new showtime.RichText(m[1].trim())
+                });
+                num++;
+                m = re.exec(respond);
+            }
+        } else {
+            // 1-title, 3-url
+            var re = /#EXTINF:.*,(.*?)(\r\n|\n)(.*)(\r\n|\n|$)/g;
+            var m = re.exec(respond);
+            while (m) {
+                if (m[3].match(/#EXTINF:/) || m[3].match(/#EXTM3U/)) {
+                    m = re.exec(respond);
+                    continue;
+                }
+                var url = m[3].match(/m3u8/) ? 'hls:' + m[3].trim() : m[3].trim();
+                page.appendItem(url, "video", {
+                    title: new showtime.RichText(m[1].trim())
+                });
+                num++;
+                m = re.exec(respond);
+            }
+        }
+        page.metadata.title += ' (' + num + ')';
+    });
+
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, slogan);
@@ -977,5 +1049,28 @@
 	page.appendItem(plugin.getDescriptor().id + ":yooooStart", "directory", {
 	    title: "Yoooo.tv"
 	});
+
+        page.appendItem("", "separator", {
+            title: 'M3U playlists'
+        });
+        page.options.createAction('addPlaylist', 'Add M3U playlist', function() {
+            var result = showtime.textDialog('Enter the URL to the playlist like:\n' +
+                'http://bit.ly/1EQ9iWy', true, true);
+            if (!result.rejected && result.input) {
+                var link = result.input;
+                var result = showtime.textDialog('Enter the name of the playlist:', true, true);
+                if (!result.rejected && result.input) {
+                    var entry = showtime.JSONEncode({
+                        title: encodeURIComponent(result.input),
+                        link: encodeURIComponent(link)
+                    });
+                    playlists.list = showtime.JSONEncode([entry].concat(eval(playlists.list)));
+                    showtime.notify("Playlist '" + result.input + "' has been added to the list.", 2);
+                    page.flush();
+                    page.redirect(plugin.getDescriptor().id + ':start');
+                }
+            }
+        });
+        showPlaylist(page);
     });
 })(this);
