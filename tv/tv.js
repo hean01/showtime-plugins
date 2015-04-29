@@ -30,6 +30,16 @@
 	page.loading = false;
     }
 
+    var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
+
+    function colorStr(str, color) {
+        return '<font color="' + color + '"> (' + str + ')</font>';
+    }
+
+    function coloredStr(str, color) {
+        return '<font color="' + color + '">' + str + '</font>';
+    }
+
     function base64_decode(data) {
         // http://kevin.vanzonneveld.net
         // +   original by: Tyler Akins (http://rumkin.com)
@@ -901,6 +911,33 @@
         }
     });
 
+    plugin.addURI(plugin.getDescriptor().id + ":yooooStart", function(page) {
+        setPageHeader(page, 'Yoooo.tv');
+        var doc = showtime.httpReq('http://yoooo.tv', {
+            headers: {
+                Cookie: ''
+            },
+            method: 'HEAD'
+        });
+
+        var id = (doc.headers['Set-Cookie']).match(/yoooo=([\S\s]*?);/)[1];
+        page.loading = true;
+        var doc = showtime.httpReq('http://yoooo.tv/json/channel_now');
+        page.loading = false;
+        json = showtime.JSONDecode(doc);
+        var counter = 0;
+        for (var i in json) {
+            page.appendItem('http://tv.yoooo.tv/onstream/' + id + '/' + i + '.m3u8', "video", {
+                title: new showtime.RichText(json[i].channel_name + ' - ' + coloredStr(json[i].name, orange)),
+                icon: 'http://yoooo.tv/images/playlist/' + json[i].img,
+                duration: json[i].duration / 60,
+                description: new showtime.RichText(coloredStr(json[i].name, orange) + ' ' + json[i].descr)
+            });
+            counter++;
+        };
+        page.metadata.title = page.metadata.title + ' (' + counter + ')'
+    });
+
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, slogan);
@@ -936,6 +973,9 @@
         page.appendItem("", "separator");
 	page.appendItem(plugin.getDescriptor().id + ":tivixStart", "directory", {
 	    title: "TIVIX"
+	});
+	page.appendItem(plugin.getDescriptor().id + ":yooooStart", "directory", {
+	    title: "Yoooo.tv"
 	});
     });
 })(this);
