@@ -816,9 +816,11 @@
         addChannel(page, 'RTД', 'direct', 'hls:http://62.213.85.137/rtdru/rtdru.m3u8', '');
         addChannel(page, 'Дождь', 'direct', 'hls:http://prosmotra.net/StreamList/Dozhd.m3u8', 'http://tvrain-st.cdn.ngenix.net/static/css/pub/images/logo-tvrain.png');
         addChannel(page, 'HD Media', 'direct', 'hls:http://serv02.vintera.tv:1935/push/hdmedia.stream/playlist.m3u8', '');
+        addChannel(page, 'КиноМеню HD', 'direct', 'hls:http://serv02.vintera.tv:1935/live/km/playlist.m3u8', '');
         addChannel(page, 'HD Media 3D', 'direct', 'hls:http://hdmedia3d.vintera.tv:1935/hdmedia3d/hdmedia3d.stream/playlist.m3u8', '');
         addChannel(page, 'Brodilo.TV', 'ts', 'http://brodilo.tv/channel.php');
-        addChannel(page, 'ЛДПР live', 'direct', 'hls:http://213.247.198.250:1935/live/ldpr.stream/playlist.m3u8', 'http://ldpr.tv/img/header/logo.png');
+        addChannel(page, 'ЛДПР live (1080p)', 'direct', 'hls:http://213.247.198.250:1935/live/ldpr.stream/playlist.m3u8', 'http://ldpr.tv/img/header/logo.png');
+        addChannel(page, 'ЛДПР live (720p)', 'direct', 'hls:http://213.247.198.250:1935/live/ldpr.stream_720p/playlist.m3u8', 'http://ldpr.tv/img/header/logo.png');
         addChannel(page, 'Hello TV', 'direct', 'rtmp://live.tvhello.ru/live//Stream1');
         addChannel(page, 'НТВ (Official)', 'ntv', 'http://www.ntv.ru/tv/videoplayer.jsp?sid=316695&live=1&autoplay=1');
         addChannel(page, 'НТВ', 'sputniktv', 'http://sputniktv.in.ua/ntv.html');
