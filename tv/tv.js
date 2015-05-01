@@ -479,7 +479,6 @@
     });
 
     function addChannel(page, title, route, url, icon) {
-        var link = plugin.getDescriptor().id + ':' + route + ":" + (url ? escape(url) + ':' : '') + escape(title);
         if (route == 'direct') {
             link = "videoparams:" + showtime.JSONEncode({
                 title: title,
@@ -490,6 +489,7 @@
             });
         }
 
+        var link = plugin.getDescriptor().id + ':' + route + ":" + (url ? escape(url) + ':' : '') + escape(title);
         var item = page.appendItem(link, "video", {
             title: title,
             icon: icon
@@ -915,14 +915,32 @@
         }
     });
 
+    plugin.addURI(plugin.getDescriptor().id + ":yoooo:(.*):(.*)", function(page, url, title) {
+        page.type = "video";
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            canonicalUrl: plugin.getDescriptor().id + ':yoooo:' + url + ':' + title,
+            sources: [{
+                url: 'hls:' + unescape(url)
+            }]
+        });
+    });
+
     plugin.addURI(plugin.getDescriptor().id + ":yooooStart", function(page) {
         setPageHeader(page, 'Yoooo.tv');
+        page.loading = true;
         var doc = showtime.httpReq('http://yoooo.tv', {
             headers: {
                 Cookie: ''
             },
             method: 'HEAD'
         });
+        page.loading = false;
+
+        if (!doc.headers['Set-Cookie']) {
+            page.error("Sorry, can't get ID :(");
+            return;
+        }
 
         var id = (doc.headers['Set-Cookie']).match(/yoooo=([\S\s]*?);/)[1];
         page.loading = true;
@@ -931,12 +949,17 @@
         json = showtime.JSONDecode(doc);
         var counter = 0;
         for (var i in json) {
-            page.appendItem('http://tv.yoooo.tv/onstream/' + id + '/' + i + '.m3u8', "video", {
-                title: new showtime.RichText(json[i].channel_name + ' - ' + coloredStr(json[i].name, orange)),
-                icon: 'http://yoooo.tv/images/playlist/' + json[i].img,
+            var title = json[i].channel_name;
+            var url = 'http://tv.yoooo.tv/onstream/' + id + '/' + i + '.m3u8';
+            var link = plugin.getDescriptor().id + ":yoooo:" + escape(url) + ':' + escape(title);
+            var icon = 'http://yoooo.tv/images/playlist/' + json[i].img;
+            var item = page.appendItem(link, "video", {
+                title: new showtime.RichText(title + ' - ' + coloredStr(json[i].name, orange)),
+                icon: icon,
                 duration: json[i].duration / 60,
                 description: new showtime.RichText(coloredStr(json[i].name, orange) + ' ' + json[i].descr)
             });
+            addToFavoritesOption(item, link, title, icon);
             counter++;
         };
         page.metadata.title = page.metadata.title + ' (' + counter + ')'
