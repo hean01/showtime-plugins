@@ -481,6 +481,7 @@
     });
 
     function addChannel(page, title, route, url, icon) {
+        var link = plugin.getDescriptor().id + ':' + route + ":" + (url ? escape(url) + ':' : '') + escape(title);
         if (route == 'direct') {
             link = "videoparams:" + showtime.JSONEncode({
                 title: title,
@@ -489,9 +490,8 @@
                     url: url
                 }]
             });
-        }
+        };
 
-        var link = plugin.getDescriptor().id + ':' + route + ":" + (url ? escape(url) + ':' : '') + escape(title);
         var item = page.appendItem(link, "video", {
             title: title,
             icon: icon
