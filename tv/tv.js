@@ -245,10 +245,12 @@
         var re = /file=([\S\s]*?)&/g;
         var match = re.exec(resp);
         while (match) {
+            page.loading = true;
             if (showtime.probe(match[1]).result) {
                 match = re.exec(resp);
                 continue;
             }
+            page.loading = false;
             if (match[1].match(/rtmp/))
                 url = unescape(match[1]) + ' swfUrl=http://tivix.net' + resp.match(/data="(.*)"/)[1] + ' pageUrl=' + unescape(url);
             else
@@ -915,17 +917,6 @@
         }
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":yoooo:(.*):(.*)", function(page, url, title) {
-        page.type = "video";
-        page.source = "videoparams:" + showtime.JSONEncode({
-            title: unescape(title),
-            canonicalUrl: plugin.getDescriptor().id + ':yoooo:' + url + ':' + title,
-            sources: [{
-                url: 'hls:' + unescape(url)
-            }]
-        });
-    });
-
     plugin.addURI(plugin.getDescriptor().id + ":yooooStart", function(page) {
         setPageHeader(page, 'Yoooo.tv');
         page.loading = true;
@@ -950,8 +941,12 @@
         var counter = 0;
         for (var i in json) {
             var title = json[i].channel_name;
-            var url = 'http://tv.yoooo.tv/onstream/' + id + '/' + i + '.m3u8';
-            var link = plugin.getDescriptor().id + ":yoooo:" + escape(url) + ':' + escape(title);
+            var link = "videoparams:" + showtime.JSONEncode({
+                title: title,
+                sources: [{
+                    url: 'hls:http://tv.yoooo.tv/onstream/' + id + '/' + i + '.m3u8'
+                }]
+            });
             var icon = 'http://yoooo.tv/images/playlist/' + json[i].img;
             var item = page.appendItem(link, "video", {
                 title: new showtime.RichText(title + ' - ' + coloredStr(json[i].name, orange)),
@@ -993,6 +988,39 @@
 	}
     }
 
+    plugin.addURI(plugin.getDescriptor().id + ":m3uGroup:(.*):(.*)", function(page, pl, groupID) {
+        setPageHeader(page, decodeURIComponent(groupID));
+        page.loading = true;
+        var respond = showtime.httpReq(decodeURIComponent(pl)).toString();
+        page.loading = false;
+
+        var num = 0;
+
+        // 1-title, 3-group, 5-url
+        var re = /#EXTINF:.*,(.*?)(\r\n|\n)#EXTGRP:(.*?)(\r\n|\n)(.*)(\r\n|\n|$)/g;
+        var m = re.exec(respond);
+        while (m) {
+            if (decodeURIComponent(groupID) != m[3]) {
+                m = re.exec(respond);
+                continue;
+            }
+            var title = m[1].trim();
+            var link = "videoparams:" + showtime.JSONEncode({
+                title: title,
+                sources: [{
+                    url: m[5].match(/m3u8/) ? 'hls:' + m[5].trim() : m[5].trim()
+                }]
+            });
+            var item = page.appendItem(link, "video", {
+                title: title
+            });
+            addToFavoritesOption(item, link, title, '');
+            num++;
+            m = re.exec(respond);
+        }
+        page.metadata.title += ' (' + num + ')';
+    });
+
     plugin.addURI(plugin.getDescriptor().id + ":browse:(.*):(.*)", function(page, pl, title) {
         setPageHeader(page, decodeURIComponent(title));
         page.loading = true;
@@ -1002,16 +1030,21 @@
 
         var num = 0;
         if (respond.match(/#EXTGRP:/)) {
+            var groups = [];
             // 1-title, 3-group, 5-url
             var re = /#EXTINF:.*,(.*?)(\r\n|\n)#EXTGRP:(.*?)(\r\n|\n)(.*)(\r\n|\n|$)/g;
             var m = re.exec(respond);
             while (m) {
-                var url = m[5].match(/m3u8/) ? 'hls:' + m[5].trim() : m[5].trim();
-                page.appendItem(url, "video", {
-                    title: new showtime.RichText(m[1].trim())
+                if (groups.indexOf(m[3]) < 0)
+                    groups.push(m[3]);
+
+                m = re.exec(respond);
+            }
+            for (var i in groups) {
+            	page.appendItem(plugin.getDescriptor().id + ":m3uGroup:" + pl + ':' + encodeURIComponent(groups[i]), "directory", {
+	            title: groups[i]
                 });
                 num++;
-                m = re.exec(respond);
             }
         } else {
             // 1-title, 3-url
@@ -1022,10 +1055,17 @@
                     m = re.exec(respond);
                     continue;
                 }
-                var url = m[3].match(/m3u8/) ? 'hls:' + m[3].trim() : m[3].trim();
-                page.appendItem(url, "video", {
-                    title: new showtime.RichText(m[1].trim())
+                var title = m[1].trim();
+                var link = "videoparams:" + showtime.JSONEncode({
+                    title: title,
+                    sources: [{
+                        url: m[3].match(/m3u8/) ? 'hls:' + m[3].trim() : m[3].trim()
+                    }]
                 });
+                var item = page.appendItem(link, "video", {
+                    title: title
+                });
+                addToFavoritesOption(item, link, title, '');
                 num++;
                 m = re.exec(respond);
             }
