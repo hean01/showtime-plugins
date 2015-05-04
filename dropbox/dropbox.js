@@ -16,8 +16,7 @@
  */
 
 (function(plugin) {
-    var OAUTH_CONSUMER_KEY='qu2ctt42e52yfh3';
-    var OAUTH_CONSUMER_SECRET='h26qrtan40ufbfa';
+    var OAUTH_CONSUMER_KEY='8qfw2dhophpbj39';
     var logo = plugin.path + 'logo.png';
     var doc, API = 'https://api.dropbox.com/1/';
 
@@ -38,7 +37,7 @@
     var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().synopsis);
     settings.createAction('clearAuth', 'Unlink from Dropbox...', function() {
         store.access_token = '';
-        showtime.notify('Showtime is unlinked from Dropbox', 3, '');
+        showtime.notify('Movian is unlinked from Dropbox', 3, '');
     });
 
     function bytesToSize(bytes) {
@@ -51,62 +50,68 @@
     plugin.addURI("dropbox:browse:(.*)", function(page, path) {
         page.type = "directory";
         page.content = "items";
-        page.loading = true;
 
         if (!store.access_token) {
-            var html = showtime.httpReq('http://dropbox.com/1/oauth2/authorize?response_type=code&client_id=' + OAUTH_CONSUMER_KEY).toString();
-            page.loading = false;
-
             while (1) {
-                var credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, 'Please enter email and password to authorize Showtime', true, false, true);
+                page.loading = true;
+                // Requesting t cookie (needed for login)
+                var doc = showtime.httpReq('https://dropbox.com/1/oauth2/authorize?response_type=token&redirect_uri=https://localhost&client_id=' + OAUTH_CONSUMER_KEY, {
+                    headers: {
+                        Cookie: ''
+                    }
+                });
+                page.loading = false;
+
+                var credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, 'Please enter email and password to login to your Dropbox account', true, false, true);
                 if (credentials.rejected) {
-                    page.error('Cannot login to ' + plugin.getDescriptor().title);
+                    page.error('To continue you need to login to your Dropbox account');
                     return;
                 }
 
                 if (credentials.username && credentials.password) {
+                    // Try to login by using entered credentials
+                    var t = doc.multiheaders['set-cookie'].toString().match(/t=([\s\S]*?);/)[1];
                     page.loading = true;
-                    var doc = showtime.httpReq('https://www.dropbox.com/ajax_login', {
+                    doc = showtime.httpReq('https://www.dropbox.com/ajax_login', {
                         postdata: {
-                            't': html.match(/name="t" value="([\s\S]*?)"/)[1],
+                            'is_xhr': true,
+                            't': t,
                             'login_email': credentials.username,
-                            'login_password': credentials.password,
-                            'recaptcha_public_key': html.match(/name="recaptcha_public_key" value="([\s\S]*?)"/)[1]
+                            'login_password': credentials.password
                         }
                     });
+
+                    // Try to get access_token in doc.headers.location)
+                    doc = showtime.httpReq('https://dropbox.com/1/oauth2/authorize?response_type=token&redirect_uri=https://localhost&client_id=' + OAUTH_CONSUMER_KEY, {
+                        noFollow: true
+                    });
+
+                    // If we got no token then we need to authorize the app
+                    if (!doc.headers.location) {
+                        doc = doc.toString();
+
+                        // Checking if we are succesfully logged
+                        if (!doc.match(/name="user_id"/))
+                            continue;
+
+                        doc = showtime.httpReq('https://www.dropbox.com/1/oauth2/authorize_submit', {
+                            postdata: {
+                                't': doc.match(/name="t" value="([\s\S]*?)"/)[1],
+                                'allow_access': 1,
+                                'context': '{"redirect_uri": "https://localhost", "response_type": "token", "client_id": "' + OAUTH_CONSUMER_KEY + '"}',
+                                'user_id': doc.match(/name="user_id" value="([\s\S]*?)"/)[1]
+                            },
+                            noFollow: true
+                        });
+                    }
                     page.loading = false;
+                    store.access_token = doc.headers.location.match(/access_token=([\s\S]*?)&/)[1]
+                    break;
                 }
-
-                try {
-                    showtime.JSONDecode(doc)
-                } catch(noerr) {
-                    continue;
-                }
-                break;
             }
-            page.loading = true;
-            doc = showtime.httpReq('https://www.dropbox.com/1/oauth2/authorize_submit', {
-                postdata: {
-                    't': showtime.JSONDecode(doc).csrf_token,
-                    'allow_access': 1,
-                    'context': '{"response_type":"code","client_id":"'+OAUTH_CONSUMER_KEY+'"}',
-                    'user_id': showtime.JSONDecode(doc).id
-                }
-            }).toString();
-
-            doc = showtime.httpReq(API + 'oauth2/token', {
-                postdata: {
-                    'grant_type': 'authorization_code',
-                    'code': doc.match(/id="auth-code">([\s\S]*?)<\/div>/)[1],
-                    'client_id': OAUTH_CONSUMER_KEY,
-                    'client_secret': OAUTH_CONSUMER_SECRET
-                }
-            });
-            var json = showtime.JSONDecode(doc);
-            if (json.access_token)
-               store.access_token = json.access_token;
         }
 
+        page.loading = true;
         try {
             doc = showtime.JSONDecode(showtime.httpReq(API + 'metadata/dropbox' + path + '?access_token=' + store.access_token));
         } catch(err) {
