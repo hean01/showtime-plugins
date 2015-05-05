@@ -1,0 +1,14 @@
+{
+	"description": "<p>OneDrive is a file hosting service that allows users to upload and sync files to a cloud storage and then access them from a web browser or their local device. It is part of the suite of online services formerly known as Windows Live and allows users to keep the files private, share them with contacts, or make the files public. Publicly shared files do not require a Microsoft account to access.<p>For additional info, visit <a href=\"https://onedrive.com\">https://onedrive.com</a>",
+	"author": "lprot",
+	"homepage": "http://github.com/lprot/showtime-plugins",
+	"title": "OneDrive",
+	"synopsis": "OneDrive – One place for everything in your life",
+	"version": "0.1",
+        "file": "onedrive.js",
+	"showtimeVersion": "4.8",
+	"type": "ecmascript",
+	"id": "onedrive",
+	"icon": "logo.png",
+	"category": "video"
+}
