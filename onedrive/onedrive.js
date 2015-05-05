@@ -20,6 +20,7 @@
     var client_secret = 'vhaJSWTL6z4ofvX19ZhX6QzLkPiLPj6n';
     var logo = plugin.path + 'logo.png';
     var doc, API = 'https://api.onedrive.com/v1.0';
+    var headersAreSet = false;
 
     var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
@@ -31,13 +32,13 @@
         return '<font color="' + color + '">' + str + '</font>';
     }
 
-    plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ':browse:root', 'other', true, logo);
+    plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ':browse:root:Root', 'other', true, logo);
   
     var store = plugin.createStore('authinfo', true);
 
-    var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
+    var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().synopsis);
     settings.createAction('clearAuth', 'Unlink from ' + plugin.getDescriptor().title + ' ...', function() {
-        store.access_token = '';
+        store.access_token = store.refresh_token = '';
         showtime.notify('Movian is unlinked from ' + plugin.getDescriptor().title, 3, '');
     });
 
@@ -48,15 +49,31 @@
         return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     };
 
+    function dateToHuman(s) {
+        return colorStr(s.split('T')[0] + ' ' + s.split('T')[1].substr(0, 8), orange)
+    }
+
+    function setHeaders() {
+        plugin.addHTTPAuth('.*files.1drv.com.*', function(req) {
+            req.setHeader('Authorization', 'Bearer ' + store.access_token);
+        });
+        plugin.addHTTPAuth(API.replace(/\./g, '\\.') + '.*', function(req) {
+            req.setHeader('Authorization', 'Bearer ' + store.access_token);
+        });
+        headersAreSet = true;
+    };
+
     function callAPI(page, path) {
+        var result = null;
         page.loading = true;
         try {
-            result = showtime.JSONDecode(showtime.httpReq(API + path, {
-                headers: {
-                    Authorization: 'Bearer ' + store.access_token
-                }
-            }));
+            if (!headersAreSet)
+                setHeaders();
+            result = showtime.JSONDecode(showtime.httpReq(API + path));
         } catch(err) {
+            if (!store.refresh_token) {
+                return null;
+            }
             // We need to refresh token
             var json = showtime.JSONDecode(showtime.httpReq('https://login.live.com/oauth20_token.srf', {
                 postdata: {
@@ -68,19 +85,16 @@
             }));
             store.access_token = json.access_token;
             store.refresh_token = json.refresh_token;
+            setHeaders();
 
             // And retry the request
-            result = showtime.JSONDecode(showtime.httpReq(API + path, {
-                headers: {
-                    Authorization: 'Bearer ' + store.access_token
-                }
-            }));
+            result = showtime.JSONDecode(showtime.httpReq(API + path));
         }
         page.loading = false;
         return result;
     };
 
-    plugin.addURI(plugin.getDescriptor().id + ':browse:(.*)', function(page, path) {
+    plugin.addURI(plugin.getDescriptor().id + ':browse:(.*):(.*)', function(page, path, title) {
         page.type = "directory";
         page.content = "items";
 
@@ -158,19 +172,19 @@
                         },
                         noFollow: true
                     }));
-
-                    showtime.print(showtime.JSONEncode(json));
                     store.access_token = json.access_token;
                     store.refresh_token = json.refresh_token;
+                    setHeaders();
                     break;
                 }
             }
         }
         page.loading = true;
 
+        page.metadata.title = plugin.getDescriptor().title + ' ' + decodeURIComponent(title);
         if (path == 'root') {
-            page.metadata.title = plugin.getDescriptor().title + ' - Root';
             json = callAPI(page, '/drive/');
+            if (!json) return;
             page.appendPassiveItem('video', '', {
                 title: new showtime.RichText(coloredStr('Account info', orange)),
                 description: new showtime.RichText(
@@ -186,25 +200,21 @@
             });
         }
         json = callAPI(page, '/drive/' + path + '/children');
-        showtime.print(showtime.JSONEncode(json));
-        page.metadata.title = plugin.getDescriptor().title + ' - ' + json.value.name;
+        if (!json) return;
         ls(page, json);
-
-        //if (!doc.is_dir) {
-        //    page.error("Browsing non directory item");
-        //    return;
-        //}
-        //var title = doc.path.split('/');
-        //} else
-        //    page.metadata.title = title[title.length-1];
+        while (json['@odata.nextLink']) {
+            json = callAPI(page, json['@odata.nextLink']);
+            if (!json) return;
+            ls(page, json);
+        }
     });
 
     function ls(page, json) {
         // folders first
         for (var i in json.value) {
             if (json.value[i].folder) {
-                page.appendItem(plugin.getDescriptor().id + ":browse:/items/" + showtime.pathEscape(json.value[i].id), "directory", {
-	            title: new showtime.RichText(json.value[i].name + colorStr(json.value[i].size, blue) + ' ' + json.value[i].lastModifiedDateTime)
+                page.appendItem(plugin.getDescriptor().id + ":browse:/items/" + showtime.pathEscape(json.value[i].id) + ':' + encodeURIComponent(json.value[i].name), "directory", {
+	            title: new showtime.RichText(json.value[i].name + colorStr(bytesToSize(json.value[i].size), blue) + ' ' + dateToHuman(json.value[i].lastModifiedDateTime))
 	        });
                 page.entries++;
             }
@@ -215,29 +225,22 @@
             if (!json.value[i].folder) {
                 var title = json.value[i].name.split('/');
                 title = title[title.length-1]
-                var url = json.value[i].webUrl;
+                var url = json.value[i]['@content.downloadUrl'];
                 if (json.value[i].name.split('.').pop().toUpperCase() == 'PLX')
                     url = 'navi-x:playlist:playlist:' + escape(url)
                 var type = json.value[i].file.mimeType.split('/')[0];
-
-	        page.appendItem(url, 'video', {
-	            title: new showtime.RichText(json.value[i].name + colorStr(json.value[i].size, blue) + ' ' + json.value[i].lastModifiedDateTime)
+	        page.appendItem(url, type, {
+	            title: new showtime.RichText(json.value[i].name + colorStr(bytesToSize(json.value[i].size), blue) + ' ' + dateToHuman(json.value[i].lastModifiedDateTime))
 	        });
                 page.entries++;
             }
         }
     }
 
-    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
+    plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
         page.entries = 0;
-        page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(API + 'search/auto/', {
-            args: {
-                access_token: store.access_token,
-                query: query
-            }
-        }));
-        page.loading = false;
+        var json = callAPI(page, '/drive/root/view.search?q=' + query);
+        if (!json) return;
         ls(page, json);
     });
 })(this);

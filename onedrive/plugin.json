@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "OneDrive",
 	"synopsis": "OneDrive – One place for everything in your life",
-	"version": "0.1",
+	"version": "0.1.1",
         "file": "onedrive.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
