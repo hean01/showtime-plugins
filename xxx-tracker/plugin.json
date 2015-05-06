@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "xxx-tracker.com",
 	"synopsis": "XXX Трекер :: Порно Бесплатно и Без Регистрации!",
-	"version": "0.2",
+	"version": "0.2.1",
         "file": "xxx-tracker.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",

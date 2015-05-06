@@ -1,5 +1,5 @@
 /**
- * xxx-tracker.com plugin for Showtime Media Center
+ * xxx-tracker.com plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -49,6 +49,28 @@
 
     plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "video", true, logo);
 
+    function scraper(page, doc) {
+        // 1-date, 2-filelink, 3-infolink, 4-title, 5-(1)size, (2)seeds, (3)peers
+        var re = /<tr class="[gai|tum]+"><td>([\s\S]*?)<\/td>[\s\S]*?" href="([\s\S]*?)"[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>([\s\S]*?)<\/tr>/g;
+        var match = re.exec(doc);
+        while (match) {
+            if (match[5].match(/alt="comment"/)) {
+                var end = match[5].match(/[\s\S]*?align="right">[\s\S]*?align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
+                var comments = match[5].match(/[\s\S]*?align="right">([\s\S]*?)</)[1];
+            } else
+                var end = match[5].match(/[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
+            page.appendItem('torrent:browse:' + BASE_URL + match[2], "directory", {
+    	        title: new showtime.RichText(colorStr(match[1], orange) +
+                    ' ' + entityEncode(match[4]) + ' ('+ coloredStr(end[2], green) +
+                    '/' + coloredStr(end[3], red) + ') ' + colorStr(end[1], blue) +
+                    (comments ? colorStr(comments, orange) : ''))
+            });
+            match = re.exec(doc);
+            page.entries++;
+        }
+    }
+
+
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().synopsis);
         page.loading = true;
@@ -61,28 +83,29 @@
                page.appendItem("", "separator", {
  	           title: new showtime.RichText(match[1])
                });
-               // 1-date, 2-filelink, 3-infolink, 4-title,
-               // 5-(1)size, (2)seeds, (3)peers
-               var re2 = /<tr class="[gai|tum]+"><td>([\s\S]*?)<\/td>[\s\S]*?" href="([\s\S]*?)"[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>([\s\S]*?)<\/tr>/g;
-               var match2 = re2.exec(match[2]);
-               while (match2) {
-                   if (match2[5].match(/alt="comment"/)) {
-                       var end = match2[5].match(/[\s\S]*?align="right">[\s\S]*?align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-                       var comments = match2[5].match(/[\s\S]*?align="right">([\s\S]*?)</)[1];
-                   } else
-                       var end = match2[5].match(/[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-                   page.appendItem('torrent:browse:'+BASE_URL+match2[2], "directory", {
-    	               title: new showtime.RichText(colorStr(match2[1], orange) + ' ' +
-                           entityEncode(match2[4]) + ' ('+ coloredStr(end[2], green) + '/'+
-                           coloredStr(end[3], red) + ') ' + colorStr(end[1], blue) +
-                           (comments ? colorStr(comments, orange) : ''))
-                   });
-                   match2 = re2.exec(match[2]);
-               }
+               scraper(page, match[2]);
                match = re.exec(doc[1]);
            }
-
         }
         page.loading = false;
     });
+
+    plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
+	page.entries = 0;
+	var fromPage = 0, tryToSearch = true;
+
+	function loader() {
+            if (!tryToSearch) return false;
+            page.loading = true;
+	    var doc = showtime.httpReq(BASE_URL + '/b.php?search=' + query.replace(/\s/g, '\+') + '&cat=0&page=' + fromPage).toString();
+	    page.loading = false;
+            scraper(page, doc);
+	    if (!doc.match(/downgif/)) return tryToSearch = false;
+            fromPage++;
+	    return true;
+	};
+	loader();
+	page.paginator = loader;
+      });
+
 })(this);
