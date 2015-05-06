@@ -1,5 +1,5 @@
 /**
- * rutor.org plugin for Showtime Media Center
+ * rutor.org plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -20,8 +20,7 @@
 (function(plugin) {
     var plugin_info = plugin.getDescriptor();
     var PREFIX = plugin_info.id;
-    //var BASE_URL = 'http://torrent-rutor.org';
-    var BASE_URL = 'http://new-rutor.org';
+    var BASE_URL = 'http://zerkalo-rutor.org';
     var logo = plugin.path + "logo.png";
     var slogan = plugin_info.synopsis;
 
@@ -57,7 +56,7 @@
                 var comments = match[5].match(/[\s\S]*?<td align="right">([\s\S]*?)</)[1];
             } else
                 var end = match[5].match(/[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-            page.appendItem('torrent:browse:'+ BASE_URL + match[2], "directory", {
+            page.appendItem('torrent:browse:'+ BASE_URL + match[2].match(/(\/download.*)/)[1], "directory", {
                 title: new showtime.RichText(colorStr(match[1], orange) + ' ' +
                     match[4] + ' ('+ coloredStr(end[2], green) + '/'+
                     coloredStr(end[3], red) + ') ' + colorStr(end[1], blue) +
@@ -87,24 +86,6 @@
         page.loading = false;
     });
 
-    function searcherScraper(page, doc) {
-        // 1-date, 2-filelink, 3-infolink, 4-title, 5-(1)size, (2)seeds, (3)peers
-        var re = /<tr class="[gai|tum]+"><td>([\s\S]*?)<\/td>[\s\S]*?href="([\s\S]*?)"[\s\S]*?<a href="([\s\S]*?)">([\s\S]*?)<\/a>([\s\S]*?)<\/tr>/g;
-        var match = re.exec(doc);
-        while (match) {
-            var end = match[5].match(/[\s\S]*?<td align="right">[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-            page.appendItem('torrent:browse:'+ BASE_URL + match[2], "directory", {
-                title:
-                 new showtime.RichText(colorStr(match[1], orange) + ' ' +
-                    match[4] + ' ('+ coloredStr(end[2], green) + '/'+
-                    coloredStr(end[3], red) + ') ' + colorStr(end[1], blue)
-                )
-            });
-            page.entries++;
-            match = re.exec(doc);
-        }
-    }
-
     plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
 	page.entries = 0;
 	var fromPage = 0, tryToSearch = true;
@@ -114,7 +95,7 @@
             page.loading = true;
 	    var doc = showtime.httpReq(BASE_URL + "/search/"+ fromPage +"/0/000/0/" + query.replace(/\s/g, '\+')).toString();
 	    page.loading = false;
-            searcherScraper(page, doc);
+            scraper(page, doc);
 	    if (!doc.match(/downgif/)) return tryToSearch = false;
             fromPage++;
 	    return true;
