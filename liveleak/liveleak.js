@@ -1,5 +1,5 @@
 /**
- * Liveleak.com plugin for Showtime Media Center
+ * Liveleak.com plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -71,7 +71,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':play:' + url + ':' + title,
                 sources: [{
                     url: unescape(lnk)
-                }]
+                }],
+                no_subtitle_scan: true
             });
         } else {
             setPageHeader(page, doc.match(/<title>([\S\s]*?)<\/title>/)[1]);
@@ -88,7 +89,8 @@
                     canonicalUrl: plugin.getDescriptor().id + ':' + url + ':' + title + '_part' + (i + 1),
                     sources: [{
                         url: unescape(lnk)
-                    }]
+                    }],
+                    no_subtitle_scan: true
                 });
                 page.appendItem(link, "video", {
                     title: unescape(title) + '_part' + (i + 1),
