@@ -1,5 +1,5 @@
 /**
- * divan.tv plugin for Showtime
+ * divan.tv plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -142,10 +142,11 @@
         }));
         //showtime.print(showtime.JSONEncode(json));
         var lnk = "videoparams:" + showtime.JSONEncode({
-            title: unescape(title),
+            title: (json.stream ? ' ': '$') + unescape(title),
             sources: [{
                 url: "hls:" + (json.stream ? json.stream : json.preview_stream)
-            }]
+            }],
+            no_subtitle_scan: true
         });
 
         var tariffs = '';
@@ -466,6 +467,10 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().synopsis);
+        plugin.addHTTPAuth('(http|https)://.*\\.divan\\.tv.*', function(req) {
+            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+        });
+
         if (logged) {
              page.appendPassiveItem('video', '', {
                  title: new showtime.RichText(coloredStr(user.email ? user.email : user.login, orange) + ' (' + countryCode.replace(/\"/g, '') + ')'),
@@ -609,6 +614,7 @@
             title: 'Все ►'
         });
     });
+
     plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
         if (!logged) loginAndGetConfig(page, false);
         var totalItems, offset = 0, tryToSearch = true;
