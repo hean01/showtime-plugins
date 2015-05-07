@@ -1175,6 +1175,7 @@
             sources: [{
                 url: unescape(video_url)
             }],
+            no_subtitle_scan: true,
             subtitles: []
         }
         var subs = unescape(id);
