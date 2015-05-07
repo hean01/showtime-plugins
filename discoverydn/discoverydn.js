@@ -18,7 +18,6 @@
  */
 
 (function(plugin) {
-    var BASE_URL;
     var logo = plugin.path + "logo.png"
 
     var blue = "6699CC", orange = "FFA500";
@@ -49,15 +48,14 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*)", function(page, url, title) {
         page.loading = true;
-        var doc = showtime.httpReq(BASE_URL + unescape(url)).toString();
+        var doc = showtime.httpReq(unescape(url)).toString();
 
         if (doc.match(/<iframe id="yt-iframe"/)) {
-            //var link = 'youtube:video:' + escape('https:' + doc.match(/<iframe id="yt-iframe"[\s\S]*?src="([\s\S]*?)"/)[1]);
             page.type = "video";
             page.source = 'youtube:video:' + escape('https:' + doc.match(/<iframe id="yt-iframe"[\s\S]*?src="([\s\S]*?)"/)[1]);
         } else {
             var videoId = doc.match(/\'video_id\', (\d+)/)[1];
-            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/api/getPlaylist.json?api_key=ba9c741bce1b9d8e3defcc22193f3651b8867e62&codecs=h264&video_id=' + videoId));
+            var json = showtime.JSONDecode(showtime.httpReq('https://' + unescape(url).match(/:\/\/([\s\S]*?)\//)[1] + '/api/getPlaylist.json?api_key=ba9c741bce1b9d8e3defcc22193f3651b8867e62&codecs=h264&video_id=' + videoId));
             var link = json.items[0].media.h264.hd.url
             page.type = "video";
             page.source = "videoparams:" + showtime.JSONEncode({
@@ -65,7 +63,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':play:' + url + ':' + title,
                 sources: [{
                     url: link
-                }]
+                }],
+                no_subtitle_scan: true
             });
         }
         page.loading = false;
@@ -73,9 +72,9 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":site:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, title);
-        BASE_URL = unescape(url);
+        var baseURL = unescape(url);
 
-        var doc = showtime.httpReq(BASE_URL).toString();
+        var doc = showtime.httpReq(baseURL).toString();
         page.loading = false;
         // 1 - link, 2 - icon, 3 - title, 4 - description
         var featured = doc.match(/<div class="featured">[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?background-image: url\(([\s\S]*?)\)[\s\S]*?title">([\s\S]*?)<\/p>[\s\S]*?subtitle">([\s\S]*?)<\/p>/);
@@ -83,7 +82,7 @@
             page.appendItem("", "separator", {
                 title: 'Featured'
             });
-            page.appendItem(plugin.getDescriptor().id + ':play:' + escape(featured[1]) + ':' + encodeURIComponent(showtime.entityDecode(featured[3])), "video", {
+            page.appendItem(plugin.getDescriptor().id + ':play:' + escape(baseURL + featured[1]) + ':' + encodeURIComponent(showtime.entityDecode(featured[3])), "video", {
                 title: showtime.entityDecode(featured[3]),
                 icon: featured[2],
                 description: showtime.entityDecode(featured[4])
@@ -114,13 +113,13 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            doc = showtime.httpReq(BASE_URL + '/episodes/page?offset=' + offset);
+            doc = showtime.httpReq(baseURL + '/episodes/page?offset=' + offset);
             page.loading = false;
             var match = re.exec(doc);
             if (!match)
                 return tryToSearch = false
             while (match) {
-                page.appendItem(plugin.getDescriptor().id + ':play:' + escape(match[3]) + ':' + encodeURIComponent(match[2]), "video", {
+                page.appendItem(plugin.getDescriptor().id + ':play:' + escape(baseURL + match[3]) + ':' + encodeURIComponent(match[2]), "video", {
                     title: match[2],
                     icon: match[1],
                     description: new showtime.RichText(coloredStr('Show name: ', orange) + match[5] +
@@ -162,20 +161,19 @@
         page.loading = false;
     });
 
-    function checkUrl(url) {
-        return unescape(url).substr(0, 4) == 'http' ? unescape(url) : BASE_URL + unescape(url)
-    }
-
     plugin.addURI(plugin.getDescriptor().id + ":index:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, decodeURIComponent(title));
-        var doc = showtime.httpReq(checkUrl(url)).toString();
+        var baseURL = 'https://' + unescape(url).match(/:\/\/([\s\S]*?)\//)[1];
+        var doc = showtime.httpReq(unescape(url)).toString();
+        if (doc.match(/<meta name="twitter:player"/))
+            page.redirect(plugin.getDescriptor().id + ':play:' + url + ':' + title);
         var shows = doc.match(/<div class="shows">([\s\S]*?)<\/ul>/);
         if (shows) {
             // 1 - url, 2 - title
             var re = /<div class="tab">[\s\S]*?href="([\s\S]*?)">([\s\S]*?)<\/a>/g;
             var match = re.exec(doc);
             while (match) {
-                page.appendItem(plugin.getDescriptor().id + ':index:' + escape(match[1]) + ':' + encodeURIComponent(match[2]), "directory", {
+                page.appendItem(plugin.getDescriptor().id + ':index:' + escape(baseURL + match[1]) + ':' + encodeURIComponent(match[2]), "directory", {
                     title: match[2]
                 });
                 match = re.exec(doc);
@@ -185,7 +183,7 @@
             re = /<a href="([\s\S]*?)" title="([\s\S]*?)"[\s\S]*?src="([\s\S]*?)"/g;
             match = re.exec(shows[1]);
             while (match) {
-                page.appendItem(plugin.getDescriptor().id + ':index:' + escape(match[1]) + ':' + encodeURIComponent(showtime.entityDecode(match[2])), "video", {
+                page.appendItem(plugin.getDescriptor().id + ':index:' + escape(baseURL + match[1]) + ':' + encodeURIComponent(showtime.entityDecode(match[2])), "video", {
                     title: showtime.entityDecode(match[2]),
                     icon: match[3]
                 });
@@ -193,18 +191,20 @@
             }
         } else {
             var tryToSearch = true, offset = 0;
-
             // 1 - icon, 2 - title, 3 - url, 4 - description, 5 - show's name, 6 - show's url, 7 - time
             var re = /class="episode [\s\S]*?data-src="([\s\S]*?)"[\s\S]*?<a rel="([\s\S]*?)"[\s\S]*?href="([\s\S]*?)">[\s\S]*?<p class="description">([\s\S]*?)<\/p>[\s\S]*?rel="([\s\S]*?)"[\s\S]*?href="([\s\S]*?)"[\s\S]*?class="time">([\s\S]*?)<\/time>/g;
-
             function loader() {
                 if (!tryToSearch) return false;
                 var match = re.exec(doc);
                 if (!match)
                      return tryToSearch = false
                 while (match) {
-                    page.appendItem(plugin.getDescriptor().id + ':play:' + escape(match[3]) + ':' + encodeURIComponent(match[2]), "video", {
-                        title: match[2] ? unescape(match[2]) : trim(match[4]),
+                    var itemTitle = match[2] ? unescape(match[2]) : trim(match[4]);
+                    if (!itemTitle)
+                        itemTitle = 'Empty title';
+
+                    page.appendItem(plugin.getDescriptor().id + ':play:' + escape(baseURL + match[3]) + ':' + encodeURIComponent(itemTitle), "video", {
+                        title: itemTitle,
                         icon: match[1],
                         description: new showtime.RichText(coloredStr('Show name: ', orange) + match[5] +
                             coloredStr('\nAdded: ', orange) + match[7] +
@@ -216,20 +216,20 @@
                 var next = doc.match(/<div class="next active"><a href="([\s\S]*?)">/);
                 if (next) {
                     page.loading = true;
-                    doc = showtime.httpReq(BASE_URL + next[1]).toString();
+                    doc = showtime.httpReq(baseURL + next[1]).toString();
                     page.loading = false;
                     return true;
                 }
                 return tryToSearch = false;
-        };
+            };
             loader();
             page.paginator = loader;
         }
         page.loading = false;
     });
 
-    function searchUrl(page, query, url) {
-        var doc = showtime.httpReq(url + '/search/?q=' + escape(query)).toString();
+    function searchUrl(page, query, baseURL) {
+        var doc = showtime.httpReq(baseURL + '/search/?q=' + escape(query)).toString();
         page.entries = 0;
         var tryToSearch = true;
         page.metadata.title += ' (' + trim(doc.match(/<div class="resultsCount">([\s\S]*?)<\/div>/)[1]) + ')';
@@ -252,13 +252,12 @@
             var next = doc.match(/<a class="nextPage" href="([\S\s]*?)">/);
             if (next) {
                  page.loading = true;
-                 doc = showtime.httpReq(url + next[1]).toString();
+                 doc = showtime.httpReq(baseURL + next[1]).toString();
                  page.loading = false;
                  return true;
             }
             return page.loading = tryToSearch = false;
         };
-
         loader();
         page.paginator = loader;
     }
@@ -266,7 +265,6 @@
     plugin.addSearcher(plugin.getDescriptor().title + ' (Revision3)', logo, function(page, query) {
         searchUrl(page, query, 'https://revision3.com');
     });
-
     plugin.addSearcher(plugin.getDescriptor().title + ' (Animalist)', logo, function(page, query) {
         searchUrl(page, query, 'https://animalist.com');
     });
