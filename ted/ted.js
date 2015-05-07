@@ -1,5 +1,5 @@
 ﻿/**
- * TED Talks plugin for Showtime Media Center
+ * TED Talks plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -43,6 +43,31 @@
 
     var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "video", true, logo);
 
+    function appendItem(page, url, title, description) {
+        if (url.match(/m3u8/))
+            url = 'hls:' + url;
+
+        var link = "videoparams:" + showtime.JSONEncode({
+                title: title,
+                //canonicalUrl: plugin.getDescriptor().id + ':play:' + url + ':' + title,
+                sources: [{
+                    url: url
+                }],
+                no_subtitle_scan: true
+            });
+
+        if (url.match(/m3u8/))
+            title = coloredStr('HLS ', orange) + title;
+
+        if (url.match(/mp4/))
+            title = coloredStr('MP4 ', orange) + title;
+
+        page.appendItem(link, "video", {
+            title: new showtime.RichText(title),
+            description: description
+        });
+    }
+
     plugin.addURI(plugin.getDescriptor().id + ":talk:(.*):(.*)", function(page, link, title) {
         setPageHeader(page, decodeURIComponent(title));
         page.loading = true;
@@ -50,15 +75,13 @@
         page.loading = false;
 
         var description = trim(doc.match(/<p class='talk-description' lang='[\s\S]*?'>([\s\S]*?)<\/p>/)[1]);
-        page.appendItem(doc.match(/"stream":"([\s\S]*?)"/)[1], "video", {
-            title: new showtime.RichText(coloredStr('HLS ', orange) + decodeURIComponent(title)),
-            description: description
-        });
+        appendItem(page, doc.match(/"stream":"([\s\S]*?)"/)[1],
+            decodeURIComponent(title),
+            description);
 
-        page.appendItem(doc.match(/"high":"([\s\S]*?)"/)[1], "video", {
-            title: new showtime.RichText(coloredStr('MP4 ', orange) + showtime.entityDecode(decodeURIComponent(title))),
-            description: description
-        });
+        appendItem(page, doc.match(/"high":"([\s\S]*?)"/)[1],
+            showtime.entityDecode(decodeURIComponent(title)),
+            description);
 
         var json = showtime.JSONDecode(doc.match(/"subtitledDownloads":([\s\S]*?),"audioDownload"/)[1]);
         var first = true;
@@ -70,13 +93,9 @@
                  first = false;
              }
              if (json[i].high)
-                 page.appendItem(json[i].high, "video", {
-                     title: json[i].name
-                 });
+                 appendItem(page, json[i].high, json[i].name, null);
              else
-                 page.appendItem(json[i].low, "video", {
-                     title: json[i].name
-                 });
+                 appendItem(page, json[i].low, json[i].name, null);
         }
     });
 
