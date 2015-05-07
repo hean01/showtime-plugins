@@ -228,8 +228,8 @@
         page.loading = false;
     });
 
-    plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
-        var doc = showtime.httpReq(BASE_URL + '/search/?q=' + escape(query)).toString();
+    function searchUrl(page, query, url) {
+        var doc = showtime.httpReq(url + '/search/?q=' + escape(query)).toString();
         page.entries = 0;
         var tryToSearch = true;
         page.metadata.title += ' (' + trim(doc.match(/<div class="resultsCount">([\s\S]*?)<\/div>/)[1]) + ')';
@@ -252,7 +252,7 @@
             var next = doc.match(/<a class="nextPage" href="([\S\s]*?)">/);
             if (next) {
                  page.loading = true;
-                 doc = showtime.httpReq(BASE_URL + next[1]).toString();
+                 doc = showtime.httpReq(url + next[1]).toString();
                  page.loading = false;
                  return true;
             }
@@ -261,5 +261,16 @@
 
         loader();
         page.paginator = loader;
+    }
+
+    plugin.addSearcher(plugin.getDescriptor().title + ' (Revision3)', logo, function(page, query) {
+        searchUrl(page, query, 'https://revision3.com');
+    });
+
+    plugin.addSearcher(plugin.getDescriptor().title + ' (Animalist)', logo, function(page, query) {
+        searchUrl(page, query, 'https://animalist.com');
+    });
+    plugin.addSearcher(plugin.getDescriptor().title + ' (TestTube)', logo, function(page, query) {
+        searchUrl(page, query, 'https://testtube.com');
     });
 })(this);

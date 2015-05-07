@@ -100,7 +100,8 @@
 	    var doc = showtime.httpReq(BASE_URL + '/b.php?search=' + query.replace(/\s/g, '\+') + '&cat=0&page=' + fromPage).toString();
 	    page.loading = false;
             scraper(page, doc);
-	    if (!doc.match(/downgif/)) return tryToSearch = false;
+	    if (!doc.match(/<b>След.&nbsp;&gt;&gt;<\/b><\/a>/))
+                return tryToSearch = false;
             fromPage++;
 	    return true;
 	};

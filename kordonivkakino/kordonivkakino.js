@@ -487,7 +487,7 @@
                 match = re.exec(doc);
                 page.entries++;
             }
-            if (doc.match(/<span>следующая&gt;<\/span>/))
+            if (!doc.match(/href="#">следующая&gt;<\/a>/))
                 return tryToSearch = false;
             p++;
             return true;
