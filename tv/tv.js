@@ -179,7 +179,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':sputniktv:' + url + ':' + title,
                 sources: [{
                     url: 'hls:' + match[1]
-                }]
+                }],
+                no_subtitle_scan: true
             });
         } else page.error("Sorry, can't get the link :(");
     });
@@ -196,14 +197,15 @@
                 canonicalUrl: plugin.getDescriptor().id + ':ntv:' + url + ':' + title,
                 sources: [{
                     url: 'hls:' + match[1]
-                }]
+                }],
+                no_subtitle_scan: true
             });
         } else page.error("Sorry, can't get the link :(");
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":divan:(.*):(.*)", function(page, url, title) {
         page.loading = true;
-        var resp = showtime.httpReq(unescape(url)).toString();
+        var resp = showtime.httpReq(unescape(url).match(/http/) ? unescape(url) : 'http://divan.tv' + unescape(url)).toString();
         page.loading = false;
         var match = resp.match(/file: "([\S\s]*?)"/);
         if (match) {
@@ -213,7 +215,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':divan:' + url + ':' + title,
                 sources: [{
                     url: 'hls:' + match[1]
-                }]
+                }],
+                no_subtitle_scan: true
             });
         } else page.error("Sorry, can't get the link :(");
     });
@@ -233,7 +236,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':tonis:' + url + ':' + title,
                 sources: [{
                     url: 'hls:' + link.replace('manifest.f4m', 'master.m3u8')
-                }]
+                }],
+                no_subtitle_scan: true
             });
         } else page.error("Sorry, can't get the link :(");
     });
@@ -266,7 +270,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':tivix:' + url + ':' + title,
                 sources: [{
                     url: url
-                }]
+                }],
+                no_subtitle_scan: true
             });
             return;
         }
@@ -293,7 +298,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':uatoday:' + url + ':' + title,
                 sources: [{
                     url: 'hls:http' + match[1]
-                }]
+                }],
+                no_subtitle_scan: true
             });
         } else page.error("Sorry, can't get the link :(");
     });
@@ -320,7 +326,8 @@
                     canonicalUrl: plugin.getDescriptor().id + ':seetv:' + url + ':' + title,
                     sources: [{
                         url: 'hls:' + unescape(doc.file)
-                    }]
+                    }],
+                    no_subtitle_scan: true
                 });
             } else
                 page.error("Sorry, can't get the link :(");
@@ -340,7 +347,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':1hd:' + url + ':' + title,
                 sources: [{
                     url: match[1]
-                }]
+                }],
+                no_subtitle_scan: true
             });
         } else page.error("Sorry, can't get the link :(");
     });
@@ -357,7 +365,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':jampo:' + url + ':' + title,
                 sources: [{
                     url: 'hls:' + showtime.JSONDecode(unhash(match[1])).file
-                }]
+                }],
+                no_subtitle_scan: true
             });
         } else page.error("Sorry, can't get the link :(");
     });
@@ -374,7 +383,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':glaz:' + url + ':' + title,
                 sources: [{
                     url: match[1].match(/m3u8/) ? 'hls:' + match[1] : match[1]
-                }]
+                }],
+                no_subtitle_scan: true
             });
        } else page.error("Sorry, can't get the link :(");
     });
@@ -390,7 +400,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':yamgo:' + url + ':' + title,
                 sources: [{
                     url: 'hls:' + resp.channel.channel_url_ipad
-                }]
+                }],
+                no_subtitle_scan: true
             });
        } else page.error("Sorry, can't get the link :(");
     });
@@ -407,7 +418,8 @@
                     canonicalUrl: plugin.getDescriptor().id + ':trk:' + title,
                     sources: [{
                         url: 'hls:' + match[1]
-                    }]
+                    }],
+                    no_subtitle_scan: true
                 });
             } else page.error("Sorry, can't get the link :(");
     });
@@ -424,7 +436,8 @@
                     canonicalUrl: plugin.getDescriptor().id + ':gamax:' + url + ':' + title,
                     sources: [{
                         url: match[1].match(/m3u8/) ? 'hls:' + match[1] : match[1]
-                    }]
+                    }],
+                    no_subtitle_scan: true
                 });
             } else page.error("Sorry, can't get the link :(");
     });
@@ -445,7 +458,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ':euronews:' + country + ':' + title,
                 sources: [{
                     url: 'hls:' + json.primary[country].hls
-                }]
+                }],
+                no_subtitle_scan: true
             });
         } else
              page.error("Sorry, can't get the link :(");
@@ -463,7 +477,8 @@
                     canonicalUrl: plugin.getDescriptor().id + ':vgtrk:' + url + ':' + title,
                     sources: [{
                         url: 'hls:' + match[1].replace(/\\/g, '')
-                    }]
+                    }],
+                    no_subtitle_scan: true
                 });
             } else
                  page.error("Sorry, can't get the link :(");
@@ -477,7 +492,8 @@
             sources: [{
                 url: unescape(url),
                 mimetype: 'video/mp2t'
-            }]
+            }],
+            no_subtitle_scan: true
         });
         page.type = 'video'
         page.source = link;
@@ -491,7 +507,8 @@
                 no_fs_scan: true,
                 sources: [{
                     url: url
-                }]
+                }],
+                no_subtitle_scan: true
             });
         };
 
@@ -709,26 +726,6 @@
         addChannel(page, '34', 'direct', 'rtmp://193.200.32.17/simplevideostreaming/flv:simplevideostreaming.flv');
         //http://112.ua/live  //rtmp://31.28.169.242/live/live112
         addChannel(page, '112', 'direct', 'hls:http://31.28.169.242/hls/live112.m3u8', 'http://112.ua/static/img/logo/112_ukr.png');
-        addChannel(page, 'Рада', 'divan', 'http://divan.tv/tv/view/rada-17');
-        addChannel(page, '100% News', 'divan', 'http://divan.tv/tv/view/100-news-327');
-        addChannel(page, '3D Planet HD', 'divan', 'http://divan.tv/tv/view/3d-planet-hd-275');
-        addChannel(page, 'ЧПinfo', 'divan', 'http://divan.tv/tv/view/chpnpho-38');
-        addChannel(page, 'Телеканал 100', 'divan', 'http://divan.tv/tv/view/telekanal-100-299');
-        addChannel(page, 'Про всё', 'divan', 'http://divan.tv/tv/view/pro-vse-246');
-        addChannel(page, 'Гамма', 'divan', 'http://divan.tv/tv/view/gamma-40');
-        addChannel(page, 'Утр', 'divan', 'http://divan.tv/tv/view/utr-103');
-        addChannel(page, 'Реноме', 'divan', 'http://divan.tv/tv/view/renome-326');
-        addChannel(page, 'Эко тв', 'divan', 'http://divan.tv/tv/view/jeko-tv-106');
-        addChannel(page, 'Соц Краiна', 'divan', 'http://divan.tv/tv/view/socalna-krana-476');
-        addChannel(page, 'ЦК', 'divan', 'http://divan.tv/tv/view/centralnyj-kanal-kiev-105');
-        addChannel(page, 'НТА', 'divan', 'http://divan.tv/tv/view/nta-lvov-220');
-        addChannel(page, 'Тиса', 'divan', 'http://divan.tv/tv/view/zakarpatska-odtk--tisa-245');
-        addChannel(page, 'Zik', 'divan', 'http://divan.tv/tv/view/zik-lvov-251');
-        addChannel(page, 'Одесса', 'divan', 'http://divan.tv/tv/view/odessa-interneshnl-278');
-        addChannel(page, 'Трк Буковина', 'divan', 'http://divan.tv/tv/view/trk-bukovina-321');
-        addChannel(page, 'Тва Мiсто', 'divan', 'http://divan.tv/tv/view/tva-msto--chernovcy-349');
-        addChannel(page, 'Трк Алекс', 'divan', 'http://divan.tv/tv/view/trk-aleks-396');
-        addChannel(page, 'ИТВ', 'divan', 'http://divan.tv/tv/view/itv-simpheropol-295');
         addChannel(page, 'TET', 'jampo', 'tet', 'http://upload.wikimedia.org/wikipedia/ru/7/72/%D0%9B%D0%BE%D0%B3%D0%BE%D1%82%D0%B8%D0%BF_%D1%82%D0%B5%D0%BB%D0%B5%D0%BA%D0%BE%D0%BC%D0%BF%D0%B0%D0%BD%D0%B8%D0%B8_%D0%A2%D0%95%D0%A2.jpg');
         addChannel(page, '1+1', 'jampo', '1plus1', 'http://upload.wikimedia.org/wikipedia/commons/thumb/0/07/1_plus_1_logo.svg/200px-1_plus_1_logo.svg.png');
         addChannel(page, '1+1 International', 'sputniktv', 'http://sputniktv.in.ua/11-international.html');
@@ -902,7 +899,7 @@
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":tivixStart", function(page) {
-        setPageHeader(page, 'Tivix');
+        setPageHeader(page, 'Tivix.net');
         page.loading = true;
         var doc = showtime.httpReq('http://tivix.net').toString();
         page.loading = false;
@@ -920,6 +917,59 @@
             menus = re.exec(doc);
             page.appendItem("", "separator");
         }
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":divanStart", function(page) {
+        setPageHeader(page, 'Divan.tv');
+        page.loading = true;
+        var doc = showtime.httpReq('https://divan.tv/tv/?devices=online&access=free').toString();
+
+        // 1-url, 2-icon, 3-title
+        var re = /class="tv-channel[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?src="([\S\s]*?)"[\S\s]*?<a title="([\S\s]*?)"/g;
+        var match = re.exec(doc);
+        var n = 0;
+        while (match) {
+            page.appendItem(plugin.getDescriptor().id + ":divan:" + escape(match[1]) + ':' + escape(match[3]), "video", {
+                title: match[3],
+                icon: match[2]
+            });
+            match = re.exec(doc);
+            n++;
+        }
+
+        doc = showtime.httpReq('http://divan.tv/tv/getNextPage', {
+            postdata: {
+                filters: '{"page":2}'
+            }
+        }).toString();
+        match = re.exec(doc);
+        page.loading = false;
+        while (match) {
+            page.appendItem(plugin.getDescriptor().id + ":divan:" + escape(match[1]) + ':' + escape(match[3]), "video", {
+                title: match[3],
+                icon: match[2]
+            });
+            match = re.exec(doc);
+            n++;
+        }
+
+        doc = showtime.httpReq('http://divan.tv/tv/getNextPage', {
+            postdata: {
+                filters: '{"page":3}'
+            }
+        }).toString();
+        match = re.exec(doc);
+        page.loading = false;
+        while (match) {
+            page.appendItem(plugin.getDescriptor().id + ":divan:" + escape(match[1]) + ':' + escape(match[3]), "video", {
+                title: match[3],
+                icon: match[2]
+            });
+            match = re.exec(doc);
+            n++;
+        }
+
+        page.metadata.title += ' (' + n + ')';
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":yooooStart", function(page) {
@@ -950,7 +1000,8 @@
                 title: title,
                 sources: [{
                     url: 'hls:http://tv.yoooo.tv/onstream/' + id + '/' + i + '.m3u8'
-                }]
+                }],
+                no_subtitle_scan: true
             });
             var icon = 'http://yoooo.tv/images/playlist/' + json[i].img;
             var item = page.appendItem(link, "video", {
@@ -1014,7 +1065,8 @@
                 title: title,
                 sources: [{
                     url: m[5].match(/m3u8/) ? 'hls:' + m[5].trim() : m[5].trim()
-                }]
+                }],
+                no_subtitle_scan: true
             });
             var item = page.appendItem(link, "video", {
                 title: title
@@ -1065,7 +1117,8 @@
                     title: title,
                     sources: [{
                         url: m[3].match(/m3u8/) ? 'hls:' + m[3].trim() : m[3].trim()
-                    }]
+                    }],
+                    no_subtitle_scan: true
                 });
                 var item = page.appendItem(link, "video", {
                     title: title
@@ -1110,9 +1163,13 @@
 	page.appendItem(plugin.getDescriptor().id + ":category:Hungarian", "directory", {
 	    title: "Hungarian"
 	});
+
         page.appendItem("", "separator");
+	page.appendItem(plugin.getDescriptor().id + ":divanStart", "directory", {
+	    title: "Divan.tv"
+	});
 	page.appendItem(plugin.getDescriptor().id + ":tivixStart", "directory", {
-	    title: "TIVIX"
+	    title: "Tivix.net"
 	});
 	page.appendItem(plugin.getDescriptor().id + ":yooooStart", "directory", {
 	    title: "Yoooo.tv"
