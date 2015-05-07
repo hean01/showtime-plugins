@@ -568,7 +568,7 @@
         addChannel(page, 'DW Europe', 'direct', 'hls:http://www.metafilegenerator.de/DWelle/tv-europa/ios/master.m3u8', 'https://lh5.googleusercontent.com/-9Ir29NdKHLU/AAAAAAAAAAI/AAAAAAAAIiY/TF5J4A4ZdP8/s120-c/photo.jpg');
         addChannel(page, 'France 24', 'direct', 'hls:http://static.france24.com/live/F24_EN_LO_HLS/live_web.m3u8', 'http://upload.wikimedia.org/wikipedia/en/thumb/6/65/FRANCE_24_logo.svg/200px-FRANCE_24_logo.svg.png');
         addChannel(page, 'CNN', 'direct', 'http://wpc.c1a9.edgecastcdn.net/hls-live/20C1A9/cnn/ls_satlink/b_828.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/8/8b/Cnn.svg');
-        addChannel(page, 'CNBC', 'direct', 'http://origin2.live.web.tv.streamprovider.net/streams/3bc166ba3776c04e987eb242710e75c0/index.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/CNBC_logo.svg/200px-CNBC_logo.svg.png');
+        addChannel(page, 'CNBC', 'direct', 'http://wpc.c1a9.edgecastcdn.net/hls-live/20C1A9/cnbc_eu/ls_satlink/b_828.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/CNBC_logo.svg/200px-CNBC_logo.svg.png');
         addChannel(page, 'Bloomberg', 'direct', 'http://wpc.c1a9.edgecastcdn.net/hls-live/20C1A9/bloomberg/ls_satlink/b_828.m3u8', 'http://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Bloomberg_logo.svg/200px-Bloomberg_logo.svg.png');
         //http://live.bltvios.com.edgesuite.net/oza2w6q8gX9WSkRx13bskffWIuyf/BnazlkNDpCIcD-QkfyZCQKlRiiFnVa5I/master.m3u8?geo_country=US
         addChannel(page, 'Sky News', 'youtube', '', 'http://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Sky_News.svg/200px-Sky_News.svg.png');
@@ -926,50 +926,38 @@
 
         // 1-url, 2-icon, 3-title
         var re = /class="tv-channel[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?src="([\S\s]*?)"[\S\s]*?<a title="([\S\s]*?)"/g;
-        var match = re.exec(doc);
         var n = 0;
-        while (match) {
-            page.appendItem(plugin.getDescriptor().id + ":divan:" + escape(match[1]) + ':' + escape(match[3]), "video", {
-                title: match[3],
-                icon: match[2]
-            });
-            match = re.exec(doc);
-            n++;
+
+        function appendItems() {
+            var match = re.exec(doc);
+            while (match) {
+                var item = page.appendItem(plugin.getDescriptor().id + ":divan:" + escape(match[1]) + ':' + escape(match[3]), "video", {
+                    title: match[3],
+                    icon: match[2]
+                });
+                addToFavoritesOption(item, plugin.getDescriptor().id + ":divan:" + escape(match[1]) + ':' + escape(match[3]), match[3], match[2]);
+                match = re.exec(doc);
+                n++;
+            }
         }
 
+        appendItems();
         doc = showtime.httpReq('http://divan.tv/tv/getNextPage', {
             postdata: {
                 filters: '{"page":2}'
             }
         }).toString();
-        match = re.exec(doc);
-        page.loading = false;
-        while (match) {
-            page.appendItem(plugin.getDescriptor().id + ":divan:" + escape(match[1]) + ':' + escape(match[3]), "video", {
-                title: match[3],
-                icon: match[2]
-            });
-            match = re.exec(doc);
-            n++;
-        }
+        appendItems();
 
         doc = showtime.httpReq('http://divan.tv/tv/getNextPage', {
             postdata: {
                 filters: '{"page":3}'
             }
         }).toString();
-        match = re.exec(doc);
-        page.loading = false;
-        while (match) {
-            page.appendItem(plugin.getDescriptor().id + ":divan:" + escape(match[1]) + ':' + escape(match[3]), "video", {
-                title: match[3],
-                icon: match[2]
-            });
-            match = re.exec(doc);
-            n++;
-        }
+        appendItems();
 
         page.metadata.title += ' (' + n + ')';
+        page.loading = false;
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":yooooStart", function(page) {
