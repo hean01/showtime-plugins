@@ -964,7 +964,12 @@
             req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
         });
 
+        var international = false;
         var doc = showtime.httpReq('https://divan.tv/tv/?devices=online&access=free').toString();
+        if (doc.match(/land-change-site/)) {
+            international = true;
+            doc = showtime.httpReq('https://divan.tv/int/tv/?devices=online&access=free').toString();
+        }
 
         // 1-url, 2-icon, 3-title
         var re = /class="tv-channel[\S\s]*?<a href="([\S\s]*?)"[\S\s]*?src="([\S\s]*?)"[\S\s]*?<a title="([\S\s]*?)"/g;
@@ -984,14 +989,17 @@
         }
 
         appendItems();
-        doc = showtime.httpReq('http://divan.tv/tv/getNextPage', {
+        var nextPageUrl = 'https://divan.tv/int/tv/getNextPage';
+        if (international)
+            nextPageUrl = 'http://divan.tv/tv/getNextPage';
+        doc = showtime.httpReq(nextPageUrl, {
             postdata: {
                 filters: '{"page":2}'
             }
         }).toString();
         appendItems();
 
-        doc = showtime.httpReq('http://divan.tv/tv/getNextPage', {
+        doc = showtime.httpReq(nextPageUrl, {
             postdata: {
                 filters: '{"page":3}'
             }
@@ -1249,7 +1257,7 @@
 
         function loader() {
             if (!tryToSearch) return false;
-            // 1-logo, 2-title, 3-flags, 4-link, 5-description, 6-viewers, 7-category, 8-totalviewers
+            // 1-logo, 2-title, 3-flags, 4-link, 5-description, 6-viewers, 7-category, 8-totalviews, 9-language
             var re = /class="clist-thumb">[\s\S]*?src="([\s\S]*?)"[\s\S]*?alt="([\s\S]*?)"([\s\S]*?)<a href="([\s\S]*?)"[\s\S]*?<strong>([\s\S]*?)<\/strong>[\s\S]*?<span class="viewers">([\s\S]*?)<\/span>[\s\S]*?<span class="totalviews">([\s\S]*?)<\/span>[\s\S]*?">([\s\S]*?)<\/a>[\s\S]*?">([\s\S]*?)<\/a>/g;
             match = re.exec(doc);
             var itemsCount = 0;
@@ -1264,9 +1272,9 @@
                     icon: match[1],
                     description: new showtime.RichText(coloredStr('Description: ', orange) + match[5].replace(/\s{2,}/g, ' ').replace(/\n/g, '') +
                         coloredStr('\nViewers: ', orange) + match[6] +
-                        coloredStr('\nCategory: ', orange) + match[7] +
-                        coloredStr('\nViewers: ', orange) + match[8] +
-                        coloredStr('\nTotal views: ', orange) + match[9])
+                        coloredStr('\nTotal views: ', orange) + match[7] +
+                        coloredStr('\nCategory: ', orange) + match[8] +
+                        coloredStr('\nLanguage: ', orange) + match[9])
                 });
                 addToFavoritesOption(item, link, match[2], match[1]);
                 match = re.exec(doc);
