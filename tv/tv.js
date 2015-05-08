@@ -293,9 +293,9 @@
                 continue;
             }
             if (match[1].match(/rtmp/))
-                url = unescape(match[1]) + ' swfUrl=http://tivix.net' + resp.match(/data="(.*)"/)[1] + ' pageUrl=' + unescape(url);
+                var link = unescape(match[1]) + ' swfUrl=http://tivix.net' + resp.match(/data="(.*)"/)[1] + ' pageUrl=' + unescape(url);
             else
-                url = match[1].match('m3u8') ? 'hls:' + unescape(match[1]) : unescape(match[1]);
+                var link = match[1].match('m3u8') ? 'hls:' + unescape(match[1]) : unescape(match[1]);
 
             page.loading = false;
             page.type = "video";
@@ -303,7 +303,7 @@
                 title: unescape(title),
                 canonicalUrl: plugin.getDescriptor().id + ':tivix:' + url + ':' + title,
                 sources: [{
-                    url: url
+                    url: link
                 }],
                 no_subtitle_scan: true
             });
