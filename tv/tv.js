@@ -233,8 +233,9 @@
             var n = 0;
             while (n < 5)
                 try {
-                    var size = roughSizeOfObject(showtime.httpReq(match[1]));
-                    showtime.print(unescape(title) + ': Got ' + size + ' bytes');
+                    //var size = roughSizeOfObject(showtime.httpReq(match[1]));
+                    //showtime.print(unescape(title) + ': Got ' + size + ' bytes');
+                    showtime.httpReq(match[1])
                     break;
                 } catch(err) {
                     showtime.print('Retry #' + (n + 1));

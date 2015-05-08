@@ -18,11 +18,7 @@
  */
 
 (function(plugin) {
-    var plugin_info = plugin.getDescriptor();
-    var PREFIX = plugin_info.id;
-    var BASE_URL = 'http://zerkalo-rutor.org';
     var logo = plugin.path + "logo.png";
-    var slogan = plugin_info.synopsis;
 
     var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
@@ -44,7 +40,14 @@
         page.loading = false;
     }
 
-    plugin.createService(plugin_info.title, PREFIX + ":start", "video", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "video", true, logo);
+
+    var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().synopsis);
+
+    settings.createString('baseURL', "Base URL without '/' at the end.", 'http://zerkalo-rutor.org', function(v) {
+        service.baseURL = v;
+    });
+
 
     function scraper(page, doc) {
         // 1-date, 2-filelink, 3-infolink, 4-title, 5-(1)size, (2)seeds, (3)peers
@@ -56,7 +59,7 @@
                 var comments = match[5].match(/[\s\S]*?<td align="right">([\s\S]*?)</)[1];
             } else
                 var end = match[5].match(/[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-            page.appendItem('torrent:browse:'+ BASE_URL + match[2].match(/(\/download.*)/)[1], "directory", {
+            page.appendItem('torrent:browse:'+ service.baseURL + match[2].match(/(\/download.*)/)[1], "directory", {
                 title: new showtime.RichText(colorStr(match[1], orange) + ' ' +
                     match[4] + ' ('+ coloredStr(end[2], green) + '/'+
                     coloredStr(end[3], red) + ') ' + colorStr(end[1], blue) +
@@ -67,10 +70,10 @@
         }
     }
 
-    plugin.addURI(PREFIX + ":start", function(page) {
-        setPageHeader(page, plugin_info.synopsis);
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
+        setPageHeader(page, plugin.getDescriptor().synopsis);
         page.loading = true;
-        var doc = showtime.httpReq(BASE_URL + '/top').toString();
+        var doc = showtime.httpReq(service.baseURL + '/top').toString();
         doc = doc.match(/<div id="index">([\s\S]*?)<!-- bottom banner -->/);
         if (doc) {
            var re = /<h2>([\s\S]*?)<\/h2>([\s\S]*?)<\/table>/g;
@@ -93,7 +96,7 @@
 	function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-	    var doc = showtime.httpReq(BASE_URL + "/search/"+ fromPage +"/0/000/0/" + query.replace(/\s/g, '\+')).toString();
+	    var doc = showtime.httpReq(service.baseURL + "/search/"+ fromPage +"/0/000/0/" + query.replace(/\s/g, '\+')).toString();
 	    page.loading = false;
             scraper(page, doc);
 	    if (!doc.match(/downgif/)) return tryToSearch = false;
