@@ -1,5 +1,5 @@
 /*
- *  Enigma2
+ *  Enigma2 plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -21,7 +21,6 @@ var XML = require('showtime/xml');
 
 (function(plugin) {
     var logo = plugin.path + "logo.png";
-    var slogan = "Enigma2";
 
     function setPageHeader(page, title) {
 	page.type = "directory";
@@ -31,10 +30,7 @@ var XML = require('showtime/xml');
 	page.loading = false;
     }
 
-    var blue = '6699CC',
-        orange = 'FFA500',
-        red = 'EE0000',
-        green = '008B45';
+    var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
     function coloredStr(str, color) {
         return '<font color="' + color + '">' + str + '</font>';
@@ -49,7 +45,7 @@ var XML = require('showtime/xml');
         return s.replace(/^\s+|\s+$/g, '');
     };
 
-    var service = plugin.createService(slogan, plugin.getDescriptor().id + ":start", "tv", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "tv", true, logo);
 
     var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().synopsis);
     settings.createDivider("Look & Feel");
@@ -61,6 +57,9 @@ var XML = require('showtime/xml');
     });
     settings.createBool("showAllServices", "Show All services", true, function(v) {
         service.showAllServices = v;
+    });
+    settings.createBool("zap", "Zap before channelswitch", true, function(v) {
+        service.zap = v;
     });
 
     var store = plugin.createStore('config', true);
@@ -79,14 +78,16 @@ var XML = require('showtime/xml');
             sources: [{
                 url: unescape(url).replace('https:', 'http:') + ':8001/' + doc.e2currentserviceinformation.e2service.e2servicereference,
                 mimetype: 'video/mp2t'
-            }]
+            }],
+            no_subtitle_scan: true
         });
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":zapTo:(.*):(.*):(.*)", function(page, url, serviceName, serviceReference) {
         page.loading = true;
-        var doc = showtime.httpReq(unescape(url) + '/web/zap?sRef=' + serviceReference);
-        doc = XML.parse(doc);
+        if (service.zap)
+            var doc = showtime.httpReq(unescape(url) + '/web/zap?sRef=' + serviceReference);
+
         page.type = 'video';
         page.loading = false;
         page.source = "videoparams:" + showtime.JSONEncode({
@@ -96,7 +97,8 @@ var XML = require('showtime/xml');
             sources: [{
                 url: unescape(url).replace('https:', 'http:') + ':8001/' + serviceReference,
                 mimetype: 'video/mp2t'
-            }]
+            }],
+            no_subtitle_scan: true
         });
     });
 
@@ -234,7 +236,7 @@ var XML = require('showtime/xml');
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().synopsis);
         page.options.createAction('addReceiver', 'Add receiver', function() {
-            var result = showtime.textDialog('Enter IP address or DNS address of the receiver like:\n' +
+            var result = showtime.textDialog('Enter IP or DNS address of the receiver like:\n' +
                 'http://192.168.0.1 or https://192.168.0.1 or http://nameOfTheReceiver or https://nameOfTheReceiver', true, true);
             if (!result.rejected && result.input) {
                 var receivers = [];
