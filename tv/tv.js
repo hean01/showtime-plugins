@@ -203,12 +203,44 @@
         } else page.error("Sorry, can't get the link :(");
     });
 
+    function roughSizeOfObject(object) {
+        var objectList = [];
+        var recurse = function(value) {
+            var bytes = 0;
+            if (typeof value === 'boolean')
+                bytes = 4;
+            else if (typeof value === 'string')
+                bytes = value.length * 2;
+            else if (typeof value === 'number')
+                bytes = 8;
+            else if (typeof value === 'object' && objectList.indexOf(value) === -1) {
+                objectList[ objectList.length ] = value;
+                for (i in value) {
+                    bytes += 8; // assumed existence overhead
+                    bytes += recurse(value[i])
+                }
+            }
+            return bytes;
+        }
+        return recurse(object);
+    }
+
     plugin.addURI(plugin.getDescriptor().id + ":divan:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         var resp = showtime.httpReq(unescape(url).match(/http/) ? unescape(url) : 'http://divan.tv' + unescape(url)).toString();
-        page.loading = false;
         var match = resp.match(/file: "([\S\s]*?)"/);
         if (match) {
+            var n = 0;
+            while (n < 5)
+                try {
+                    var size = roughSizeOfObject(showtime.httpReq(match[1]));
+                    showtime.print(unescape(title) + ': Got ' + size + ' bytes');
+                    break;
+                } catch(err) {
+                    showtime.print('Retry #' + (n + 1));
+                    showtime.sleep(1);
+                    n++;
+                }
             page.type = "video";
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: unescape(title),
@@ -219,6 +251,7 @@
                 no_subtitle_scan: true
             });
         } else page.error("Sorry, can't get the link :(");
+        page.loading = false;
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":tonis:(.*):(.*)", function(page, url, title) {
@@ -1122,11 +1155,12 @@
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, slogan);
-
-        plugin.addHTTPAuth('(http|https)://.*\\.divan\\.tv.*', function(req) {
+        plugin.addHTTPAuth('.*divan\\.tv', function(req) {
             req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
         });
-
+        plugin.addHTTPAuth('.*divan\\.tv.*', function(req) {
+            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+        });
 	page.appendItem(plugin.getDescriptor().id + ":favorites", "directory", {
 	    title: "My Favorites"
 	});
