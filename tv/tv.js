@@ -1164,6 +1164,33 @@
     plugin.addURI(plugin.getDescriptor().id + ":streamlive:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString();
+
+        var match = doc.match(/Question: \((\d+) (\-|\+) (\d+)\) x (\d+) =/);
+        if (match) {
+            if (match[2] == '+')
+                var captcha = (+match[1] + (+match[3])) * (+match[4]);
+            else
+                var captcha = (+match[1] - (+match[3])) * (+match[4]);
+
+            showtime.print('Sending captcha: ' + captcha);
+            doc = showtime.httpReq(unescape(url), {
+                postdata: {
+                    captcha: captcha
+                }
+            })
+            doc = showtime.httpReq(unescape(url)).toString();
+        } else {
+            match = doc.match(/in the box: ([\s\S]*?)<br/);
+            if (match) {
+                showtime.print('Sending captcha: ' + captcha);
+                doc = showtime.httpReq(unescape(url), {
+                    postdata: {
+                        captcha: match[1]
+                    }
+                })
+                doc = showtime.httpReq(unescape(url)).toString();
+            }
+        }
         var token = doc.match(/getJSON\("([\s\S]*?)"/)[1];
         token = showtime.JSONDecode(showtime.httpReq(token)).token;
         var streamer = doc.match(/streamer: "([\s\S]*?)"/)[1].replace(/\\/g, '');
@@ -1205,27 +1232,6 @@
 
         var url = 'http://www.streamlive.to/channels';
         var doc = showtime.httpReq(url).toString();
-        var match = doc.match(/Question: \((\d+) (\-|\+) (\d+)\) x (\d+) =/);
-        if (match) {
-            if (match[2] == '+')
-                var captcha = (+match[1] + (+match[3])) * (+match[4]);
-            else
-                var captcha = (+match[1] - (+match[3])) * (+match[4]);
-
-            doc = showtime.httpReq(url, {
-                postdata: {
-                    captcha: captcha
-                }
-            })
-        } else {
-            match = doc.match(/in the box: ([\s\S]*?)<br/);
-            if (match)
-                doc = showtime.httpReq(url, {
-                    postdata: {
-                        captcha: match[1]
-                    }
-                })
-        }
 
         n = 1, tryToSearch = true;
         var totalCount = 0;
