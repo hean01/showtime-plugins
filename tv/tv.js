@@ -966,7 +966,7 @@
 
         var international = false;
         var doc = showtime.httpReq('https://divan.tv/tv/?devices=online&access=free').toString();
-        if (doc.match(/land-change-site/)) {
+        if (doc.match(/land-change-site/) || international) {
             international = true;
             doc = showtime.httpReq('https://divan.tv/int/tv/?devices=online&access=free').toString();
         }
@@ -989,9 +989,9 @@
         }
 
         appendItems();
-        var nextPageUrl = 'https://divan.tv/int/tv/getNextPage';
+        var nextPageUrl = 'http://divan.tv/tv/getNextPage';
         if (international)
-            nextPageUrl = 'http://divan.tv/tv/getNextPage';
+            nextPageUrl = 'https://divan.tv/int/tv/getNextPage';
         doc = showtime.httpReq(nextPageUrl, {
             postdata: {
                 filters: '{"page":2}'
