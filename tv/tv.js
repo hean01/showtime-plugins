@@ -1085,8 +1085,11 @@
     var m3uItems = [];
     var groups = [];
 
-    plugin.addURI(plugin.getDescriptor().id + ":m3uGroup:(.*)", function(page, groupID) {
+    plugin.addURI(plugin.getDescriptor().id + ":m3uGroup:(.*):(.*)", function(page, pl, groupID) {
         setPageHeader(page, decodeURIComponent(groupID));
+
+        if (!m3uItems.length)
+            readAndParseM3U(page, pl);
 
         var num = 0;
         for (var i in m3uItems) {
@@ -1106,18 +1109,16 @@
             addToFavoritesOption(item, link, m3uItems[i].title, m3uItems[i].logo);
             num++;
         }
-
         page.metadata.title += ' (' + num + ')';
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":browse:(.*):(.*)", function(page, pl, title) {
-        setPageHeader(page, decodeURIComponent(title));
+    function readAndParseM3U(page, pl) {
         page.loading = true;
         var m3u = showtime.httpReq(decodeURIComponent(pl)).toString().split('\n');
         page.loading = false;
+
         m3uItems = [], groups = [];
         var m3uUrl = '', m3uTitle = '', m3uImage = '', m3uGroup = '';
-        var num = 0;
 
         for (var i = 0; i < m3u.length; i++) {
             var line = m3u[i].trim();
@@ -1152,10 +1153,16 @@
                     m3uUrl = '', m3uTitle = '', m3uImage = '', m3uGroup = '';
             }
         }
+    }
 
+    plugin.addURI(plugin.getDescriptor().id + ":browse:(.*):(.*)", function(page, pl, title) {
+        setPageHeader(page, decodeURIComponent(title));
+        readAndParseM3U(page, pl);
+
+        var num = 0;
         if (groups.length) {
             for (var i in groups) {
-            	page.appendItem(plugin.getDescriptor().id + ":m3uGroup:" + encodeURIComponent(groups[i]), "directory", {
+            	page.appendItem(plugin.getDescriptor().id + ":m3uGroup:" + pl + ':' + encodeURIComponent(groups[i]), "directory", {
 	            title: groups[i]
                 });
                 num++;
