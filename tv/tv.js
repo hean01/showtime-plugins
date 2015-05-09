@@ -1115,21 +1115,21 @@
         page.loading = true;
         var m3u = showtime.httpReq(decodeURIComponent(pl)).toString().split('\n');
         page.loading = false;
-
         m3uItems = [], groups = [];
         var m3uUrl = '', m3uTitle = '', m3uImage = '', m3uGroup = '';
         var num = 0;
 
         for (var i = 0; i < m3u.length; i++) {
-            if (m3u[i].length < 7) continue; // skip empty lines
-            switch(m3u[i].substr(0, 7)) {
+            var line = m3u[i].trim();
+            if (line.length < 7) continue; // skip empty lines
+            switch(line.substr(0, 7)) {
                 case '#EXTINF':
-                    var match = m3u[i].match(/#EXTINF:.*,(.*)/);
+                    var match = line.match(/#EXTINF:.*,(.*)/);
                     if (match)
-                        m3uTitle = match[1];
+                        m3uTitle = match[1].trim();
                     break;
                 case '#EXTGRP':
-                    var match = m3u[i].match(/#EXTGRP:(.*)/);
+                    var match = line.match(/#EXTGRP:(.*)/);
                     if (match) {
                         m3uGroup = match[1];
                         if (groups.indexOf(m3uGroup) < 0)
@@ -1137,15 +1137,15 @@
                     }
                     break;
                 case '#EXTIMG':
-                    var match = m3u[i].match(/#EXTIMG:(.*)/);
+                    var match = line.match(/#EXTIMG:(.*)/);
                     if (match)
                         m3uImage = match[1];
                     break;
                 default:
-                    if (m3u[i][0] == '#') continue; // skip unknown tags
+                    if (line[0] == '#') continue; // skip unknown tags
                     m3uItems.push({
-                        title: m3uTitle ? m3uTitle : m3u[i],
-                        url: m3u[i],
+                        title: m3uTitle ? m3uTitle : line,
+                        url: line,
                         group: m3uGroup,
                         logo: m3uImage
                     });
@@ -1162,19 +1162,26 @@
             }
         } else {
             for (var i in m3uItems) {
-                var link = "videoparams:" + showtime.JSONEncode({
-                    title: m3uItems[i].title,
-                    sources: [{
-                        url: m3uItems[i].url.match(/m3u8/) ? 'hls:' + m3uItems[i].url.trim() : m3uItems[i].url.trim()
-                    }],
-                    no_subtitle_scan: true
-                });
-                var item = page.appendItem(link, "video", {
-                    title: m3uItems[i].title,
-                    icon: m3uItems[i].logo
-                });
-                addToFavoritesOption(item, link, m3uItems[i].title, m3uItems[i].logo);
-                num++;
+                var extension = m3uItems[i].url.split('.').pop().toUpperCase();
+                if ((extension == 'M3U' || extension == 'PHP') && (m3uItems[i].url == m3uItems[i].title)) {
+                    page.appendItem(plugin.getDescriptor().id + ":browse:" + encodeURIComponent(m3uItems[i].url) + ':' + encodeURIComponent(m3uItems[i].title), "directory", {
+                        title: m3uItems[i].title
+                    });
+                } else {
+                    var link = "videoparams:" + showtime.JSONEncode({
+                        title: m3uItems[i].title,
+                        sources: [{
+                            url: m3uItems[i].url.match(/m3u8/) ? 'hls:' + m3uItems[i].url.trim() : m3uItems[i].url.trim()
+                        }],
+                        no_subtitle_scan: true
+                    });
+                    var item = page.appendItem(link, "video", {
+                        title: m3uItems[i].title,
+                        icon: m3uItems[i].logo
+                    });
+                    addToFavoritesOption(item, link, m3uItems[i].title, m3uItems[i].logo);
+                    num++;
+                }
             }
         }
         page.metadata.title += ' (' + num + ')';
