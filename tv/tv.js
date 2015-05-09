@@ -1074,88 +1074,99 @@
 	}
     }
 
-    plugin.addURI(plugin.getDescriptor().id + ":m3uGroup:(.*):(.*)", function(page, pl, groupID) {
+    var m3uItems = [];
+    var groups = [];
+
+    plugin.addURI(plugin.getDescriptor().id + ":m3uGroup:(.*)", function(page, groupID) {
         setPageHeader(page, decodeURIComponent(groupID));
-        page.loading = true;
-        var respond = showtime.httpReq(decodeURIComponent(pl)).toString();
-        page.loading = false;
 
         var num = 0;
-
-        // 1-title, 3-group, 5-url
-        var re = /#EXTINF:.*,(.*?)(\r\n|\n)#EXTGRP:(.*?)(\r\n|\n)(.*)(\r\n|\n|$)/g;
-        var m = re.exec(respond);
-        while (m) {
-            if (decodeURIComponent(groupID) != m[3]) {
-                m = re.exec(respond);
+        for (var i in m3uItems) {
+            if (decodeURIComponent(groupID) != m3uItems[i].group)
                 continue;
-            }
-            var title = m[1].trim();
             var link = "videoparams:" + showtime.JSONEncode({
-                title: title,
+                title: m3uItems[i].title,
                 sources: [{
-                    url: m[5].match(/m3u8/) ? 'hls:' + m[5].trim() : m[5].trim()
+                    url: m3uItems[i].url.match(/m3u8/) ? 'hls:' + m3uItems[i].url.trim() : m3uItems[i].url.trim()
                 }],
                 no_subtitle_scan: true
             });
             var item = page.appendItem(link, "video", {
-                title: title
+                title: m3uItems[i].title,
+                icon: m3uItems[i].logo
             });
-            addToFavoritesOption(item, link, title, '');
+            addToFavoritesOption(item, link, m3uItems[i].title, m3uItems[i].logo);
             num++;
-            m = re.exec(respond);
         }
+
         page.metadata.title += ' (' + num + ')';
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":browse:(.*):(.*)", function(page, pl, title) {
         setPageHeader(page, decodeURIComponent(title));
         page.loading = true;
-        var respond = showtime.httpReq(decodeURIComponent(pl)).toString();
+        var m3u = showtime.httpReq(decodeURIComponent(pl)).toString().split('\n');
         page.loading = false;
-        //respond = respond.substr(respond.lastIndexOf('#EXTM3U'), respond.length);
 
+        m3uItems = [], groups = [];
+        var m3uUrl = '', m3uTitle = '', m3uImage = '', m3uGroup = '';
         var num = 0;
-        if (respond.match(/#EXTGRP:/)) {
-            var groups = [];
-            // 1-title, 3-group, 5-url
-            var re = /#EXTINF:.*,(.*?)(\r\n|\n)#EXTGRP:(.*?)(\r\n|\n)(.*)(\r\n|\n|$)/g;
-            var m = re.exec(respond);
-            while (m) {
-                if (groups.indexOf(m[3]) < 0)
-                    groups.push(m[3]);
 
-                m = re.exec(respond);
+        for (var i = 0; i < m3u.length; i++) {
+            if (m3u[i].length < 7) continue; // skip empty lines
+            switch(m3u[i].substr(0, 7)) {
+                case '#EXTINF':
+                    var match = m3u[i].match(/#EXTINF:.*,(.*)/);
+                    if (match)
+                        m3uTitle = match[1];
+                    break;
+                case '#EXTGRP':
+                    var match = m3u[i].match(/#EXTGRP:(.*)/);
+                    if (match) {
+                        m3uGroup = match[1];
+                        if (groups.indexOf(m3uGroup) < 0)
+                            groups.push(m3uGroup);
+                    }
+                    break;
+                case '#EXTIMG':
+                    var match = m3u[i].match(/#EXTIMG:(.*)/);
+                    if (match)
+                        m3uImage = match[1];
+                    break;
+                default:
+                    if (m3u[i][0] == '#') continue; // skip unknown tags
+                    m3uItems.push({
+                        title: m3uTitle ? m3uTitle : m3u[i],
+                        url: m3u[i],
+                        group: m3uGroup,
+                        logo: m3uImage
+                    });
+                    m3uUrl = '', m3uTitle = '', m3uImage = '', m3uGroup = '';
             }
+        }
+
+        if (groups.length) {
             for (var i in groups) {
-            	page.appendItem(plugin.getDescriptor().id + ":m3uGroup:" + pl + ':' + encodeURIComponent(groups[i]), "directory", {
+            	page.appendItem(plugin.getDescriptor().id + ":m3uGroup:" + encodeURIComponent(groups[i]), "directory", {
 	            title: groups[i]
                 });
                 num++;
             }
         } else {
-            // 1-title, 3-url
-            var re = /#EXTINF:.*,(.*?)(\r\n|\n)(.*)(\r\n|\n|$)/g;
-            var m = re.exec(respond);
-            while (m) {
-                if (m[3].match(/#EXTINF:/) || m[3].match(/#EXTM3U/)) {
-                    m = re.exec(respond);
-                    continue;
-                }
-                var title = m[1].trim();
+            for (var i in m3uItems) {
                 var link = "videoparams:" + showtime.JSONEncode({
-                    title: title,
+                    title: m3uItems[i].title,
                     sources: [{
-                        url: m[3].match(/m3u8/) ? 'hls:' + m[3].trim() : m[3].trim()
+                        url: m3uItems[i].url.match(/m3u8/) ? 'hls:' + m3uItems[i].url.trim() : m3uItems[i].url.trim()
                     }],
                     no_subtitle_scan: true
                 });
                 var item = page.appendItem(link, "video", {
-                    title: title
+                    title: m3uItems[i].title,
+                    icon: m3uItems[i].logo
                 });
-                addToFavoritesOption(item, link, title, '');
+                addToFavoritesOption(item, link, m3uItems[i].title, m3uItems[i].logo);
                 num++;
-                m = re.exec(respond);
             }
         }
         page.metadata.title += ' (' + num + ')';
