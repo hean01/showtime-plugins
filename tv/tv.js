@@ -1210,8 +1210,15 @@
                 doc = showtime.httpReq(unescape(url)).toString();
             }
         }
-        var token = doc.match(/getJSON\("([\s\S]*?)"/)[1];
-        token = showtime.JSONDecode(showtime.httpReq(token)).token;
+
+        var token = doc.match(/getJSON\("([\s\S]*?)"/);
+        if (!token) {
+            showtime.print(doc);
+            page.error('Cannot pass captcha. Return back and retry :(');
+            return;
+        }
+
+        token = showtime.JSONDecode(showtime.httpReq(token[1])).token;
         var streamer = doc.match(/streamer: "([\s\S]*?)"/)[1].replace(/\\/g, '');
         var param = ' app=' + doc.match(/streamer: "[\s\S]*?(edge[\s\S]*?)"/)[1].replace(/\\/g, '');
         param += ' playpath=' + doc.match(/file: "([\s\S]*?)\./)[1];
