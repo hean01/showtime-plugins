@@ -956,6 +956,14 @@
     plugin.addURI(plugin.getDescriptor().id + ":divanStart", function(page) {
         setPageHeader(page, 'Divan.tv');
         page.loading = true;
+
+        plugin.addHTTPAuth('.*divan\\.tv', function(req) {
+            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+        });
+        plugin.addHTTPAuth('.*divan\\.tv.*', function(req) {
+            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+        });
+
         var doc = showtime.httpReq('https://divan.tv/tv/?devices=online&access=free').toString();
 
         // 1-url, 2-icon, 3-title
@@ -1153,15 +1161,115 @@
         page.metadata.title += ' (' + num + ')';
     });
 
+    plugin.addURI(plugin.getDescriptor().id + ":streamlive:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
+        var doc = showtime.httpReq(unescape(url)).toString();
+        var token = doc.match(/getJSON\("([\s\S]*?)"/)[1];
+        token = showtime.JSONDecode(showtime.httpReq(token)).token;
+        var streamer = doc.match(/streamer: "([\s\S]*?)"/)[1].replace(/\\/g, '');
+        var param = ' app=' + doc.match(/streamer: "[\s\S]*?(edge[\s\S]*?)"/)[1].replace(/\\/g, '');
+        param += ' playpath=' + doc.match(/file: "([\s\S]*?)\./)[1];
+        param += ' swfUrl=http://www.streamlive.to/ads/streamlive.swf';
+        param += ' tcUrl=' + streamer;
+        param += ' pageUrl=' + url;
+        param += ' token=' + token;
+        page.type = 'video';
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            canonicalUrl: plugin.getDescriptor().id + ':streamlive:' + url + ':' + title,
+            sources: [{
+                url: streamer + param
+            }],
+            no_subtitle_scan: true
+        });
+        page.loading = false;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":streamliveStart", function(page) {
+        setPageHeader(page, 'StreamLive.to');
+        page.loading = true;
+
+        plugin.addHTTPAuth('.*streamlive\\.to', function(req) {
+            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+            req.setHeader('Host', 'www.streamlive.to');
+            req.setHeader('Origin', 'http://www.streamlive.to');
+            req.setHeader('Referer', url);
+        });
+
+        plugin.addHTTPAuth('.*streamlive\\.to.*', function(req) {
+            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+            req.setHeader('Host', 'www.streamlive.to');
+            req.setHeader('Origin', 'http://www.streamlive.to');
+            req.setHeader('Referer', url);
+        });
+
+        var url = 'http://www.streamlive.to/channels';
+        var doc = showtime.httpReq(url).toString();
+        var match = doc.match(/Question: \((\d+) (\-|\+) (\d+)\) x (\d+) =/);
+        if (match) {
+            if (match[2] == '+')
+                var captcha = (+match[1] + (+match[3])) * (+match[4]);
+            else
+                var captcha = (+match[1] - (+match[3])) * (+match[4]);
+
+            doc = showtime.httpReq(url, {
+                postdata: {
+                    captcha: captcha
+                }
+            })
+        } else {
+            match = doc.match(/in the box: ([\s\S]*?)<br/);
+            if (match)
+                doc = showtime.httpReq(url, {
+                    postdata: {
+                        captcha: match[1]
+                    }
+                })
+        }
+
+        n = 1, tryToSearch = true;
+        var totalCount = 0;
+
+        function loader() {
+            if (!tryToSearch) return false;
+            // 1-logo, 2-title, 3-flags, 4-link, 5-description, 6-viewers, 7-category, 8-totalviewers
+            var re = /class="clist-thumb">[\s\S]*?src="([\s\S]*?)"[\s\S]*?alt="([\s\S]*?)"([\s\S]*?)<a href="([\s\S]*?)"[\s\S]*?<strong>([\s\S]*?)<\/strong>[\s\S]*?<span class="viewers">([\s\S]*?)<\/span>[\s\S]*?<span class="totalviews">([\s\S]*?)<\/span>[\s\S]*?">([\s\S]*?)<\/a>[\s\S]*?">([\s\S]*?)<\/a>/g;
+            match = re.exec(doc);
+            var itemsCount = 0;
+            while (match) {
+                if (match[3].match(/premium_only/)) {
+                    match = re.exec(doc);
+                    continue;
+                }
+                var link = plugin.getDescriptor().id + ':streamlive:' + escape(match[4]) + ':' + escape(match[2]);
+                var item = page.appendItem(link, "video", {
+                    title: match[2],
+                    icon: match[1],
+                    description: new showtime.RichText(coloredStr('Description: ', orange) + match[5].replace(/\s{2,}/g, ' ').replace(/\n/g, '') +
+                        coloredStr('\nViewers: ', orange) + match[6] +
+                        coloredStr('\nCategory: ', orange) + match[7] +
+                        coloredStr('\nViewers: ', orange) + match[8] +
+                        coloredStr('\nTotal views: ', orange) + match[9])
+                });
+                addToFavoritesOption(item, link, match[2], match[1]);
+                match = re.exec(doc);
+                itemsCount++;
+            };
+            if (!itemsCount) return tryToSearch = false;
+            totalCount += itemsCount;
+            page.metadata.title = 'StreamLive.to (' + totalCount + ')';
+            n++;
+            doc = showtime.httpReq(url + '/?p=' + n);
+            return true;
+        }
+        loader();
+        page.paginator = loader;
+        page.loading = false;
+    });
+
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, slogan);
-        plugin.addHTTPAuth('.*divan\\.tv', function(req) {
-            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
-        });
-        plugin.addHTTPAuth('.*divan\\.tv.*', function(req) {
-            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
-        });
 	page.appendItem(plugin.getDescriptor().id + ":favorites", "directory", {
 	    title: "My Favorites"
 	});
@@ -1197,7 +1305,9 @@
 	page.appendItem(plugin.getDescriptor().id + ":yooooStart", "directory", {
 	    title: "Yoooo.tv"
 	});
-
+	page.appendItem(plugin.getDescriptor().id + ":streamliveStart", "directory", {
+	    title: "StreamLive.to"
+	});
         page.appendItem("", "separator", {
             title: 'M3U playlists'
         });
