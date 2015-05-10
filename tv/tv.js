@@ -1013,12 +1013,17 @@
     plugin.addURI(plugin.getDescriptor().id + ":yooooStart", function(page) {
         setPageHeader(page, 'Yoooo.tv');
         page.loading = true;
-        var doc = showtime.httpReq('http://yoooo.tv', {
-            headers: {
-                Cookie: ''
-            },
-            method: 'HEAD'
-        });
+        try {
+            var doc = showtime.httpReq('http://yoooo.tv', {
+                headers: {
+                    Cookie: ''
+                },
+                method: 'HEAD'
+            });
+        } catch(err) {
+            page.error(err);
+            return;
+        }
         page.loading = false;
 
         if (!doc.headers['Set-Cookie']) {
@@ -1160,36 +1165,36 @@
         readAndParseM3U(page, pl);
 
         var num = 0;
-        if (groups.length) {
-            for (var i in groups) {
-            	page.appendItem('m3uGroup:' + pl + ':' + encodeURIComponent(groups[i]), "directory", {
-	            title: groups[i]
+        for (var i in groups) {
+            page.appendItem('m3uGroup:' + pl + ':' + encodeURIComponent(groups[i]), "directory", {
+	        title: groups[i]
+            });
+            num++;
+        }
+
+        for (var i in m3uItems) {
+            if (m3uItems[i].group)
+                continue;
+            var extension = m3uItems[i].url.split('.').pop().toUpperCase();
+            if (extension == 'M3U' || extension == 'PHP') {
+                page.appendItem('m3u:' + encodeURIComponent(m3uItems[i].url) + ':' + encodeURIComponent(m3uItems[i].title), "directory", {
+                    title: m3uItems[i].title
                 });
                 num++;
-            }
-        } else {
-            for (var i in m3uItems) {
-                var extension = m3uItems[i].url.split('.').pop().toUpperCase();
-                if (extension == 'M3U' || extension == 'PHP') {
-                    page.appendItem('m3u:' + encodeURIComponent(m3uItems[i].url) + ':' + encodeURIComponent(m3uItems[i].title), "directory", {
-                        title: m3uItems[i].title
-                    });
-                    num++;
-                } else {
-                    var link = "videoparams:" + showtime.JSONEncode({
-                        title: m3uItems[i].title,
-                        sources: [{
-                            url: m3uItems[i].url.match(/m3u8/) ? 'hls:' + m3uItems[i].url.trim() : m3uItems[i].url.trim()
-                        }],
-                        no_subtitle_scan: true
-                    });
-                    var item = page.appendItem(link, "video", {
-                        title: m3uItems[i].title,
-                        icon: m3uItems[i].logo
-                    });
-                    addToFavoritesOption(item, link, m3uItems[i].title, m3uItems[i].logo);
-                    num++;
-                }
+            } else {
+                var link = "videoparams:" + showtime.JSONEncode({
+                    title: m3uItems[i].title,
+                    sources: [{
+                        url: m3uItems[i].url.match(/m3u8/) ? 'hls:' + m3uItems[i].url.trim() : m3uItems[i].url.trim()
+                    }],
+                    no_subtitle_scan: true
+                });
+                var item = page.appendItem(link, "video", {
+                    title: m3uItems[i].title,
+                    icon: m3uItems[i].logo
+                });
+                addToFavoritesOption(item, link, m3uItems[i].title, m3uItems[i].logo);
+                num++;
             }
         }
         page.metadata.title += ' (' + num + ')';
@@ -1320,6 +1325,8 @@
 	page.appendItem(plugin.getDescriptor().id + ":favorites", "directory", {
 	    title: "My Favorites"
 	});
+
+
 	page.appendItem(plugin.getDescriptor().id + ":category:All", "directory", {
 	    title: "All"
 	});
