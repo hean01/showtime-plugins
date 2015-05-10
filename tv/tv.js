@@ -1065,7 +1065,7 @@
         var pos = 0;
 	for (var i in list) {
 	    var itemmd = showtime.JSONDecode(list[i]);
-	    var item = page.appendItem(plugin.getDescriptor().id + ":browse:" + itemmd.link + ':' + itemmd.title, "directory", {
+	    var item = page.appendItem('m3u:' + itemmd.link + ':' + itemmd.title, "directory", {
        		title: decodeURIComponent(itemmd.title),
 		link: decodeURIComponent(itemmd.link)
 	    });
@@ -1085,7 +1085,7 @@
     var m3uItems = [];
     var groups = [];
 
-    plugin.addURI(plugin.getDescriptor().id + ":m3uGroup:(.*):(.*)", function(page, pl, groupID) {
+    plugin.addURI('m3uGroup:(.*):(.*)', function(page, pl, groupID) {
         setPageHeader(page, decodeURIComponent(groupID));
 
         if (!m3uItems.length)
@@ -1127,7 +1127,7 @@
                 case '#EXTINF':
                     var match = line.match(/#EXTINF:.*,(.*)/);
                     if (match)
-                        m3uTitle = match[1].trim();
+                        m3uTitle = showtime.entityDecode(match[1].trim());
                     break;
                 case '#EXTGRP':
                     var match = line.match(/#EXTGRP:(.*)/);
@@ -1155,14 +1155,14 @@
         }
     }
 
-    plugin.addURI(plugin.getDescriptor().id + ":browse:(.*):(.*)", function(page, pl, title) {
+    plugin.addURI('m3u:(.*):(.*)', function(page, pl, title) {
         setPageHeader(page, decodeURIComponent(title));
         readAndParseM3U(page, pl);
 
         var num = 0;
         if (groups.length) {
             for (var i in groups) {
-            	page.appendItem(plugin.getDescriptor().id + ":m3uGroup:" + pl + ':' + encodeURIComponent(groups[i]), "directory", {
+            	page.appendItem('m3uGroup:' + pl + ':' + encodeURIComponent(groups[i]), "directory", {
 	            title: groups[i]
                 });
                 num++;
@@ -1170,10 +1170,11 @@
         } else {
             for (var i in m3uItems) {
                 var extension = m3uItems[i].url.split('.').pop().toUpperCase();
-                if ((extension == 'M3U' || extension == 'PHP') && (m3uItems[i].url == m3uItems[i].title)) {
-                    page.appendItem(plugin.getDescriptor().id + ":browse:" + encodeURIComponent(m3uItems[i].url) + ':' + encodeURIComponent(m3uItems[i].title), "directory", {
+                if (extension == 'M3U' || extension == 'PHP') {
+                    page.appendItem('m3u:' + encodeURIComponent(m3uItems[i].url) + ':' + encodeURIComponent(m3uItems[i].title), "directory", {
                         title: m3uItems[i].title
                     });
+                    num++;
                 } else {
                     var link = "videoparams:" + showtime.JSONEncode({
                         title: m3uItems[i].title,
