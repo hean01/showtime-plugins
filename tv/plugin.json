@@ -1,10 +1,10 @@
 {
-	"description": "<p>Online TV channels list<p>For more information, google channels websites.",
+	"description": "<p>Online TV - is M3U playlist loader and collection of online tv sources.<p>For more infrmation visit corresponding websites.",
 	"author": "lprot",
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "Online TV",
-	"synopsis": "Online TV channels list",
-	"version": "0.7.5",
+	"synopsis": "Online TV - collection of online tv sources",
+	"version": "0.7.6",
 	"file": "tv.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
