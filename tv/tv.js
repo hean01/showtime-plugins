@@ -794,6 +794,12 @@
                     var match = line.match(/#EXTINF:.*,(.*)/);
                     if (match)
                         m3uTitle = showtime.entityDecode(match[1].trim());
+                    match = line.match(/group-title="([\s\S]*?)"/);
+                    if (match) {
+                        m3uGroup = match[1];
+                        if (groups.indexOf(m3uGroup) < 0)
+                            groups.push(m3uGroup);
+                    }
                     break;
                 case '#EXTGRP':
                     var match = line.match(/#EXTGRP:(.*)/);
@@ -812,7 +818,7 @@
                     if (line[0] == '#') continue; // skip unknown tags
                     m3uItems.push({
                         title: m3uTitle ? m3uTitle : line,
-                        url: line.trim(),
+                        url: showtime.entityDecode(line.trim()),
                         group: m3uGroup,
                         logo: m3uImage
                     });
@@ -821,40 +827,16 @@
         }
     }
 
-    function addChannel(page, title, route, url, icon) {
-showtime.print('#EXTINF:-1,' + title);
-showtime.print('#EXTGRP:Ukrainian');
-if (icon) showtime.print('#EXTIMG:' + icon);
-if (route == 'direct') {
-    if (url.substr(0, 4) == 'hls:') showtime.print(url.substr(4));
-    else showtime.print(url);
-} else
-    showtime.print(route+':'+url);
-
-        var link = plugin.getDescriptor().id + ':' + route + ":" + (url ? escape(url) + ':' : '') + escape(title);
-        if (route == 'direct') {
-            link = "videoparams:" + showtime.JSONEncode({
-                title: title,
-                no_fs_scan: true,
-                sources: [{
-                    url: url
-                }],
-                no_subtitle_scan: true
-            });
-        };
-
-        var item = page.appendItem(link, "video", {
-            title: title,
-            icon: icon
-        });
-        addToFavoritesOption(item, link, title, icon);
-    }
-
     function addItem(page, url, title, logo) {
         var match = url.match(/([\s\S]*?):(.*)/);
+        var type = 'video';
         if (match && match[1].toUpperCase().substr(0, 4) != 'HTTP' &&
             match[1].toUpperCase().substr(0, 4) != 'RTMP') {
             var link = plugin.getDescriptor().id + ':' + match[1] + ":" + escape(match[2]) + ':' + escape(title);
+            if (match[1].toUpperCase() == 'M3U') {// the link is m3u list
+                var link = 'm3u:' + encodeURIComponent(match[2]) + ":" + escape(title);
+                type = 'directory'
+            }
         } else {
             var link = "videoparams:" + showtime.JSONEncode({
                 title: title,
@@ -865,7 +847,7 @@ if (route == 'direct') {
                 no_subtitle_scan: true
             });
         }
-        var item = page.appendItem(link, "video", {
+        var item = page.appendItem(link, type, {
             title: title,
             icon: logo
         });
