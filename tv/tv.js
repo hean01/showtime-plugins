@@ -20,7 +20,6 @@
 
 (function(plugin) {
     var logo = plugin.path + "logo.png";
-    var slogan = "Online TV";
 
     function setPageHeader(page, title) {
 	page.type = "directory";
@@ -76,9 +75,9 @@
         return base64_decode(hash);
     }
 
-    var service = plugin.createService(slogan, plugin.getDescriptor().id + ":start", "tv", true, logo);
+    var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "tv", true, logo);
 
-    var settings = plugin.createSettings(slogan, logo, slogan);
+    var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().title);
 
     settings.createBool('disableSampleList', "Don't show Sample M3U list", false, function(v) {
         service.disableSampleList = v;
@@ -892,11 +891,75 @@
             '="#32CD32"').replace(/="aqua"/g, '="#00FFFF"').replace(/='green'/g,
             '="#00FF00"').replace(/='cyan'/g, '="#00FFFF"').replace(/="LightSalmon"/g,
             '="#ffa07a"').replace(/="PaleGoldenrod"/g, '="#eee8aa"').replace(/="Aquamarine"/g,
-            '="#7fffd4"').replace(/="LightSkyBlue"/g, '="#87cefa');
+            '="#7fffd4"').replace(/="LightSkyBlue"/g, '="#87cefa"').replace(/="palegreen"/g,
+            '="#98fb98"').replace(/="yellow"/g, '="#FFFF00"');
     }
 
+    plugin.addURI(plugin.getDescriptor().id + ':parse:(.*):(.*)', function(page, parser, title) {
+        setPageHeader(page, unescape(title));
+        page.loading = true;
+        var n = 1;
+        showtime.print('Parser is: ' + unescape(parser));
+        var params = unescape(parser).split('|');
+        showtime.print('Requesting: ' + params[0]);
+        var html = showtime.httpReq(params[0]).toString();
+        var base_url = params[0].match(/^.+?[^\/:](?=[?\/]|$)/);
+        if (params.length > 1) {
+            var start = html.indexOf(params[1]) + params[1].length;
+            var length = html.indexOf(params[2], start) - start;
+            var url = html.substr(start, length).split(',');
+            showtime.print('Found URL: ' + url);
+            if (!url[0].trim()) {
+                url = html.match(/pl:"([\s\S]*?)"/)[1];
+                showtime.print('Fetching URL from pl: ' + url);
+                var json = showtime.JSONDecode(showtime.httpReq(url));
+            } else if (url[0].trim().substr(0, 4) != 'http') {
+                if (url[0][0] == '/') {
+                    page.appendItem(base_url + url[0], 'video', {
+                        title: new showtime.RichText(unescape(title))
+                    });
+                } else {
+                    url = url[0].match(/value="([\s\S]*?)"/)[1];
+                    showtime.print('Fetching URL from value: ' + url);
+                    var json = showtime.JSONDecode(showtime.httpReq(url));
+                    showtime.print(showtime.JSONEncode(json));
+                    for (var i in json.playlist) {
+                        if (json.playlist[i].file) {
+                            page.appendItem(json.playlist[i].file.split(' ')[0], 'video', {
+                                title: new showtime.RichText(json.playlist[i].comment)
+                            });
+                        }
+                        for (var j in json.playlist[i].playlist) {
+                            showtime.print(json.playlist[i].playlist[j].comment);
+                            page.appendItem(json.playlist[i].playlist[j].file.split(' ')[0], 'video', {
+                                title: new showtime.RichText(json.playlist[i].comment + ' - ' + json.playlist[i].playlist[j].comment)
+                            });
+                        }
+                    }
+                }
+            } else {
+                for (i in url) {
+                    page.appendItem(url[i], 'video', {
+                        title: new showtime.RichText(unescape(title) + ' #' + n)
+                    });
+                    n++;
+                }
+            }
+        } else {
+            html = html.split('\n');
+            for (var i = 0; i < html.length; i++) {
+                if (!html[i].trim()) continue;
+                page.appendItem(html[i].trim(), 'video', {
+                    title: new showtime.RichText(unescape(title) + ' #' + n)
+                });
+                n++;
+            }
+        }
+        page.loading = false;
+    });
+
     plugin.addURI('xml:(.*):(.*)', function(page, pl, pageTitle) {
-        showtime.print('Main list: ' + decodeURIComponent(pl));
+        showtime.print('Main list: ' + decodeURIComponent(pl).trim());
         setPageHeader(page, unescape(pageTitle));
         page.loading = true;
         try {
@@ -916,6 +979,7 @@
             if (channels[i].category_id && channels[i].category_id != 1) continue;
             var title = showtime.entityDecode(channels[i].title);
             title = setColors(title);
+            //showtime.print(title);
             var playlist = channels[i].playlist_url;
             var description = channels[i].description ? channels[i].description : null;
             description = setColors(description);
@@ -938,8 +1002,11 @@
             } else {
                 var url = channels[i].stream_url ? channels[i].stream_url : '';
                 if (channels[i].parser)
-                    url = channels[i].parser;
-                addItem(page, url, title, '', description);
+                    page.appendItem(plugin.getDescriptor().id + ':parse:' + escape(channels[i].parser) + ':' + escape(title), 'directory', {
+                        title: new showtime.RichText(title)
+                    });
+                else
+                    addItem(page, url, title, '', description);
             }
             num++;
         }
@@ -1093,7 +1160,7 @@
 
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-        setPageHeader(page, slogan);
+        setPageHeader(page, plugin.getDescriptor().title);
 	page.appendItem(plugin.getDescriptor().id + ":favorites", "directory", {
 	    title: "My Favorites"
 	});
