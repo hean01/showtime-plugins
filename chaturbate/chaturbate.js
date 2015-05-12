@@ -67,28 +67,46 @@
 
         tryToSearch = true;
         // 1-link, 2-icon, 3-label, 4-nick, 5-type/gender, 6-age, 7-description, 8-location, 9-stats
-        var re = /<li>[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="thumbnail_label thumbnail_label[\s\S]*?">([\s\S]*?)<\/div>[\s\S]*?\/"> ([\s\S]*?)<\/a>[\s\S]*?<span class="age gender([\s\S]*?)">([\s\S]*?)<\/span>[\s\S]*?<li title="([\s\S]*?)<\/li>[\s\S]*?<li class="location"[\s\S]*?">([\s\S]*?)<\/li>[\s\S]*?<li class="cams">([\s\S]*?)<\/li>/g;
+        var re = /<li>[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="thumbnail_label[\s\S]*?thumbnail_label[\s\S]*?">([\s\S]*?)<\/div>[\s\S]*?\/"> ([\s\S]*?)<\/a>[\s\S]*?<span class="age gender([\s\S]*?)">([\s\S]*?)<\/span>[\s\S]*?<li title="([\s\S]*?)">[\s\S]*?<li class="location"[\s\S]*?">([\s\S]*?)<\/li>[\s\S]*?<li class="cams">([\s\S]*?)<\/li>/g;
+        var doc;
+        function scrapeItems(blob) {
+            var match = re.exec(blob);
+            while (match) {
+                var gender = match[5];
+                if (match[5] == 'c') gender = 'couple';
+                if (match[5] == 'f') gender = 'female';
+                if (match[5] == 'm') gender = 'male';
+                if (match[5] == 's') gender = 'shemale';
+                page.appendItem(plugin.getDescriptor().id + ":play:" + match[1] + ':' + escape(match[4]), "video", {
+                    title: new showtime.RichText(match[3].trim() + ' ' + coloredStr(match[4], orange) + ' (' + gender + ' ' + match[6] + ') ' + coloredStr(match[8], orange)),
+                    icon: match[2],
+                    description: new showtime.RichText(coloredStr('Status: ', orange) + match[9] +
+                        coloredStr('\nLocation: ', orange) + match[8] +
+                        (match[7] ? coloredStr('\nDescription: ', orange) + match[7] : null))
+                });
+                match = re.exec(blob);
+            }
+        }
 
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var doc = showtime.httpReq(url).toString();
+            doc = showtime.httpReq(url).toString();
             page.loading = false;
-            doc = doc.match(/<ul class="list">([\s\S]*?)<div class="featured_blog_posts">/)[1];
-            var match = re.exec(doc);
-            while (match) {
-                var gender = match[6];
-                if (match[5] == 'c') gender = 'couple';
-                if (match[5] == 'f') gender = 'female';
-                if (match[5] == 'm') gender = 'male';
-                page.appendItem(plugin.getDescriptor().id + ":play:" + match[1] + ':' + escape(match[4]), "video", {
-                    title: new showtime.RichText(coloredStr(match[4], orange) + ' (' + match[6] + ') ' + gender),
-                    icon: match[2],
-                    description: new showtime.RichText(coloredStr('Location: ', orange) + match[8] +
-                        coloredStr('\nStatus: ', orange) + match[9] +
-                        coloredStr('\nDescription: ', orange) + match[7])
-                });
-                match = re.exec(doc);
+            var blob = doc.match(/<ul class="list">([\s\S]*?)<div class="featured_blog_posts">/);
+            if (blob) {
+                scrapeItems(blob[1]);
+            } else {
+                // 1-title, 2-blob, 3-end of blob
+                var re2 = /class="callout">([\s\S]*?)<\/h([\s\S]*?)<h2>/g;
+                var match2 = re2.exec(doc);
+                while (match2) {
+                    page.appendItem("", "separator", {
+                        title: match2[1]
+                    });
+                    scrapeItems(match2[2]);
+                    match2 = re2.exec(doc);
+                }
             }
             var next = doc.match(/<link rel="next" href="([\s\S]*?)">/);
             if (!next) return tryToSearch = false;
@@ -122,7 +140,7 @@
         // 1-section title, 2-block of links
         var re = /<div class="col[\s\S]*?<h2>([\s\S]*?)<\/h2>([\s\S]*?)<\/dl>/g;
         // 1-link, title
-        var re2 = /<a href="([\s\S]*?)">([\s\S]*?)<\/a>/g;
+        var re2 = /<a href="([\s\S]*?)"[\s\S]*?>([\s\S]*?)<\/a>/g;
         var match = re.exec(doc);
         while (match) {
             page.appendItem("", "separator", {
