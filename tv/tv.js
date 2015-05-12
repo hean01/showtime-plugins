@@ -656,7 +656,7 @@
         }).toString();
         appendItems();
 
-        page.metadata.title += ' (' + n + ')';
+        page.metadata.title = 'Divan.tv (' + n + ')';
         page.loading = false;
     });
 
@@ -706,7 +706,7 @@
             addToFavoritesOption(item, link, title, icon);
             counter++;
         };
-        page.metadata.title = page.metadata.title + ' (' + counter + ')'
+        page.metadata.title = 'Yoooo.tv (' + counter + ')';
     });
 
     function showPlaylist(page) {
@@ -714,13 +714,15 @@
 
         if (!list || !list.toString()) {
             page.appendPassiveItem("directory", '', {
-                title: "You can add M3U playlists via the page menu"
+                title: "You can add M3U & XML playlists via the page menu"
             });
         }
         var pos = 0;
 	for (var i in list) {
 	    var itemmd = showtime.JSONDecode(list[i]);
-	    var item = page.appendItem('m3u:' + itemmd.link + ':' + itemmd.title, "directory", {
+            if (!itemmd.link.match(/m3u:http/) && !itemmd.link.match(/xml:http/))
+                itemmd.link = 'm3u:' + itemmd.link;
+	    var item = page.appendItem(itemmd.link + ':' + itemmd.title, "directory", {
        		title: decodeURIComponent(itemmd.title),
 		link: decodeURIComponent(itemmd.link)
 	    });
@@ -753,7 +755,7 @@
             addItem(page, m3uItems[i].url, m3uItems[i].title, m3uItems[i].logo);
             num++;
         }
-        page.metadata.title += ' (' + num + ')';
+        page.metadata.title = decodeURIComponent(groupID) + ' (' + num + ')';
     });
 
     function readAndParseM3U(page, pl) {
@@ -806,11 +808,11 @@
                     m3uUrl = '', m3uTitle = '', m3uImage = '', m3uGroup = '';
             }
         }
-        page.metadata.title = tmp;
+        page.metadata.title = new showtime.RichText(tmp);
         page.loading = false;
     }
 
-    function addItem(page, url, title, logo, text) {
+    function addItem(page, url, title, logo, description) {
         var match = url.match(/([\s\S]*?):(.*)/);
         var type = 'video';
         if (match && match[1].toUpperCase().substr(0, 4) != 'HTTP' &&
@@ -820,7 +822,7 @@
                 var link = 'm3u:' + encodeURIComponent(match[2]) + ":" + escape(title);
                 type = 'directory'
             }
-            var description = link;
+            var linkUrl = link;
         } else {
             var link = "videoparams:" + showtime.JSONEncode({
                 title: title,
@@ -830,15 +832,27 @@
                 no_fs_scan: true,
                 no_subtitle_scan: true
             });
-            var description = url;
+            var linkUrl = url;
         }
-        var item = page.appendItem(link, type, {
-            title: new showtime.RichText(title),
-            icon: logo ? logo : null,
-            description: new showtime.RichText((description ? coloredStr('Link: ', orange) + description : '') +
-                (text ? '\n' + text : ''))
-        });
-        addToFavoritesOption(item, link, title, logo);
+        if (!logo && description) {
+            logo = description.match(/img src="(\s\S*?)"/)
+            if (logo) logo = logo[1];
+        }
+        if (!linkUrl)  {
+            var item = page.appendPassiveItem(type, '' , {
+                title: new showtime.RichText(title),
+                icon: logo ? logo : null,
+                description: new showtime.RichText((linkUrl ? coloredStr('Link: ', orange) + linkUrl : '') + description)
+            });
+        } else {
+            var item = page.appendItem(link, type, {
+                title: new showtime.RichText(title),
+                icon: logo ? logo : null,
+                description: new showtime.RichText((linkUrl ? coloredStr('Link: ', orange) + linkUrl : '') +
+                    (description ? '\n' + description : ''))
+            });
+            addToFavoritesOption(item, link, title, logo);
+        }
     }
 
     plugin.addURI('m3u:(.*):(.*)', function(page, pl, title) {
@@ -867,20 +881,23 @@
                 num++;
             }
         }
-        page.metadata.title = new showtime.RichText(page.metadata.title + ' (' + num + ')');
+        page.metadata.title = new showtime.RichText(unescape(title) + ' (' + num + ')');
     });
 
     var XML = require('showtime/xml');
 
     function setColors(s) {
         if (!s) return '';
-        return s.replace(/="##/g, '="#').replace(/="lime"/g, '="#32CD32"').replace(/="aqua"/g, '="#00FFFF"').replace(/='green'/g, '="#00FF00"').replace(/='cyan'/g, '="#00FFFF"');
-
+        return s.replace(/="##/g, '="#').replace(/="lime"/g,
+            '="#32CD32"').replace(/="aqua"/g, '="#00FFFF"').replace(/='green'/g,
+            '="#00FF00"').replace(/='cyan'/g, '="#00FFFF"').replace(/="LightSalmon"/g,
+            '="#ffa07a"').replace(/="PaleGoldenrod"/g, '="#eee8aa"').replace(/="Aquamarine"/g,
+            '="#7fffd4"').replace(/="LightSkyBlue"/g, '="#87cefa');
     }
 
-    plugin.addURI('xml:(.*):(.*)', function(page, pl, title) {
-        //showtime.print('Main list: ' + decodeURIComponent(pl));
-        setPageHeader(page, unescape(title));
+    plugin.addURI('xml:(.*):(.*)', function(page, pl, pageTitle) {
+        showtime.print('Main list: ' + decodeURIComponent(pl));
+        setPageHeader(page, unescape(pageTitle));
         page.loading = true;
         try {
             var doc = XML.parse(showtime.httpReq(decodeURIComponent(pl)));
@@ -894,6 +911,7 @@
         }
 
         var channels = doc.items.filterNodes('channel');
+        var num = 0;
         for (var i = 0; i < channels.length; i++) {
             if (channels[i].category_id && channels[i].category_id != 1) continue;
             var title = showtime.entityDecode(channels[i].title);
@@ -901,21 +919,31 @@
             var playlist = channels[i].playlist_url;
             var description = channels[i].description ? channels[i].description : null;
             description = setColors(description);
-            if (playlist) {
+            if (playlist && playlist != 'null' && !channels[i].parser) {
                 var extension = playlist.split('.').pop().toLowerCase();
                 if (extension != 'm3u')
                     extension = 'xml';
                 var url = extension + ':' + encodeURIComponent(playlist) + ':' + escape(title);
+                var icon = null;
+                if (description) {
+                   icon = description.match(/src="([\s\S]*?)"/)
+                   if (icon) icon = showtime.entityDecode(icon[1]);
+                }
+                var description = description.replace(/<img[\s\S]*?src=[\s\S]*?(>|$)/, '').replace(/\t/g, '').replace(/\n/g, '').trim();
                 page.appendItem(url, 'video', {
                     title: new showtime.RichText(title),
-                    description: new showtime.RichText(coloredStr('Link: ', orange) + playlist +
-                        '\n' + description)
+                    icon: icon,
+                    description: new showtime.RichText((playlist ? coloredStr('Link: ', orange) + playlist + '\n' : '') + description)
                 });
             } else {
                 var url = channels[i].stream_url ? channels[i].stream_url : '';
+                if (channels[i].parser)
+                    url = channels[i].parser;
                 addItem(page, url, title, '', description);
             }
+            num++;
         }
+        page.metadata.title = new showtime.RichText(unescape(pageTitle) + ' (' + num + ')');
         page.loading = false;
     });
 
@@ -1052,7 +1080,7 @@
                 if (!result.rejected && result.input) {
                     var entry = showtime.JSONEncode({
                         title: encodeURIComponent(result.input),
-                        link: encodeURIComponent(link)
+                        link: type.toLowerCase() + ':' + encodeURIComponent(link)
                     });
                     playlists.list = showtime.JSONEncode([entry].concat(eval(playlists.list)));
                     showtime.notify("Playlist '" + result.input + "' has been added to the list.", 2);
@@ -1078,13 +1106,13 @@
         addActionToTheItem(page, 'Add XML playlist', '1zVA91a', 'XML');
 
         if (!service.disableSampleList) {
-            var item = page.appendItem('m3u:http%3A%2F%2Fbit.ly%2F1Hbuve6:Sample list', "directory", {
+            var item = page.appendItem('m3u:http%3A%2F%2Fbit.ly%2F1Hbuve6:Sample M3U list', "directory", {
                 title: 'Sample M3U list'
             });
         }
 
         if (!service.disableSampleXMLList) {
-            var item = page.appendItem('xml:http%3A%2F%2Fbit.ly%2F1zVA91a:Sample list', "directory", {
+            var item = page.appendItem('xml:http%3A%2F%2Fbit.ly%2F1zVA91a:Sample XML list', "directory", {
                 title: 'Sample XML list'
             });
         }
