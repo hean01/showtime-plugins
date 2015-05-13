@@ -26,7 +26,7 @@
 	page.type = "directory";
 	page.contents = "items";
 	page.metadata.logo = logo;
-	page.metadata.title = title;
+	page.metadata.title = new showtime.RichText(title);
     }
 
     var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
@@ -80,8 +80,12 @@
 
     var settings = plugin.createSettings(slogan, logo, slogan);
 
-    settings.createBool('disableSampleList', "Don't show Sample list", false, function(v) {
+    settings.createBool('disableSampleList', "Don't show Sample M3U list", false, function(v) {
         service.disableSampleList = v;
+    });
+
+    settings.createBool('disableSampleXMLList', "Don't show Sample XML list", true, function(v) {
+        service.disableSampleXMLList = v;
     });
 
     settings.createAction("cleanFavorites", "Clean My Favorites", function () {
@@ -806,7 +810,7 @@
         page.loading = false;
     }
 
-    function addItem(page, url, title, logo) {
+    function addItem(page, url, title, logo, text) {
         var match = url.match(/([\s\S]*?):(.*)/);
         var type = 'video';
         if (match && match[1].toUpperCase().substr(0, 4) != 'HTTP' &&
@@ -829,15 +833,16 @@
             var description = url;
         }
         var item = page.appendItem(link, type, {
-            title: title,
+            title: new showtime.RichText(title),
             icon: logo ? logo : null,
-            description: new showtime.RichText(coloredStr('Link: ', orange) + url)
+            description: new showtime.RichText((description ? coloredStr('Link: ', orange) + description : '') +
+                (text ? '\n' + text : ''))
         });
         addToFavoritesOption(item, link, title, logo);
     }
 
     plugin.addURI('m3u:(.*):(.*)', function(page, pl, title) {
-        setPageHeader(page, decodeURIComponent(title));
+        setPageHeader(page, unescape(title));
         readAndParseM3U(page, pl);
 
         var num = 0;
@@ -863,6 +868,55 @@
             }
         }
         page.metadata.title += ' (' + num + ')';
+    });
+
+    var XML = require('showtime/xml');
+
+    function setColors(s) {
+        if (!s) return '';
+        return s.replace(/="##/g, '="#').replace(/="lime"/g, '="#32CD32"').replace(/="aqua"/g, '="#00FFFF"').replace(/='green'/g, '="#00FF00"').replace(/='cyan'/g, '="#00FFFF"');
+
+    }
+
+    plugin.addURI('xml:(.*):(.*)', function(page, pl, title) {
+        //showtime.print('Main list: ' + decodeURIComponent(pl));
+        setPageHeader(page, unescape(title));
+        page.loading = true;
+        try {
+            var doc = XML.parse(showtime.httpReq(decodeURIComponent(pl)));
+        } catch(err) {
+            page.error(err);
+            return;
+        }
+        if (!doc.items) {
+            page.error('Cannot get proper xml file');
+            return;
+        }
+
+        var channels = doc.items.filterNodes('channel');
+        for (var i = 0; i < channels.length; i++) {
+            if (channels[i].category_id && channels[i].category_id != 1) continue;
+            var title = showtime.entityDecode(channels[i].title);
+            title = setColors(title);
+            var playlist = channels[i].playlist_url;
+            var description = channels[i].description ? channels[i].description : null;
+            description = setColors(description);
+            if (playlist) {
+                var extension = playlist.split('.').pop().toLowerCase();
+                if (extension != 'm3u')
+                    extension = 'xml';
+                var url = extension + ':' + encodeURIComponent(playlist) + ':' + escape(title);
+                page.appendItem(url, 'video', {
+                    title: new showtime.RichText(title),
+                    description: new showtime.RichText(coloredStr('Link: ', orange) + playlist +
+                        '\n' + description)
+                });
+            } else {
+                var url = channels[i].stream_url ? channels[i].stream_url : '';
+                addItem(page, url, title, '', description);
+            }
+        }
+        page.loading = false;
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":streamlive:(.*):(.*)", function(page, url, title) {
@@ -984,19 +1038,10 @@
         page.loading = false;
     });
 
-    // Start page
-    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-        setPageHeader(page, slogan);
-	page.appendItem(plugin.getDescriptor().id + ":favorites", "directory", {
-	    title: "My Favorites"
-	});
-
-        page.appendItem("", "separator", {
-            title: 'M3U playlists'
-        });
-        page.options.createAction('addPlaylist', 'Add M3U playlist', function() {
+    function addActionToTheItem(page, menuText, id, type) {
+        page.options.createAction('addPlaylist' + type, menuText, function() {
             var result = showtime.textDialog('Enter the URL to the playlist like:\n' +
-                'http://bit.ly/1Hbuve6 or just bit.ly/1Hbuve6 or 1Hbuve6', true, true);
+                'http://bit.ly/' + id + ' or just bit.ly/' + id + ' or ' + id, true, true);
             if (!result.rejected && result.input) {
                 var link = result.input;
                 if (!link.match(/\./))
@@ -1016,10 +1061,31 @@
                 }
             }
         });
+    }
+
+    // Start page
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
+        setPageHeader(page, slogan);
+	page.appendItem(plugin.getDescriptor().id + ":favorites", "directory", {
+	    title: "My Favorites"
+	});
+
+        page.appendItem("", "separator", {
+            title: 'M3U & XML playlists'
+        });
+
+        addActionToTheItem(page, 'Add M3U playlist', '1Hbuve6', 'M3U');
+        addActionToTheItem(page, 'Add XML playlist', '1zVA91a', 'XML');
 
         if (!service.disableSampleList) {
             var item = page.appendItem('m3u:http%3A%2F%2Fbit.ly%2F1Hbuve6:Sample list', "directory", {
-                title: 'Sample list'
+                title: 'Sample M3U list'
+            });
+        }
+
+        if (!service.disableSampleXMLList) {
+            var item = page.appendItem('xml:http%3A%2F%2Fbit.ly%2F1zVA91a:Sample list', "directory", {
+                title: 'Sample XML list'
             });
         }
 
