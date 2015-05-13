@@ -867,7 +867,7 @@
                 num++;
             }
         }
-        page.metadata.title += ' (' + num + ')';
+        page.metadata.title = new showtime.RichText(page.metadata.title + ' (' + num + ')');
     });
 
     var XML = require('showtime/xml');

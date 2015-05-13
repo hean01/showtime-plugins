@@ -1,10 +1,10 @@
 {
-	"description": "<p>Online TV - is M3U playlist loader and collection of online tv sources.<p>For more infrmation visit corresponding websites.",
+	"description": "<p>Online TV - is M3U/XML playlist loader and collection of online tv sources.<p>For more infrmation visit corresponding websites.",
 	"author": "lprot",
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "Online TV",
 	"synopsis": "Online TV - collection of online tv sources",
-	"version": "0.8",
+	"version": "0.8.1",
 	"file": "tv.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
