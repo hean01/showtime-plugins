@@ -138,6 +138,7 @@
             }).toString();
             page.redirect('youtube:video:' + showtime.JSONDecode(doc).items[0].id.videoId);
         } catch(err) {
+            page.metadata.title = unescape(title);
             page.error("Sorry, can't get channel's link :(");
         }
         page.loading = false;
@@ -168,7 +169,10 @@
                 }],
                 no_subtitle_scan: true
             });
-        } else page.error("Sorry, can't get the link :(");
+        } else {
+            page.metadata.title = unescape(title);
+            page.error("Sorry, can't get the link :(");
+        }
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":ntv:(.*):(.*)", function(page, url, title) {
@@ -186,7 +190,10 @@
                 }],
                 no_subtitle_scan: true
             });
-        } else page.error("Sorry, can't get the link :(");
+        } else {
+            page.metadata.title = unescape(title);
+            page.error("Sorry, can't get the link :(");
+        }
     });
 
     function roughSizeOfObject(object) {
@@ -237,7 +244,10 @@
                 }],
                 no_subtitle_scan: true
             });
-        } else page.error("Sorry, can't get the link :(");
+        } else {
+            page.metadata.title = unescape(title);
+            page.error("Sorry, can't get the link :(");
+        }
         page.loading = false;
     });
 
@@ -259,7 +269,10 @@
                 }],
                 no_subtitle_scan: true
             });
-        } else page.error("Sorry, can't get the link :(");
+        } else {
+            page.metadata.title = unescape(title);
+            page.error("Sorry, can't get the link :(");
+        }
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":tivix:(.*):(.*)", function(page, url, title) {
@@ -302,12 +315,13 @@
             page.redirect('youtube:video:' + match[1]);
             return;
         }
-
+        page.metadata.title = unescape(title);
         page.error("Sorry, can't get the link :(");
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":uatoday:(.*):(.*)", function(page, url, title) {
         page.loading = true;
+        page.metadata.title = unescape(title);
         var resp = showtime.httpReq(unescape(url)).toString();
         page.loading = false;
         var match = resp.match(/player.online[\S\s]*?http[\S\s]*?http([\S\s]*?)'/);
@@ -321,10 +335,14 @@
                 }],
                 no_subtitle_scan: true
             });
-        } else page.error("Sorry, can't get the link :(");
+        } else {
+            page.metadata.title = unescape(title);
+            page.error("Sorry, can't get the link :(");
+        }
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":seetv:(.*):(.*)", function(page, url, title) {
+        page.metadata.title = unescape(title);
         page.loading = true;
         var resp = showtime.httpReq("http://seetv.tv/see/" + unescape(url)).toString();
         page.loading = false;
@@ -357,6 +375,7 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":1hd:(.*):(.*)", function(page, url, title) {
         page.loading = true;
+        page.metadata.title = unescape(title);
         var resp = showtime.httpReq(unescape(url)).toString();
         page.loading = false;
         var match = resp.match(/file:"([\S\s]*?)"/);
@@ -375,6 +394,7 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":jampo:(.*):(.*)", function(page, url, title) {
         page.loading = true;
+        page.metadata.title = unescape(title);
         var resp = showtime.httpReq("http://tv.jampo.tv/play/channel/" + unescape(url)).toString();
         page.loading = false;
         var match = resp.match(/"st=([\S\s]*?)\&/);
@@ -393,6 +413,7 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":glaz:(.*):(.*)", function(page, url, title) {
         page.loading = true;
+        page.metadata.title = unescape(title);
         var resp = showtime.httpReq("http://www.glaz.tv/online-tv/" + unescape(url)).toString();
         page.loading = false;
         var match = resp.match(/file=([\S\s]*?)\"/);
@@ -411,6 +432,7 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":yamgo:(.*):(.*)", function(page, url, title) {
         page.loading = true;
+        page.metadata.title = unescape(title);
         var resp = showtime.JSONDecode(showtime.httpReq("http://yamgo.com/get-channel/" + unescape(url) + '?format=json'));
         page.loading = false;
         if (resp && resp.channel && resp.channel.channel_url_ipad) {
@@ -428,6 +450,7 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":trk:(.*)", function(page, title) {
         page.loading = true;
+        page.metadata.title = unescape(title);
         var resp = showtime.httpReq("http://kanalukraina.tv/online/").toString();
         page.loading = false;
         var match = resp.match(/source: '([\S\s]*?)'/);
@@ -446,6 +469,7 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":gamax:(.*):(.*)", function(page, url, title) {
         page.loading = true;
+        page.metadata.title = unescape(title);
         var resp = showtime.httpReq(unescape(url)).toString();
         page.loading = false;
         var match = resp.match(/'file': '([\S\s]*?)' \}/);
@@ -464,6 +488,7 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":euronews:(.*):(.*)", function(page, country, title) {
         page.loading = true;
+        page.metadata.title = unescape(title);
         var resp = showtime.httpReq('http://www.euronews.com/news/streaming-live/', {
             postdata: {
                 action: 'getHexaglobeUrl'
@@ -486,6 +511,7 @@
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":vgtrk:(.*):(.*)", function(page, url, title) {
+        page.metadata.title = unescape(title);
         page.loading = true;
         var resp = showtime.httpReq(unescape(url)).toString();
         page.loading = false;
@@ -505,6 +531,7 @@
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":ts:(.*):(.*)", function(page, url, title) {
+        page.metadata.title = unescape(title);
         var link = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             no_fs_scan: true,
