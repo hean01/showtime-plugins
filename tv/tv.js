@@ -672,17 +672,22 @@
             req.setHeader('Cookie', 'yoooo=' + id);
         });
 
-        page.loading = true;
-        var doc = showtime.httpReq('http://yoooo.tv/json/channel_now');
-        page.loading = false;
         if (!id) {
+            var doc = showtime.httpReq('http://yoooo.tv', {
+                headers: {
+                    'Cookie': ''
+                },
+                method: 'HEAD'
+            });
             if (!doc.headers['Set-Cookie']) {
                 page.error("Sorry, can't get ID :(");
                 return;
             }
             id = (doc.headers['Set-Cookie']).match(/yoooo=([\S\s]*?);/)[1];
         }
-        json = showtime.JSONDecode(doc);
+
+        page.loading = true;
+        json = showtime.JSONDecode(showtime.httpReq('http://yoooo.tv/json/channel_now'));
         var counter = 0;
         for (var i in json) {
             var title = json[i].channel_name;
@@ -714,6 +719,7 @@
                 page.redirect(plugin.getDescriptor().id + ':yooooStart');
             }
         });
+        page.loading = false;
     });
 
     function showPlaylist(page) {
