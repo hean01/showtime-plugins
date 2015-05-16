@@ -865,9 +865,8 @@
         var m3uUrl = '', m3uTitle = '', m3uImage = '', m3uGroup = '';
         for (var i = 0; i < m3u.length; i++) {
             page.metadata.title = 'Parsing M3U list. Line ' + i + ' of ' + m3u.length;
-            if (m3u[i].length < 7) continue; // skip empty lines
             var line = showtime.entityDecode(m3u[i]).trim().replace(/[\u200B-\u200F\u202A-\u202E]/g, '');
-            if (line.length < 7) continue; // skip empty lines
+            if (!line.length) continue; // skip empty lines
             switch(line.substr(0, 7)) {
                 case '#EXTINF':
                     var match = line.match(/#EXTINF:.*,(.*)/);
@@ -1345,7 +1344,7 @@
             }
             break;
         };
-        page.metadata.title = 'Idc.md (' + counter + ')';
+        page.metadata.title = new showtime.RichText(page.metadata.title + ' (' + counter + ')');
         page.loading = false;
     });
 
