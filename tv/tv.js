@@ -149,14 +149,14 @@
         page.loading = false;
         var match = resp.match(/file=([\S\s]*?)"/);
         if (!match)
-           match = resp.match(/value="src=([\S\s]*?)&/)
+           match = resp.match(/value="src=([\S\s]*?)"/)
         if (match) {
             page.type = "video";
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: unescape(title),
                 canonicalUrl: plugin.getDescriptor().id + ':sputniktv:' + url + ':' + title,
                 sources: [{
-                    url: 'hls:' + match[1]
+                    url: 'hls:' + match[1].toString().replace(/&st=\/online\/video.txt/, '')
                 }],
                 no_subtitle_scan: true
             });
@@ -550,7 +550,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":indexTivix:(.*):(.*)", function(page, url, title) {
         setPageHeader(page, decodeURIComponent(title));
         var url = prefixUrl = 'http://tivix.net' + decodeURIComponent(url);
-        var tryToSearch = true, fromPage = 1;
+        var tryToSearch = true, fromPage = 1, n = 0;
 
         function loader() {
             if (!tryToSearch) return false;
@@ -562,15 +562,16 @@
             var match = re.exec(doc);
             while (match) {
                 var link = plugin.getDescriptor().id + ":tivix:" + escape(match[2]) + ':' + escape(match[1]);
-                var title = match[1];
                 var icon = 'http://tivix.net' + match[3];
                 var item = page.appendItem(link, "video", {
-                    title: title,
+                    title: match[1],
                     icon: icon
                 });
-                addToFavoritesOption(item, link, title, icon);
+                addToFavoritesOption(item, link, match[1], icon);
+                n++;
                 match = re.exec(doc);
             }
+            page.metadata.title = new showtime.RichText(decodeURIComponent(title) + ' (' + n + ')');
             var next = doc.match(/">Вперед<\/a>/);
             if (!next)
                 return tryToSearch = false;
@@ -658,6 +659,45 @@
         appendItems();
 
         page.metadata.title = 'Divan.tv (' + n + ')';
+        page.loading = false;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":sputnikStart", function(page) {
+        setPageHeader(page, 'Sputniktv.in.ua');
+        page.loading = true;
+        // 1-link, 2-title, 3-epg
+        var re = /<div class="channel_main channel" onclick="location.href='([\s\S]*?)'[\s\S]*?<div class="program_title">([\s\S]*?)<\/div>([\s\S]*?)/g;
+        var tryToSearch = true, n = 0, start = 0;
+
+        function loader() {
+            if (!tryToSearch) return false;
+            page.loading = true;
+            var html = showtime.httpReq('http://sputniktv.in.ua/online/vse.php', {
+                postdata: {
+                    count: 20,
+                    begin: start
+                }
+            }).toString();
+            var match = re.exec(html);
+            while (match) {
+                var link = plugin.getDescriptor().id + ':sputniktv:' + escape('http://sputniktv.in.ua/' + match[1]) + ':' + escape(match[2]);
+                var item = page.appendItem(link, 'video', {
+                    title: match[2]
+                });
+                addToFavoritesOption(item, link, match[2], '');
+                n++;
+                match = re.exec(html);
+            }
+            page.metadata.title = new showtime.RichText('Sputniktv.in.ua (' + n + ')');
+            page.loading = false;
+            if (html.trim()) {
+                start+=20;
+                return true;
+            }
+            return tryToSearch = false;
+        }
+        loader();
+        page.paginator = loader;
         page.loading = false;
     });
 
@@ -793,6 +833,9 @@
                         if (groups.indexOf(m3uGroup) < 0)
                             groups.push(m3uGroup);
                     }
+                    match = line.match(/tvg-logo=["|”]([\s\S]*?)["|”]/);
+                    if (match)
+                        m3uImage = match[1].trim();
                     break;
                 case '#EXTGRP':
                     var match = line.match(/#EXTGRP:(.*)/);
@@ -816,7 +859,7 @@
                         group: m3uGroup,
                         logo: m3uImage
                     });
-                    m3uUrl = '', m3uTitle = '', m3uImage = '', m3uGroup = '';
+                    m3uUrl = '', m3uTitle = '', m3uImage = '';//, m3uGroup = '';
             }
         }
         page.metadata.title = new showtime.RichText(tmp);
@@ -824,12 +867,13 @@
     }
 
     function addItem(page, url, title, logo, description) {
+        // try to detect item type
         var match = url.match(/([\s\S]*?):(.*)/);
         var type = 'video';
         if (match && match[1].toUpperCase().substr(0, 4) != 'HTTP' &&
             match[1].toUpperCase().substr(0, 4) != 'RTMP') {
             var link = plugin.getDescriptor().id + ':' + match[1] + ":" + escape(match[2]) + ':' + escape(title);
-            if (match[1].toUpperCase() == 'M3U') {// the link is m3u list
+            if (match[1].toUpperCase() == 'M3U') { // the link is m3u list
                 var link = 'm3u:' + encodeURIComponent(match[2]) + ":" + escape(title);
                 type = 'directory'
             }
@@ -845,15 +889,16 @@
             });
             var linkUrl = url;
         }
+        // get icon from description
         if (!logo && description) {
             logo = description.match(/img src="(\s\S*?)"/)
             if (logo) logo = logo[1];
         }
-        if (!linkUrl)  {
-            var item = page.appendPassiveItem(type, '' , {
+        if (!linkUrl) {
+            var item = page.appendPassiveItem(type, '', {
                 title: new showtime.RichText(title),
                 icon: logo ? logo : null,
-                description: new showtime.RichText((linkUrl ? coloredStr('Link: ', orange) + linkUrl : '') + description)
+                description: new showtime.RichText(description)
             });
         } else {
             var item = page.appendItem(link, type, {
@@ -925,6 +970,9 @@
             var length = html.indexOf(params[2], start) - start;
             var url = html.substr(start, length).split(',');
             showtime.print('Found URL: ' + url);
+            //var urlCheck = params[1].replace(/\\\//g, '/') + url + params[2].replace(/\\\//g, '/');
+            //if (urlCheck.match(/(http.*)/))
+            //    url = urlCheck.match(/(http.*)/)[1];
             if (!url[0].trim()) {
                 url = html.match(/pl:"([\s\S]*?)"/)[1];
                 showtime.print('Fetching URL from pl: ' + url);
@@ -965,19 +1013,19 @@
                             showtime.print('Fetching URL from pl":": ' + url);
                             var pl = html.match(/pl":"([\s\S]*?)"/)[1].replace(/\\\//g, '/');
                             var json = showtime.JSONDecode(showtime.httpReq(pl).toString().trim());
-                                for (var i in json.playlist) {
-                                    if (json.playlist[i].file) {
-                                        page.appendItem(json.playlist[i].file.split(' ')[0], 'video', {
-                                            title: new showtime.RichText(json.playlist[i].comment)
-                                        });
-                                    }
-                                    for (var j in json.playlist[i].playlist) {
-                                        showtime.print(json.playlist[i].playlist[j].comment);
-                                        page.appendItem(json.playlist[i].playlist[j].file.split(' ')[0], 'video', {
-                                            title: new showtime.RichText(json.playlist[i].comment + ' - ' + json.playlist[i].playlist[j].comment)
-                                        });
-                                    }
+                            for (var i in json.playlist) {
+                                if (json.playlist[i].file) {
+                                    page.appendItem(json.playlist[i].file.split(' ')[0], 'video', {
+                                        title: new showtime.RichText(json.playlist[i].comment)
+                                    });
                                 }
+                                for (var j in json.playlist[i].playlist) {
+                                    showtime.print(json.playlist[i].playlist[j].comment);
+                                    page.appendItem(json.playlist[i].playlist[j].file.split(' ')[0], 'video', {
+                                        title: new showtime.RichText(json.playlist[i].comment + ' - ' + json.playlist[i].playlist[j].comment)
+                                    });
+                                }
+                            }
                         }
                     }
                 }
@@ -1025,7 +1073,7 @@
             title = setColors(title);
             //showtime.print(title);
             var playlist = channels[i].playlist_url;
-            var description = channels[i].description ? channels[i].description.toString() : null;
+            var description = channels[i].description ? channels[i].description : null;
             description = setColors(description);
             if (playlist && playlist != 'null' && !channels[i].parser) {
                 var extension = playlist.split('.').pop().toLowerCase();
@@ -1044,13 +1092,23 @@
                     description: new showtime.RichText((playlist ? coloredStr('Link: ', orange) + playlist + '\n' : '') + description)
                 });
             } else {
-                var url = channels[i].stream_url ? channels[i].stream_url : '';
                 if (channels[i].parser)
                     page.appendItem(plugin.getDescriptor().id + ':parse:' + escape(channels[i].parser) + ':' + escape(title), 'directory', {
                         title: new showtime.RichText(title)
                     });
-                else
-                    addItem(page, url, title, '', description);
+                else {
+                    var url = channels[i].stream_url ? channels[i].stream_url : '';
+                    var match = url.match(/http:\/\/www.youtube.com\/watch\?v=(.*)/);
+                    if (match) {
+                        url = 'youtube:video:' + match[1];
+                        page.appendItem(url, 'video', {
+                            title: title,
+                            icon: logo,
+                            description: new showtime.RichText(coloredStr('Link: ', orange) + url)
+                        });
+                    } else
+                        addItem(page, url, title, '', description);
+                }
             }
             num++;
         }
@@ -1238,6 +1296,9 @@
 	});
 	page.appendItem(plugin.getDescriptor().id + ":tivixStart", "directory", {
 	    title: "Tivix.net"
+	});
+	page.appendItem(plugin.getDescriptor().id + ":sputnikStart", "directory", {
+	    title: "Sputniktv.in.ua"
 	});
 	page.appendItem(plugin.getDescriptor().id + ":yooooStart", "directory", {
 	    title: "Yoooo.tv"
