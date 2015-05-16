@@ -127,6 +127,7 @@
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":playlist:(.*):(.*)", function(page, type, url) {
+        page.loading = true;
         page.metadata.background = plugin.path + "views/img/background.png";
 
         if (service.customViews) {
@@ -148,6 +149,7 @@
 
         if (result.error)
             page.error(result.message);
+        page.loading = false;
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":playlist:(.*):list_processor:(.*)", function (page, type, processor) {
@@ -1520,7 +1522,7 @@
                 page.metadata.title = this.NIPL.vars['countdown_title'] + ' - Waiting ' + (time - j) + ' seconds';
                 if (service.verbose)
                     showtime.print('Waiting ' + (time - j) + ' seconds');
-                showtime.sleep(1000);
+                showtime.sleep(1);
             }
             page.metadata.title = 'Processing...';
         }
@@ -1575,6 +1577,9 @@
                 switches = RegExp.$1;
                 regex = regex.replace(/^\(\?[gmsi]+\)/,'');
             }
+
+            if (!switches) switches = '';
+
             if(switches.match(/s/)){
                 switches=switches.replace(/s/,'');
                 regex = regex.replace(/\\n/g,'\\s');
