@@ -92,15 +92,16 @@
         showtime.notify('Favorites has been cleaned successfully', 2);
     });
 
-    var store = plugin.createStore('favorites', true)
-    if (!store.list) {
+    var store = plugin.createStore('favorites', true);
+    if (!store.list)
         store.list = "[]";
-    }
 
-    var playlists = plugin.createStore('playlists', true)
-    if (!playlists.list) {
+    var playlists = plugin.createStore('playlists', true);
+    if (!playlists.list)
         playlists.list = "[]";
-    }
+
+    var yoooo = plugin.createStore('yoooo', true);
+
 
     function addToFavoritesOption(item, link, title, icon) {
         item.link = link;
@@ -523,7 +524,8 @@
 	    var itemmd = showtime.JSONDecode(list[i]);
 	    var item = page.appendItem(decodeURIComponent(itemmd.link), "video", {
        		title: decodeURIComponent(itemmd.title),
-		icon: decodeURIComponent(itemmd.icon)
+		icon: decodeURIComponent(itemmd.icon),
+                description: new showtime.RichText(coloredStr('Link: ', orange) + decodeURIComponent(itemmd.link))
 	    });
 	    item.addOptAction("Remove '" + decodeURIComponent(itemmd.title) + "' from My Favorites", pos);
 
@@ -662,28 +664,24 @@
     plugin.addURI(plugin.getDescriptor().id + ":yooooStart", function(page) {
         setPageHeader(page, 'Yoooo.tv');
         page.loading = true;
-        try {
-            var doc = showtime.httpReq('http://yoooo.tv', {
-                headers: {
-                    Cookie: ''
-                },
-                method: 'HEAD'
-            });
-        } catch(err) {
-            page.error(err);
-            return;
-        }
-        page.loading = false;
+        var id = yoooo.key ? yoooo.key : '';
+        plugin.addHTTPAuth('.*yoooo\\.tv', function(req) {
+            req.setHeader('Cookie', 'yoooo=' + id);
+        });
+        plugin.addHTTPAuth('.*yoooo\\.tv.*', function(req) {
+            req.setHeader('Cookie', 'yoooo=' + id);
+        });
 
-        if (!doc.headers['Set-Cookie']) {
-            page.error("Sorry, can't get ID :(");
-            return;
-        }
-
-        var id = (doc.headers['Set-Cookie']).match(/yoooo=([\S\s]*?);/)[1];
         page.loading = true;
         var doc = showtime.httpReq('http://yoooo.tv/json/channel_now');
         page.loading = false;
+        if (!id) {
+            if (!doc.headers['Set-Cookie']) {
+                page.error("Sorry, can't get ID :(");
+                return;
+            }
+            id = (doc.headers['Set-Cookie']).match(/yoooo=([\S\s]*?);/)[1];
+        }
         json = showtime.JSONDecode(doc);
         var counter = 0;
         for (var i in json) {
@@ -706,6 +704,16 @@
             counter++;
         };
         page.metadata.title = 'Yoooo.tv (' + counter + ')';
+        page.options.createAction('setYooooKey', 'Set/change Yoooo.tv key', function() {
+            var result = showtime.textDialog('Enter authorization key:', true, true);
+            if (!result.rejected && result.input) {
+                yoooo.key = result.input;
+                var resp = showtime.httpReq('http://yoooo.tv/status.php?key=' + yoooo.key).toString();
+                showtime.notify("The key is set: " + resp.trim(), 2);
+                page.flush();
+                page.redirect(plugin.getDescriptor().id + ':yooooStart');
+            }
+        });
     });
 
     function showPlaylist(page) {
@@ -738,9 +746,7 @@
 	}
     }
 
-    var m3uItems = [];
-    var groups = [];
-    var theLastList = '';
+    var m3uItems = [], groups = [], theLastList = '';
 
     plugin.addURI('m3uGroup:(.*):(.*)', function(page, pl, groupID) {
         setPageHeader(page, decodeURIComponent(groupID));
@@ -887,12 +893,12 @@
 
     function setColors(s) {
         if (!s) return '';
-        return s.replace(/="##/g, '="#').replace(/="lime"/g,
+        return s.toString().replace(/="##/g, '="#').replace(/="lime"/g,
             '="#32CD32"').replace(/="aqua"/g, '="#00FFFF"').replace(/='green'/g,
             '="#00FF00"').replace(/='cyan'/g, '="#00FFFF"').replace(/="LightSalmon"/g,
             '="#ffa07a"').replace(/="PaleGoldenrod"/g, '="#eee8aa"').replace(/="Aquamarine"/g,
             '="#7fffd4"').replace(/="LightSkyBlue"/g, '="#87cefa"').replace(/="palegreen"/g,
-            '="#98fb98"').replace(/="yellow"/g, '="#FFFF00"');
+            '="#98fb98"').replace(/="yellow"/g, '="#FFFF00"').replace(/font color=""/g, 'font color="#FFFFFF"');
     }
 
     plugin.addURI(plugin.getDescriptor().id + ':parse:(.*):(.*)', function(page, parser, title) {
@@ -902,6 +908,10 @@
         showtime.print('Parser is: ' + unescape(parser));
         var params = unescape(parser).split('|');
         showtime.print('Requesting: ' + params[0]);
+        if (!params[0]) {
+            page.error('The link is empty');
+            return;
+        }
         var html = showtime.httpReq(params[0]).toString();
         var base_url = params[0].match(/^.+?[^\/:](?=[?\/]|$)/);
         if (params.length > 1) {
@@ -919,21 +929,49 @@
                         title: new showtime.RichText(unescape(title))
                     });
                 } else {
-                    url = url[0].match(/value="([\s\S]*?)"/)[1];
-                    showtime.print('Fetching URL from value: ' + url);
-                    var json = showtime.JSONDecode(showtime.httpReq(url));
-                    showtime.print(showtime.JSONEncode(json));
-                    for (var i in json.playlist) {
-                        if (json.playlist[i].file) {
-                            page.appendItem(json.playlist[i].file.split(' ')[0], 'video', {
-                                title: new showtime.RichText(json.playlist[i].comment)
-                            });
+                    url = url[0].match(/value="([\s\S]*?)"/);
+                    if (url) {
+                        url = url[1];
+                        showtime.print('Fetching URL from value: ' + url);
+                        var json = showtime.JSONDecode(showtime.httpReq(url));
+                        showtime.print(showtime.JSONEncode(json));
+                        for (var i in json.playlist) {
+                            if (json.playlist[i].file) {
+                                page.appendItem(json.playlist[i].file.split(' ')[0], 'video', {
+                                    title: new showtime.RichText(json.playlist[i].comment)
+                                });
+                            }
+                            for (var j in json.playlist[i].playlist) {
+                                showtime.print(json.playlist[i].playlist[j].comment);
+                                page.appendItem(json.playlist[i].playlist[j].file.split(' ')[0], 'video', {
+                                    title: new showtime.RichText(json.playlist[i].comment + ' - ' + json.playlist[i].playlist[j].comment)
+                                });
+                            }
                         }
-                        for (var j in json.playlist[i].playlist) {
-                            showtime.print(json.playlist[i].playlist[j].comment);
-                            page.appendItem(json.playlist[i].playlist[j].file.split(' ')[0], 'video', {
-                                title: new showtime.RichText(json.playlist[i].comment + ' - ' + json.playlist[i].playlist[j].comment)
+                    } else {
+                        showtime.print('Fetching URL from file":": ' + url);
+                        var file = html.match(/file":"([\s\S]*?)"/);
+                        if (file) {
+                            page.appendItem(file[1].replace(/\\\//g, '/'), 'video', {
+                                title: new showtime.RichText(unescape(title))
                             });
+                        } else {
+                            showtime.print('Fetching URL from pl":": ' + url);
+                            var pl = html.match(/pl":"([\s\S]*?)"/)[1].replace(/\\\//g, '/');
+                            var json = showtime.JSONDecode(showtime.httpReq(pl).toString().trim());
+                                for (var i in json.playlist) {
+                                    if (json.playlist[i].file) {
+                                        page.appendItem(json.playlist[i].file.split(' ')[0], 'video', {
+                                            title: new showtime.RichText(json.playlist[i].comment)
+                                        });
+                                    }
+                                    for (var j in json.playlist[i].playlist) {
+                                        showtime.print(json.playlist[i].playlist[j].comment);
+                                        page.appendItem(json.playlist[i].playlist[j].file.split(' ')[0], 'video', {
+                                            title: new showtime.RichText(json.playlist[i].comment + ' - ' + json.playlist[i].playlist[j].comment)
+                                        });
+                                    }
+                                }
                         }
                     }
                 }
@@ -981,7 +1019,7 @@
             title = setColors(title);
             //showtime.print(title);
             var playlist = channels[i].playlist_url;
-            var description = channels[i].description ? channels[i].description : null;
+            var description = channels[i].description ? channels[i].description.toString() : null;
             description = setColors(description);
             if (playlist && playlist != 'null' && !channels[i].parser) {
                 var extension = playlist.split('.').pop().toLowerCase();
