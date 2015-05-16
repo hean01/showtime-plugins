@@ -102,7 +102,6 @@
 
     var yoooo = plugin.createStore('yoooo', true);
 
-
     function addToFavoritesOption(item, link, title, icon) {
         item.link = link;
         item.title = title;
@@ -1307,6 +1306,99 @@
         });
     }
 
+    var idcJson;
+
+    plugin.addURI(plugin.getDescriptor().id + ":idcPlay:(.*):(.*)", function(page, id, title) {
+        page.loading = true;
+        var json = showtime.JSONDecode(showtime.httpReq('http://iptvn.idc.md/api/json/get_url?cid=' + id));
+        page.type = 'video'
+        var link = "videoparams:" + showtime.JSONEncode({
+            title: decodeURI(title),
+            no_fs_scan: true,
+            canonicalUrl: plugin.getDescriptor().id + ':idcPlay:' + id + ':' + title,
+            sources: [{
+                url: unescape(json.url).replace('http/ts', 'http'),
+                mimetype: 'video/mp2t'
+            }],
+            no_subtitle_scan: true
+        });
+        page.source = link;
+        page.loading = false;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":idcGroups:(.*)", function(page, id) {
+        page.loading = true;
+        var counter = 0;
+        for (var i in idcJson.groups) {
+            if (idcJson.groups[i].id != id)
+                continue;
+            if (counter == 0)
+                setPageHeader(page, coloredStr(decodeURI(idcJson.groups[i].name), idcJson.groups[i].color));
+            for (var j in idcJson.groups[i].channels) {
+                var lines = decodeURI(idcJson.groups[i].channels[j].epg_progname).split('\n');
+                page.appendItem(plugin.getDescriptor().id + ":idcPlay:" + idcJson.groups[i].channels[j].id + ':' + idcJson.groups[i].channels[j].name, "video", {
+                    title: new showtime.RichText(decodeURI(idcJson.groups[i].channels[j].name) + ' - ' + coloredStr(lines[0], orange)),
+                    icon: 'http://iptvn.idc.md' + idcJson.groups[i].channels[j].icon,
+                    description: decodeURI(idcJson.groups[i].channels[j].epg_progname)
+                });
+                counter++;
+            }
+            break;
+        };
+        page.metadata.title = 'Idc.md (' + counter + ')';
+        page.loading = false;
+    });
+
+    function getIdc(page, url) {
+        showDialog = false;
+        while(1) {
+            idcJson = showtime.JSONDecode(showtime.httpReq(url));
+            if (!idcJson.error)
+                return true;
+
+            while(1) {
+                var credentials = plugin.getAuthCredentials(plugin.getDescriptor().id, 'Idc.md requires login to continue', showDialog, 'idc');
+                if (credentials.rejected) {
+                    page.error('Cannot continue without login/password :(');
+                    return false;
+                }
+
+                if (credentials && credentials.username && credentials.password) {
+                    page.loading = true;
+                    var resp = showtime.JSONDecode(showtime.httpReq('https://iptvn.idc.md/api/json/login', {
+                        postdata: {
+                            login: credentials.username,
+                            pass: credentials.password,
+                            settings: 'all'//,
+                            //softid: 'ktvwin-jo-001'
+                        }
+                    }));
+                    page.loading = false;
+                    if (!resp.error) break;
+                    showtime.message(resp.error.message);
+                }
+                page.loading = false;
+                showDialog = true;
+            }
+        }
+    }
+
+    plugin.addURI(plugin.getDescriptor().id + ":idcStart", function(page) {
+        setPageHeader(page, 'Idc.md');
+        page.loading = true;
+        if (!getIdc(page, 'https://iptvn.idc.md/api/json/channel_list')) return;
+
+        var counter = 0;
+        for (var i in idcJson.groups) {
+            page.appendItem(plugin.getDescriptor().id + ":idcGroups:" + idcJson.groups[i].id, "directory", {
+                title: new showtime.RichText(coloredStr(decodeURI(idcJson.groups[i].name), idcJson.groups[i].color))
+            });
+            counter++;
+        };
+        page.metadata.title = 'Idc.md (' + counter + ')';
+        page.loading = false;
+    });
+
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().title);
@@ -1338,6 +1430,9 @@
         page.appendItem("", "separator", {
             title: 'Providers'
         });
+	page.appendItem(plugin.getDescriptor().id + ":streamliveStart", "directory", {
+	    title: "StreamLive.to"
+	});
 	page.appendItem(plugin.getDescriptor().id + ":divanStart", "directory", {
 	    title: "Divan.tv"
 	});
@@ -1350,8 +1445,8 @@
 	page.appendItem(plugin.getDescriptor().id + ":yooooStart", "directory", {
 	    title: "Yoooo.tv"
 	});
-	page.appendItem(plugin.getDescriptor().id + ":streamliveStart", "directory", {
-	    title: "StreamLive.to"
+	page.appendItem(plugin.getDescriptor().id + ":idcStart", "directory", {
+	    title: "Idc.md"
 	});
     });
 })(this);
