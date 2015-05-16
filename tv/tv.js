@@ -682,7 +682,7 @@
         });
 
         // 1-link, 2-title, 3-epg
-        var re = /<div class="channel_main channel" onclick="location.href='([\s\S]*?)'[\s\S]*?<div class="program_title">([\s\S]*?)<\/div>([\s\S]*?)/g;
+        var re = /<div class="channel_main channel" onclick="location.href='([\s\S]*?)'[\s\S]*?<div class="program_title">([\s\S]*?)<\/div>([\s\S]*?)<\/span>/g;
         var tryToSearch = true, n = 0, start = 0;
 
         function loader() {
@@ -696,9 +696,13 @@
             }).toString();
             var match = re.exec(html);
             while (match) {
+                var epg = match[3].match(/<div class="pstart">([\s\S]*?)<\/div>[\s\S]*?<div class="pstartt">([\s\S]*?)<\/div><div class="progran_translation">([\s\S]*?)<\/div>/);
+                if (epg) epg  = coloredStr(' (' + epg[1] + '-' + epg[2] + ') ' + epg[3], orange)
+                else epg = ''
                 var link = plugin.getDescriptor().id + ':sputniktv:' + escape('http://sputniktv.in.ua/' + match[1]) + ':' + escape(match[2]);
                 var item = page.appendItem(link, 'video', {
-                    title: match[2]
+                    title: new showtime.RichText(match[2] + epg),
+                    description: new showtime.RichText(match[2] + epg)
                 });
                 addToFavoritesOption(item, link, match[2], '');
                 n++;
