@@ -108,11 +108,14 @@ var XML = require('showtime/xml');
         var doc = showtime.httpReq(unescape(url) + '/web/getservices?sRef=' + serviceReference);
         page.loading = false;
         doc = XML.parse(doc);
-        var e2services = doc.e2servicelist.filterNodes('e2service');
-        for (var i = 0; i < e2services.length; i++) {
-             page.appendItem(plugin.getDescriptor().id + ":zapTo:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "video", {
-                 title: e2services[i].e2servicename
-             });
+        try {
+            var e2services = doc.e2servicelist.filterNodes('e2service');
+            for (var i = 0; i < e2services.length; i++)
+                 page.appendItem(plugin.getDescriptor().id + ":zapTo:" + url + ':' + escape(e2services[i].e2servicename) + ':' + encodeURIComponent(e2services[i].e2servicereference), "video", {
+                     title: e2services[i].e2servicename
+                 });
+        } catch(err) {
+            page.error('The list is empty');
         }
     });
 

@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "Enigma2",
 	"synopsis": "Streaming from Enigma2 receivers to Movian Media Center",
-	"version": "0.1.9",
+	"version": "0.1.10",
 	"file": "enigma2.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
