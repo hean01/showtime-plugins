@@ -168,9 +168,27 @@ var XML = require('showtime/xml');
 
     plugin.addURI(plugin.getDescriptor().id + ":processReceiver:(.*)", function(page, url) {
         setPageHeader(page, unescape(url));
+
+        var description = '';
+        try {
+            page.loading = true;
+            var doc = showtime.httpReq(unescape(url) + '/web/about');
+            doc = XML.parse(doc);
+            description = coloredStr('Current service: ', orange) + doc.e2abouts.e2about.e2servicename +
+                coloredStr('\nService provider: ', orange) + doc.e2abouts.e2about.e2serviceprovider +
+                coloredStr('\nReceiver model: ', orange) + doc.e2abouts.e2about.e2model +
+                coloredStr('\nFirmware version: ', orange) + doc.e2abouts.e2about.e2imageversion +
+                coloredStr('\nEnigma version: ', orange) + doc.e2abouts.e2about.e2enigmaversion +
+                coloredStr('\nWebif version: ', orange) + doc.e2abouts.e2about.e2webifversion
+        } catch(err) {
+            page.error(err);
+            return;
+        }
+
         page.appendItem(plugin.getDescriptor().id + ":streamFromCurrent:" + url, "video", {
             title: 'Stream from the current service',
-            icon: unescape(url) + '/grab?format=jpg&r=640'
+            icon: unescape(url) + '/grab?format=jpg&r=640',
+            description: new showtime.RichText(description)
         });
         if (service.showScreenshot)
             page.appendItem(unescape(url) + '/grab?format=jpg&r=1080', "image", {
@@ -189,6 +207,7 @@ var XML = require('showtime/xml');
             page.appendItem(plugin.getDescriptor().id + ":all:" + url, "directory", {
                 title: 'All services'
             });
+        page.loading = false;
     });
 
     function showReceivers(page) {
@@ -200,23 +219,8 @@ var XML = require('showtime/xml');
         } else {
             var receivers = store.receivers.split(',');
             for (var i in receivers) {
-                var description = '';
-                try {
-                    page.loading = true;
-                    var doc = showtime.httpReq(unescape(receivers[i]) + '/web/about');
-                    page.loading = false;
-                    doc = XML.parse(doc);
-                    description = coloredStr('Current service: ', orange) + doc.e2abouts.e2about.e2servicename +
-                        coloredStr('\nService provider: ', orange) + doc.e2abouts.e2about.e2serviceprovider +
-                        coloredStr('\nReceiver model: ', orange) + doc.e2abouts.e2about.e2model +
-                        coloredStr('\nFirmware version: ', orange) + doc.e2abouts.e2about.e2imageversion +
-                        coloredStr('\nEnigma version: ', orange) + doc.e2abouts.e2about.e2enigmaversion +
-                        coloredStr('\nWebif version: ', orange) + doc.e2abouts.e2about.e2webifversion
-                } catch(err) {}
-                var item = page.appendItem(plugin.getDescriptor().id + ":processReceiver:" + receivers[i], "video", {
-                    title: unescape(receivers[i]),
-                    icon: unescape(receivers[i]) + '/grab?format=jpg&r=640',
-                    description: new showtime.RichText(description)
+                var item = page.appendItem(plugin.getDescriptor().id + ":processReceiver:" + receivers[i], "directory", {
+                    title: unescape(receivers[i])
                 });
                 item.id = +i;
                 item.title = unescape(receivers[i]);

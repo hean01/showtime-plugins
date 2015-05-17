@@ -1,10 +1,10 @@
 {
-	"description": "<p>Enigma2 is plugin that allows you to watch channels of Enigma2 based receivers in Showtime Mediacenter<p>For additional info, visit <a href=\"https://movian.tv\">https://movian.tv</a>",
+	"description": "<p>Enigma2 is plugin that allows you to stream and watch channels from Enigma2 based satellite receivers to Movian Mediacenter<p>For additional info, visit <a href=\"https://movian.tv\">https://movian.tv</a>",
 	"author": "lprot",
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "Enigma2",
 	"synopsis": "Streaming from Enigma2 receivers to Movian Media Center",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"file": "enigma2.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
