@@ -146,17 +146,25 @@
     plugin.addURI(plugin.getDescriptor().id + ":sputniktv:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         var resp = showtime.httpReq(unescape(url)).toString();
-        page.loading = false;
-        var match = resp.match(/file=([\S\s]*?)"/);
+        var match = resp.match(/stream: "([\S\s]*?)"/);
+        if (!match)
+           match = resp.match(/file=([\S\s]*?)&/);
+        if (!match)
+           match = resp.match(/"src=([\S\s]*?)&/);
         if (!match)
            match = resp.match(/value="src=([\S\s]*?)"/)
+        if (match && showtime.probe(match[1]).result)
+           match = resp.match(/file=([\S\s]*?)"/);
+        page.loading = false;
         if (match) {
+            var link = match[1].toString().replace(/&st=\/online\/video.txt/, '').replace('manifest.f4m', 'playlist.m3u8');
+            if (link.match(/m3u8/)) link = 'hls:' + link;
             page.type = "video";
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: unescape(title),
                 canonicalUrl: plugin.getDescriptor().id + ':sputniktv:' + url + ':' + title,
                 sources: [{
-                    url: 'hls:' + match[1].toString().replace(/&st=\/online\/video.txt/, '')
+                    url: link
                 }],
                 no_subtitle_scan: true
             });
@@ -665,6 +673,14 @@
     plugin.addURI(plugin.getDescriptor().id + ":sputnikStart", function(page) {
         setPageHeader(page, 'Sputniktv.in.ua');
         page.loading = true;
+
+        plugin.addHTTPAuth('.*divan\\.tv', function(req) {
+            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+        });
+        plugin.addHTTPAuth('.*divan\\.tv.*', function(req) {
+            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+        });
+
         // 1-link, 2-title, 3-epg
         var re = /<div class="channel_main channel" onclick="location.href='([\s\S]*?)'[\s\S]*?<div class="program_title">([\s\S]*?)<\/div>([\s\S]*?)/g;
         var tryToSearch = true, n = 0, start = 0;
