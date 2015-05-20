@@ -360,11 +360,7 @@
         // As we don't have reliable timestamp locally, let's get it from google.com
         var now = showtime.httpReq("http://google.com", { method: 'HEAD' }).headers.Date;
         showtime.trace('Google time: ' + now);
-        if (typeof Duktape != 'undefined')
-            now = new Date(Showtime.parseTime(now));
-        else
-            now = new Date(now);
-
+        now = new Date(require('native/string').parseTime(now));
         showtime.trace('System time: ' + now + ' Timestamp: ' + now.getTime());
 
         // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
@@ -467,7 +463,10 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().synopsis);
-        plugin.addHTTPAuth('(http|https)://.*\\.divan\\.tv.*', function(req) {
+        plugin.addHTTPAuth('.*divan\\.tv', function(req) {
+            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+        });
+        plugin.addHTTPAuth('.*divan\\.tv.*', function(req) {
             req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
         });
 

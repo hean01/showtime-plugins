@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Divan.tv",
 	"synopsis": "Онлайн ТВ и фильмы на телевизоре, планшете, смартфоне и компьютере - DIVAN.TV",
-	"version": "0.6.1",
+	"version": "0.6.2",
         "file": "divan_tv.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
