@@ -67,11 +67,12 @@
 
         tryToSearch = true;
         // 1-link, 2-icon, 3-label, 4-nick, 5-type/gender, 6-age, 7-description, 8-location, 9-stats
-        var re = /<li>[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="thumbnail_label[\s\S]*?thumbnail_label[\s\S]*?">([\s\S]*?)<\/div>[\s\S]*?\/"> ([\s\S]*?)<\/a>[\s\S]*?<span class="age gender([\s\S]*?)">([\s\S]*?)<\/span>[\s\S]*?<li title="([\s\S]*?)">[\s\S]*?<li class="location"[\s\S]*?">([\s\S]*?)<\/li>[\s\S]*?<li class="cams">([\s\S]*?)<\/li>/g;
-        var doc;
+        var re = /<li>[\r\n|\r|\n].*<a href="([\s\S]*?)"[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<div class="thumbnail_label[\s\S]*?thumbnail_label[\s\S]*?">([\s\S]*?)<\/div>[\s\S]*?\/"> ([\s\S]*?)<\/a>[\s\S]*?<span class="age gender([\s\S]*?)">([\s\S]*?)<\/span>[\s\S]*?<li title="([\s\S]*?)">[\s\S]*?<li class="location"[\s\S]*?">([\s\S]*?)<\/li>[\s\S]*?<li class="cams">([\s\S]*?)<\/li>/g;
+
         function scrapeItems(blob) {
             var match = re.exec(blob);
             while (match) {
+showtime.print(match[1]);
                 var gender = match[5];
                 if (match[5] == 'c') gender = 'couple';
                 if (match[5] == 'f') gender = 'female';
@@ -91,11 +92,14 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            doc = showtime.httpReq(url).toString();
+            var doc = showtime.httpReq(url).toString();
             page.loading = false;
-            var blob = doc.match(/<ul class="list">([\s\S]*?)<div class="featured_blog_posts">/);
+            var end = doc.indexOf('<ul class="paging">');
+            if (end == -1)
+                end = doc.indexOf('<div class="featured_blog_posts">');
+            var blob = doc.substr(doc.indexOf('<ul class="list">'), end);
             if (blob) {
-                scrapeItems(blob[1]);
+                scrapeItems(blob);
             } else {
                 // 1-title, 2-blob, 3-end of blob
                 var re2 = /class="callout">([\s\S]*?)<\/h([\s\S]*?)<h2>/g;
