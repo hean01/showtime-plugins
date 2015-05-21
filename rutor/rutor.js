@@ -59,7 +59,10 @@
                 var comments = match[5].match(/[\s\S]*?<td align="right">([\s\S]*?)</)[1];
             } else
                 var end = match[5].match(/[\s\S]*?<td align="right">([\s\S]*?)<[\s\S]*?nbsp;([\s\S]*?)<\/span>[\s\S]*?nbsp;([\s\S]*?)<\/span>/);
-            page.appendItem('torrent:browse:'+ service.baseURL + match[2].match(/(\/download.*)/)[1], "directory", {
+            var url = service.baseURL + match[2];
+            if (match[2].match(/http:\/\//))
+                url = service.baseURL + match[2].match(/(\/download.*)/)[1];
+            page.appendItem('torrent:browse:' + url, "directory", {
                 title: new showtime.RichText(colorStr(match[1], orange) + ' ' +
                     match[4] + ' ('+ coloredStr(end[2], green) + '/'+
                     coloredStr(end[3], red) + ') ' + colorStr(end[1], blue) +
