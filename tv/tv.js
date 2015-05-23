@@ -87,6 +87,10 @@
         service.disableSampleXMLList = v;
     });
 
+    settings.createString('acestreamIp', "IP address of AceStream Proxy. Enter IP only.",  '192.168.0.93', function(v) {
+        service.acestreamIp = v;
+    });
+
     settings.createAction("cleanFavorites", "Clean My Favorites", function () {
         store.list = "[]";
         showtime.notify('Favorites has been cleaned successfully', 2);
@@ -338,6 +342,18 @@
             page.metadata.title = unescape(title);
             page.error("Sorry, can't get the link :(");
         }
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":acestream:(.*):(.*)", function(page, id, title) {
+        page.type = "video";
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            canonicalUrl: plugin.getDescriptor().id + ':acestream:' + id + ':' + title,
+            sources: [{
+                url: 'hls:http://' + service.acestreamIp + ':6878/ace/manifest.m3u8?id=' + id.replace('//', '')
+            }],
+            no_subtitle_scan: true
+        });
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":seetv:(.*):(.*)", function(page, url, title) {
@@ -865,7 +881,7 @@
         var m3uUrl = '', m3uTitle = '', m3uImage = '', m3uGroup = '';
         for (var i = 0; i < m3u.length; i++) {
             page.metadata.title = 'Parsing M3U list. Line ' + i + ' of ' + m3u.length;
-            if (m3u[i].indexOf(':') < 0) continue; // skip invalid lines
+            if (m3u[i].indexOf(':') < 0 && m3u[i].trim().length != 40) continue; // skip invalid lines
             var line = showtime.entityDecode(m3u[i]).trim().replace(/[\u200B-\u200F\u202A-\u202E]/g, '');
             switch(line.substr(0, 7)) {
                 case '#EXTINF':
@@ -898,6 +914,8 @@
                 default:
                     if (line[0] == '#') continue; // skip unknown tags
                     line = line.replace(/rtmp:\/\/\$OPT:rtmp-raw=/, '');
+                    if (line.indexOf(':') == -1 && line.length == 40)
+                        line = 'acestream://' + line;
                     m3uItems.push({
                         title: m3uTitle ? m3uTitle : line,
                         url: line,
