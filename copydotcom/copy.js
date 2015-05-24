@@ -54,30 +54,32 @@
         page.loading = true;
 
         if (!store.access_token) {
-            var tokens = showtime.httpReq(API + '/oauth/request', {
-                headers: {
-                    Authorization: 'OAuth oauth_version="1.0", ' +
-                        'oauth_signature_method="PLAINTEXT", ' +
-                        'oauth_consumer_key="' + CONSUMER_KEY + '", ' +
-                        'oauth_signature="' + CONSUMER_SECRET + '&", ' +
-                        'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
-                        'oauth_timestamp="' + new Date().getTime() / 1000 + '", ' +
-                        'oauth_callback="oob"'
-                    }
-            }).toString();
-
-            var requestTokenSecret = tokens.match(/oauth_token_secret=([\s\S]*?)&/)[1];
-
-            doc = showtime.httpReq('https://www.copy.com/applications/authorize?oauth_token=' + tokens.match(/oauth_token=([\s\S]*?)&/)[1]);
-
             while (1) {
+                page.loading = true;
+                var tokens = showtime.httpReq(API + '/oauth/request', {
+                    headers: {
+                        Authorization: 'OAuth oauth_version="1.0", ' +
+                            'oauth_signature_method="PLAINTEXT", ' +
+                            'oauth_consumer_key="' + CONSUMER_KEY + '", ' +
+                            'oauth_signature="' + CONSUMER_SECRET + '&", ' +
+                            'oauth_nonce="' + showtime.md5digest(new Date().getTime()) + '", ' +
+                            'oauth_timestamp="' + new Date().getTime() / 1000 + '", ' +
+                            'oauth_callback="oob"'
+                        }
+                }).toString();
+                var requestTokenSecret = tokens.match(/oauth_token_secret=([\s\S]*?)&/);
+                if (!requestTokenSecret) continue;
+                requestTokenSecret = requestTokenSecret[1];
+                doc = showtime.httpReq('https://www.copy.com/applications/authorize?oauth_token=' + tokens.match(/oauth_token=([\s\S]*?)&/)[1]);
+
                 page.loading = false;
                 var credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, 'Please enter email and password to authorize Showtime', true, false, true);
                 if (credentials.rejected)
-                     return 0;
+                     return false;
                 if (credentials.username && credentials.password) {
                     page.loading = true;
                     try {
+
                         doc = showtime.httpReq('https://www.copy.com/auth/login', {
                             headers: {
                                 'Host': 'www.copy.com',
@@ -137,10 +139,7 @@
     }
 
     function getData(page, path) {
-        if (!store.access_token) {
-            if (!login(page))
-                return 0;
-        }
+        if (!store.access_token && !login(page)) return false;
 
         if (!setHeader) {
             showtime.trace('Adding HTTP auth handlers');
