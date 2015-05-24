@@ -182,6 +182,7 @@
     }
 
     plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
+        if (!store.access_token) return false;
         page.entries = 0;
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(API + 'search/auto/', {
