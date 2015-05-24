@@ -358,8 +358,8 @@
             channelIds.push(json.channels[i].id);
 
         // As we don't have reliable timestamp locally, let's get it from google.com
-        var now = showtime.httpReq("http://google.com", { method: 'HEAD' }).headers.Date;
-        showtime.trace('Google time: ' + now);
+        var now = showtime.httpReq("http://divan.tv", { method: 'HEAD' }).headers.Date;
+        showtime.trace('Divan.tv time: ' + now);
         now = new Date(require('native/string').parseTime(now));
         showtime.trace('System time: ' + now + ' Timestamp: ' + now.getTime());
 
@@ -367,7 +367,6 @@
         if (!store.offset) store.offset = 10800;
         var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - store.offset);
         showtime.trace('Store offset: ' + store.offset + ' Request timestamp: ' + day);
-
         var epg = request(page, showtime.JSONEncode({
             method: 'getEpgByChannelIdsAndDay',
             Params: {
@@ -379,6 +378,7 @@
 
         if (!showtime.JSONEncode(epg) || showtime.JSONEncode(epg) == '[]') {
             store.offset = 7200;
+            showtime.trace('Store offset: ' + store.offset + ' Request timestamp: ' + day);
             day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - store.offset);
             var epg = request(page, showtime.JSONEncode({
                 method: 'getEpgByChannelIdsAndDay',
@@ -388,6 +388,10 @@
                     baseClientKey:baseClientKey
                 }
             }));
+            if (!showtime.JSONEncode(epg) || showtime.JSONEncode(epg) == '[]') {
+                store.offset = 10800;
+                page.redirect(plugin.getDescriptor().id + ":epg");
+            }
         }
 
         function getChNameByID(id) {
