@@ -1182,7 +1182,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":streamlive:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString();
-
+        showtime.trace(doc.match(/Question:([\s\S]*?)<br/));
         var match = doc.match(/Question: \((\d+) (\-|\+) (\d+)\) x (\d+).*=/);
         if (match) {
             if (match[2] == '+')
@@ -1199,6 +1199,7 @@
             doc = showtime.httpReq(unescape(url)).toString();
         } else {
             match = doc.match(/in the box: ([\s\S]*?)<br/);
+            showtime.trace(doc.match(/Question:([\s\S]*?)<br/));
             if (match) {
                 showtime.print('Sending captcha: ' + captcha);
                 doc = showtime.httpReq(unescape(url), {
