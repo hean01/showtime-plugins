@@ -142,7 +142,7 @@
                 page.appendItem(plugin.getDescriptor().id + ':index:' + escape(match[1]), 'video', {
                     title: new showtime.RichText((match[4].match(/quality_hd/) ? coloredStr("HD", orange) : coloredStr("DVD", orange)) + ' ' + match[5]),
                     rating: +(match[6]) / 2,
-                    icon: match[3],
+                    icon: checkUrl(match[3]),
                     year: match[9].match(/(\d+)/) ? +match[9].match(/(\d+)/)[1] : '',
                     timestamp: getTimestamp(match[8]),
                     description: new showtime.RichText((match[7].match(/(\d+)/) ? coloredStr('Комментариев: ', orange) + match[7].match(/(\d+)/)[1] : '') +
@@ -526,7 +526,7 @@
         if (timestamp) { // series
             page.appendPassiveItem('video', {}, {
                 title: title,
-                icon: icon,
+                icon: checkUrl(icon),
                 year: +year[2],
                 genre: genre,
                 duration: duration,
@@ -549,7 +549,7 @@
             function addItem(player) {
                 page.appendItem(link, 'video', {
                     title: new showtime.RichText(coloredStr(player, orange).replace(' плеер', '') + ' ' + title),
-                    icon: icon,
+                    icon: checkUrl(icon),
                     year: +year[2],
                     genre: genre,
                     duration: duration,
@@ -730,7 +730,7 @@
             while (match) {
                 page.appendItem(plugin.getDescriptor().id + ":index:" + escape(match[1]), 'video', {
                     title: new showtime.RichText((match[4] == "quality_hd" ? coloredStr("HD", orange) : coloredStr("DVD", orange)) + ' ' + match[3]),
-                    icon: match[2]
+                    icon: checkUrl(match[2])
                 });
                 match = re.exec(html);
             };
@@ -762,10 +762,10 @@
                 }
                 page.appendPassiveItem('video', '', {
                     title: new showtime.RichText(coloredStr(trim(author), orange) + added),
-                    icon: match[2].substr(0, 4) == 'http' ? match[2] : BASE_URL + match[2],
+                    icon: checkUrl(match[2]),
                     description: new showtime.RichText(trim(match[3]))
-                    });
-                    match = re.exec(html[1]);
+                });
+                match = re.exec(html[1]);
             };
             var next = response.match(/<div class="dle-comments-navigation">([\S\s]*?)<\/div>/);
             if (!next) return tryToSearch = false;
@@ -779,6 +779,10 @@
         page.loading = false;
         page.paginator = loader;
     });
+
+    function checkUrl(url) {
+        return url.substr(0, 4) == 'http' ? url : BASE_URL + url
+    }
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         page.loading = true;
@@ -811,7 +815,7 @@
         while (match) {
             page.appendItem(plugin.getDescriptor().id + ':index:' + escape(BASE_URL + match[1]), 'video', {
                 title: new showtime.RichText(match[2]),
-                icon: match[3],
+                icon: checkUrl(match[3]),
                 description: new showtime.RichText(coloredStr('Режиссер: ', orange) + match[4])
             });
             match = re.exec(response);
@@ -828,7 +832,7 @@
         while (match) {
             page.appendItem(plugin.getDescriptor().id + ':index:' + escape(BASE_URL + match[1]), 'video', {
                 title: new showtime.RichText((match[4] == "quality_hd" ? coloredStr("HD", orange) : coloredStr("DVD", orange)) + ' ' + match[2]),
-                icon: match[3]
+                icon: checkUrl(match[3])
             });
             match = re.exec(n);
         };
