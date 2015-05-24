@@ -1,5 +1,5 @@
 /**
- * fs.to plugin for Movian
+ * fs.to plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -146,7 +146,7 @@
 
         // Scrape duration
         var duration = response.match(/itemprop="duration"[\S\s]*?>([\S\s]*?)<\/span>/);
-        if (duration) duration = duration[1];
+        if (duration) duration = duration[1].trim().substr(0, 8);
 
         // Scrape item info
         var iteminfo = response.match(/<div class="item-info">([\S\s]*?)<\/div>/);
@@ -353,7 +353,7 @@
                 title = m[3].replace('<p>', " / ").replace('</p><p>', " ").replace('</p>', "");
                 page.appendItem(plugin.getDescriptor().id + ":listRoot:" + m[1] + ":" + escape(title), "video", {
                     title: new showtime.RichText(title),
-                    icon: m[2].replace('/9/', '/2/')
+                    icon: setIconSize(m[2], 2)
                 });
                 m = re.exec(what_else);
             }
@@ -381,7 +381,7 @@
                 while (match) {
                     page.appendPassiveItem('video', '', {
                         title: new showtime.RichText(trim(match[2]) + ' (' + coloredStr(match[4], green) + ' / ' + coloredStr(match[5], red) + ') ' + trim(match[3])),
-                        icon: match[1].replace('/3/', '/1/'),
+                        icon: setIconSize(match[1], 1),
                         description: new showtime.RichText(match[6])
                     });
                     match = re.exec(commented);
@@ -639,7 +639,7 @@
         while (m) {
             page.appendItem(plugin.getDescriptor().id + ":listRoot:" + m[1] + ":" + escape(trim(m[3])), "video", {
                 title: new showtime.RichText(trim(m[3]).replace(/(<([^>]+)>)/ig, "")),
-                icon: m[2].replace('/9/', '/2/')
+                icon: setIconSize(m[2], 2)
             });
             m = re.exec(match);
         }
@@ -657,7 +657,7 @@
         while (match) {
             page.appendItem(plugin.getDescriptor().id + ":listRoot:" + match[1]+ ':' + escape(trim(match[2])), 'video', {
                 title: trim(match[2]),
-                icon: match[3].replace('/9/', '/2/'),
+                icon: setIconSize(match[3], 2),
                 year: +(trim(match[5].replace(/\D+/, '')).substr(0,4)),
                 genre: new showtime.RichText(match[4] + ' ' + colorStr(trim(match[7].replace(/<[^>]*>/g, '')), orange)),
                 description: new showtime.RichText(colorStr(trim(match[11]), match[10] == "negative" ? red : green) + ' '+
@@ -693,7 +693,7 @@
             }
             page.appendItem(plugin.getDescriptor().id + ":listRoot:" + escape(match[1]) + ":" + escape(match[3].replace(/\\\'/g, "'").replace(/\\\"/g, '"')), "video", {
                 title: new showtime.RichText(quality + match[3].replace(/\\\'/g, "'").replace(/\\\"/g, '"')),
-                icon: match[2].replace('/6/', '/2/'),
+                icon: setIconSize(match[2], 2),
                 genre: genre,
                 year: +match[7].substr(0,4),
                 description: new showtime.RichText('('+coloredStr(match[5], green)+'/'+coloredStr(match[6], red) + ') ' + actors + coloredStr("Производство: ", orange) + ' ' +
@@ -763,7 +763,16 @@
         processScroller(page, url);
     });
 
+    function setIconSize(s, size) {
+        result = s;
+        var lastMatch = s.lastIndexOf('/');
+        if (lastMatch != -1)
+            result = s.substr(0, s.substr(0, lastMatch - 1).lastIndexOf('/') + 1) + size + s.substr(lastMatch);
+        return result;
+    }
+
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
+    showtime.print(setIconSize('http://s0.dotua.org/fsua_items/cover/13/31/64/13/00316468.jpg', 2));
         setPageHeader(page, plugin.getDescriptor().synopsis);
         response = showtime.httpReq(BASE_URL).toString();
 
@@ -820,7 +829,7 @@
                 var description = trim(match[7].replace(/<[^>]*>/g, '').replace('.......',''))
                 page.appendItem(plugin.getDescriptor().id + ":listRoot:" + escape(match[1]) + ":" + escape(showtime.entityDecode(match[4])), "video", {
                     title: new showtime.RichText(match[4]),
-                    icon: match[2].replace('/9/','/2/'),
+                    icon: setIconSize(match[2], 2),
                     genre: new showtime.RichText(match[3] + ' ' + (trim(match[5].replace(/<[^>]*>/g, '')) ? colorStr(trim(match[5]), orange) : '')),
                     description: new showtime.RichText((trim(match[6]) ? coloredStr('Произведено: ',orange) + trim(match[6]) + ' ' : '') +
                        coloredStr('Добавил: ',orange) + match[8] + ' ' + colorStr(match[9], blue) +
@@ -869,10 +878,9 @@
 		            rate = colorStr(rate, red);
                         else
                             rate = '';
-
                     page.appendItem(plugin.getDescriptor().id + ":listRoot:" + escape(match[1]) + ":" + escape(match[3]), "video", {
                         title: new showtime.RichText(rate + ' ' + match[3]),
-                        icon: match[2].replace('/5/', '/2/'),
+                        icon: setIconSize(match[2], 2),
                         genre: new showtime.RichText(match[4] + genres),
                         description: new showtime.RichText('('+coloredStr(match[6], green)+'/'+coloredStr(match[7], red) + ') ' + coloredStr(' Описание: ', orange) + match[8])
                     });
