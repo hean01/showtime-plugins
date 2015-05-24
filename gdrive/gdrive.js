@@ -1,4 +1,6 @@
 /**
+ * Google Drive plugin for Movian Media Center
+ *
  *  Copyright (C) 2014-2015 lprot
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -231,6 +233,7 @@
     }
 
     plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
+        if (!store.refresh_token) return;
         page.entries = 0;
         ls(page, "title contains '"+ query + "'");
     });

@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Google Drive",
 	"synopsis": "Google Drive – Keep everything. Share anything.",
-	"version": "0.1.2",
+	"version": "0.1.3",
         "file": "gdrive.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
