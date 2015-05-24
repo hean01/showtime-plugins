@@ -119,6 +119,12 @@
             noFollow: true
         });
         switch (unescape(hoster)) {
+            case 'Videoapi.mail.ru':
+                var pageUrl = doc.toString().match(/SRC="([\S\s]*?)"/)[1];
+                url = showtime.httpReq(pageUrl).toString().match(/metadataUrl":"([\s\S]*?)"/)[1];
+                url = showtime.JSONDecode(showtime.httpReq(url));
+                url = url.videos[0].url;
+                break;
             case 'Videoget.tv':
             case 'Videoget.eu':
             case 'Videoget (Divx+Letöltés)':
@@ -230,6 +236,7 @@
                 url = decryptedUrl.match(/file:"([\S\s]*?)"/)[1];
                 break;
             case 'CloudZilla':
+            case 'CloudZilla (Neodrive)':
                 url = showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/<div id="player_container">[\S\s]*?src="([\S\s]*?)"/)[1];
                 if (url.substr(0, 4) != 'http')
                     url = 'http://www.neodrive.co' + url;
@@ -358,7 +365,7 @@
 
         var blob = doc.match(/id=forrlistfej([\S\s]*?)<\/table>/)[1];
 	// 1-language, 2-quality, 3-hoster, 4-info, 5-link
-        re = /<img src="img\/lang\/([\S\s]*?)\.gif[\S\s]*?<img src="img\/qual\/([\S\s]*?)\.gif"[\S\s]*?">([\S\s]*?)<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>[\S\s]*?href=http[\S\s]*?(http[\S\s]*?)>/g;
+        re = /<img src="img\/lang\/([\S\s]*?)\.gif[\S\s]*?<img src="img\/qual\/([\S\s]*?)\.gif"[\S\s]*?">([\S\s]*?)<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>[\S\s]*?href=([\S\s]*?)>/g;
         match = re.exec(blob);
         while (match) {
             appendItem(plugin.getDescriptor().id + ':play:' + escape(trim(match[3])) + ':' + escape(match[5]) + ':' + escape(page.metadata.title),
