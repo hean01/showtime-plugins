@@ -1183,7 +1183,7 @@
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString();
 
-        var match = doc.match(/Question: \((\d+) (\-|\+) (\d+)\) x (\d+) =/);
+        var match = doc.match(/Question: \((\d+) (\-|\+) (\d+)\) x (\d+).*=/);
         if (match) {
             if (match[2] == '+')
                 var captcha = (+match[1] + (+match[3])) * (+match[4]);
