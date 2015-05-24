@@ -1182,33 +1182,35 @@
     plugin.addURI(plugin.getDescriptor().id + ":streamlive:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString();
-        var match = doc.match(/Question: \((\d+) (\-|\+) (\d+)\) x (\d+).*=/);
-        if (match) {
-            if (match[2] == '+')
-                var captcha = (+match[1] + (+match[3])) * (+match[4]);
-            else
-                var captcha = (+match[1] - (+match[3])) * (+match[4]);
-            showtime.trace(doc.match(/Question:([\s\S]*?)<br/) + ' Sending captcha: ' + captcha);
-            doc = showtime.httpReq(unescape(url), {
-                postdata: {
-                    captcha: captcha
-                }
-            })
-            doc = showtime.httpReq(unescape(url)).toString();
-        } else {
-            match = doc.match(/[\s\S]*?in the box: ([\s\S]*?)<br/);
+        if (!doc.match(/getJSON\("([\s\S]*?)"/)) {
+            showtime.trace(doc.match(/Question:([\s\S]*?)<br/));
+            var match = doc.match(/Question: \((\d+) (\-|\+) (\d+)\) x (\d+).*=/);
             if (match) {
-                captcha = match[1];
-                showtime.trace(doc.match(/Question:([\s\S]*?)<br/) + ' Sending captcha: ' + captcha);
+                if (match[2] == '+')
+                    var captcha = (+match[1] + (+match[3])) * (+match[4]);
+                else
+                    var captcha = (+match[1] - (+match[3])) * (+match[4]);
+                showtime.trace('Sending number: ' + captcha);
                 doc = showtime.httpReq(unescape(url), {
                     postdata: {
                         captcha: captcha
                     }
                 })
                 doc = showtime.httpReq(unescape(url)).toString();
+            } else {
+                match = doc.match(/[\s\S]*?in the box: ([\s\S]*?)<br/);
+                if (match) {
+                    captcha = match[1];
+                    showtime.trace('Sending word: ' + captcha);
+                    doc = showtime.httpReq(unescape(url), {
+                        postdata: {
+                            captcha: captcha
+                        }
+                    })
+                    doc = showtime.httpReq(unescape(url)).toString();
+                }
             }
         }
-
         var token = doc.match(/getJSON\("([\s\S]*?)"/);
         if (!token) {
             showtime.trace('Cannot pass captcha: ' + doc.match(/Question:([\s\S]*?)<br/));
