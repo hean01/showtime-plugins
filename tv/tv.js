@@ -1190,7 +1190,7 @@
             else
                 var captcha = (+match[1] - (+match[3])) * (+match[4]);
 
-            showtime.print('Sending captcha: ' + captcha);
+            showtime.trace('Sending captcha: ' + captcha);
             doc = showtime.httpReq(unescape(url), {
                 postdata: {
                     captcha: captcha
@@ -1201,7 +1201,7 @@
             match = doc.match(/in the box: ([\s\S]*?)<br/);
             showtime.trace(doc.match(/Question:([\s\S]*?)<br/));
             if (match) {
-                showtime.print('Sending captcha: ' + captcha);
+                showtime.trace('Sending captcha: ' + captcha);
                 doc = showtime.httpReq(unescape(url), {
                     postdata: {
                         captcha: match[1]
