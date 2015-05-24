@@ -225,6 +225,7 @@
         page.loading = true;
         var resp = showtime.httpReq(unescape(url).match(/http/) ? unescape(url) : 'http://divan.tv' + unescape(url)).toString();
         var match = resp.match(/file: "([\S\s]*?)"/);
+        if (!match) match = resp.match(/stream: "([\S\s]*?)"/);
         if (match) {
             var n = 0;
             while (n < 5)
@@ -945,7 +946,7 @@
             var link = "videoparams:" + showtime.JSONEncode({
                 title: title,
                 sources: [{
-                    url: url.match(/m3u8/) ? 'hls:' + url : url
+                    url: url.match(/m3u8/) || url.match(/\.smil/) ? 'hls:' + url : url
                 }],
                 no_fs_scan: true,
                 no_subtitle_scan: true
@@ -1416,6 +1417,48 @@
         page.loading = false;
     });
 
+    plugin.addURI(plugin.getDescriptor().id + ":playgoAtDee:(.*):(.*)", function(page, url, title) {
+        page.loading = true;
+        var doc = showtime.httpReq('http://goatd.net/' + unescape(url)).toString();
+        var match = doc.match(/id="([\s\S]*?)"; ew="/);
+        if (match) {
+            showtime.print('http://castalba.tv/embed.php?cid='+ match[1]);
+            doc = showtime.httpReq('http://castalba.tv/embed.php?cid='+ match[1]).toString();
+            var streamer = doc.match(/'streamer': '([\s\S]*?)'/)[1];
+            var playpath = doc.match(/'file': '([\s\S]*?)'/)[1];
+            page.type = 'video';
+            page.source = streamer + ' playpath=' + playpath + ' swfUrl=http://static.castalba.tv/player5.9.swf pageUrl=http://castalba.tv/embed.php?cid=' + match[1];
+        }
+        page.loading = false;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":goAtDeeStart", function(page) {
+        setPageHeader(page, 'goATDee.Net');
+        page.loading = true;
+        var doc = showtime.httpReq('http://goatd.net').toString();
+        page.appendItem("", "separator", {
+            title: doc.match(/<b>([\s\S]*?)<\/b>/)[1]
+        });
+        // 1-am/pm time, 2-est time, 3-icon, 4-link, 5-title, 6-cet time
+        var re = /<td align="right"><b>([\s\S]*?)<\/b><\/td><td align="left"><b>([\s\S]*?)<\/b><\/td>[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?blank">([\s\S]*?)<\/a>([\s\S]*?)<\/tr>/g;
+        // 1- 6-24h time, 2-cet time
+        var re2 = /<td align="right"><b>([\s\S]*?)<\/b><\/td><td align="left"><b>([\s\S]*?)<\/b>/;
+        var match = re.exec(doc);
+        while (match) {
+            var params = re2.exec(match[6]);
+            cet = '';
+            if (params)
+                cet = ' / ' + params[1] + ' ' + params[2];
+	    page.appendItem(plugin.getDescriptor().id + ":playgoAtDee:" + escape(match[4]) + ':' + escape(match[5]), "video", {
+	        title: new showtime.RichText(match[5] + (match[1] ? coloredStr(' ' + match[1] + ' ' + match[2] + cet, orange) : '')),
+                icon: match[3],
+                description: new showtime.RichText(match[5] + (match[1] ? coloredStr(' ' + match[1] + ' ' + match[2] + cet, orange) : ''))
+	    });
+            match = re.exec(doc);
+        }
+        page.loading = false;
+    });
+
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().title);
@@ -1464,6 +1507,9 @@
 	});
 	page.appendItem(plugin.getDescriptor().id + ":idcStart", "directory", {
 	    title: "Idc.md"
+	});
+	page.appendItem(plugin.getDescriptor().id + ":goAtDeeStart", "directory", {
+	    title: "goATDee.Net"
 	});
     });
 })(this);
