@@ -112,6 +112,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*):(.*)", function(page, hoster, url, title) {
         var canonicalUrl = plugin.getDescriptor().id + ":play:" + hoster + ':' + url + ':' + title;
         page.loading = true;
+        var url = checkLink(unescape(url)).match(/(http:\/\/filmezz.*)/)[1];
         var doc = showtime.httpReq(checkLink(unescape(url)), {
             noFollow: true
         });
@@ -180,6 +181,7 @@
                 url = 'hls:' + showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/file: "([\S\s]*?)"/)[1];
                 break;
             case 'VidToMe':
+showtime.print(doc.headers.Location);
                 var param = showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/name="op" value="([\S\s]*?)"[\S\s]*?name="id" value="([\S\s]*?)"[\S\s]*?name="fname" value="([\S\s]*?)"[\S\s]*?name="hash" value="([\S\s]*?)"/);
                 if (param) {
                     sleep(page, 6000);
@@ -323,6 +325,7 @@
     });
 
     function checkLink(link) {
+        if (!link) return '';
         return link.substr(0, 4) == 'http' ? showtime.entityDecode(link).replace(/\"/g, '') : BASE_URL + showtime.entityDecode(link).replace(/\"/g, '');
     }
 
