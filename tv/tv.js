@@ -1383,7 +1383,6 @@
                 }
 
                 if (credentials && credentials.username && credentials.password) {
-                    page.loading = true;
                     var resp = showtime.JSONDecode(showtime.httpReq('https://iptvn.idc.md/api/json/login', {
                         postdata: {
                             login: credentials.username,
@@ -1392,7 +1391,6 @@
                             //softid: 'ktvwin-jo-001'
                         }
                     }));
-                    page.loading = false;
                     if (!resp.error) break;
                     showtime.message(resp.error.message);
                 }
@@ -1405,7 +1403,6 @@
         setPageHeader(page, 'Idc.md');
         page.loading = true;
         if (!getIdc(page, 'https://iptvn.idc.md/api/json/channel_list')) return;
-
         var counter = 0;
         for (var i in idcJson.groups) {
             page.appendItem(plugin.getDescriptor().id + ":idcGroups:" + idcJson.groups[i].id, "directory", {
