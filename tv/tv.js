@@ -930,7 +930,7 @@
         page.loading = false;
     }
 
-    function addItem(page, url, title, logo, description) {
+    function addItem(page, url, title, icon, description) {
         // try to detect item type
         var match = url.match(/([\s\S]*?):(.*)/);
         var type = 'video';
@@ -954,24 +954,24 @@
             var linkUrl = url;
         }
         // get icon from description
-        if (!logo && description) {
-            logo = description.match(/img src="(\s\S*?)"/)
-            if (logo) logo = logo[1];
+        if (!icon && description) {
+            icon = description.match(/img src="(\s\S*?)"/)
+            if (icon) icon = icon[1];
         }
         if (!linkUrl) {
             var item = page.appendPassiveItem(type, '', {
                 title: new showtime.RichText(title),
-                icon: logo ? logo : null,
+                icon: icon ? icon : null,
                 description: new showtime.RichText(description)
             });
         } else {
             var item = page.appendItem(link, type, {
                 title: new showtime.RichText(title),
-                icon: logo ? logo : null,
+                icon: icon ? icon : null,
                 description: new showtime.RichText((linkUrl ? coloredStr('Link: ', orange) + linkUrl : '') +
                     (description ? '\n' + description : ''))
             });
-            addToFavoritesOption(item, link, title, logo);
+            addToFavoritesOption(item, link, title, icon);
         }
     }
 
@@ -1139,17 +1139,21 @@
             var playlist = channels[i].playlist_url;
             var description = channels[i].description ? channels[i].description : null;
             description = setColors(description);
+            var icon = null;
+            if (channels[i].logo_30x30 && channels[i].logo_30x30.substr(0, 4) == 'http')
+                icon = channels[i].logo_30x30;
+
+            if (description && !icon) {
+               icon = description.match(/src="([\s\S]*?)"/)
+               if (icon) icon = showtime.entityDecode(icon[1]);
+            }
+            description = description.replace(/<img[\s\S]*?src=[\s\S]*?(>|$)/, '').replace(/\t/g, '').replace(/\n/g, '').trim();
+
             if (playlist && playlist != 'null' && !channels[i].parser) {
                 var extension = playlist.split('.').pop().toLowerCase();
                 if (extension != 'm3u')
                     extension = 'xml';
                 var url = extension + ':' + encodeURIComponent(playlist) + ':' + escape(title);
-                var icon = null;
-                if (description) {
-                   icon = description.match(/src="([\s\S]*?)"/)
-                   if (icon) icon = showtime.entityDecode(icon[1]);
-                }
-                var description = description.replace(/<img[\s\S]*?src=[\s\S]*?(>|$)/, '').replace(/\t/g, '').replace(/\n/g, '').trim();
                 page.appendItem(url, 'video', {
                     title: new showtime.RichText(title),
                     icon: icon,
@@ -1167,11 +1171,11 @@
                         url = 'youtube:video:' + match[1];
                         page.appendItem(url, 'video', {
                             title: title,
-                            icon: logo,
+                            icon: icon,
                             description: new showtime.RichText(coloredStr('Link: ', orange) + url)
                         });
                     } else
-                        addItem(page, url, title, '', description);
+                        addItem(page, url, title, icon, description);
                 }
             }
             num++;
