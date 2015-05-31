@@ -575,7 +575,7 @@
 	    var itemmd = showtime.JSONDecode(list[i]);
 	    var item = page.appendItem(decodeURIComponent(itemmd.link), "video", {
        		title: decodeURIComponent(itemmd.title),
-		icon: decodeURIComponent(itemmd.icon),
+		icon: itemmd.icon ? decodeURIComponent(itemmd.icon) : null,
                 description: new showtime.RichText(coloredStr('Link: ', orange) + decodeURIComponent(itemmd.link))
 	    });
 	    item.addOptAction("Remove '" + decodeURIComponent(itemmd.title) + "' from My Favorites", pos);
