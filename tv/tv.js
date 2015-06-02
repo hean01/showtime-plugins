@@ -710,6 +710,30 @@
         appendItems();
 
         page.metadata.title = 'Divan.tv (' + n + ')';
+        page.options.createAction('loginToDivan', 'Login to divan.tv', function() {
+                page.loading = false;
+                var credentials = plugin.getAuthCredentials(plugin.getDescriptor().id, 'Enter email and password to login', true, 'divan');
+                if (credentials && !credentials.rejected && credentials.username && credentials.password) {
+                    page.loading = true;
+                    var resp = showtime.httpReq('http://divan.tv/users/login', {
+                        headers: {
+                            Origin: 'http://divan.tv',
+                            Referer: 'http://divan.tv/',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        postdata: {
+                            'data[Form][login]': credentials.username,
+                            'data[Form][password]': credentials.password,
+                            'data[Form][remember]': 1,
+                            '': 'ВОЙТИ'
+
+                        }
+                    });
+                    page.flush();
+                    page.redirect(plugin.getDescriptor().id + ':divanStart');
+                }
+        });
+
         page.loading = false;
     });
 
