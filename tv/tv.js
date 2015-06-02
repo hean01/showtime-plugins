@@ -1151,7 +1151,7 @@
         var channels = doc.items.filterNodes('channel');
         var num = 0;
         for (var i = 0; i < channels.length; i++) {
-            if (channels[i].category_id && channels[i].category_id != 1) continue;
+            //if (channels[i].category_id && channels[i].category_id != 1) continue;
             var title = showtime.entityDecode(channels[i].title);
             title = setColors(title);
             //showtime.print(title);
@@ -1545,7 +1545,7 @@
             setSpbHeaders();
             var json = showtime.JSONDecode(showtime.httpReq('http://tv3.spr.spbtv.com/v1/vods/' + id + '/stream?protocol=hds&'));
             var link = "videoparams:" + showtime.JSONEncode({
-                title: unescape(title),
+                title: showtime.entityDecode(unescape(title)),
                 no_fs_scan: true,
                 canonicalUrl: plugin.getDescriptor().id + ':playVodSpb:' + id + ':' + title,
                 sources: [{
@@ -1568,12 +1568,13 @@
         setSpbHeaders();
         var json = showtime.JSONDecode(showtime.httpReq('http://tv3.spr.spbtv.com/desktop/channels/' + id.match(/ch_(.*)/)[1] + '/videos.json?limit=10000'));
         for (var i in json.videos) {
-            page.appendItem(plugin.getDescriptor().id + ':playVodSpb:' + escape(json.videos[i].id) + ':' + escape(json.videos[i].name), 'video', {
-                title: new showtime.RichText(coloredStr(json.videos[i].language.iso2, orange) + ' ' + json.videos[i].name),
+            var name = json.videos[i].name.replace(/\n/g, '').replace(/''/g, "'").replace(/""/g, '"');
+            page.appendItem(plugin.getDescriptor().id + ':playVodSpb:' + escape(json.videos[i].id) + ':' + escape(name), 'video', {
+                title: new showtime.RichText(coloredStr(json.videos[i].language.iso2, orange) + ' ' + name),
                 icon: json.videos[i].images[0].original_url,
                 description: new showtime.RichText(coloredStr('Language: ', orange) + json.videos[i].language.name +
-                    coloredStr('\nPublishing date: ', orange) + json.videos[i].publishing_date.replace('T', '').replace('Z', '') +
-                    coloredStr('\nDescription: ', orange) + json.videos[i].description),
+                    coloredStr('\nPublishing date: ', orange) + json.videos[i].publishing_date.replace('T', ' ').replace('Z', ' ') +
+                    (json.videos[i].description ? coloredStr('\nDescription: ', orange) + json.videos[i].description : '')),
             });
         }
         page.metadata.title += ' (' + json.videos.length + ')';
@@ -1655,7 +1656,6 @@
                 var type = flags[4];
                 var lang = flags[2];
             }
-
             if (type == 'vod')
                 var route = ":channelSpb:";
             else
