@@ -223,6 +223,7 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":divan:(.*):(.*)", function(page, url, title) {
         page.loading = true;
+        setDivanHeaders();
         var resp = showtime.httpReq(unescape(url).match(/http/) ? unescape(url) : 'http://divan.tv' + unescape(url)).toString();
         var match = resp.match(/file: "([\S\s]*?)"/);
         if (!match) match = resp.match(/stream: "([\S\s]*?)"/);
@@ -659,15 +660,9 @@
     plugin.addURI(plugin.getDescriptor().id + ":divanStart", function(page) {
         setPageHeader(page, 'Divan.tv');
         page.loading = true;
-
-        plugin.addHTTPAuth('.*divan\\.tv', function(req) {
-            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
-        });
-        plugin.addHTTPAuth('.*divan\\.tv.*', function(req) {
-            req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
-        });
-
         var international = false;
+        setDivanHeaders();
+
         var doc = showtime.httpReq('https://divan.tv/tv/?devices=online&access=free').toString();
         if (doc.match(/land-change-site/) || international) {
             international = true;
@@ -1542,6 +1537,145 @@
         page.loading = false;
     });
 
+    plugin.addURI(plugin.getDescriptor().id + ":playVodSpb:(.*):(.*)", function(page, id, title) {
+        page.loading = true;
+        page.type = 'video'
+        page.metadata.title = unescape(title);
+        try {
+            setSpbHeaders();
+            var json = showtime.JSONDecode(showtime.httpReq('http://tv3.spr.spbtv.com/v1/vods/' + id + '/stream?protocol=hds&'));
+            var link = "videoparams:" + showtime.JSONEncode({
+                title: unescape(title),
+                no_fs_scan: true,
+                canonicalUrl: plugin.getDescriptor().id + ':playVodSpb:' + id + ':' + title,
+                sources: [{
+                    url: 'hls:' + json.stream.url.replace('.f4m?', '.m3u8?')
+                }],
+                no_subtitle_scan: true
+            });
+            page.source = link;
+        } catch(err) {
+            if (err.toString().match(/error: 403/))
+                err = 'Stream is not available in your country';
+            page.error(err);
+        }
+        page.loading = false;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":channelSpb:(.*):(.*)", function(page, id, title) {
+        setPageHeader(page, unescape(title));
+        page.loading = true;
+        setSpbHeaders();
+        var json = showtime.JSONDecode(showtime.httpReq('http://tv3.spr.spbtv.com/desktop/channels/' + id.match(/ch_(.*)/)[1] + '/videos.json?limit=10000'));
+        for (var i in json.videos) {
+            page.appendItem(plugin.getDescriptor().id + ':playVodSpb:' + escape(json.videos[i].id) + ':' + escape(json.videos[i].name), 'video', {
+                title: new showtime.RichText(coloredStr(json.videos[i].language.iso2, orange) + ' ' + json.videos[i].name),
+                icon: json.videos[i].images[0].original_url,
+                description: new showtime.RichText(coloredStr('Language: ', orange) + json.videos[i].language.name +
+                    coloredStr('\nPublishing date: ', orange) + json.videos[i].publishing_date.replace('T', '').replace('Z', '') +
+                    coloredStr('\nDescription: ', orange) + json.videos[i].description),
+            });
+        }
+        page.metadata.title += ' (' + json.videos.length + ')';
+        page.loading = false;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":playSpb:(.*):(.*)", function(page, id, title) {
+        page.loading = true;
+        page.type = 'video'
+        page.metadata.title = unescape(title);
+        try {
+            setSpbHeaders();
+            var json = showtime.JSONDecode(showtime.httpReq('http://tv3.spr.spbtv.com/v1/channels/' + id.match(/ch_(.*)/)[1] + '/stream?protocol=hds&'));
+            var link = "videoparams:" + showtime.JSONEncode({
+                title: unescape(title),
+                no_fs_scan: true,
+                canonicalUrl: plugin.getDescriptor().id + ':playSpb:' + id + ':' + title,
+                sources: [{
+                    url: 'hls:' + json.stream.url.replace('.f4m?', '.m3u8?')
+                }],
+                no_subtitle_scan: true
+            });
+            page.source = link;
+        } catch(err) {
+            if (err.toString().match(/error: 403/))
+                err = 'Stream is not available in your country';
+            page.error(err);
+        }
+        page.loading = false;
+    });
+
+    var spbHeadersAreSet = false;
+    function setSpbHeaders() {
+        if (!spbHeadersAreSet) {
+            plugin.addHTTPAuth('.*spbtv\\.com', function(req) {
+                req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+            });
+            plugin.addHTTPAuth('.*spbtv\\.com.*', function(req) {
+                req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+            });
+            spbHeadersAreSet = true;
+        }
+    }
+
+    var divanHeadersAreSet = false;
+    function setDivanHeaders() {
+        if (!divanHeadersAreSet) {
+            plugin.addHTTPAuth('.*divan\\.tv', function(req) {
+                req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+            });
+            plugin.addHTTPAuth('.*divan\\.tv.*', function(req) {
+                req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+            });
+            divanHeadersAreSet = true;
+        }
+    }
+
+    plugin.addURI(plugin.getDescriptor().id + ":spbStart", function(page) {
+        setPageHeader(page, 'Spbtv.com');
+        page.loading = true;
+
+        setSpbHeaders();
+        var doc = showtime.httpReq('http://spbtv.com/channels/').toString();
+        var cList = doc.match(/<div id="channel_list([\s\S]*?)<\/div>/)[1];
+        // 1-category/lang/access/type, 2-id, 3-language, 4-logo, 5-description, 6-link, 7-title
+        var re = /<li class="([\s\S]*?)" id="([\s\S]*?)">[\s\S]*?<span class="lang">([\s\S]*?)<\/span><img src="([\s\S]*?)"[\s\S]*?<p title="([\s\S]*?)"><a href="([\s\S]*?)">([\s\S]*?)<\/a>/g;
+        var match = re.exec(cList);
+        var c = 0;
+        while (match) {
+            if (match[1].match(/paid/)) {
+                match = re.exec(cList);
+                continue;
+            }
+            var flags = match[1].split(' ');
+            if (flags[4] == 'free') {
+                var type = flags[5];
+                var lang = flags[3];
+            } else {
+                var type = flags[4];
+                var lang = flags[2];
+            }
+
+            if (type == 'vod')
+                var route = ":channelSpb:";
+            else
+                var route = ":playSpb:";
+            var link = plugin.getDescriptor().id + route + escape(match[2]) + ':' + escape(match[7]);
+            var title = coloredStr(type, orange) + ' ' + match[7] + ' ' + coloredStr(lang, orange);
+            var icon = 'http://spbtv.com' + match[4];
+            var item = page.appendItem(link, "video", {
+	        title: new showtime.RichText(title),
+                icon: icon,
+                description: new showtime.RichText(match[5])
+	    });
+            addToFavoritesOption(item, link, match[7], icon);
+            c++;
+            match = re.exec(cList);
+        }
+        page.metadata.title = new showtime.RichText(page.metadata.title + ' (' + c + ')');
+        page.loading = false;
+    });
+
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().title);
@@ -1575,6 +1709,9 @@
         });
 	page.appendItem(plugin.getDescriptor().id + ":streamliveStart", "directory", {
 	    title: "StreamLive.to"
+	});
+	page.appendItem(plugin.getDescriptor().id + ":spbStart", "directory", {
+	    title: "Spbtv.com"
 	});
 	page.appendItem(plugin.getDescriptor().id + ":divanStart", "directory", {
 	    title: "Divan.tv"
