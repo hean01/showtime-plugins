@@ -1375,11 +1375,13 @@
     function getIdc(page, url) {
         showDialog = false;
         while(1) {
+            page.loading = true;
             idcJson = showtime.JSONDecode(showtime.httpReq(url));
             if (!idcJson.error)
                 return true;
 
             while(1) {
+                page.loading = false;
                 var credentials = plugin.getAuthCredentials(plugin.getDescriptor().id, 'Idc.md requires login to continue', showDialog, 'idc');
                 if (credentials.rejected) {
                     page.error('Cannot continue without login/password :(');
@@ -1387,6 +1389,7 @@
                 }
 
                 if (credentials && credentials.username && credentials.password) {
+                    page.loading = true;
                     var resp = showtime.JSONDecode(showtime.httpReq('https://iptvn.idc.md/api/json/login', {
                         postdata: {
                             login: credentials.username,
@@ -1395,8 +1398,9 @@
                             //softid: 'ktvwin-jo-001'
                         }
                     }));
+                    page.loading = false;
                     if (!resp.error) break;
-                    showtime.message(resp.error.message);
+                    showtime.message(resp.error.message, true);
                 }
                 showDialog = true;
             }
