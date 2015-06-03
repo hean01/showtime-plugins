@@ -93,20 +93,6 @@
         return imdbid;
     };
 
-    function videoparams(url, title, full_title) {
-        var videoparams = {
-            title: unescape(title),
-            sources: [{
-               url: url,
-               mimetype: 'video/quicktime'
-            }],
-            imdbid: getIMDBid(full_title),
-            canonicalUrl: plugin.getDescriptor().id + ':' + unescape(title),
-            no_fs_scan: true
-        };
-        return "videoparams:" + showtime.JSONEncode(videoparams);
-    }
-
     var doc;
 
     plugin.addURI(plugin.getDescriptor().id + ":listFolder:(.*):(.*):(.*)", function(page, id, quality, title) {
@@ -122,8 +108,17 @@
         var re = new RegExp(regex, "g");
         var match = re.exec(doc);
         while (match) {
-           fileLink = match[5];
-           page.appendItem(videoparams(fileLink, escape(trim(match[2])), title), 'video', {
+           var link = "videoparams:" + showtime.JSONEncode({
+                title: trim(match[2]),
+                sources: [{
+                    url: match[5],
+                    mimetype: 'video/quicktime'
+                }],
+                imdbid: getIMDBid(unescape(title)),
+                canonicalUrl: plugin.getDescriptor().id + ':' + unescape(title),
+                no_fs_scan: true
+           });
+           page.appendItem(link, 'video', {
                title: new showtime.RichText(trim(match[2]) + (trim(match[6]) ? colorStr(trim(match[6]), blue): '')),
                description: match[3]
            });
@@ -440,14 +435,18 @@
 
         // show comments
         var comments = doc.match(/<div class="comment[\s\S]*?">([\s\S]*?)<script type="text/);
+        var first = true;
         if (comments) {
-            page.appendItem("", "separator", {
-                title: 'Комментарии'
-            });
             // 1-icon, 2-nick, 3-date, 4-likes up, 5-likes down, 6-text, 7-time
             re2 = /<div class="left">[\s\S]*?src="([\s\S]*?)" alt="([\s\S]*?)"[\s\S]*?_date">([\s\S]*?)<[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<span>([\s\S]*?)<\/span>[\s\S]*?<div class="right_text">([\s\S]*?)<\/div>[\s\S]*?<div class="answer">([\s\S]*?)<\/div>/g;
             match = re2.exec(comments[1]);
             while (match) {
+                if (first) {
+                    page.appendItem("", "separator", {
+                        title: 'Комментарии'
+                    });
+                    first = false;
+                }
                 if (trim(match[3]))
                     var date = match[3]
                 else

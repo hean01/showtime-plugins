@@ -1,10 +1,10 @@
 {
-	"description": "<p>Tree.tv - online фильмы - новинки кино в хорошем качестве смотреть бесплатно без регистрации онлайн<p>For additional info visit <a href=\"http://tree.tv\">http://tree.tv</a>",
+	"description": "<p>Tree.tv - online фильмы - новинки кино в хорошем качестве онлайн - бесплатно<p>For additional info visit <a href=\"http://tree.tv\">http://tree.tv</a>",
 	"author": "lprot", 
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Tree.tv",
-	"synopsis": "Tree.tv - online фильмы - новинки кино в хорошем качестве смотреть бесплатно без регистрации онлайн",
-	"version": "0.5.3",
+	"synopsis": "Tree.tv - online фильмы - новинки кино в хорошем качестве онлайн - бесплатно",
+	"version": "0.5.4",
         "file": "treetv.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
