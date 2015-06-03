@@ -1,5 +1,5 @@
 /**
- * EX.UA plugin for Showtime
+ * EX.UA plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -276,7 +276,6 @@
         getDoc(page, BASE_URL);
         setPageHeader(page, doc.match(/<title>([\S\s]*?)<\/title>/)[1]);
         var match = doc.match(/alt='EX'>[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)/);
-
         page.appendItem(PREFIX + ':index:/view/81708', 'directory', {
             title: match[2],
             icon: logo
@@ -323,7 +322,6 @@
                 Cookie: 'ulang=' + service.lang
             }
         }).toString();
-        page.loading = false;
     }
 
     plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
