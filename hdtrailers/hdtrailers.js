@@ -1,5 +1,5 @@
 /*
- *  HD-Trailers.net plugin for Showtime Media Center
+ *  HD-Trailers.net plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -70,10 +70,11 @@
                         title: showtime.entityDecode(doc.query.results.mediaObj[0].meta.title),
                         canonicalUrl: plugin.getDescriptor().id + ':yahoo:' + id + ':' + height,
                         no_fs_scan: true,
+                        no_subtitle_scan: true,
                         sources: [{
                             url: link
                         }]
-                    });
+        });
     });
 
     function getTimestamp(str) {
@@ -107,6 +108,7 @@
                     link = "videoparams:" + showtime.JSONEncode({
                         title: title.replace(/(<([^>]+)>)/ig, ''),
                         no_fs_scan: true,
+                        no_subtitle_scan: true,
                         sources: [{
                             url: link
                         }]

@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "HD-Trailers",
 	"synopsis": "Best Place on the Web to Download HD Trailers - HD-Trailers.net (HDTN)",
-	"version": "0.2.3",
+	"version": "0.2.4",
 	"file": "hdtrailers.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
