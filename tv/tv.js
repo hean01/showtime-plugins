@@ -1571,9 +1571,9 @@
             var name = json.videos[i].name.replace(/\n/g, '').replace(/''/g, "'").replace(/""/g, '"');
             page.appendItem(plugin.getDescriptor().id + ':playVodSpb:' + escape(json.videos[i].id) + ':' + escape(name), 'video', {
                 title: new showtime.RichText(coloredStr(json.videos[i].language.iso2, orange) + ' ' + name),
-                icon: json.videos[i].images[0].original_url,
+                icon: json.videos[i].images[0] ? json.videos[i].images[0].original_url : null,
                 description: new showtime.RichText(coloredStr('Language: ', orange) + json.videos[i].language.name +
-                    coloredStr('\nPublishing date: ', orange) + json.videos[i].publishing_date.replace('T', ' ').replace('Z', ' ') +
+                    coloredStr('\nPublishing date: ', orange) + json.videos[i].publishing_date.split('T')[0] +
                     (json.videos[i].description ? coloredStr('\nDescription: ', orange) + json.videos[i].description : '')),
             });
         }
