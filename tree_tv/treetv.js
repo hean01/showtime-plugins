@@ -115,7 +115,7 @@
                     mimetype: 'video/quicktime'
                 }],
                 imdbid: getIMDBid(unescape(title)),
-                canonicalUrl: plugin.getDescriptor().id + ':' + unescape(title),
+                canonicalUrl: plugin.getDescriptor().id + ':listFolder:' + id + ':' + quality + ':' + trim(match[2]),
                 no_fs_scan: true
            });
            page.appendItem(link, 'video', {
