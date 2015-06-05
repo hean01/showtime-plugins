@@ -304,7 +304,7 @@
             title: 'Сейчас смотрят:'
         });
         page.loading = true;
-        var response = showtime.httpReq(BASE_URL);
+        var response = showtime.httpReq(BASE_URL).toString();
         page.loading = false;
         addItems(page, response);
 
@@ -327,21 +327,27 @@
         });
         addNews(page, response);
 
-        page.appendItem("", "separator", {
-            title: 'Смотрите также:'
-        });
-        re = /<ul id='carousel'>([\S\s]*?)<\/ul>/;
-        response = re.exec(response)[1];
-        // 1 - link, 2 - poster, 3 - title
-        re = /<a href='(.*?)'[\S\s]*?<img src="(.*?)" alt="" \/>([\S\s]*?)<\/a>/g;
-        match = re.exec(response);
-        while (match) {
-            page.appendItem(PREFIX + ':index:' + escape(match[1]) + ':' + escape(trim(match[3])), 'video', {
-                title: new showtime.RichText(trim(match[3])),
-                icon: match[2]
-            });
+        response = response.match(/<ul id='carousel'>([\S\s]*?)<\/ul>/);
+        if (response) {
+            response = response[1];
+            var first = true;
+            // 1 - link, 2 - poster, 3 - title
+            re = /<a href='(.*?)'[\S\s]*?<img src="(.*?)" alt="" \/>([\S\s]*?)<\/a>/g;
             match = re.exec(response);
-        };
+            while (match) {
+                if (first) {
+                    page.appendItem("", "separator", {
+                        title: 'Смотрите также:'
+                    });
+                    first =false;
+                }
+                page.appendItem(PREFIX + ':index:' + escape(match[1]) + ':' + escape(trim(match[3])), 'video', {
+                    title: new showtime.RichText(trim(match[3])),
+                    icon: match[2]
+                });
+                match = re.exec(response);
+            };
+        }
     });
 
     function addNews(page, blob) {

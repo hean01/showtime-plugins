@@ -1465,9 +1465,9 @@
             if (match) {
                 doc = showtime.httpReq(match[1], {
                     headers: {
-                        // Host: 'www.sawlive.tv',
-                        Referer: 'http://goatd.net/' + unescape(url)
-                        // 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36'
+                        Host: 'www.sawlive.tv',
+                        Referer: 'http://goatd.net/' + unescape(url),
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36'
                     }
                 }).toString();
                 doc = doc.substr(doc.lastIndexOf('eval('), doc.length);
@@ -1477,15 +1477,16 @@
                 referer = unescape(referer).match(/src="([\s\S]*?)"/)[1];
                 doc = showtime.httpReq(referer, {
                     headers: {
-                        // Host: 'www.sawlive.tv',
-                        Referer: 'http://goatd.net/' + unescape(url)
-                        // 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36'
+                        Host: 'www.sawlive.tv',
+                        Referer: 'http://goatd.net/' + unescape(url),
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36'
                     }
                 }).toString();
-                var streamer = doc.match(/'streamer', '([\s\S]*?)'/);
-                if (streamer) {
-                    var streamer = streamer[1];
-                    var playpath = doc.match(/'file', '([\s\S]*?)'/)[1];
+                doc = doc.match(/eval\(function([\S\s]*?)\}\((.*)/);
+                if (doc) {
+                    eval('try { function decryptParams' + doc[1] + '}; decodedStr = (decryptParams(' + doc[2] + '} catch (err) {}');
+                    var streamer = decodedStr.match(/'streamer','([\s\S]*?)'/)[1];
+                    var playpath = decodedStr.match(/'file','([\s\S]*?)'/)[1];
                     var link = streamer + ' playpath=' + playpath + ' swfUrl=http://static3.sawlive.tv/player.swf pageUrl=' + referer;
                 } else {
                     page.error('Stream is offline');
