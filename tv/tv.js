@@ -1026,7 +1026,7 @@
         page.loading = false;
     }
 
-    function addItem(page, url, title, icon, description) {
+    function addItem(page, url, title, icon, description, genre) {
         // try to detect item type
         var match = url.match(/([\s\S]*?):(.*)/);
         var type = 'video';
@@ -1058,12 +1058,14 @@
             var item = page.appendPassiveItem(type, '', {
                 title: new showtime.RichText(title),
                 icon: icon ? icon : null,
+                genre: genre,
                 description: new showtime.RichText(description)
             });
         } else {
             var item = page.appendItem(link, type, {
                 title: new showtime.RichText(title),
                 icon: icon ? icon : null,
+                genre: genre,
                 description: new showtime.RichText((linkUrl ? coloredStr('Link: ', orange) + linkUrl : '') +
                     (description ? '\n' + description : ''))
             });
@@ -1225,6 +1227,11 @@
             return;
         }
 
+        var categories = [];
+        var category = doc.items.filterNodes('category');
+        for (var i = 0; i < category.length; i++)
+            categories[category[i].category_id] = category[i].category_title;
+
         var channels = doc.items.filterNodes('channel');
         var num = 0;
         for (var i = 0; i < channels.length; i++) {
@@ -1235,16 +1242,37 @@
             var playlist = channels[i].playlist_url;
             var description = channels[i].description ? channels[i].description : null;
             description = setColors(description);
+
             var icon = null;
             if (channels[i].logo_30x30 && channels[i].logo_30x30.substr(0, 4) == 'http')
                 icon = channels[i].logo_30x30;
-
-            if (description && !icon) {
+            if (!icon && channels[i].logo && channels[i].logo.substr(0, 4) == 'http')
+                icon = channels[i].logo;
+            if (!icon && description) {
                icon = description.match(/src="([\s\S]*?)"/)
                if (icon) icon = showtime.entityDecode(icon[1]);
             }
+
+            // show epg if available
+            if (channels[i].region && channels[i].description) {
+                var epg = showtime.httpReq('https://tv.yandex.ua/' + channels[i].region + '/channels/' + channels[i].description);
+                // 1-time, 2-title
+                var re = /tv-event_wanna-see_check i-bem[\s\S]*?<span class="tv-event__time">([\s\S]*?)<\/span><div class="tv-event__title"><div class="tv-event__title-inner">([\s\S]*?)<\/div>/g;
+                var match = re.exec(epg);
+                var first = true;
+                while (match) {
+                    if (first) {
+                        description = '';
+                        title += coloredStr(' (' + match[1] + ') ' + match[2], orange);
+                        first = false;
+                    }
+                    description += '<br>' + match[1] + coloredStr(' - ' + match[2], orange);
+                    match = re.exec(epg);
+                }
+            }
             description = description.replace(/<img[\s\S]*?src=[\s\S]*?(>|$)/, '').replace(/\t/g, '').replace(/\n/g, '').trim();
 
+            genre = channels[i].category_id ? categories[channels[i].category_id] : null;
             if (playlist && playlist != 'null' && !channels[i].parser) {
                 var extension = playlist.split('.').pop().toLowerCase();
                 if (extension != 'm3u')
@@ -1253,12 +1281,14 @@
                 page.appendItem(url, 'video', {
                     title: new showtime.RichText(title),
                     icon: icon,
+                    genre: genre,
                     description: new showtime.RichText((playlist ? coloredStr('Link: ', orange) + playlist + '\n' : '') + description)
                 });
             } else {
                 if (channels[i].parser)
                     page.appendItem(plugin.getDescriptor().id + ':parse:' + escape(channels[i].parser) + ':' + escape(title), 'directory', {
-                        title: new showtime.RichText(title)
+                        title: new showtime.RichText(title),
+                        genre: genre
                     });
                 else {
                     var url = channels[i].stream_url ? channels[i].stream_url : '';
@@ -1268,10 +1298,11 @@
                         page.appendItem(url, 'video', {
                             title: title,
                             icon: icon,
+                            genre: genre,
                             description: new showtime.RichText(coloredStr('Link: ', orange) + url)
                         });
                     } else
-                        addItem(page, url, title, icon, description);
+                        addItem(page, url, title, icon, description, genre);
                 }
             }
             num++;
