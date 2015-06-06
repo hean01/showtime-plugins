@@ -706,29 +706,27 @@
 
         page.metadata.title = 'Divan.tv (' + n + ')';
         page.options.createAction('loginToDivan', 'Login to divan.tv', function() {
-                page.loading = false;
-                var credentials = plugin.getAuthCredentials(plugin.getDescriptor().id, 'Enter email and password to login', true, 'divan');
-                if (credentials && !credentials.rejected && credentials.username && credentials.password) {
-                    page.loading = true;
-                    var resp = showtime.httpReq('http://divan.tv/users/login', {
-                        headers: {
-                            Origin: 'http://divan.tv',
-                            Referer: 'http://divan.tv/',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        postdata: {
-                            'data[Form][login]': credentials.username,
-                            'data[Form][password]': credentials.password,
-                            'data[Form][remember]': 1,
-                            '': 'ВОЙТИ'
-
-                        }
-                    });
-                    page.flush();
-                    page.redirect(plugin.getDescriptor().id + ':divanStart');
-                }
+            page.loading = false;
+            var credentials = plugin.getAuthCredentials(plugin.getDescriptor().id, 'Enter email and password to login', true, 'divan');
+            if (credentials && !credentials.rejected && credentials.username && credentials.password) {
+                page.loading = true;
+                var resp = showtime.httpReq('http://divan.tv/users/login', {
+                    headers: {
+                        Origin: 'http://divan.tv',
+                        Referer: 'http://divan.tv/',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    postdata: {
+                        'data[Form][login]': credentials.username,
+                        'data[Form][password]': credentials.password,
+                        'data[Form][remember]': 1,
+                        '': 'ВОЙТИ'
+                    }
+                });
+                page.flush();
+                page.redirect(plugin.getDescriptor().id + ':divanStart');
+            }
         });
-
         page.loading = false;
     });
 
@@ -780,6 +778,85 @@
         }
         loader();
         page.paginator = loader;
+        page.loading = false;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":drundooPlay:(.*):(.*)", function(page, url, title) {
+        page.metadata.title = unescape(title);
+        page.loading = true;
+        var doc = showtime.httpReq('http://drundoo.com' + unescape(url)).toString();
+        if (doc.match(/user_not_logged/)) {
+            page.loading = false;
+            var credentials = plugin.getAuthCredentials(plugin.getDescriptor().id, 'Enter email and password to login', true, 'drundoo');
+            if (credentials && !credentials.rejected && credentials.username && credentials.password) {
+                page.loading = true;
+                var resp = showtime.httpReq('http://drundoo.com/users/login/', {
+                    headers: {
+                        Origin: 'http://drundoo.com',
+                        Referer: 'http://drundoo.com/live/',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    postdata: {
+                        'login_dialog': 1,
+                        'redirect_url': 'http://drundoo.com/live/',
+                        email: credentials.username,
+                        password: credentials.password
+                    }
+                });
+                doc = showtime.httpReq('http://drundoo.com' + unescape(url)).toString();
+            }
+        }
+        var link = doc.match(/getJSON\(\"([\s\S]*?)\"/);
+        if (link) {
+            var json = showtime.JSONDecode(showtime.httpReq('http://drundoo.com' + link[1]));
+            page.type = 'video'
+            var link = "videoparams:" + showtime.JSONEncode({
+                title: unescape(title),
+                no_fs_scan: true,
+                canonicalUrl: plugin.getDescriptor().id + ':drundooPlay:' + url + ':' + title,
+                sources: [{
+                    url: 'hls:' + json.link,
+                }],
+                no_subtitle_scan: true
+            });
+            page.source = link;
+        } else
+            page.error("Sorry can't get the link :(");
+        page.loading = false;
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":drundooStart", function(page) {
+        setPageHeader(page, 'Drun Doo');
+        page.loading = true;
+        doc = showtime.httpReq('http://drundoo.com/live/').toString();
+        var counter = 0;
+        // 1-logo, 2-genres, 3-from, 4-to, 5-playing now, 6-link, 7-title
+        var re = /<a class="logo logo-width"[\s\S]*?<img src="([\s\S]*?)"[\s\S]*?<p>([\s\S]*?)<\/p>[\s\S]*?<span class="from">([\s\S]*?)<\/span>[\s\S]*?<span class="to">([\s\S]*?)<\/span>[\s\S]*?class="plaing-now">([\s\S]*?)<\/h5>[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?data-ga-label="([\s\S]*?)"/g;
+        var match = re.exec(doc);
+        while (match) {
+            var link = plugin.getDescriptor().id + ':drundooPlay:' + escape(match[6]) + ':' + escape(match[7]);
+            var icon = 'http://drundoo.com' + match[1];
+            var item = page.appendItem(link, "video", {
+                title: new showtime.RichText(match[7] + coloredStr(' (' + match[3] + '-' + match[4] + ') ' + match[5], orange)),
+                icon: icon,
+                genre: match[2].trim().replace(/;/g, ',').replace(/<[^>]*>/g, ''),
+                description: new showtime.RichText(match[7] + coloredStr(' (' + match[3] + '-' + match[4] + ') ' + match[5], orange))
+            });
+            addToFavoritesOption(item, link, match[7], icon);
+            counter++;
+            match = re.exec(doc);
+        };
+        page.metadata.title += ' (' + counter + ')';
+        page.options.createAction('setYooooKey', 'Set/change Yoooo.tv key', function() {
+            var result = showtime.textDialog('Enter authorization key:', true, true);
+            if (!result.rejected && result.input) {
+                yoooo.key = result.input;
+                var resp = showtime.httpReq('http://yoooo.tv/status.php?key=' + yoooo.key).toString();
+                showtime.notify("The key is set: " + resp.trim(), 2);
+                page.flush();
+                page.redirect(plugin.getDescriptor().id + ':yooooStart');
+            }
+        });
         page.loading = false;
     });
 
@@ -1731,6 +1808,9 @@
 	});
 	page.appendItem(plugin.getDescriptor().id + ":goAtDeeStart", "directory", {
 	    title: "goATDee.Net"
+	});
+	page.appendItem(plugin.getDescriptor().id + ":drundooStart", "directory", {
+	    title: "DrunDoo.com"
 	});
     });
 })(this);
