@@ -708,7 +708,11 @@
         page.options.createAction('loginToDivan', 'Login to divan.tv', function() {
             page.loading = false;
             var credentials = plugin.getAuthCredentials(plugin.getDescriptor().id, 'Enter email and password to login', true, 'divan');
-            if (credentials && !credentials.rejected && credentials.username && credentials.password) {
+            if (credentials.rejected) {
+                page.error('Cannot continue without login/password :(');
+                return false;
+            }
+            if (credentials && credentials.username && credentials.password) {
                 page.loading = true;
                 var resp = showtime.httpReq('http://divan.tv/users/login', {
                     headers: {
@@ -791,7 +795,12 @@
             while (!link) {
                 page.loading = false;
                 var credentials = plugin.getAuthCredentials(plugin.getDescriptor().id, 'Enter email and password to login', showDialog, 'drundoo');
-                if (credentials && !credentials.rejected && credentials.username && credentials.password) {
+                if (credentials.rejected) {
+                    page.error('Cannot continue without login/password :(');
+                    return false;
+                }
+
+                if (credentials && credentials.username && credentials.password) {
                     page.loading = true;
                     var resp = showtime.httpReq('http://drundoo.com/users/login/', {
                         headers: {
