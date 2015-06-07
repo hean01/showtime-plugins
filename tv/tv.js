@@ -1263,20 +1263,22 @@
             // show epg if available
             var epgForTitle = '';
             if (channels[i].region && channels[i].description) {
-                var epg = showtime.httpReq('https://tv.yandex.ua/' + channels[i].region + '/channels/' + channels[i].description);
-                // 1-time, 2-title
-                var re = /tv-event_wanna-see_check i-bem[\s\S]*?<span class="tv-event__time">([\s\S]*?)<\/span><div class="tv-event__title"><div class="tv-event__title-inner">([\s\S]*?)<\/div>/g;
-                var match = re.exec(epg);
-                var first = true;
-                while (match) {
-                    if (first) {
-                        description = '';
-                        epgForTitle = coloredStr(' (' + match[1] + ') ' + match[2], orange);
-                        first = false;
+                try {
+                    var epg = showtime.httpReq('https://tv.yandex.ua/' + channels[i].region + '/channels/' + channels[i].description);
+                    // 1-time, 2-title
+                    var re = /tv-event_wanna-see_check i-bem[\s\S]*?<span class="tv-event__time">([\s\S]*?)<\/span><div class="tv-event__title"><div class="tv-event__title-inner">([\s\S]*?)<\/div>/g;
+                    var match = re.exec(epg);
+                    var first = true;
+                    while (match) {
+                        if (first) {
+                            description = '';
+                            epgForTitle = coloredStr(' (' + match[1] + ') ' + match[2], orange);
+                            first = false;
+                        }
+                        description += '<br>' + match[1] + coloredStr(' - ' + match[2], orange);
+                        match = re.exec(epg);
                     }
-                    description += '<br>' + match[1] + coloredStr(' - ' + match[2], orange);
-                    match = re.exec(epg);
-                }
+                } catch(err) {}
             }
             description = description.replace(/<img[\s\S]*?src=[\s\S]*?(>|$)/, '').replace(/\t/g, '').replace(/\n/g, '').trim();
 
@@ -1713,7 +1715,7 @@
         for (var i in json.videos) {
             var name = json.videos[i].name.replace(/\n/g, '').replace(/''/g, "'").replace(/""/g, '"');
             page.appendItem(plugin.getDescriptor().id + ':playVodSpb:' + escape(json.videos[i].id) + ':' + escape(name), 'video', {
-                title: new showtime.RichText(coloredStr(json.videos[i].language.iso2, orange) + ' ' + name),
+                title: new showtime.RichText(coloredStr(json.videos[i].language.iso2, orange) + ' ' + name.replace(/\\'/g, "'")),
                 icon: json.videos[i].images[0] ? json.videos[i].images[0].original_url : null,
                 description: new showtime.RichText(coloredStr('Language: ', orange) + json.videos[i].language.name +
                     coloredStr('\nPublishing date: ', orange) + json.videos[i].publishing_date.split('T')[0] +
