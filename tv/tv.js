@@ -878,7 +878,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":yooooStart", function(page) {
         setPageHeader(page, 'Yoooo.tv');
         page.loading = true;
-        var id = yoooo.key ? yoooo.key : '';
+        var id = yoooo.key ? yoooo.key.trim() : '';
         plugin.addHTTPAuth('.*yoooo\\.tv', function(req) {
             req.setHeader('Cookie', 'yoooo=' + id);
         });
@@ -928,7 +928,7 @@
             if (!result.rejected && result.input) {
                 yoooo.key = result.input;
                 var resp = showtime.httpReq('http://yoooo.tv/status.php?key=' + yoooo.key).toString();
-                showtime.notify("The key is set: " + resp.trim(), 2);
+                showtime.notify("The key is set. Response: " + resp.trim(), 2);
                 page.flush();
                 page.redirect(plugin.getDescriptor().id + ':yooooStart');
             }
