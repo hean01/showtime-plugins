@@ -784,29 +784,35 @@
     plugin.addURI(plugin.getDescriptor().id + ":drundooPlay:(.*):(.*)", function(page, url, title) {
         page.metadata.title = unescape(title);
         page.loading = true;
+        var link = null, showDialog = false;
         var doc = showtime.httpReq('http://drundoo.com' + unescape(url)).toString();
+        var link = doc.match(/getJSON\(\"([\s\S]*?)\"/);
         if (doc.match(/user_not_logged/)) {
-            page.loading = false;
-            var credentials = plugin.getAuthCredentials(plugin.getDescriptor().id, 'Enter email and password to login', true, 'drundoo');
-            if (credentials && !credentials.rejected && credentials.username && credentials.password) {
-                page.loading = true;
-                var resp = showtime.httpReq('http://drundoo.com/users/login/', {
-                    headers: {
-                        Origin: 'http://drundoo.com',
-                        Referer: 'http://drundoo.com/live/',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    postdata: {
-                        'login_dialog': 1,
-                        'redirect_url': 'http://drundoo.com/live/',
-                        email: credentials.username,
-                        password: credentials.password
-                    }
-                });
-                doc = showtime.httpReq('http://drundoo.com' + unescape(url)).toString();
+            while (!link) {
+                page.loading = false;
+                var credentials = plugin.getAuthCredentials(plugin.getDescriptor().id, 'Enter email and password to login', showDialog, 'drundoo');
+                if (credentials && !credentials.rejected && credentials.username && credentials.password) {
+                    page.loading = true;
+                    var resp = showtime.httpReq('http://drundoo.com/users/login/', {
+                        headers: {
+                            Origin: 'http://drundoo.com',
+                            Referer: 'http://drundoo.com/live/',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        postdata: {
+                            'login_dialog': 1,
+                            'redirect_url': 'http://drundoo.com/live/',
+                            email: credentials.username,
+                            password: credentials.password
+                        }
+                    });
+                    doc = showtime.httpReq('http://drundoo.com' + unescape(url)).toString();
+                }
+                showDialog = true;
+                link = doc.match(/getJSON\(\"([\s\S]*?)\"/);
             }
         }
-        var link = doc.match(/getJSON\(\"([\s\S]*?)\"/);
+
         if (link) {
             var json = showtime.JSONDecode(showtime.httpReq('http://drundoo.com' + link[1]));
             page.type = 'video'
@@ -1026,7 +1032,8 @@
         page.loading = false;
     }
 
-    function addItem(page, url, title, icon, description, genre) {
+    function addItem(page, url, title, icon, description, genre, epgForTitle) {
+        if (!epgForTitle) epgForTitle = '';
         // try to detect item type
         var match = url.match(/([\s\S]*?):(.*)/);
         var type = 'video';
@@ -1056,14 +1063,14 @@
         }
         if (!linkUrl) {
             var item = page.appendPassiveItem(type, '', {
-                title: new showtime.RichText(title),
+                title: new showtime.RichText(title + epgForTitle),
                 icon: icon ? icon : null,
                 genre: genre,
                 description: new showtime.RichText(description)
             });
         } else {
             var item = page.appendItem(link, type, {
-                title: new showtime.RichText(title),
+                title: new showtime.RichText(title  + epgForTitle),
                 icon: icon ? icon : null,
                 genre: genre,
                 description: new showtime.RichText((linkUrl ? coloredStr('Link: ', orange) + linkUrl : '') +
@@ -1254,6 +1261,7 @@
             }
 
             // show epg if available
+            var epgForTitle = '';
             if (channels[i].region && channels[i].description) {
                 var epg = showtime.httpReq('https://tv.yandex.ua/' + channels[i].region + '/channels/' + channels[i].description);
                 // 1-time, 2-title
@@ -1263,7 +1271,7 @@
                 while (match) {
                     if (first) {
                         description = '';
-                        title += coloredStr(' (' + match[1] + ') ' + match[2], orange);
+                        epgForTitle = coloredStr(' (' + match[1] + ') ' + match[2], orange);
                         first = false;
                     }
                     description += '<br>' + match[1] + coloredStr(' - ' + match[2], orange);
@@ -1279,7 +1287,7 @@
                     extension = 'xml';
                 var url = extension + ':' + encodeURIComponent(playlist) + ':' + escape(title);
                 page.appendItem(url, 'video', {
-                    title: new showtime.RichText(title),
+                    title: new showtime.RichText(title + epgForTitle),
                     icon: icon,
                     genre: genre,
                     description: new showtime.RichText((playlist ? coloredStr('Link: ', orange) + playlist + '\n' : '') + description)
@@ -1287,7 +1295,7 @@
             } else {
                 if (channels[i].parser)
                     page.appendItem(plugin.getDescriptor().id + ':parse:' + escape(channels[i].parser) + ':' + escape(title), 'directory', {
-                        title: new showtime.RichText(title),
+                        title: new showtime.RichText(title + epgForTitle),
                         genre: genre
                     });
                 else {
@@ -1296,13 +1304,13 @@
                     if (match) {
                         url = 'youtube:video:' + match[1];
                         page.appendItem(url, 'video', {
-                            title: title,
+                            title: title + epgForTitle,
                             icon: icon,
                             genre: genre,
                             description: new showtime.RichText(coloredStr('Link: ', orange) + url)
                         });
                     } else
-                        addItem(page, url, title, icon, description, genre);
+                        addItem(page, url, title, icon, description, genre, epgForTitle);
                 }
             }
             num++;
