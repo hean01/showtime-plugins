@@ -1566,11 +1566,10 @@
                 page.error('Stream is offline');
                 return;
             }
-            var playpath = doc.match(/'file': '([\s\S]*?)'/)[1];
-            var link = streamer + ' playpath=' + playpath + ' swfUrl=http://static.castalba.tv/player5.9.swf pageUrl=http://castalba.tv/embed.php?cid=' + match[1]
+            link = streamer + ' playpath=' + doc.match(/'file': '([\s\S]*?)'/)[1] + ' swfUrl=http://static.castalba.tv/player5.9.swf pageUrl=http://castalba.tv/embed.php?cid=' + match[1]
         } else { // Sawlive
-            match = doc.match(/swidth=[\s\S]*?src="([\s\S]*?)"/);
-            if (match) {
+            match = doc.match(/swidth=[\s\S]*?src="([\s\S]*?)"/); // extract pseudo link
+            if (match) { // get watch link from pseudo link
                 doc = showtime.httpReq(match[1], {
                     headers: {
                         Host: 'www.sawlive.tv',
@@ -1578,8 +1577,9 @@
                         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36'
                     }
                 }).toString();
-                match = doc.match(/swidth[\s\S]*?src="([\s\S]*?)"/); // try to get embed link
+                match = doc.match(/swidth[\s\S]*?src="([\s\S]*?)"/); // extract watch link
                 if (match) {
+                    var referer = match[1];
                     doc = showtime.httpReq(match[1], {
                         headers: {
                             Host: 'www.sawlive.tv',
@@ -1588,32 +1588,32 @@
                         }
                     }).toString();
                 }
-                doc = doc.substr(doc.lastIndexOf('eval('), doc.length);
-                if (doc.trim()) {
-                    doc = doc.match(/eval\(function([\S\s]*?)\}\(([\S\s]*?)$/);
-                    var referer;
-                    eval('try { function decryptParams' + doc[1] + '}; referer = (decryptParams(' + doc[2] + '} catch (err) {}');
-                    referer = unescape(referer).match(/src="([\s\S]*?)"/)[1];
-                    doc = showtime.httpReq(referer, {
-                        headers: {
-                            Host: 'www.sawlive.tv',
-                            Referer: 'http://goatd.net/' + unescape(url),
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36'
-                        }
-                    }).toString();
-                    doc = doc.match(/eval\(function([\S\s]*?)\}\((.*)/);
-                    if (doc) {
-                        eval('try { function decryptParams' + doc[1] + '}; decodedStr = (decryptParams(' + doc[2] + '} catch (err) {}');
-                        var streamer = decodedStr.match(/'streamer','([\s\S]*?)'/)[1];
-                        var playpath = decodedStr.match(/'file','([\s\S]*?)'/)[1];
-                        var link = streamer + ' playpath=' + playpath + ' swfUrl=http://static3.sawlive.tv/player.swf pageUrl=' + referer;
-                    } else {
-                        page.error('Stream is offline');
-                        return;
-                    }
+                // try play directly
+                var streamer = doc.match(/'streamer', '([\s\S]*?)'/);
+                if (streamer) {
+                    var link = streamer[1] + ' playpath=' + doc.match(/'file', '([\s\S]*?)'/)[1] + ' swfUrl=http://static3.sawlive.tv/player.swf pageUrl=' + referer;
                 } else {
-                        page.error('Stream is offline');
-                        return;
+                    doc = doc.substr(doc.lastIndexOf('eval('), doc.length);
+                    if (doc.trim()) {
+                        doc = doc.match(/eval\(function([\S\s]*?)\}\(([\S\s]*?)$/);
+                        var referer;
+                        eval('try { function decryptParams' + doc[1] + '}; referer = (decryptParams(' + doc[2] + '} catch (err) {}');
+                        referer = unescape(referer).match(/src="([\s\S]*?)"/)[1];
+                        doc = showtime.httpReq(referer, {
+                            headers: {
+                                Host: 'www.sawlive.tv',
+                                Referer: 'http://goatd.net/' + unescape(url),
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36'
+                            }
+                        }).toString();
+                        doc = doc.match(/eval\(function([\S\s]*?)\}\((.*)/);
+                        if (doc) {
+                            eval('try { function decryptParams' + doc[1] + '}; decodedStr = (decryptParams(' + doc[2] + '} catch (err) {}');
+                            var streamer = decodedStr.match(/'streamer','([\s\S]*?)'/)[1];
+                            var playpath = decodedStr.match(/'file','([\s\S]*?)'/)[1];
+                            var link = streamer + ' playpath=' + playpath + ' swfUrl=http://static3.sawlive.tv/player.swf pageUrl=' + referer;
+                        }
+                    }
                 }
             }
         }
@@ -1630,7 +1630,7 @@
             page.type = 'video';
             page.source = link;
         } else
-            page.error('Can\'t get link :(');
+            page.error('Can\'t get link :( Maybe stream is offline?');
         page.loading = false;
     });
 
