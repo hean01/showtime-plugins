@@ -1484,20 +1484,32 @@
         page.loading = false;
     });
 
+
+    function getEpgPeriod(ts1, ts2, epg) {
+        if (!ts1 || !ts2 || !epg) return '';
+        function tsToTime(ts) {
+            var a = new Date(ts * 1000);
+            return (a.getHours() < 10 ? '0' + a.getHours() : a.getHours()) + ':' + (a.getMinutes() < 10 ? '0' + a.getMinutes() : a.getMinutes());
+        }
+        return ' (' + tsToTime(ts1) + '-' + tsToTime(ts2) + ') ' + epg;
+    }
+
     plugin.addURI(plugin.getDescriptor().id + ":idcGroups:(.*)", function(page, id) {
         page.loading = true;
         var counter = 0;
+        if (!idcJson) getIdc(page, 'https://iptvn.idc.md/api/json/channel_list');
         for (var i in idcJson.groups) {
             if (idcJson.groups[i].id != id)
                 continue;
             if (counter == 0)
-                setPageHeader(page, coloredStr(decodeURI(idcJson.groups[i].name), idcJson.groups[i].color));
+                setPageHeader(page, coloredStr(decodeURI(idcJson.groups[i].name), idcJson.groups[i].color.replace('#000000', '#FFFFFF')));
             for (var j in idcJson.groups[i].channels) {
                 var lines = decodeURI(idcJson.groups[i].channels[j].epg_progname).split('\n');
                 page.appendItem(plugin.getDescriptor().id + ":idcPlay:" + idcJson.groups[i].channels[j].id + ':' + idcJson.groups[i].channels[j].name, "video", {
-                    title: new showtime.RichText(decodeURI(idcJson.groups[i].channels[j].name) + ' - ' + coloredStr(lines[0], orange)),
+                    title: new showtime.RichText(decodeURI(idcJson.groups[i].channels[j].name) +
+                        coloredStr(getEpgPeriod(idcJson.groups[i].channels[j].epg_start, idcJson.groups[i].channels[j].epg_end, lines[0]) , orange)),
                     icon: 'http://iptvn.idc.md' + idcJson.groups[i].channels[j].icon,
-                    description: decodeURI(idcJson.groups[i].channels[j].epg_progname)
+                    description: idcJson.groups[i].channels[j].epg_progname ? decodeURI(idcJson.groups[i].channels[j].epg_progname) : null
                 });
                 counter++;
             }
@@ -1529,8 +1541,7 @@
                         postdata: {
                             login: credentials.username,
                             pass: credentials.password,
-                            settings: 'all'//,
-                            //softid: 'ktvwin-jo-001'
+                            settings: 'all'
                         }
                     }));
                     page.loading = false;
@@ -1549,7 +1560,7 @@
         var counter = 0;
         for (var i in idcJson.groups) {
             page.appendItem(plugin.getDescriptor().id + ":idcGroups:" + idcJson.groups[i].id, "directory", {
-                title: new showtime.RichText(coloredStr(decodeURI(idcJson.groups[i].name), idcJson.groups[i].color))
+                title: new showtime.RichText(coloredStr(decodeURI(idcJson.groups[i].name), idcJson.groups[i].color.replace('#000000', '#FFFFFF')))
             });
             counter++;
         };
