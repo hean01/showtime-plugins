@@ -982,11 +982,18 @@
         theLastList = pl;
         m3uItems = [], groups = [];
         var m3uUrl = '', m3uTitle = '', m3uImage = '', m3uGroup = '';
+        var line = '', m3uRegion = '', m3uEpgId = '';
         for (var i = 0; i < m3u.length; i++) {
             page.metadata.title = 'Parsing M3U list. Line ' + i + ' of ' + m3u.length;
-            if (m3u[i].indexOf(':') < 0 && m3u[i].trim().length != 40) continue; // skip invalid lines
-            var line = showtime.entityDecode(m3u[i]).trim().replace(/[\u200B-\u200F\u202A-\u202E]/g, '');
+            line = m3u[i].trim();
+            if (line.substr(0, 7) != '#EXTM3U' && line.indexOf(':') < 0 && line.length != 40) continue; // skip invalid lines
+            line = showtime.entityDecode(line.replace(/[\u200B-\u200F\u202A-\u202E]/g, ''));
             switch(line.substr(0, 7)) {
+                case '#EXTM3U':
+                    var match = line.match(/region=(.*)\b/);
+                    if (match)
+                        m3uRegion = match[1];
+                    break;
                 case '#EXTINF':
                     var match = line.match(/#EXTINF:.*,(.*)/);
                     if (match)
@@ -1000,6 +1007,14 @@
                     match = line.match(/tvg-logo=["|”]([\s\S]*?)["|”]/);
                     if (match)
                         m3uImage = match[1].trim();
+                    match = line.match(/region="([\s\S]*?)"/);
+                    if (match)
+                        m3uRegion = match[1];
+                    if (m3uRegion) {
+                        match = line.match(/description="([\s\S]*?)"/);
+                        if (match)
+                            m3uEpgId = match[1];
+                    }
                     break;
                 case '#EXTGRP':
                     var match = line.match(/#EXTGRP:(.*)/);
@@ -1023,9 +1038,11 @@
                         title: m3uTitle ? m3uTitle : line,
                         url: line,
                         group: m3uGroup,
-                        logo: m3uImage
+                        logo: m3uImage,
+                        region: m3uRegion,
+                        epgid: m3uEpgId
                     });
-                    m3uUrl = '', m3uTitle = '', m3uImage = '';//, m3uGroup = '';
+                    m3uUrl = '', m3uTitle = '', m3uImage = '', m3uEpgId = '';//, m3uGroup = '';
             }
         }
         page.metadata.title = new showtime.RichText(tmp);
@@ -1102,7 +1119,11 @@
                 });
                 num++;
             } else {
-                addItem(page, m3uItems[i].url, m3uItems[i].title, m3uItems[i].logo);
+                var description = '';
+                if (m3uItems[i].region && m3uItems[i].epgid)
+                    description = getEpg(m3uItems[i].region, m3uItems[i].epgid);
+                addItem(page, m3uItems[i].url, m3uItems[i].title, m3uItems[i].logo, description, '', epgForTitle);
+                epgForTitle = '';
                 num++;
             }
         }
@@ -1219,6 +1240,27 @@
         page.loading = false;
     });
 
+    var epgForTitle = '';
+    function getEpg(region, channelId) {
+        var description = '';
+        try {
+            var epg = showtime.httpReq('https://tv.yandex.ua/' + region + '/channels/' + channelId);
+            // 1-time, 2-title
+            var re = /tv-event_wanna-see_check i-bem[\s\S]*?<span class="tv-event__time">([\s\S]*?)<\/span><div class="tv-event__title"><div class="tv-event__title-inner">([\s\S]*?)<\/div>/g;
+            var match = re.exec(epg);
+            var first = true;
+            while (match) {
+                if (first) {
+                    epgForTitle = coloredStr(' (' + match[1] + ') ' + match[2], orange);
+                    first = false;
+                }
+                description += '<br>' + match[1] + coloredStr(' - ' + match[2], orange);
+                match = re.exec(epg);
+            }
+        } catch(err) {}
+        return description;
+    }
+
     plugin.addURI('xml:(.*):(.*)', function(page, pl, pageTitle) {
         showtime.print('Main list: ' + decodeURIComponent(pl).trim());
         setPageHeader(page, unescape(pageTitle));
@@ -1261,25 +1303,8 @@
             }
 
             // show epg if available
-            var epgForTitle = '';
-            if (channels[i].region && channels[i].description) {
-                try {
-                    var epg = showtime.httpReq('https://tv.yandex.ua/' + channels[i].region + '/channels/' + channels[i].description);
-                    // 1-time, 2-title
-                    var re = /tv-event_wanna-see_check i-bem[\s\S]*?<span class="tv-event__time">([\s\S]*?)<\/span><div class="tv-event__title"><div class="tv-event__title-inner">([\s\S]*?)<\/div>/g;
-                    var match = re.exec(epg);
-                    var first = true;
-                    while (match) {
-                        if (first) {
-                            description = '';
-                            epgForTitle = coloredStr(' (' + match[1] + ') ' + match[2], orange);
-                            first = false;
-                        }
-                        description += '<br>' + match[1] + coloredStr(' - ' + match[2], orange);
-                        match = re.exec(epg);
-                    }
-                } catch(err) {}
-            }
+            if (channels[i].region && channels[i].description)
+                description = getEpg(channels[i].region, channels[i].description);
             description = description.replace(/<img[\s\S]*?src=[\s\S]*?(>|$)/, '').replace(/\t/g, '').replace(/\n/g, '').trim();
 
             genre = channels[i].category_id ? categories[channels[i].category_id] : null;
