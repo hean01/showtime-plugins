@@ -1068,16 +1068,15 @@
                             groups.push(m3uGroup);
                     }
                     break;
-                case '#EXTIMG':
-                    var match = line.match(/#EXTIMG:(.*)/);
-                    if (match)
-                        m3uImage = match[1].trim();
-                    break;
                 default:
                     if (line[0] == '#') continue; // skip unknown tags
                     line = line.replace(/rtmp:\/\/\$OPT:rtmp-raw=/, '');
                     if (line.indexOf(':') == -1 && line.length == 40)
                         line = 'acestream://' + line;
+showtime.print(m3uImage);
+                    if (m3uImage && m3uImage.substr(0, 4) != 'http')
+                        m3uImage = line.match(/^.+?[^\/:](?=[?\/]|$)/) + '/' + m3uImage;
+showtime.print(m3uImage);
                     m3uItems.push({
                         title: m3uTitle ? m3uTitle : line,
                         url: line,
