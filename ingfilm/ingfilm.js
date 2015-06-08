@@ -1,5 +1,5 @@
 /**
- * ingfilm.ru plugin for Showtime Media Center
+ * ingfilm.ru plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -125,7 +125,8 @@
             imdbid: getIMDBid(title),
             sources: [{
                 url: link
-            }]
+            }],
+            no_subtitles_scan: true
         });
     });
 
@@ -333,6 +334,36 @@
         }
     }
 
+    plugin.addURI(plugin.getDescriptor().id + ":top250", function(page) {
+        setPageHeader(page, 'Топ 250');
+        page.loading = true;
+        var doc = showtime.httpReq(BASE_URL + '/top250.html');
+        // 1 - link&title, 2-orig title, 3-rating, 4-numbers
+        var re = /<td class="topname" valign="top">([\s\S]*?)<br \/>([\s\S]*?)<\/td>[\s\S]*?<div class="topkono">([\s\S]*?)<span>([\s\S]*?)<\/span>/g;
+        var match = re.exec(doc);
+	while (match) {
+            var title = match[1].match(/">([\s\S]*?)<\/a>/);
+            if (title)
+                title = title[1];
+            else
+                title = match[1];
+            var origTitle = match[2].match(/<span class="topspan">([\s\S]*?)<\/span>/);
+            if (origTitle)
+                title = title + ' | ' + origTitle[1];
+            var url = match[1].match(/href="([\s\S]*?)"/);
+            if (url)
+                url = escape(BASE_URL + url[1]);
+            page.appendItem(plugin.getDescriptor().id + ':indexItem:' + url + ":" + escape(title), 'video', {
+                title: url ? title : '-' + title,
+                rating: match[3] * 10,
+                description: new showtime.RichText((url ? title : '-' + title) +
+                    orangeStr('\nК-во голосов: ') + match[4].match(/\((.*)\)/)[1])
+            });
+	    match = re.exec(doc);
+	};
+        page.loading = false;
+    });
+
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().synopsis);
         var showAuthCredentials = false;
@@ -355,6 +386,11 @@
             };
             showAuthCredentials = true;
         };
+
+        //top 250
+        page.appendItem(plugin.getDescriptor().id + ':top250', 'directory', {
+            title: 'Топ 250'
+        });
 
         // genres
         var htmlBlock = v.match(/<div class="janr-block-content">([\S\s]*?)<div style/)
