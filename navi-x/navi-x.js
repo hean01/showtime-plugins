@@ -89,13 +89,21 @@
 
     settings.createDivider('User Interface');
 
-    settings.createBool("backgroundEnabled", "Background", true, function(v) { service.backgroundEnabled = v; });
-    settings.createBool("customViews", "Custom Views", false, function(v) { service.customViews = v; });
+    settings.createBool("backgroundEnabled", "Background", true, function(v) {
+        service.backgroundEnabled = v;
+    });
+    settings.createBool("customViews", "Custom Views", false, function(v) {
+        service.customViews = v;
+    });
 
     settings.createDivider('Processor Settings');
 
-    settings.createBool("cachingProcessors", "Cache Processors (only for those cacheable)", true, function (v) { service.cachingProcessors = v; });
-    settings.createBool("verbose", "Verbose mode", false, function (v) { service.verbose = v; });
+    settings.createBool("cachingProcessors", "Cache Processors (only for those cacheable)", true, function (v) {
+        service.cachingProcessors = v;
+    });
+    settings.createBool("verbose", "Verbose mode", false, function (v) {
+        service.verbose = v;
+    });
 
     settings.createDivider('User Settings (change adult mode on the website if needed)');
 
@@ -509,7 +517,8 @@
             if ((state == 1) || (previous_state == 1))
                 this.list.push(tmp);
 
-            showtime.trace('Playlist: Parsed ' + this.list.length + ' items');
+            if (service.verbose)
+                showtime.trace('Playlist: Parsed ' + this.list.length + ' items');
             result.error = false;
             return result;
         };
@@ -1286,10 +1295,14 @@
 
                     switch (m.type) {
                         case "image":
-                            item = page.appendItem(link, "image", { title: new showtime.RichText(name_final_color), icon: cover });
+                            item = page.appendItem(link, "image", {
+                                title: new showtime.RichText(name_final_color), icon: cover
+                            });
                             break;
                         case "audio":
-                            item = page.appendItem(link, "audio", { title: new showtime.RichText(name_final_color), icon: cover });
+                            item = page.appendItem(link, "audio", {
+                                title: new showtime.RichText(name_final_color), icon: cover
+                            });
                             break;
                         case "video":
                             if (link.indexOf('youtube.com') != -1) {
@@ -1555,11 +1568,9 @@
         }
 
         this.match = function(line) { 
-            for (var v in this.NIPL.vars) {
-                if (v && typeof v == 'string' && v[0] === 'v' && !isNaN(parseInt(v.slice(1)))) {
+            for (var v in this.NIPL.vars)
+                if (v && typeof v == 'string' && v[0] === 'v' && !isNaN(parseInt(v.slice(1))))
                     delete this.NIPL.vars[v];
-                }
-            }
 
             if (!this.NIPL.vars['regex'])
                 return -1;
@@ -1585,9 +1596,10 @@
                 regex = regex.replace(/\\n/g,'\\s');
                 value = value.replace(/\n/g," ");
             }
-        
-            regex = new RegExp(regex, switches);
-        
+
+            regex = regex.replace(/\\\}/g, '\}').replace(/\\\{/g, '\{');
+            regex = new RegExp(regex.replace(/\}/g, '\\}').replace(/\{/g, '\\{'), switches);
+
             match = regex.exec(value);
 
             if (!match)
@@ -2121,14 +2133,12 @@
                 t("Downloading " + link);
                 data = this.downloader.getRemote(link, args);
 
-                if (data.error || data.response == '') {
-                    if (data.error) {
-                        message = data.error;
-                    }
-                    if (data.response == '') {
-                        message = 'There was a problem while trying to obtain processor.';
-                    }
-
+                message = '';
+                if (!data.response)
+                    message = 'Can\'t get processor';
+                if (data.error)
+                    message += ': ' + data.error;
+                if (message) {
                     var result = {
                         error: true,
                         message: message
@@ -2735,12 +2745,13 @@
                 }
             }
 
-            try {
+            if (service.verbose) {
                 showtime.trace("URL: " + url);
                 showtime.trace("Args: " + showtime.JSONEncode(argsVar));
-                if (processor && processor.NIPL.vars['s_method'] === 'get') {
+            }
+            try {
+                if (processor && processor.NIPL.vars['s_method'] === 'get')
                     data = showtime.httpGet(url, argsVar, headers, this.controls);
-                }
                 else if (processor && processor.NIPL.vars['s_method'] === 'post' && processor.NIPL.vars['s_postdata']) {
                     var arguments = {};
                     var params = processor.NIPL.vars['s_postdata'].split('&');
@@ -3215,7 +3226,6 @@
             t("Removing item from playlist: " + playlist);
             if (this[playlist].list == "[]")
                 return false;
-showtime.print(item);
             var list = eval(this[playlist].list);
             list.splice(item, 1);
             this[playlist].list = showtime.JSONEncode(list);
@@ -3318,23 +3328,29 @@ showtime.print(item);
     }
 
     function parse_string_color(text, size) {
-        if (text.length == 255 && text.substr(249, 6) == '[/COLO')
-            text += 'R]'
         var lastPos = 0, textOut = '', lastColor = '';
         while (lastPos < text.length) {
-            var openTagStartPos = text.indexOf('[COLOR', lastPos);
+            var openTagStartPos = text.indexOf('[COLOR=', lastPos);
             if (openTagStartPos > -1) {
                 textOut += text.substring(lastPos, openTagStartPos);
                 var openTagEndPos = text.indexOf(']', openTagStartPos);
+                if (openTagEndPos == -1) {
+                    textOut += text.substr(openTagStartPos);
+                    break;
+                }
                 lastColor = text.substring(openTagStartPos, openTagEndPos + 1);
                 var closeTagStartPos = text.indexOf('[/COLOR]', openTagEndPos);
-                var orphanTagStartPos = text.substring(openTagEndPos, closeTagStartPos).indexOf('[COLOR');
+                if (closeTagStartPos == -1) {
+                    textOut += text.substr(openTagStartPos);
+                    break;
+                }
+                var orphanTagStartPos = text.substring(openTagEndPos, closeTagStartPos).indexOf('[COLOR=');
                 if (orphanTagStartPos > -1) {
                     textOut += lastColor + text.substring(openTagEndPos + 1, openTagEndPos + orphanTagStartPos) + '[/COLOR]';
                     textOut += text.substring(openTagEndPos + orphanTagStartPos, closeTagStartPos) + '[/COLOR]' + lastColor;
-                    lastPos = closeTagStartPos+7;
+                    lastPos = closeTagStartPos + 7;
                 } else {
-                    textOut += text.substring(openTagStartPos, closeTagStartPos+8);
+                    textOut += text.substring(openTagStartPos, closeTagStartPos + 8);
                     lastPos = closeTagStartPos + 7;
                 }
             } else {
