@@ -125,8 +125,7 @@
             imdbid: getIMDBid(title),
             sources: [{
                 url: link
-            }],
-            no_subtitles_scan: true
+            }]
         });
     });
 
