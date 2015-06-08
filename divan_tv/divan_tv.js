@@ -93,14 +93,16 @@
     }
 
     var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "video", true, logo);
+
     var store = plugin.createStore('offset');
+    if (!store.offset) store.offset = 10800;
+
     var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
     settings.createAction(plugin.getDescriptor().id+'_login', 'Войти в ' + plugin.getDescriptor().id, function() {
         loginAndGetConfig(0, true);
     });
 
     function getTimePeriod(timestamp) {
-        if (!store.offset) store.offset = 10800;
         var a = new Date((+timestamp + store.offset + new Date().getTimezoneOffset() * 60) * 1000);
         return ((a.getHours() < 10 ? '0' + a.getHours() : a.getHours()) + ':' +
             (a.getMinutes() < 10 ? '0' + a.getMinutes() : a.getMinutes()));
@@ -353,6 +355,8 @@
             }
         }));
 
+        page.loading = true;
+
         var channelIds = [];
         for (var i in json.channels)
             channelIds.push(json.channels[i].id);
@@ -364,7 +368,6 @@
         showtime.trace('System time: ' + now + ' Timestamp: ' + now.getTime());
 
         // Getting the beginning of the day. Server has GMT-3 time difference let's correct that
-        if (!store.offset) store.offset = 10800;
         var day = "" + (new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())).getTime() / 1000 - store.offset);
         showtime.trace('Store offset: ' + store.offset + ' Request timestamp: ' + day);
         var epg = request(page, showtime.JSONEncode({
@@ -388,6 +391,7 @@
                     baseClientKey:baseClientKey
                 }
             }));
+            page.loading = true;
             if (!showtime.JSONEncode(epg) || showtime.JSONEncode(epg) == '[]') {
                 store.offset = 10800;
                 page.redirect(plugin.getDescriptor().id + ":epg");
@@ -407,10 +411,10 @@
         for (var i in epg)
             if (epg[i].current_program) {
                 var chName = getChNameByID(i);
-                page.appendItem(plugin.getDescriptor().id + ":getChannelInfoById:" + i + ':' + escape(chName), 'file', {
-                    title: new showtime.RichText(chName + ' ' + getTimePeriod(epg[i].current_program.start) + ' - ' +
-                        getTimePeriod(epg[i].current_program.stop) + '  ' +
-                        coloredStr(epg[i].current_program.title_ru, orange))
+                page.appendItem(plugin.getDescriptor().id + ":getChannelInfoById:" + i + ':' + escape(chName), 'directory', {
+                    title: new showtime.RichText(chName + coloredStr(' (' + getTimePeriod(epg[i].current_program.start) + '-' +
+                        getTimePeriod(epg[i].current_program.stop) + ') ' +
+                        epg[i].current_program.title_ru, orange))
                 });
             }
 
