@@ -44,7 +44,7 @@
 
     var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().synopsis);
 
-    settings.createString('baseURL', "Base URL without '/' at the end.", 'http://zerkalo-rutor.org', function(v) {
+    settings.createString('baseURL', "Base URL without '/' at the end", 'http://zerkalo-rutor.org', function(v) {
         service.baseURL = v;
     });
 

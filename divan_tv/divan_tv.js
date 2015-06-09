@@ -199,10 +199,11 @@
         }));
         //showtime.print(showtime.JSONEncode(json));
         for (var i in json.named_streams) {
+            var fullTitle = json.title_ru + (json.title_orig ? ' | ' + json.title_orig : '') + (json.named_streams[i].name && json.named_streams[i].name != json.title_ru ? ' - ' + json.named_streams[i].name : '');
             var lnk = "videoparams:" + showtime.JSONEncode({
-                title: json.title_ru + (json.title_orig ? ' | ' + json.title_orig : '') + (json.named_streams[i].name && json.named_streams[i].name != json.title_ru ? ' - ' + json.named_streams[i].name : ''),
+                title: fullTitle,
                 canonicalUrl: plugin.getDescriptor().id + ':getMovieInfoById:' + i + ":" + title,
-                imdbid: getIMDBid(title),
+                imdbid: getIMDBid(fullTitle),
                 sources: [{
                     url: json.named_streams[i].url
                 }]

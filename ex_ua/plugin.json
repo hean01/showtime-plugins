@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "EX.UA",
 	"synopsis": "Express file - server of information exchange",
-	"version": "0.8.1",
+	"version": "0.8.2",
         "file": "ex_ua.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",

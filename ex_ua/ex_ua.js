@@ -96,11 +96,44 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
-        var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        var title = showtime.entityDecode(unescape(title)).toString();
+        showtime.print('Trying to get IMDB code for: ' + title);
+        var splittedTitle = title.split('/');
+        if (splittedTitle.length == 1)
+            splittedTitle = title.split('|');
+        if (splittedTitle.length == 1)
+            splittedTitle = title.split('-');
+        showtime.print('Splitted title is: ' + splittedTitle);
+        for (var i in splittedTitle) {
+            var cleanTitle = splittedTitle[i].trim();
+            var match = cleanTitle.match(/[^\(|\[|\.]*/);
+            if (match) cleanTitle = match;
+            showtime.print('Trying: ' + cleanTitle);
+            resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(cleanTitle)).toString();
+            imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+            if (imdbid) break;
+        }
+        showtime.print(imdbid);
         if (imdbid) return imdbid[1];
         return imdbid;
     };
+
+    plugin.addURI(PREFIX + ":play:(.*):(.*):(.*)", function(page, url, title, imdbTitle) {
+        page.type = 'video';
+        page.loading = true;
+        page.metadata.title = unescape(title);
+        var v = "videoparams:" + showtime.JSONEncode({
+        });
+        page.source = "videoparams:" + showtime.JSONEncode({
+            sources: [{
+                url: BASE_URL + unescape(url)
+            }],
+            title: showtime.entityDecode(unescape(title)),
+            canonicalUrl: PREFIX + ':play:' + url + ':' + title + ':' + imdbTitle,
+            imdbid: getIMDBid(imdbTitle)
+        });
+        page.loading = false;
+    });
 
     // Index page at URL
     plugin.addURI(PREFIX + ":index:(.*)", function(page, url) {
@@ -186,21 +219,16 @@
                 if (match) {
                     while (match) {
                         var type = getType(match[2].split('.').pop());
-                        var v = BASE_URL + match[1];
                         if (type == "video") {
-                            v = "videoparams:" + showtime.JSONEncode({
-                                sources: [{
-                                    url: BASE_URL + match[1]
-                                }],
+                            page.appendItem(PREFIX + ':play:' + escape(match[1]) + ':' + escape(match[2]) + ':' + escape(page.metadata.title), type, {
                                 title: showtime.entityDecode(match[2]),
-			        canonicalUrl: match[1],
-                                imdbid: getIMDBid(page.metadata.title)
+                                icon: logo
                             });
-                        }
-                        page.appendItem(v, type, {
-                            title: showtime.entityDecode(match[2]),
-                            icon: logo
-                        });
+                        } else
+                            page.appendItem(BASE_URL + match[1], type, {
+                                title: showtime.entityDecode(match[2]),
+                                icon: logo
+                            });
                         match = re.exec(doc);
                     }
                     url = 0;

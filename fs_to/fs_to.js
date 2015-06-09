@@ -506,8 +506,24 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
-        var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        var title = showtime.entityDecode(unescape(title)).toString();
+        showtime.print('Trying to get IMDB code for: ' + title);
+        var splittedTitle = title.split('/');
+        if (splittedTitle.length == 1)
+            splittedTitle = title.split('|');
+        if (splittedTitle.length == 1)
+            splittedTitle = title.split('-');
+        showtime.print('Splitted title is: ' + splittedTitle);
+        for (var i in splittedTitle) {
+            var cleanTitle = splittedTitle[i].trim();
+            var match = cleanTitle.match(/[^\(|\[|\.]*/);
+            if (match) cleanTitle = match;
+            showtime.print('Trying: ' + cleanTitle);
+            resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(cleanTitle)).toString();
+            imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+            if (imdbid) break;
+        }
+        showtime.print(imdbid);
         if (imdbid) return imdbid[1];
         return imdbid;
     };
