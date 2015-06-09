@@ -77,7 +77,7 @@
         var doc = showtime.httpReq(baseURL).toString();
         page.loading = false;
         // 1 - link, 2 - icon, 3 - title, 4 - description
-        var featured = doc.match(/<div class="featured">[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?background-image: url\(([\s\S]*?)\)[\s\S]*?title">([\s\S]*?)<\/p>[\s\S]*?subtitle">([\s\S]*?)<\/p>/);
+        var featured = doc.match(/<div class="featured">[\s\S]*?<a href="([\s\S]*?)"[\s\S]*?background-image: url\(([\s\S]*?)\)[\s\S]*?title">([\s\S]*?)<\/[\s\S]*?subtitle">([\s\S]*?)<\//);
         if (featured) {
             page.appendItem("", "separator", {
                 title: 'Featured'
