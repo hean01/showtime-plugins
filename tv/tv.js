@@ -450,6 +450,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":yamgo:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         page.metadata.title = unescape(title);
+
         var resp = showtime.JSONDecode(showtime.httpReq("http://yamgo.com/get/channel?id=" + unescape(url)));
         page.loading = false;
         if (resp.channel && resp.channel.channel_stream) {
@@ -463,6 +464,40 @@
                 no_subtitle_scan: true
             });
        } else page.error("Sorry, can't get the link :(");
+    });
+
+    plugin.addURI(plugin.getDescriptor().id + ":yamgoClips:(.*):(.*)", function(page, id, title) {
+        setPageHeader(page, unescape(title));
+        page.loading = true;
+        for (var i in clips[id]) {
+            page.appendItem('youtube:video:' + clips[id][i].yt_id , "video", {
+	        title: new showtime.RichText(clips[id][i].clip_name),
+                genre: clips[id][i].subcat_name,
+                duration: showtime.durationToString(clips[id][i].clip_duration),
+                description: new showtime.RichText(clips[id][i].yt_description)
+	    });
+        }
+        page.loading = false;
+    });
+
+    var clips = [];
+
+    plugin.addURI(plugin.getDescriptor().id + ":yamgoYoutube:(.*):(.*)", function(page, id, title) {
+        setPageHeader(page, unescape(title));
+        page.loading = true;
+        var json = showtime.JSONDecode(showtime.httpReq("http://yamgo.com/get/channel?id=" + unescape(id) + '&shows=1'));
+
+        for (var i in json.shows) {
+            page.appendItem(plugin.getDescriptor().id + ":yamgoClips:" + json.shows[i].id + ':' + escape(json.shows[i].name) , "video", {
+	        title: new showtime.RichText(json.shows[i].name),
+                genre: json.shows[i].subcat,
+                duration: showtime.durationToString(json.shows[i].duration),
+                icon: json.shows[i].image_url,
+                description: new showtime.RichText(json.shows[i].description)
+	    });
+            clips[json.shows[i].id] = json.shows[i].clips;
+        }
+        page.loading = false;
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":trk::(.*)", function(page, title) {
@@ -1855,6 +1890,47 @@
         page.loading = false;
     });
 
+    var yamgoJson = null;
+    function getYamgoJson() {
+        var doc = showtime.httpReq('http://yamgo.com').toString();
+        var bPattern = 'channels = ';
+        var ePattern = '};';
+        yamgoJson = doc.substr(doc.indexOf(bPattern) + bPattern.length, doc.indexOf(ePattern) - (doc.indexOf(bPattern) + bPattern.length) + 1);
+        if (yamgoJson)
+            yamgoJson = showtime.JSONDecode(yamgoJson);
+        else {
+            page.error('Sorry, can\'t get json with the channel list: (');
+            return false;
+        }
+        return true;
+    }
+
+    plugin.addURI(plugin.getDescriptor().id + ":yamgoStart", function(page) {
+        setPageHeader(page, 'Yamgo - tv on the go');
+        page.loading = true;
+        if (!yamgoJson)
+           if (!getYamgoJson()) return;
+
+        var c = 0;
+        for (var i in yamgoJson) {
+            var link = plugin.getDescriptor().id + ':yamgo:' + yamgoJson[i][0].channel_id + ':' + escape(yamgoJson[i][0].channel_name);
+            if (yamgoJson[i][0].channel_type == 'YOUTUBE')
+                link = plugin.getDescriptor().id + ':yamgoYoutube:' + yamgoJson[i][0].channel_id + ':' + escape(yamgoJson[i][0].channel_name);
+            var icon = yamgoJson[i][0].channel_images_tn_large;
+            var title = yamgoJson[i][0].channel_name;
+            var item = page.appendItem(link, "video", {
+	        title: new showtime.RichText(title + ' ' + coloredStr(yamgoJson[i][0].channel_type, orange)),
+                genre: yamgoJson[i][0].channel_metakeywords,
+                icon: icon,
+                description: new showtime.RichText(yamgoJson[i][0].channel_description)
+	    });
+            c++;
+            addToFavoritesOption(item, link, title, icon);
+        };
+        page.metadata.title = new showtime.RichText(page.metadata.title + ' (' + c + ')');
+        page.loading = false;
+    });
+
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
         setPageHeader(page, plugin.getDescriptor().title);
@@ -1912,6 +1988,9 @@
 	});
 	page.appendItem(plugin.getDescriptor().id + ":drundooStart", "directory", {
 	    title: "DrunDoo.com"
+	});
+	page.appendItem(plugin.getDescriptor().id + ":yamgoStart", "directory", {
+	    title: "Yamgo.com"
 	});
     });
 })(this);
