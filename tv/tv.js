@@ -450,15 +450,15 @@
     plugin.addURI(plugin.getDescriptor().id + ":yamgo:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         page.metadata.title = unescape(title);
-        var resp = showtime.JSONDecode(showtime.httpReq("http://yamgo.com/get-channel/" + unescape(url) + '?format=json'));
+        var resp = showtime.JSONDecode(showtime.httpReq("http://yamgo.com/get/channel?id=" + unescape(url)));
         page.loading = false;
-        if (resp && resp.channel && resp.channel.channel_url_ipad) {
+        if (resp.channel && resp.channel.channel_stream) {
             page.type = "video";
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: unescape(title),
                 canonicalUrl: plugin.getDescriptor().id + ':yamgo:' + url + ':' + title,
                 sources: [{
-                    url: 'hls:' + resp.channel.channel_url_ipad
+                    url: 'hls:' + resp.channel.channel_stream
                 }],
                 no_subtitle_scan: true
             });
