@@ -108,8 +108,8 @@
             page.loading = true;
             var doc = showtime.httpReq(url + param).toString();
             page.loading = false;
-            // 1-icon, 2-duration, 3-speaker, 4-link, 5-title, 6-views, 7-date
-            var re = /<div class='media media--sm-v'>[\s\S]*?src="([\s\S]*?)"[\s\S]*?class="thumb__duration">([\s\S]*?)<\/span>[\s\S]*?speaker'>([\s\S]*?)<[\s\S]*?<a href='([\s\S]*?)'>([\s\S]*?)<\/a>[\s\S]*?<span class='meta__val'>([\s\S]*?)views[\s\S]*?<span class='meta__val'>([\s\S]*?)<\/span>/g;
+            // 1-icon, 2-duration, 3-speaker, 4-link, 5-title, 6-posted, 7-rated
+            var re = /<div class='media media--sm-v'>[\s\S]*?src="([\s\S]*?)"[\s\S]*?class="thumb__duration">([\s\S]*?)<\/span>[\s\S]*?speaker'>([\s\S]*?)<[\s\S]*?<a href='([\s\S]*?)'>([\s\S]*?)<\/a>[\s\S]*?<span class='meta__val'>([\s\S]*?)<\/span>[\s\S]*?<span class='meta__val'>([\s\S]*?)<\/span>/g;
             var match = re.exec(doc);
             while (match) {
                 page.appendItem(plugin.getDescriptor().id + ':talk:' + encodeURIComponent(match[4]) + ':' + encodeURIComponent(trim(match[5])), "video", {
@@ -118,8 +118,8 @@
                     duration: match[2],
                     description: new showtime.RichText(coloredStr('Speaker: ', orange) + match[3] +
                         coloredStr('\nTitle: ', orange) + trim(match[5]) +
-                        coloredStr('\nViews: ', orange) + trim(match[6]) +
-                        coloredStr('\nAdded: ', orange) + trim(match[7])
+                        coloredStr('\nPosted: ', orange) + trim(match[6]) +
+                        coloredStr('\nRated: ', orange) + trim(match[7])
                     )
                 });
                 page.entries++;
