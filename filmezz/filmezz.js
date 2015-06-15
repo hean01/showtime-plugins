@@ -121,14 +121,21 @@
         });
         switch (unescape(hoster)) {
             case 'Videoapi.mail.ru':
-                var pageUrl = doc.toString().match(/SRC="([\S\s]*?)"/)[1];
-                url = showtime.httpReq(pageUrl).toString().match(/metadataUrl":"([\s\S]*?)"/)[1];
-                url = showtime.JSONDecode(showtime.httpReq(url));
-                url = url.videos[0].url;
+                var pageUrl = doc.toString().match(/SRC="([\S\s]*?)"/);
+                if (pageUrl) {
+                    pageUrl = pageUrl[1];
+                    url = showtime.httpReq(pageUrl).toString().match(/metadataUrl":"([\s\S]*?)"/)[1];
+                    url = showtime.JSONDecode(showtime.httpReq(url));
+                    url = url.videos[0].url;
+                } else {
+                    page.error("Can't get the link :( Probably video is deleted...");
+                    return;
+                }
                 break;
             case 'Videoget.tv':
             case 'Videoget.eu':
             case 'Videoget (Divx+Letöltés)':
+            case 'Videoget (Divx)':
                 var tmp = null;
                 while (!tmp) {
                     url = showtime.httpReq(checkLink(doc.headers.Location)).toString();
@@ -181,7 +188,6 @@
                 url = 'hls:' + showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/file: "([\S\s]*?)"/)[1];
                 break;
             case 'VidToMe':
-showtime.print(doc.headers.Location);
                 var param = showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/name="op" value="([\S\s]*?)"[\S\s]*?name="id" value="([\S\s]*?)"[\S\s]*?name="fname" value="([\S\s]*?)"[\S\s]*?name="hash" value="([\S\s]*?)"/);
                 if (param) {
                     sleep(page, 6000);
