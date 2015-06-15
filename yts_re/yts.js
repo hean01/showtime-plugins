@@ -122,15 +122,21 @@
         function loader() {
             if (!offset) return false;
             page.loading = true;
+
+            var args = {
+                limit: 40,
+                page: offset,
+                quality: service.quality,
+                sort_by: service.sorting,
+                order_by: service.order
+            };
+            for (var i in query)
+                args[i] = unescape(query[i]);
+
             var c = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'v2/list_movies.json', {
-                args: [{
-                    limit: 40,
-                    page: offset,
-                    quality: service.quality,
-                    sort_by: service.sorting,
-                    order_by: service.order
-                }, query]
+                args: args
             }));
+
             page.loading = false;
             if (offset == 1 && page.metadata)
                page.metadata.title += ' (' + c.data.movie_count + ')';
@@ -201,7 +207,7 @@
     plugin.addURI(PREFIX + ":list:(.*)", function(page, query) {
         setPageHeader(page, 'Filter by: ' + unescape(query));
         browseItems(page, {
-            keywords: query
+            query_term: query
         });
         page.loading = false;
     });
