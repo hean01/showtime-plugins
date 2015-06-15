@@ -1,5 +1,5 @@
 /*
- *  LubeTube - Showtime Plugin
+ *  LubeTube plugin for Movian Media Center
  *
  *  Copyright (C) 2012-2015 Henrik Andersson, lprot
  *
@@ -93,7 +93,8 @@
             canonicalUrl: plugin.getDescriptor().id + ":play:" + url + ":" + title,
             sources: [{
                 url: link[1]
-            }]
+            }],
+            no_subtitle_scan: true
         });
     });
 

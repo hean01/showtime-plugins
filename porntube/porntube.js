@@ -1,5 +1,5 @@
 /**
- * Porntube plugin for Showtime Media Center
+ * Porntube plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -325,7 +325,8 @@
             canonicalUrl: plugin.getDescriptor().id + ":video:" + url + ":" + title,
             sources: [{
                 url: unescape(showtime.entityDecode(match[1]))
-            }]
+            }],
+            no_subtitle_scan: true
         });
         page.loading = false;
     });

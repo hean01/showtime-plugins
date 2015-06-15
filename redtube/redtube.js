@@ -1,5 +1,5 @@
 /**
- * Redtube plugin for Showtime Media Center
+ * Redtube plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -354,7 +354,8 @@
             canonicalUrl: plugin.getDescriptor().id + ":play:" + video_id + ":" + title,
             sources: [{
                 url: unescape(link[1]).replace(/\\/g,'')
-            }]
+            }],
+            no_subtitle_scan: true
         });
     });
 

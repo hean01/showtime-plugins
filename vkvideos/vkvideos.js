@@ -261,7 +261,8 @@
                 canonicalUrl: plugin.getDescriptor().id + ":play:" + url + ":" + title,
                 sources: [{
                     url: video
-                }]
+                }],
+                no_subtitle_scan: true
             });
         } else {
             var error = v.match(/<div class="light_cry_dog"><\/div>([\s\S]*?)<\/div>/);

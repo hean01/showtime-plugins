@@ -1,5 +1,5 @@
 /**
- * paradisehill.tv plugin for Showtime Media Center
+ * paradisehill.tv plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -94,6 +94,7 @@
                             url: films[n],
                             mimetype: "video/quicktime"
                         }],
+                        no_subtitle_scan: true,
                         title: match[1] + " (" + (service.lang == "en" ? 'part' : 'часть') + (+n+1) + ")"
                     }), 'video', {
                     title: new showtime.RichText((match[1] ? match[1] : 'No title')+ colorStr((service.lang == "en" ? 'part' : 'часть') + (+n+1), blue)),

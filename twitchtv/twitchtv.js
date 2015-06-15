@@ -298,7 +298,8 @@
             title: name,
             sources: [{
                 url: url
-            }]
+            }],
+            no_subtitle_scan: true
         });
     });
 

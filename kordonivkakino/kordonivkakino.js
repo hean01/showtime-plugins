@@ -98,7 +98,8 @@
                mimetype: 'video/quicktime'
             }],
             canonicalUrl: plugin.getDescriptor().id + ':' + unescape(title) + ':'+n,
-            no_fs_scan: true
+            no_fs_scan: true,
+            no_subtitle_scan: true
         };
         return "videoparams:" + showtime.JSONEncode(videoparams);
     }
@@ -130,7 +131,8 @@
                     mimetype: 'video/quicktime'
                 }],
                 canonicalUrl: plugin.getDescriptor().id + ':' + title + ':' + n,
-                no_fs_scan: true
+                no_fs_scan: true,
+                no_subtitle_scan: true
             });
         } else page.error('Видео не доступно. / This video is not available, sorry :(');
         page.loading = false;
@@ -149,7 +151,8 @@
                     mimetype: 'video/quicktime'
                 }],
                 canonicalUrl: plugin.getDescriptor().id + ':' + title + ':' + n,
-                no_fs_scan: true
+                no_fs_scan: true,
+                no_subtitle_scan: true
             });
         } else page.error('Видео не доступно. / This video is not available, sorry :(');
         page.loading = false;
