@@ -350,8 +350,10 @@
             if (origTitle)
                 title = title + ' | ' + origTitle[1];
             var url = match[1].match(/href="([\s\S]*?)"/);
-            if (url)
-                url = escape(BASE_URL + url[1]);
+
+            if (url) {
+                url = escape(BASE_URL + (url[1][0] == '/' ? url[1] : '/' + url[1]));
+            }
             page.appendItem(plugin.getDescriptor().id + ':indexItem:' + url + ":" + escape(title), 'video', {
                 title: url ? title : '-' + title,
                 rating: match[3] * 10,
