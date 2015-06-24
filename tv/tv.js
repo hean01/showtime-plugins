@@ -79,6 +79,10 @@
 
     var settings = plugin.createSettings(plugin.getDescriptor().title, logo, plugin.getDescriptor().title);
 
+    settings.createBool('dontShowAdult', "Don't show adult channels", true, function(v) {
+        service.dontShowAdult = v;
+    });
+
     settings.createBool('disableSampleList', "Don't show Sample M3U list", false, function(v) {
         service.disableSampleList = v;
     });
@@ -1073,10 +1077,8 @@
                     line = line.replace(/rtmp:\/\/\$OPT:rtmp-raw=/, '');
                     if (line.indexOf(':') == -1 && line.length == 40)
                         line = 'acestream://' + line;
-showtime.print(m3uImage);
                     if (m3uImage && m3uImage.substr(0, 4) != 'http')
                         m3uImage = line.match(/^.+?[^\/:](?=[?\/]|$)/) + '/' + m3uImage;
-showtime.print(m3uImage);
                     m3uItems.push({
                         title: m3uTitle ? m3uTitle : line,
                         url: line,
@@ -1229,7 +1231,7 @@ showtime.print(m3uImage);
                                 });
                             }
                             for (var j in json.playlist[i].playlist) {
-                                showtime.print(json.playlist[i].playlist[j].comment);
+                                //showtime.print(json.playlist[i].playlist[j].comment);
                                 page.appendItem(json.playlist[i].playlist[j].file.split(' ')[0], 'video', {
                                     title: new showtime.RichText(json.playlist[i].comment + ' - ' + json.playlist[i].playlist[j].comment)
                                 });
@@ -1253,7 +1255,7 @@ showtime.print(m3uImage);
                                     });
                                 }
                                 for (var j in json.playlist[i].playlist) {
-                                    showtime.print(json.playlist[i].playlist[j].comment);
+                                    //showtime.print(json.playlist[i].playlist[j].comment);
                                     page.appendItem(json.playlist[i].playlist[j].file.split(' ')[0], 'video', {
                                         title: new showtime.RichText(json.playlist[i].comment + ' - ' + json.playlist[i].playlist[j].comment)
                                     });
@@ -1284,6 +1286,7 @@ showtime.print(m3uImage);
     });
 
     var epgForTitle = '';
+
     function getEpg(region, channelId) {
         var description = '';
         try {
@@ -1303,6 +1306,8 @@ showtime.print(m3uImage);
         } catch(err) {}
         return description;
     }
+
+    var adults = ['O-la-la', 'XXL', 'Русская ночь', 'Blue Hustler', 'Brazzers TV Europe', 'Playboy TV'];
 
     plugin.addURI('xml:(.*):(.*)', function(page, pl, pageTitle) {
         showtime.print('Main list: ' + decodeURIComponent(pl).trim());
@@ -1329,8 +1334,9 @@ showtime.print(m3uImage);
         for (var i = 0; i < channels.length; i++) {
             //if (channels[i].category_id && channels[i].category_id != 1) continue;
             var title = showtime.entityDecode(channels[i].title);
-            title = setColors(title);
+            if (service.dontShowAdult && adults.indexOf(title) != -1) continue;
             //showtime.print(title);
+            title = setColors(title);
             var playlist = channels[i].playlist_url;
             var description = channels[i].description ? channels[i].description : null;
             description = setColors(description);
@@ -1346,7 +1352,8 @@ showtime.print(m3uImage);
             }
 
             // show epg if available
-            if (channels[i].region && channels[i].description)
+            epgForTitle = '';
+            if (channels[i].region && +channels[i].description)
                 description = getEpg(channels[i].region, channels[i].description);
             description = description.replace(/<img[\s\S]*?src=[\s\S]*?(>|$)/, '').replace(/\t/g, '').replace(/\n/g, '').trim();
 

@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "Online TV",
 	"synopsis": "Online TV - collection of online tv sources",
-	"version": "0.8.43",
+	"version": "0.8.44",
 	"file": "tv.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
