@@ -19,7 +19,7 @@
 
 (function(plugin) {
     var PREFIX = 'ex_ua';
-    var BASE_URL = 'http://ex.ua';
+    var BASE_URL = 'http://www.ex.ua';
     var logo = plugin.path + "logo.png";
     var doc;
     var service = plugin.createService(plugin.getDescriptor().id, PREFIX + ":start", "video", true, logo);
