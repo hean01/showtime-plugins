@@ -1,6 +1,6 @@
 {
-	"version": "0.1",
-	"description": "Web browser popup plugin. After installing it you can create type in the search box: webbrowse:https://movian.tv or create bookmarks like that.",
+	"version": "0.1.1",
+	"description": "Web browser popup plugin. After installing it you can open webpages via search box like: webbrowse:https://movian.tv or you create bookmarks like that.\nFeature is supported only on following platforms Linux, OS X, PS3",
 	"author": "lprot",
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "Web browser popup plugin",
