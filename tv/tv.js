@@ -1434,8 +1434,15 @@
             page.error('Cannot pass captcha. Return back and retry :(');
             return;
         }
-
-        token = showtime.JSONDecode(showtime.httpReq(token[1])).token;
+        token = showtime.JSONDecode(showtime.httpReq(token[1] + '&_=' +
+             token[1].match(/id=(\d+)/)[1] + Date.now().toString().substr(10, 3), {
+                 headers: {
+                     Host: 'www.streamlive.to',
+                     Referer: unescape(url),
+                     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36',
+                     'X-Requested-With': 'XMLHttpRequest'
+                 }
+        })).token;
         var streamer = doc.match(/streamer: "([\s\S]*?)"/)[1].replace(/\\/g, '');
         var param = ' app=' + doc.match(/streamer: "[\s\S]*?(edge[\s\S]*?)"/)[1].replace(/\\/g, '');
         param += ' playpath=' + doc.match(/file: "([\s\S]*?)\./)[1];
@@ -1688,7 +1695,7 @@
                 var streamer = doc.match(/'streamer', '([\s\S]*?)'/);
                 if (streamer) {
                     var link = streamer[1] + ' playpath=' + doc.match(/'file', '([\s\S]*?)'/)[1] + ' swfUrl=http://static3.sawlive.tv/player.swf pageUrl=' + referer;
-                } else {
+                } else { // page is crypted
                     doc = doc.substr(doc.lastIndexOf('eval('), doc.length);
                     if (doc.trim()) {
                         doc = doc.match(/eval\(function([\S\s]*?)\}\(([\S\s]*?)$/);
@@ -1702,12 +1709,17 @@
                                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36'
                             }
                         }).toString();
-                        doc = doc.match(/eval\(function([\S\s]*?)\}\((.*)/);
-                        if (doc) {
-                            eval('try { function decryptParams' + doc[1] + '}; decodedStr = (decryptParams(' + doc[2] + '} catch (err) {}');
-                            var streamer = decodedStr.match(/'streamer','([\s\S]*?)'/)[1];
-                            var playpath = decodedStr.match(/'file','([\s\S]*?)'/)[1];
-                            var link = streamer + ' playpath=' + playpath + ' swfUrl=http://static3.sawlive.tv/player.swf pageUrl=' + referer;
+                        var streamer = doc.match(/'streamer', '([\s\S]*?)'/);
+                        if (streamer) {
+                            var link = streamer[1] + ' playpath=' + doc.match(/'file', '([\s\S]*?)'/)[1] + ' swfUrl=http://static3.sawlive.tv/player.swf pageUrl=' + referer;
+                        } else {
+                            doc = doc.match(/eval\(function([\S\s]*?)\}\((.*)/);
+                            if (doc) {
+                                eval('try { function decryptParams' + doc[1] + '}; decodedStr = (decryptParams(' + doc[2] + '} catch (err) {}');
+                                var streamer = decodedStr.match(/'streamer','([\s\S]*?)'/)[1];
+                                var playpath = decodedStr.match(/'file','([\s\S]*?)'/)[1];
+                                var link = streamer + ' playpath=' + playpath + ' swfUrl=http://static3.sawlive.tv/player.swf pageUrl=' + referer;
+                            }
                         }
                     }
                 }
