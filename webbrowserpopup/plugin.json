@@ -1,0 +1,15 @@
+{
+	"version": "0.1",
+	"description": "Web browser popup plugin. After installing it you can create type in the search box: webbrowse:https://movian.tv or create bookmarks like that.",
+	"author": "lprot",
+	"homepage": "https://github.com/lprot/showtime-plugins",
+	"title": "Web browser popup plugin",
+	"synopsis": "Web browser plugin",
+	"file": "webbrowserpopup.js",
+	"showtimeVersion": "4.10",
+	"type": "ecmascript",
+	"id": "webbrowserpopup",
+	"icon": "logo.png",
+	"category": "other",
+        "apiversion": 2
+}
