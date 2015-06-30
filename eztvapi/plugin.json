@@ -1,0 +1,14 @@
+{
+	"description": "<p>eztvapi – Here you can watch all the TV shows you can find on popcorn time",
+	"author": "Gekko, lprot",
+	"homepage": "https://github.com/lprot/showtime-plugins",
+	"title": "eztvapi",
+	"synopsis": "eztvapi – Here you can watch all the TV shows you can find on popcorn time",
+	"version": "0.3",
+        "file": "eztvv.js",
+	"showtimeVersion": "4.10",
+	"type": "ecmascript",
+	"id": "eztvapi",
+	"icon": "logo.png",
+	"category": "video"
+}
