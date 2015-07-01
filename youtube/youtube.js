@@ -1192,17 +1192,19 @@
 
         // Get closed captions
         if (!videoParams.subtitles.length) {
-            subs = showtime.httpReq('http://video.google.com/timedtext?type=list&v=' + id);
-            re = /lang_code="([\s\S]*?)" lang_original="([\s\S]*?)"/g;
-            match = re.exec(subs);
-            while (match) {
-                videoParams.subtitles.push({
-                    url: 'http://www.youtube.com/api/timedtext?v=' + id + '&lang=' + match[1],
-                    language: match[2],
-                    title: 'Youtube Closed Captions (' + match[1] + ')'
-                });
+            try {
+                subs = showtime.httpReq('http://video.google.com/timedtext?type=list&v=' + id);
+                re = /lang_code="([\s\S]*?)" lang_original="([\s\S]*?)"/g;
                 match = re.exec(subs);
-            }
+                while (match) {
+                    videoParams.subtitles.push({
+                        url: 'http://www.youtube.com/api/timedtext?v=' + id + '&lang=' + match[1],
+                        language: match[2],
+                        title: 'Youtube Closed Captions (' + match[1] + ')'
+                    });
+                    match = re.exec(subs);
+                }
+            } catch(err) {}
         }
         page.source = "videoparams:" + showtime.JSONEncode(videoParams);
     }
