@@ -504,17 +504,17 @@
         page.loading = false;
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":trk::(.*)", function(page, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":trk:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         page.metadata.title = unescape(title);
-        var resp = showtime.httpReq("http://kanalukraina.tv/online/").toString();
+        var resp = showtime.httpReq('http://' + unescape(url)).toString();
         page.loading = false;
         var match = resp.match(/source: '([\S\s]*?)'/);
             if (match) {
                 page.type = "video";
                 page.source = "videoparams:" + showtime.JSONEncode({
                     title: unescape(title),
-                    canonicalUrl: plugin.getDescriptor().id + ':trk:' + title,
+                    canonicalUrl: plugin.getDescriptor().id + ':trk:' + url + ':' + title,
                     sources: [{
                         url: 'hls:' + match[1]
                     }],

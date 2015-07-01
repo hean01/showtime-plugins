@@ -313,6 +313,7 @@
     var v;
 
     function scraper(page) {
+        page.loading = true;
         var htmlBlock = v.match(/<div class="main-content">([\S\s]*?)<div class="bg-fotter">/)
         if (htmlBlock) {
             page.entries = 0;
@@ -331,6 +332,7 @@
                 match = re.exec(htmlBlock[1]);
             }
         }
+        page.loading = false;
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":top250", function(page) {
@@ -365,13 +367,15 @@
         page.loading = false;
     });
 
-    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-        setPageHeader(page, plugin.getDescriptor().synopsis);
+    function login(page, interactive) {
         var showAuthCredentials = false;
         while (1) {
             var credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, "Login required", showAuthCredentials);
-            if (credentials.rejected) return; //rejected by user
-            if (credentials) {
+            if (credentials.rejected) { //rejected by user
+                page.error('Cannot continue without login/password');
+                return;
+            }
+            if (credentials && credentials.username && credentials.password) {
                 page.loading = true;
                 v = showtime.httpReq(BASE_URL, {
                     postdata: {
@@ -382,23 +386,35 @@
                     noFollow: true
                 }).toString();
                 page.loading = false;
-                showAuthCredentials = v.match(/<div class="logintext">/);
-                if (!showAuthCredentials) break;
+                if (!v.match(/<div class="logintext">/)) break;
+                if (!interactive) return false;
             };
             showAuthCredentials = true;
         };
+        return true;
+    }
 
-        //top 250
-        page.appendItem(plugin.getDescriptor().id + ':top250', 'directory', {
-            title: 'Топ 250'
-        });
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
+        setPageHeader(page, plugin.getDescriptor().synopsis);
+        var showAuthCredentials = false;
+        if (!login(page, true)) {
+            page.error('Cannot login to the site');
+            return;
+        }
+
+        page.entries = 0;
 
         // genres
         var htmlBlock = v.match(/<div class="janr-block-content">([\S\s]*?)<div style/)
         if (htmlBlock) {
+            //top 250
+            page.appendItem(plugin.getDescriptor().id + ':top250', 'directory', {
+                title: 'Топ 250'
+            });
             page.appendItem(plugin.getDescriptor().id + ':showGenres:' + escape(htmlBlock[1]), 'directory', {
                 title: 'Жанры'
             });
+            page.entries = 2;
         }
 
         // recommended
@@ -418,14 +434,11 @@
                     description: showtime.entityDecode(trim(match[4]))
                 });
                 match = re.exec(htmlBlock[1]);
+                page.entries++;
             }
         }
 
-        // news
         var tryToSearch = true;
-        page.appendItem("", "separator", {
-            title: 'Новинки:'
-        });
 
         function loader() {
             if (!tryToSearch) return false;
@@ -438,23 +451,19 @@
             return true;
         };
 
-        loader();
-        page.paginator = loader;
+        page.loading = false;
+        if (page.entries > 0) {
+            page.appendItem("", "separator", {
+                title: 'Новинки:'
+            });
+            loader();
+            page.paginator = loader;
+        } else
+            page.error(v.match(/<title>(.*)<\/title>/)[1]);
     });
 
     plugin.addSearcher(plugin.getDescriptor().id, logo, function(page, query) {
-        var credentials = plugin.getAuthCredentials(plugin.getDescriptor().synopsis, "Login required", false);
-        if (credentials) {
-             v = showtime.httpReq(BASE_URL, {
-                 postdata: {
-                     'login_name': credentials.username,
-                     'login_password': credentials.password,
-                     'login': 'submit'
-                 },
-                 noFollow: true
-            }).toString();
-            if (v.match(/<div class="logintext">/)) return;
-        };
+        if (!login(page, false)) return;
 
         v = showtime.httpReq(BASE_URL + '/?do=search&subaction=search&story=' + unicode2win1251(query)).toString();
         var tryToSearch = true;
@@ -472,7 +481,6 @@
             }
             return page.loading = tryToSearch = false;
         };
-
         loader();
         page.paginator = loader;
     });
