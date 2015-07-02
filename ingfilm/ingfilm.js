@@ -76,12 +76,16 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var title = showtime.entityDecode(unescape(title)).split(':');
-        title = title[0].trim();
         var title = showtime.entityDecode(unescape(title)).split('|');
         title = title[0].trim();
         var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(title).toString()).toString();
         var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        if (!imdbid && title.indexOf(':') != -1) {
+            title = showtime.entityDecode(unescape(title)).split(':');
+            title = title[0].trim();
+            resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(title).toString()).toString();
+            imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        }
         if (imdbid) return imdbid[1];
         return imdbid;
     };
