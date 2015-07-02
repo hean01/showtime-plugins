@@ -76,7 +76,11 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var title = showtime.entityDecode(unescape(title)).split(':');
+        title = title[0].trim();
+        var title = showtime.entityDecode(unescape(title)).split('|');
+        title = title[0].trim();
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(title).toString()).toString();
         var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
         if (imdbid) return imdbid[1];
         return imdbid;
@@ -119,10 +123,19 @@
         }
         page.loading = false;
         page.type = "video";
+        var season = null, episode = null;
+        var series = unescape(title).split('|');
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             canonicalUrl: plugin.getDescriptor().id + ':play:' + url + ':' + title,
             imdbid: getIMDBid(title),
+            season: season,
+            episode: episode,
             sources: [{
                 url: link
             }]
@@ -137,7 +150,7 @@
         while (gMatch) {
             if (first) {
                 genre += gMatch[2];
-                    first = false;
+                first = false;
             } else
                 genre += ', ' + gMatch[2]
                 gMatch = re.exec(blob)
@@ -146,7 +159,7 @@
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":listSeason:(.*):(.*):(.*)", function(page, link, series, title) {
-        setPageHeader(page, unescape(title));
+        setPageHeader(page, unescape(title) + ' - Сезон ' + unescape(series));
         page.loading = true;
         var video = showtime.httpReq(unescape(link) + '?season=' + series + '&episode=1').toString();
         var videos = video.match(/<select id="episode"([\s\S]*?)<\/select>/);
@@ -154,8 +167,8 @@
         var re = /value="([\s\S]*?)">([\s\S]*?)<\/option>/g;
         video = re.exec(videos[1])
         while (video) {
-            page.appendItem(plugin.getDescriptor().id + ':play:' + link + escape('?season=' + series + '&episode=' + video[1]) + ':' + escape(unescape(title) + ' - ' + video[2]), 'video', {
-                title: unescape(title) + ' - ' + video[2]
+            page.appendItem(plugin.getDescriptor().id + ':play:' + link + escape('?season=' + series + '&episode=' + video[1]) + ':' + escape(unescape(title) + ' | Сезон ' + unescape(series) + ' - ' + video[2]), 'video', {
+                title: video[2]
             });
             video = re.exec(videos[1])
         }
@@ -204,7 +217,7 @@
                 var re = /value="([\s\S]*?)">([\s\S]*?)<\/option>/g;
                 var series = re.exec(block[1])
                 while (series) {
-                    addItem(plugin.getDescriptor().id + ':listSeason:' + escape(match[18]) + ':' + series[1], series[2], series[2]);
+                    addItem(plugin.getDescriptor().id + ':listSeason:' + escape(match[18]) + ':' + series[1], series[2], match[2]);
                     series = re.exec(block[1])
                 }
             } else
@@ -317,16 +330,16 @@
         var htmlBlock = v.match(/<div class="main-content">([\S\s]*?)<div class="bg-fotter">/)
         if (htmlBlock) {
             page.entries = 0;
-            // 1-link, 2-icon, 3-title, 4-description, 5-genre, 6-rating
-            var re = /<a href="([\S\s]*?)"><img src="([\S\s]*?)" alt="([\S\s]*?)"><\/a>[\S\s]*?style="display:inline;">([\S\s]*?)<\/div>[\S\s]*?<div class="main-news-janr">([\S\s]*?)<\/div>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>/g;
+            // 1-translation, 2-link, 3-icon, 4-title, 5-description, 6-genre, 7-rating
+            var re = /<span>([\S\s]*?)<\/span>[\S\s]*?<a href="([\S\s]*?)"><img src="([\S\s]*?)" alt="([\S\s]*?)"><\/a>[\S\s]*?style="display:inline;">([\S\s]*?)<\/div>[\S\s]*?<div class="main-news-janr">([\S\s]*?)<\/div>[\S\s]*?<li class="current-rating" style="[\S\s]*?">([\S\s]*?)<\/li>/g;
             var match = re.exec(htmlBlock[1]);
             while (match) {
-                page.appendItem(plugin.getDescriptor().id + ':indexItem:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
-                    title: new showtime.RichText(match[3]),
-                    icon: checkLink(match[2]),
-                    genre: getGenres(match[5]),
-                    rating: +match[6],
-                    description: new showtime.RichText(trim(match[4]))
+                page.appendItem(plugin.getDescriptor().id + ':indexItem:' + escape(match[2]) + ":" + escape(match[4]), 'video', {
+                    title: new showtime.RichText(match[4] + ' ' + orangeStr(match[1])),
+                    icon: checkLink(match[3]),
+                    genre: getGenres(match[6]),
+                    rating: +match[7],
+                    description: new showtime.RichText(trim(match[5]))
                 });
                 page.entries++;
                 match = re.exec(htmlBlock[1]);
