@@ -183,7 +183,8 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        var title = showtime.entityDecode(unescape(title)).trim().split(String.fromCharCode(7))[0];
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(title).toString()).toString();
         var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
         if (imdbid) return imdbid[1];
         return imdbid;
@@ -220,12 +221,20 @@
             link = doc.response.url360;
         if (!link)
             link = doc.response.url240;
-        page.loading = false;
-        page.type = "video";
+        page.type = 'video';
+        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var season = null, episode = null;
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
-            canonicalUrl: plugin.getDescriptor().id + ':vki:' + url + ':' + title,
             imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
+            canonicalUrl: plugin.getDescriptor().id + ':vki:' + url + ':' + title,
             sources: [{
                 url: link
             }]
@@ -250,9 +259,18 @@
             return;
         }
         page.type = "video";
+        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var season = null, episode = null;
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
             canonicalUrl: plugin.getDescriptor().id + ':vk:' + url + ':' + title,
             sources: [{
                 url: link[1]
@@ -265,9 +283,18 @@
     plugin.addURI(plugin.getDescriptor().id + ":bk:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         page.type = "video";
+        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var season = null, episode = null;
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
             canonicalUrl: plugin.getDescriptor().id + ':bk:' + url + ':' + title,
             sources: [{
                 url: unescape(url)
@@ -285,9 +312,18 @@
         page.loading = true;
         var v = showtime.httpReq('http://kinostok.tv/embed' + unhash(url, hash1, hash2).match(/_video\/.*\//));
         page.type = "video";
+        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var season = null, episode = null;
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
             sources: [{
                 url: showtime.JSONDecode(unhash(v, hash1, hash2)).playlist[0].file
             }]
@@ -302,9 +338,18 @@
         page.loading = true;
         var v = showtime.httpReq('http://media.meta.ua/players/getparam/?v=' + unescape(unescape(url).match(/value="fileID=(.*?)&/)[1]));
         page.type = "video";
+        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var season = null, episode = null;
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
             sources: [{
                 url: showtime.JSONDecode(unhash(v, hash1, hash2))
             }]
@@ -320,9 +365,18 @@
         url = unescape(url).match(/;file=(.*?)&amp;/)[1];
         page.loading = true;
         page.type = "video";
+        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var season = null, episode = null;
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
             sources: [{
                 url: "hls:" + unhash(url, hash1, hash2).replace('manifest.f4m', 'master.m3u8')
             }]
@@ -342,9 +396,18 @@
         }));
         link = 'hls:' + link['manifest_m3u8']
         page.type = "video";
+        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var season = null, episode = null;
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
             canonicalUrl: plugin.getDescriptor().id + ':moonwalk:' + url + ':' + title,
             sources: [{
                 url: link
@@ -366,9 +429,18 @@
             return;
         }
         page.type = "video";
+        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var season = null, episode = null;
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
-            title: unescape(sign.title),
-            imdbid: getIMDBid(unescape(sign.title)),
+            title: unescape(title),
+            imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
             canonicalUrl: plugin.getDescriptor().id + ":megogo:" + url,
             sources: [{
                 url: sign.src
@@ -382,9 +454,18 @@
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString();
         page.type = "video";
+        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var season = null, episode = null;
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
             canonicalUrl: plugin.getDescriptor().id + ":gidtv:" + url + ':' + title,
             sources: [{
                 url: doc.match(/setFlash\('([\s\S]*?)\s/)[1].replace(/manifest.f4m/,'index.m3u8')
@@ -404,9 +485,18 @@
             return;
         }
         page.type = "video";
+        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var season = null, episode = null;
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
             sources: [{
                 url: 'hls:' + link[1]
             }]
@@ -419,9 +509,18 @@
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString();
         page.type = "video";
+        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var season = null, episode = null;
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
             imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
             canonicalUrl: plugin.getDescriptor().id + ":hdgo:" + url + ':' + title,
             sources: [{
                 url: doc.match(/<source src="([\s\S]*?)"/)[1]
@@ -433,7 +532,7 @@
     var linksBlob;
 
     plugin.addURI(plugin.getDescriptor().id + ":indexSeason:(.*):(.*)", function(page, title, blob) {
-        setPageHeader(page, decodeURIComponent(title));
+        setPageHeader(page, decodeURIComponent(title) + ')');
         page.loading = true;
         var links = new Array();
         var re = /"([0-9]+)":"([\S\s]*?)>"/g;
@@ -484,7 +583,7 @@
         var html = decodeURIComponent(blob);
         match2 = re.exec(html);
         while (match2) {
-            page.appendItem(links[match2[1]] + ":" + escape(decodeURIComponent(title) + ' - ' + match2[2]), 'video', {
+            page.appendItem(links[match2[1]] + ":" + escape(decodeURIComponent(title) + ' - ' + match2[2] + ')'), 'video', {
                 title: match2[2]
             });
             match2 = re.exec(html);
@@ -540,7 +639,7 @@
             re = /<div id="episodes-([0-9]+)"([\S\s]*?)<\/div>/g;
             match = re.exec(response);
             while (match) {
-                page.appendItem(plugin.getDescriptor().id + ":indexSeason:" + encodeURIComponent(title + ' - Сезон ' + match[1]) + ':' + encodeURIComponent(match[2]), 'directory', {
+                page.appendItem(plugin.getDescriptor().id + ":indexSeason:" + encodeURIComponent(title + String.fromCharCode(7) + ' (Сезон ' + match[1]) + ':' + encodeURIComponent(match[2]), 'directory', {
                     title: 'Сезон ' + match[1]
                 });
                 match = re.exec(response);
