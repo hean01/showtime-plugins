@@ -50,8 +50,24 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
+        imdbid = null;
+        var title = showtime.entityDecode(unescape(title));
+        title = title.substring(0, title.indexOf('('));
+        showtime.print('Fetching IMDBID for: ' + title);
+        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(title).toString()).toString();
         var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        if (!imdbid && title.lastIndexOf('.') != -1) {
+            title = title.substring(0, title.lastIndexOf('.'));
+            showtime.print('Fetching IMDBID for: ' + title);
+            resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(title).toString()).toString();
+            imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        }
+        if (!imdbid && title.search(/\d/) != -1) {
+            title = title.substring(0, title.search(/\d/));
+            showtime.print('Fetching IMDBID for: ' + title);
+            resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(title).toString()).toString();
+            imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        }
         if (imdbid) return imdbid[1];
         return imdbid;
     };
@@ -109,7 +125,7 @@
     }
 
     // Index page
-    plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*):(.*)", function(page, hoster, url, title) {
+    plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*):(.*):(.*)", function(page, hoster, url, title, info) {
         var canonicalUrl = plugin.getDescriptor().id + ":play:" + hoster + ':' + url + ':' + title;
         page.loading = true;
         var url = checkLink(unescape(url)).match(/(http:\/\/filmezz.*)/)[1];
@@ -320,9 +336,16 @@
         }
         page.loading = false;
         page.type = "video";
+        var season = null, episode = null;
+        if (unescape(title).indexOf('évad') != -1 || unescape(title).indexOf('Évad') != -1) {
+            season = +unescape(title).match(/\d+/);
+            episode = +unescape(info).match(/\d+/);
+        }
         page.source = "videoparams:" + showtime.JSONEncode({
-          title: unescape(unescape(title)),
-          imdbid: getIMDBid(unescape(title)),
+            title: unescape(unescape(title)),
+            imdbid: getIMDBid(unescape(title)),
+            season: season,
+            episode: episode,
             canonicalUrl: canonicalUrl,
             sources: [{
                 url: url
@@ -377,7 +400,7 @@
         re = /<img src="img\/lang\/([\S\s]*?)\.gif[\S\s]*?<img src="img\/qual\/([\S\s]*?)\.gif"[\S\s]*?">([\S\s]*?)<\/td>[\S\s]*?<td>([\S\s]*?)<\/td>[\S\s]*?href=([\S\s]*?)>/g;
         match = re.exec(blob);
         while (match) {
-            appendItem(plugin.getDescriptor().id + ':play:' + escape(trim(match[3])) + ':' + escape(match[5]) + ':' + escape(page.metadata.title),
+            appendItem(plugin.getDescriptor().id + ':play:' + escape(trim(match[3])) + ':' + escape(match[5]) + ':' + escape(page.metadata.title) + ':' + escape(trim(match[4]) ? trim(match[4]) : 'no info'),
                 coloredStr(getQuality(+match[2]), orange) + ' ' + trim(match[3] + (match[4] ? ' - ' + trim(match[4]): '')) + coloredStr(' (' + getLang(+match[1]) + ')', orange)),
             match = re.exec(blob);
         }
