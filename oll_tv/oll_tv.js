@@ -1,5 +1,5 @@
 /**
- * oll.tv plugin for Showtime
+ * oll.tv plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -151,20 +151,30 @@
         page.loading = true;
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/media?id=' + id + '&' +sn));
         page.loading = false;
-        //showtime.print(showtime.JSONEncode(json));
         if (!json.media_url) {
             showtime.message("Не могу проиграть видео. Возможно трансляция еще не началась, Вы не вошли в учетную запись, либо закончилась подписка :(", true, false);
             return;
         }
+        var season = null, episode = null;
+        var series = unescape(title).split('|');
+        var imdbTitle = series[0];
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[0].match(/(\d+)/)[1];
+            episode = +series[1].match(/(\d+)/)[1];
+        }
 
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
-            title: unescape(json.title),
+            title: unescape(title),
             canonicalUrl: PREFIX + ":play:" + id + ":" + title,
-            imdbid: getIMDBid(title),
+            imdbid: getIMDBid(imdbTitle),
+            season: season,
+            episode: episode,
             sources: [{
                 url: "hls:" + unescape(json.media_url)
-            }]	    
+            }],
+            no_fs_scan: true
         });
     });
 
@@ -175,7 +185,8 @@
         var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/info?' + sn + '&id=' + id));
         page.loading = false;
         for (var i in json.series)
-            appendItem(page, json, ':play:', json.series[i].series_id, json.series[i].series_title);
+            appendItem(page, json, ':play:', json.series[i].series_id, json.series[i].series_title,
+                json.title + ' | ' + unescape(title) + ' - ' + json.series[i].series_title);
     });
 
     // Index media by id
@@ -187,11 +198,11 @@
         //showtime.print(showtime.JSONEncode(json));
         if (json.seasons) {
             for (var i in json.seasons)
-                appendItem(page, json, ':indexSeason:', json.seasons[i].season_id, json.seasons[i].season_title);
+                appendItem(page, json, ':indexSeason:', json.seasons[i].season_id, 'Сезон ' + (+i + 1));
         } else
             if (json.series) {
                 for (var j in json.series)
-                    appendItem(page, json, ':play:', json.series[j].series_id, json.series[j].series_title);
+                    appendItem(page, json, ':play:', json.series[j].series_id, json.series[j].series_title, json.title + ' | Сезон 1 - ' + json.series[j].series_title);
             } else
                 appendItem(page, json, ':play:');
 
@@ -202,7 +213,7 @@
             var splitted = unescape(json.actors).split(',');
             for (i in splitted) {
                 page.appendItem(PREFIX + ":search:" + escape(splitted[i]), 'directory', {
-                    title: trim(splitted[i])
+                    title: showtime.entityDecode(trim(splitted[i]))
                 });
             }
         }
@@ -214,7 +225,7 @@
             var splitted = unescape(json.director).split(',');
             for (i in splitted) {
                 page.appendItem(PREFIX + ":search:" + escape(splitted[i]), 'directory', {
-                    title: trim(splitted[i])
+                    title: showtime.entityDecode(trim(splitted[i]))
                 });
             }
         }
@@ -396,8 +407,8 @@
         return s;
     }
 
-    function appendItem(page, json, route, id, title) {
-        page.appendItem(PREFIX + route + (id ? id : json.id) + ':' + escape(title ? title : json.title), 'video', {
+    function appendItem(page, json, route, id, title, itemTitle) {
+        page.appendItem(PREFIX + route + (id ? id : json.id) + ':' + escape(itemTitle ? itemTitle : (title ? title : json.title)), 'video', {
             title: new showtime.RichText(getReason(json.subs_type) +
                 (json.hd_quality == 1 ? coloredStr('HD ', blue) : '') + unescape((title ? title : json.title))),
             description: new showtime.RichText((!json.is_free && +json.cost ? coloredStr('Стоимость: ', orange) + json.cost + ' ' + json.cost_currency + ' ' : '') +
@@ -406,7 +417,7 @@
                 coloredStr('\nРодительский контроль: ', orange) + getAgeLimits(json.age_limit, json.age_limits, json.age_limit_name) +
                 coloredStr('\nОписание: ', orange) + unescape(json.descr)),
             year: +unescape(json.release_date),
-            duration: json.duration != null ? showtime.durationToString(json.duration * 60) : '',
+            duration: json.duration ? showtime.durationToString(json.duration * 60) : null,
             icon: unescape(json.src),
             genre: unescape(json.genre),
             rating: unescape(json.rating)*20

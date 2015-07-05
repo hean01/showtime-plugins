@@ -87,17 +87,67 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(showtime.entityDecode(unescape(title))).toString()).toString();
-        var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        var title = showtime.entityDecode(unescape(title));
+        showtime.print(title);
+        title = title.split('/');
+        showtime.print(title);
+        var resp, imdbid = null;
+        if (title[1]) {
+            var reqTitle = title[1].trim();
+            showtime.print('Fetching IMDBID for: ' + reqTitle);
+            resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(reqTitle)).toString();
+            imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        }
+        if (!imdbid) {
+            var reqTitle = title[0].trim();
+            showtime.print('Fetching IMDBID for: ' + reqTitle);
+            resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(reqTitle)).toString();
+            imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        }
+        showtime.print(imdbid);
         if (imdbid) return imdbid[1];
         return imdbid;
     };
 
-    var doc;
+    plugin.addURI(plugin.getDescriptor().id + ":play:(.*)", function(page, title) {
+        page.loading = true;
+        page.type = 'video';
+        var fullTitle = doc.match(/film_object_name">(.*)<\//)[1];
+        var imdbid = getIMDBid(fullTitle);
+        var series = fullTitle.trim().split('/');
+        var season = null, episode = null;
+        var name = unescape(title).toUpperCase();
+        if (name.match(/\.S\d\dE\d\d/)) {
+            season = +name.match(/\.S(\d\d)E\d\d/)[1];
+            episode = +name.match(/\.S\d\dE(\d\d)/)[1];
+        } else if (name.match(/\.S\d\dE\d\d-/)) {
+            season = +name.match(/\.S(\d\d)E\d\d-/)[1];
+            episode = +name.match(/\.S\d\dE(\d\d)-/)[1];
+        }
+        if (!season) { // try to extract from main title
+            series = fullTitle.match(/Сезон (\d+)/);
+            if (series)
+                season = +series[1];
+        }
+        page.source = "videoparams:" + showtime.JSONEncode({
+            title: unescape(title),
+            canonicalUrl: plugin.getDescriptor().id + ':play:' + title,
+            imdbid: imdbid,
+            season: season,
+            episode: episode,
+            sources: [{
+                url: links[unescape(title)],
+                mimetype: 'video/quicktime'
+            }],
+            no_fs_scan: true
+        });
+        page.loading = false;
+    });
+
+    var doc, links = [];
 
     plugin.addURI(plugin.getDescriptor().id + ":listFolder:(.*):(.*):(.*)", function(page, id, quality, title) {
         setPageHeader(page, unescape(title));
-        var first = 0, links, fileLink;
         // 1-film_id, 2-filename, 3-date, 4-flags, 5-link, 6-filesize
         var regex = 'class="accordion_content_item q' + quality + '"' +
             '[\\s\\S]*?data-folder="' + id + '"([\\s\\S]*?)' +
@@ -108,17 +158,8 @@
         var re = new RegExp(regex, "g");
         var match = re.exec(doc);
         while (match) {
-           var link = "videoparams:" + showtime.JSONEncode({
-                title: trim(match[2]),
-                sources: [{
-                    url: match[5],
-                    mimetype: 'video/quicktime'
-                }],
-                imdbid: getIMDBid(unescape(title)),
-                canonicalUrl: plugin.getDescriptor().id + ':listFolder:' + id + ':' + quality + ':' + trim(match[2]),
-                no_fs_scan: true
-           });
-           page.appendItem(link, 'video', {
+           links[trim(match[2])] = match[5];
+           page.appendItem(plugin.getDescriptor().id + ':play:' + escape(trim(match[2])), 'video', {
                title: new showtime.RichText(trim(match[2]) + (trim(match[6]) ? colorStr(trim(match[6]), blue): '')),
                description: match[3]
            });
@@ -253,7 +294,6 @@
         doc = showtime.httpReq(BASE_URL + url).toString();
         var title = doc.match(/<title>([\s\S]*?)<\/title>/)[1];
         setPageHeader(page, title);
-
         // 1-title, 2-icon, 3-views, 4-comments, 5-screenshots, 6-quality,
         // 7-genre, 8-year, 9-country, 10-director, 11-soundtrack, 12-duration,
         // 13-actors, 14-description, 15-added by, 16-info, 17-rating
@@ -312,8 +352,9 @@
                 }
             }
             var info = match[16].match(/<div class="new_series">([\s\S]*?)<\/div>/);
+            title = trim(match[1]);
             page.appendItem(plugin.getDescriptor().id + ":showScreenshots:" + escape(match[5]) + ':' + escape(match[1]), 'video', {
-                title: new showtime.RichText(trim(match[1])),
+                title: new showtime.RichText(title),
                 icon: BASE_URL + escape(match[2]),
                 genre: genre,
                 year: +match[8],

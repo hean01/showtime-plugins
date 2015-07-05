@@ -1,5 +1,5 @@
 /**
- * megogo.net plugin for Showtime Media Center
+ * megogo.net plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -246,7 +246,7 @@
         if (json2) { // season
            for (var i in json2) {
                appendItem(page, json.video, PREFIX + ':season:' + json2[i].id + ':' +
-                   escape(json.video.title + ' - ' + json2[i].title +
+                   escape(json.video.title + String.fromCharCode(7) + ' - ' + json2[i].title +
                    (json2[i].title_orig ? ' | ' + json2[i].title_orig : '')),
                    json2[i].title + (json2[i].title_orig ? ' | ' +
                    json2[i].title_orig : '') + ' (' + json2[i].total_num + ' серий)',
@@ -461,7 +461,7 @@
         setPageHeader(page, unescape(title));
         var json = getJSON(page, API, '/videos/season?', 'id=' + id);
         for (var i=0; i < json.season.total_num; i++) {
-            page.appendItem(PREFIX + ':video:' + json.season.episode_list[i].id + ':' + json.season.episode_list[i].title, "video", {
+            page.appendItem(PREFIX + ':video:' + json.season.episode_list[i].id + ':' + escape(unescape(title) + ' - ' + json.season.episode_list[i].title), "video", {
                 title: json.season.episode_list[i].title,
                 icon: unescape(json.season.episode_list[i].image)
             });
@@ -483,21 +483,28 @@
             showtime.message("Не удается проиграть видео. Возможно видео доступно только по подписке, платное или не доступно для Вашего региона.", true, false);
             return;
         }
-	var counter = 0;
+        setPageHeader(page, unescape(json.title));
 	var s1 = json.src.match(/(.*)\/a\/0\//);
 	var s2 = json.src.match(/\/a\/0\/(.*)/);
-	var imdbid = 0;
+        var season = null, episode = null;
+        var series = unescape(title).split(String.fromCharCode(7));
+        title = series[0];
+        if (series[1]) {
+            series = series[1].split('-');
+            season = +series[1].match(/(\d+)/)[1];
+            episode = +series[2].match(/(\d+)/)[1];
+        }
+	var imdbid = getIMDBid(title);
+
         //showtime.print(showtime.JSONEncode(json));
         if (json.audio_tracks.length > 1) {
             for (var i in json.audio_tracks) {
-	        if (!counter) {
-                    setPageHeader(page, unescape(json.title));
-                    imdbid = getIMDBid(title);
-                }
                 var link = "videoparams:" + showtime.JSONEncode({
                     title: unescape(json.title) + ' (' + showtime.entityDecode(unescape(json.audio_tracks[i].lang)) + (json.audio_tracks[i].lang_orig ? '/' + showtime.entityDecode(unescape(json.audio_tracks[i].lang_orig)) : '')+')',
                     canonicalUrl: PREFIX + ":video:" + id + ":" + title,
                     imdbid: imdbid,
+                    season: season,
+                    episode: episode,
                     sources: [{
                         url: "hls:" + (s1 ? s1[1] +"/a/" + json.audio_tracks[i].index + "/" + s2[1] : json.src)
                     }]
@@ -505,7 +512,6 @@
                 page.appendItem(link, "video", {
                     title: unescape(json.title) + ' (' + showtime.entityDecode(unescape(json.audio_tracks[i].lang)) + (json.audio_tracks[i].lang_orig ? '/' + showtime.entityDecode(unescape(json.audio_tracks[i].lang_orig)) : '')+')'
                 });
-	        counter++;
             };
             return;
         }
@@ -514,6 +520,8 @@
             title: unescape(json.title),
             canonicalUrl: PREFIX + ":video:" + id + ":" + title,
             imdbid: getIMDBid(title),
+            season: season,
+            episode: episode,
             sources: [{
                 url: "hls:" + json.src
             }]	    

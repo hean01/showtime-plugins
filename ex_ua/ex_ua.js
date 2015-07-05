@@ -122,15 +122,26 @@
         page.type = 'video';
         page.loading = true;
         page.metadata.title = unescape(title);
-        var v = "videoparams:" + showtime.JSONEncode({
-        });
+
+        var season = null, episode = null;
+        var name = showtime.entityDecode(unescape(title)).toUpperCase();
+        if (name.match(/\.S\d\dE\d\d\./)) {
+            season = +name.match(/\.S(\d\d)E\d\d\./)[1];
+            episode = +name.match(/\.S\d\dE(\d\d)\./)[1];
+        } else if (name.match(/\.S\d\dE\d\d-/)) {
+            season = +name.match(/\.S(\d\d)E\d\d-/)[1];
+            episode = +name.match(/\.S\d\dE(\d\d)-/)[1];
+        }
+
         page.source = "videoparams:" + showtime.JSONEncode({
-            sources: [{
-                url: BASE_URL + unescape(url)
-            }],
             title: showtime.entityDecode(unescape(title)),
             canonicalUrl: PREFIX + ':play:' + url + ':' + title + ':' + imdbTitle,
-            imdbid: getIMDBid(imdbTitle)
+            imdbid: getIMDBid(imdbTitle),
+            season: season,
+            episode: episode,
+            sources: [{
+                url: BASE_URL + unescape(url)
+            }]
         });
         page.loading = false;
     });

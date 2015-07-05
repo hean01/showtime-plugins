@@ -564,13 +564,25 @@
         page.type = "video";
         page.loading = true;
         if (showtime.probe(BASE_URL + folderList[pos].directlink).result == 0) {
+            var season = null, episode = null;
+            var name = unescape(title).toUpperCase();
+            if (name.match(/\.S\d\dE\d\d\./)) {
+                season = +name.match(/\.S(\d\d)E\d\d\./)[1];
+                episode = +name.match(/\.S\d\dE(\d\d)\./)[1];
+            } else if (name.match(/\.S\d\dE\d\d-/)) {
+                season = +name.match(/\.S(\d\d)E\d\d-/)[1];
+                episode = +name.match(/\.S\d\dE(\d\d)-/)[1];
+            }
             page.source = "videoparams:" + showtime.JSONEncode({
                 title: unescape(title),
                 canonicalUrl: plugin.getDescriptor().id + ":play:" + title + ':' + pos,
                 imdbid: getIMDBid(folderList[pos].title),
+                season: season,
+                episode: episode,
                 sources: [{
                     url: BASE_URL + folderList[pos].directlink
-                }]
+                }],
+                no_fs_scan: true
             });
             page.loading = false;
             return;

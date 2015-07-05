@@ -534,6 +534,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":indexSeason:(.*):(.*)", function(page, title, blob) {
         setPageHeader(page, decodeURIComponent(title) + ')');
         page.loading = true;
+        var html = decodeURIComponent(blob);
         var links = new Array();
         var re = /"([0-9]+)":"([\S\s]*?)>"/g;
         var match = re.exec(linksBlob);
@@ -580,9 +581,17 @@
         };
 
         re = /<span onclick="showCode\(([0-9]+),this\);">([\S\s]*?)<\/span>/g;
-        var html = decodeURIComponent(blob);
         match2 = re.exec(html);
         while (match2) {
+            if (html.match(/серий/)) {
+                var num = html.match(/">(\d+) серий<\/span>/)[1];
+                for (var i = 1; i <= num; i++) {
+                    page.appendItem(links[match2[1]] + escape('&episode=' + i) + ":" + escape(decodeURIComponent(title) + ' - ' + i + ' cерия)'), 'video', {
+                        title: i + ' cерия'
+                    });
+                }
+                break;
+            }
             page.appendItem(links[match2[1]] + ":" + escape(decodeURIComponent(title) + ' - ' + match2[2] + ')'), 'video', {
                 title: match2[2]
             });
