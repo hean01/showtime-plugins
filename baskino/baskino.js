@@ -183,7 +183,7 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var title = showtime.entityDecode(unescape(title)).trim().split(String.fromCharCode(7))[0];
+        var title = showtime.entityDecode(unescape(title)).trim().split(String.fromCharCode(8194))[0];
         var resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(title).toString()).toString();
         var imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
         if (imdbid) return imdbid[1];
@@ -222,7 +222,7 @@
         if (!link)
             link = doc.response.url240;
         page.type = 'video';
-        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var series = unescape(title).trim().split(String.fromCharCode(8194));
         var season = null, episode = null;
         if (series[1]) {
             series = series[1].split('-');
@@ -259,7 +259,7 @@
             return;
         }
         page.type = "video";
-        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var series = unescape(title).trim().split(String.fromCharCode(8194));
         var season = null, episode = null;
         if (series[1]) {
             series = series[1].split('-');
@@ -283,7 +283,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":bk:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         page.type = "video";
-        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var series = unescape(title).trim().split(String.fromCharCode(8194));
         var season = null, episode = null;
         if (series[1]) {
             series = series[1].split('-');
@@ -312,7 +312,7 @@
         page.loading = true;
         var v = showtime.httpReq('http://kinostok.tv/embed' + unhash(url, hash1, hash2).match(/_video\/.*\//));
         page.type = "video";
-        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var series = unescape(title).trim().split(String.fromCharCode(8194));
         var season = null, episode = null;
         if (series[1]) {
             series = series[1].split('-');
@@ -338,7 +338,7 @@
         page.loading = true;
         var v = showtime.httpReq('http://media.meta.ua/players/getparam/?v=' + unescape(unescape(url).match(/value="fileID=(.*?)&/)[1]));
         page.type = "video";
-        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var series = unescape(title).trim().split(String.fromCharCode(8194));
         var season = null, episode = null;
         if (series[1]) {
             series = series[1].split('-');
@@ -365,7 +365,7 @@
         url = unescape(url).match(/;file=(.*?)&amp;/)[1];
         page.loading = true;
         page.type = "video";
-        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var series = unescape(title).trim().split(String.fromCharCode(8194));
         var season = null, episode = null;
         if (series[1]) {
             series = series[1].split('-');
@@ -396,7 +396,7 @@
         }));
         link = 'hls:' + link['manifest_m3u8']
         page.type = "video";
-        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var series = unescape(title).trim().split(String.fromCharCode(8194));
         var season = null, episode = null;
         if (series[1]) {
             series = series[1].split('-');
@@ -429,7 +429,7 @@
             return;
         }
         page.type = "video";
-        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var series = unescape(title).trim().split(String.fromCharCode(8194));
         var season = null, episode = null;
         if (series[1]) {
             series = series[1].split('-');
@@ -454,7 +454,7 @@
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString();
         page.type = "video";
-        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var series = unescape(title).trim().split(String.fromCharCode(8194));
         var season = null, episode = null;
         if (series[1]) {
             series = series[1].split('-');
@@ -485,7 +485,7 @@
             return;
         }
         page.type = "video";
-        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var series = unescape(title).trim().split(String.fromCharCode(8194));
         var season = null, episode = null;
         if (series[1]) {
             series = series[1].split('-');
@@ -509,7 +509,7 @@
         page.loading = true;
         var doc = showtime.httpReq(unescape(url)).toString();
         page.type = "video";
-        var series = unescape(title).trim().split(String.fromCharCode(7));
+        var series = unescape(title).trim().split(String.fromCharCode(8194));
         var season = null, episode = null;
         if (series[1]) {
             series = series[1].split('-');
@@ -648,7 +648,7 @@
             re = /<div id="episodes-([0-9]+)"([\S\s]*?)<\/div>/g;
             match = re.exec(response);
             while (match) {
-                page.appendItem(plugin.getDescriptor().id + ":indexSeason:" + encodeURIComponent(title + String.fromCharCode(7) + ' (Сезон ' + match[1]) + ':' + encodeURIComponent(match[2]), 'directory', {
+                page.appendItem(plugin.getDescriptor().id + ":indexSeason:" + encodeURIComponent(title + String.fromCharCode(8194) + '(Сезон ' + match[1]) + ':' + encodeURIComponent(match[2]), 'directory', {
                     title: 'Сезон ' + match[1]
                 });
                 match = re.exec(response);
@@ -810,20 +810,22 @@
         }
 
         //actors
-        page.appendItem("", "separator", {
-            title: 'В ролях:'
-        });
-        var actors = response.match(/"post-actors-list">([\S\s]*?)<\/td>/)[1];
-        re = /data\-person="([\S\s]*?)" href="([\S\s]*?)"/g;
-        html = re.exec(actors);
-        while (html) {
-            var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/engine/ajax/getActorData.php?name='+encodeURIComponent(html[1])));
-            page.appendItem(plugin.getDescriptor().id + ":indexURL:" + escape(html[2]), 'video', {
-                title: html[1],
-                icon: json.image
+        var actors = response.match(/"post-actors-list">([\S\s]*?)<\/td>/);
+        if (actors) {
+            page.appendItem("", "separator", {
+                title: 'В ролях:'
             });
+            re = /data\-person="([\S\s]*?)" href="([\S\s]*?)"/g;
             html = re.exec(actors);
-        };
+            while (html) {
+                var json = showtime.JSONDecode(showtime.httpReq(BASE_URL + '/engine/ajax/getActorData.php?name='+encodeURIComponent(html[1])));
+                page.appendItem(plugin.getDescriptor().id + ":indexURL:" + escape(html[2]), 'video', {
+                    title: html[1],
+                    icon: json.image
+                });
+                html = re.exec(actors);
+            };
+        }
 
         //related
         html = response.match(/<div class="related_news">([\S\s]*?)<\/li><\/ul>/);
