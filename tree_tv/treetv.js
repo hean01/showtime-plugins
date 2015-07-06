@@ -87,25 +87,51 @@
 
     // Search IMDB ID by title
     function getIMDBid(title) {
-        var title = showtime.entityDecode(unescape(title));
-        showtime.print(title);
-        title = title.split('/');
-        showtime.print(title);
-        var resp, imdbid = null;
-        if (title[1]) {
-            var reqTitle = title[1].trim();
-            showtime.print('Fetching IMDBID for: ' + reqTitle);
-            resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(reqTitle)).toString();
+        var imdbid = null;
+        var title = showtime.entityDecode(unescape(title)).toString();
+        showtime.print('Splitting the title for IMDB ID request: ' + title);
+        var splittedTitle = title.split('|');
+        if (splittedTitle.length == 1)
+            splittedTitle = title.split('/');
+        if (splittedTitle.length == 1)
+            splittedTitle = title.split('-');
+        showtime.print('Splitted title is: ' + splittedTitle);
+        if (splittedTitle[1]) { // first we look by original title
+            var cleanTitle = splittedTitle[1].trim();
+            var match = cleanTitle.match(/[^\(|\[|\.]*/);
+            if (match)
+                cleanTitle = match;
+            showtime.print('Trying to get IMDB ID for: ' + cleanTitle);
+            resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(cleanTitle)).toString();
             imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+            if (!imdbid && cleanTitle.indexOf('/') != -1) {
+                splittedTitle2 = cleanTitle.split('/');
+                for (var i in splittedTitle2) {
+                    showtime.print('Trying to get IMDB ID for: ' + splittedTitle2[i].trim());
+                    resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(splittedTitle2[i].trim())).toString();
+                    imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+                    if (imdbid) break;
+                }
+            }
         }
-        if (!imdbid) {
-            var reqTitle = title[0].trim();
-            showtime.print('Fetching IMDBID for: ' + reqTitle);
-            resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(reqTitle)).toString();
-            imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+        if (!imdbid)
+            for (var i in splittedTitle) {
+                if (i == 1) continue; // we already checked that
+                var cleanTitle = splittedTitle[i].trim();
+                var match = cleanTitle.match(/[^\(|\[|\.]*/);
+                if (match)
+                    cleanTitle = match;
+                showtime.print('Trying to get IMDB ID for: ' + cleanTitle);
+                resp = showtime.httpReq('http://www.imdb.com/find?ref_=nv_sr_fn&q=' + encodeURIComponent(cleanTitle)).toString();
+                imdbid = resp.match(/<a href="\/title\/(tt\d+)\//);
+                if (imdbid) break;
+            }
+
+        if (imdbid) {
+            showtime.print('Got following IMDB ID: ' + imdbid[1]);
+            return imdbid[1];
         }
-        showtime.print(imdbid);
-        if (imdbid) return imdbid[1];
+        showtime.print('Cannot get IMDB ID :(');
         return imdbid;
     };
 
@@ -117,12 +143,12 @@
         var series = fullTitle.trim().split('/');
         var season = null, episode = null;
         var name = unescape(title).toUpperCase();
-        if (name.match(/\.S\d\dE\d\d/)) {
-            season = +name.match(/\.S(\d\d)E\d\d/)[1];
-            episode = +name.match(/\.S\d\dE(\d\d)/)[1];
-        } else if (name.match(/\.S\d\dE\d\d-/)) {
-            season = +name.match(/\.S(\d\d)E\d\d-/)[1];
-            episode = +name.match(/\.S\d\dE(\d\d)-/)[1];
+        var season = name.match(/S(\d{1,2})E(\d{3})/); // SxExxx, SxxExxx
+        if (!season) season = name.match(/S(\d{1,2})E(\d{2})/); // SxExx, SxxExx
+        if (season) {
+            episode = +season[2];
+            season = +season[1];
+            showtime.print('Season: ' + season + ' Episode: ' + episode);
         }
         if (!season) { // try to extract from main title
             series = fullTitle.match(/Сезон (\d+)/);
