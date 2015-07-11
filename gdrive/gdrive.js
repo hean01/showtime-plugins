@@ -55,6 +55,12 @@
         plugin.addHTTPAuth('https://docs.google.com.*', function(req) {
             req.setHeader('Authorization', store.token_type + ' ' + store.access_token);
         });
+        plugin.addHTTPAuth('.*\\.googleusercontent\\.com', function(req) {
+            req.setHeader('Authorization', store.token_type + ' ' + store.access_token);
+        });
+        plugin.addHTTPAuth('.*\\.googleusercontent\\.com.*', function(req) {
+            req.setHeader('Authorization', store.token_type + ' ' + store.access_token);
+        });
         headersAreSet = true;
     };
 
@@ -209,14 +215,22 @@
                 if (json.items[i].mimeType != 'application/vnd.google-apps.folder') {
                     var url = '';
                     if (json.items[i].webContentLink)
-                        url = json.items[i].webContentLink;
+                        url = json.items[i].downloadUrl;
                     if (json.items[i].fileExtension && json.items[i].fileExtension.toUpperCase() == 'PLX')
                         url = 'navi-x:playlist:playlist:' + escape(url)
                     var type = json.items[i].mimeType.split('/')[0];
                     if (!url) url = '';
+
+                    url = "videoparams:" + showtime.JSONEncode({
+                        title: json.items[i].title,
+                        sources: [{
+                            url: url
+                        }]
+                    });
                     page.appendItem(url, 'video', {
 	                title: new showtime.RichText(json.items[i].title + colorStr(bytesToSize(json.items[i].fileSize ? json.items[i].fileSize : json.items[i].quotaBytesUsed), blue) + ' ' + dateToHuman(json.items[i].modifiedDate)),
-                        icon: json.items[i].thumbnailLink ? json.items[i].thumbnailLink : json.items[i].iconLink
+                        icon: json.items[i].thumbnailLink ? json.items[i].thumbnailLink : json.items[i].iconLink,
+                        description: new showtime.RichText(json.items[i].title + colorStr(bytesToSize(json.items[i].fileSize ? json.items[i].fileSize : json.items[i].quotaBytesUsed), blue) + ' ' + dateToHuman(json.items[i].modifiedDate))
 	            });
                     page.entries++;
                 }
