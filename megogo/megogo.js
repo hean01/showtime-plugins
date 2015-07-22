@@ -246,7 +246,7 @@
         if (json2) { // season
            for (var i in json2) {
                appendItem(page, json.video, PREFIX + ':season:' + json2[i].id + ':' +
-                   escape(json.video.title + String.fromCharCode(7) + ' - ' + json2[i].title +
+                   escape(json.video.title + String.fromCharCode(8194) + '- ' + json2[i].title +
                    (json2[i].title_orig ? ' | ' + json2[i].title_orig : '')),
                    json2[i].title + (json2[i].title_orig ? ' | ' +
                    json2[i].title_orig : '') + ' (' + json2[i].total_num + ' серий)',
@@ -484,17 +484,18 @@
             return;
         }
         setPageHeader(page, unescape(json.title));
+        page.loading = true;
 	var s1 = json.src.match(/(.*)\/a\/0\//);
 	var s2 = json.src.match(/\/a\/0\/(.*)/);
         var season = null, episode = null;
-        var series = unescape(title).split(String.fromCharCode(7));
-        title = series[0];
+        var series = unescape(title).split(String.fromCharCode(8194));
+        var imdbTitle = series[0];
         if (series[1]) {
             series = series[1].split('-');
             season = +series[1].match(/(\d+)/)[1];
             episode = +series[2].match(/(\d+)/)[1];
         }
-	var imdbid = getIMDBid(title);
+	var imdbid = getIMDBid(imdbTitle);
 
         //showtime.print(showtime.JSONEncode(json));
         if (json.audio_tracks.length > 1) {
@@ -513,6 +514,7 @@
                     title: unescape(json.title) + ' (' + showtime.entityDecode(unescape(json.audio_tracks[i].lang)) + (json.audio_tracks[i].lang_orig ? '/' + showtime.entityDecode(unescape(json.audio_tracks[i].lang_orig)) : '')+')'
                 });
             };
+            page.loading = false;
             return;
         }
         page.type = "video";
@@ -526,6 +528,7 @@
                 url: "hls:" + json.src
             }]	    
         });
+        page.loading = false;
     });
 
     // Shows videos of the collection

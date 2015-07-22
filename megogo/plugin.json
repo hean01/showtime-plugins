@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "MEGOGO.NET",
 	"synopsis": "MEGOGO.NET - лучший онлайн кинотеатр с бесплатным легальным контентом",
-	"version": "0.9.1",
+	"version": "0.9.2",
         "file": "megogo.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
