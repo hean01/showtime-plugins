@@ -56,7 +56,12 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            v = showtime.httpReq((url.substr(0, 4) != 'http' ? BASE_URL : '') + unescape(url) + '?p=' + fromPage + Order + Quality + Duration + Age).toString();
+            try {
+               v = showtime.httpReq((url.substr(0, 4) != 'http' ? BASE_URL : '') + unescape(url) + '?p=' + fromPage + Order + Quality + Duration + Age).toString();
+            } catch(err) {
+                page.loading = false;
+                return tryToSearch = false
+            }
             page.loading = false;
             re = /<div class="col thumb_video"([\S\s]*?)class="pagination"/;
             scrape(page);
@@ -335,7 +340,7 @@
     function scrape(page, html) {
         var bw = re.exec(v)[1];
         // 1-link, 2-title, 3-icon, 4-HDflag, 5-duration, 6-views, 7-was added
-        re = /<a href="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?<ul class="thumb-info_top">([\S\s]*?)div class="bottom">[\S\s]*?"icon icon-timer"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-eye"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-up"><\/i>([\S\s]*?)<\/li>/g;
+        re = /button><a href="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?<ul class="thumb-info_top">([\S\s]*?)div class="bottom">[\S\s]*?"icon icon-timer"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-eye"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-up"><\/i>([\S\s]*?)<\/li>/g;
         var match = re.exec(bw);
         while (match) {
             page.appendItem(plugin.getDescriptor().id + ':video:' + escape(match[1]) + ":" + escape(match[2]), 'video', {

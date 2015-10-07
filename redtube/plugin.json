@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "Redtube",
 	"synopsis": "Redtube: Home of free porn videos",
-	"version": "2.1.1",
+	"version": "2.1.2",
         "file": "redtube.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",

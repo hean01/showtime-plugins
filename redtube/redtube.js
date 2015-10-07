@@ -85,7 +85,7 @@
         setPageHeader(page, 'Redtube - Pornstar Directory');
 	var fromPage = 1, tryToSearch = true;
         // 1-link, 2-title, 3-icon, 4-num of videos
-        var re = /<a href="([^"]+)" title="([^"]+)[\S\s]*?onclick="trackByCookie[\S\s]*?src="([^"]+)[\S\s]*?class="pornstar-stats">([\d^]+)\s/g;
+        var re = /<a href="([^"]+)" title="([^"]+)" onclick="trackByCookie[\S\s]*?src="([^"]+)[\S\s]*?class="pornstar-stats">([\d^]+)\s/g;
 
         function loader() {
             if (!tryToSearch) return false;
@@ -93,8 +93,8 @@
             var response = showtime.httpReq(url+'?page='+fromPage).toString();
             page.loading = false;
             if (fromPage == 1) {
-                match = response.match(/categoryHeading">[\S\s^]*?([\d].*)\)/);
-                if (match) if (page.metadata) page.metadata.title = "Redtube - Pornstar Directory - found (" + match[1].replace(",", "") + ") videos"
+                match = response.match(/div><h1>([\S\s]*?)<\/h1>/);
+                if (match) if (page.metadata) page.metadata.title = 'Redtube - '+ match[1].trim()
             };
 
             var match = re.exec(response);
@@ -346,11 +346,11 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*)", function(page, video_id, title) {
         page.loading = true;
-	var link = showtime.httpReq("http://www.redtube.com/" + video_id).toString().match(/vpVideoSource[\S\s]*?"([\S\s]*?)"/);
+	var link = showtime.httpReq("http://www.redtube.com/" + video_id).toString().match(/<source src="([\S\s]*?)"/);
         page.loading = false;
         page.type = "video";
         page.source = "videoparams:" + showtime.JSONEncode({
-            title: unescape(title),
+            title: showtime.entityDecode(unescape(title)),
             canonicalUrl: plugin.getDescriptor().id + ":play:" + video_id + ":" + title,
             sources: [{
                 url: unescape(link[1]).replace(/\\/g,'')
