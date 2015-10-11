@@ -1398,9 +1398,10 @@
 
     plugin.addURI(plugin.getDescriptor().id + ":streamlive:(.*):(.*)", function(page, url, title) {
         page.loading = true;
+        //showtime.print(unescape(url));
         var doc = showtime.httpReq(unescape(url)).toString();
         if (!doc.match(/getJSON\("([\s\S]*?)"/)) {
-            showtime.trace(doc.match(/Question:([\s\S]*?)<br/));
+            showtime.trace('Question is: ' + doc.match(/Question:([\s\S]*?)<br/));
             var match = doc.match(/Question: \((\d+) (\-|\+) (\d+)\) x (\d+).*=/);
             if (match) {
                 if (match[2] == '+')
@@ -1415,7 +1416,9 @@
                 })
                 doc = showtime.httpReq(unescape(url)).toString();
             } else {
-                match = doc.match(/[\s\S]*?in the box: ([\s\S]*?)<br/);
+                match = null;
+                if (doc.indexOf('in the box:') > -1)
+                    match = doc.match(/[\s\S]*?in the box: ([\s\S]*?)<br/);
                 if (match) {
                     captcha = match[1];
                     showtime.trace('Sending word: ' + captcha);
@@ -1428,28 +1431,41 @@
                 }
             }
         }
+        var direct = doc.match(/<source src="([\s\S]*?)"/);
         var token = doc.match(/getJSON\("([\s\S]*?)"/);
-        if (!token) {
+        if (!token && !direct) {
             showtime.trace('Cannot pass captcha: ' + doc.match(/Question:([\s\S]*?)<br/));
             page.error('Cannot pass captcha. Return back and retry :(');
             return;
         }
-        token = showtime.JSONDecode(showtime.httpReq(token[1] + '&_=' +
-             token[1].match(/id=(\d+)/)[1] + Date.now().toString().substr(10, 3), {
-                 headers: {
-                     Host: 'www.streamlive.to',
-                     Referer: unescape(url),
-                     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36',
-                     'X-Requested-With': 'XMLHttpRequest'
-                 }
-        })).token;
-        var streamer = doc.match(/streamer: "([\s\S]*?)"/)[1].replace(/\\/g, '');
-        var param = ' app=' + doc.match(/streamer: "[\s\S]*?(edge[\s\S]*?)"/)[1].replace(/\\/g, '');
-        param += ' playpath=' + doc.match(/file: "([\s\S]*?)\./)[1];
-        param += ' swfUrl=http://www.streamlive.to/ads/streamlive.swf';
-        param += ' tcUrl=' + streamer;
-        param += ' pageUrl=' + url;
-        param += ' token=' + token;
+        no_subtitle_scan = true;
+        var param = '';
+        if (direct) {
+            streamer = direct[1];
+            no_subtitle_scan = false;
+            plugin.addHTTPAuth('.*od\\.streamlive\\.to.*', function(req) {
+                req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+                req.setHeader('Host', 'od.streamlive.to');
+                req.setHeader('Referer', streamer);
+            });
+        } else {
+            token = showtime.JSONDecode(showtime.httpReq(token[1] + '&_=' +
+                 token[1].match(/id=(\d+)/)[1] + Date.now().toString().substr(10, 3), {
+                     headers: {
+                         Host: 'www.streamlive.to',
+                         Referer: unescape(url),
+                         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36',
+                         'X-Requested-With': 'XMLHttpRequest'
+                     }
+            })).token;
+            var streamer = doc.match(/streamer: "([\s\S]*?)"/)[1].replace(/\\/g, '');
+            param = ' app=' + doc.match(/streamer: "[\s\S]*?(edge[\s\S]*?)"/)[1].replace(/\\/g, '');
+            param += ' playpath=' + doc.match(/file: "([\s\S]*?)\./)[1];
+            param += ' swfUrl=http://www.streamlive.to/ads/streamlive.swf';
+            param += ' tcUrl=' + streamer;
+            param += ' pageUrl=' + url;
+            param += ' token=' + token;
+        }
         page.type = 'video';
         page.source = "videoparams:" + showtime.JSONEncode({
             title: unescape(title),
@@ -1457,7 +1473,7 @@
             sources: [{
                 url: streamer + param
             }],
-            no_subtitle_scan: true
+            no_subtitle_scan: no_subtitle_scan
         });
         page.loading = false;
     });
@@ -1498,9 +1514,12 @@
                     continue;
                 }
                 var link = plugin.getDescriptor().id + ':streamlive:' + escape(match[4]) + ':' + escape(match[2]);
+                var iUrl = match[1];
+                if (iUrl && (iUrl.substr(0, 2) == '//'))
+                    iUrl = 'http:' + iUrl;
                 var item = page.appendItem(link, "video", {
                     title: match[2],
-                    icon: match[1],
+                    icon: iUrl,
                     description: new showtime.RichText(coloredStr('Description: ', orange) + match[5].replace(/\s{2,}/g, ' ').replace(/\n/g, '') +
                         coloredStr('\nViewers: ', orange) + match[6] +
                         coloredStr('\nTotal views: ', orange) + match[7] +
@@ -1652,6 +1671,43 @@
         page.loading = false;
     });
 
+    function unpack(str) {
+
+        function get_chunks(str) {
+            var chunks = str.match(/eval\(\(?function\(.*?(,0,\{\}\)\)|split\('\|'\)\)\))($|\n)/g);
+            return chunks ? chunks : [];
+        };
+
+        function detect(str) {
+            return (get_chunks(str).length > 0);
+        }
+
+        function unpack_chunk(str) {
+            var unpacked_source = '';
+            var __eval = eval;
+            if (detect(str)) {
+                try {
+                    eval = function (s) { unpacked_source += s; return unpacked_source; };
+                    __eval(str);
+                    if (typeof unpacked_source == 'string' && unpacked_source) {
+                        str = unpacked_source;
+                    }
+                } catch (e) {
+                    // well, it failed. we'll just return the original, instead of crashing on user.
+               }
+            }
+            eval = __eval;
+            return str;
+        }
+
+        var chunks = get_chunks(str);
+        for(var i = 0; i < chunks.length; i++) {
+            chunk = chunks[i].replace(/\n$/, '');
+            str = str.split(chunk).join(unpack_chunk(chunk));
+        }
+        return str;
+    }
+
     plugin.addURI(plugin.getDescriptor().id + ":playgoAtDee:(.*):(.*)", function(page, url, title) {
         page.loading = true;
         page.metadata.title = unescape(title);
@@ -1696,12 +1752,8 @@
                 if (streamer) {
                     var link = streamer[1] + ' playpath=' + doc.match(/'file', '([\s\S]*?)'/)[1] + ' swfUrl=http://static3.sawlive.tv/player.swf pageUrl=' + referer;
                 } else { // page is crypted
-                    doc = doc.substr(doc.lastIndexOf('eval('), doc.length);
-                    if (doc.trim()) {
-                        doc = doc.match(/eval\(function([\S\s]*?)\}\(([\S\s]*?)$/);
-                        var referer;
-                        eval('try { function decryptParams' + doc[1] + '}; referer = (decryptParams(' + doc[2] + '} catch (err) {}');
-                        referer = unescape(referer).match(/src="([\s\S]*?)"/)[1];
+                        var tmp = unescape(unpack(doc)).replace(/document\.write\(unescape\(\'/g, '').replace(/\'\)\);/g, '').replace(/\n/g, '');
+                        var referer = tmp.match(/src="([\s\S]*?)"/)[1];
                         doc = showtime.httpReq(referer, {
                             headers: {
                                 Host: 'www.sawlive.tv',
@@ -1721,7 +1773,6 @@
                                 var link = streamer + ' playpath=' + playpath + ' swfUrl=http://static3.sawlive.tv/player.swf pageUrl=' + referer;
                             }
                         }
-                    }
                 }
             }
         }
