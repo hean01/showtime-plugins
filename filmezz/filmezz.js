@@ -124,6 +124,43 @@
         }
     }
 
+    function unpack(str) {
+
+        function get_chunks(str) {
+            var chunks = str.match(/eval\(\(?function\(.*?(,0,\{\}\)\)|split\('\|'\)\)\))($|\n)/g);
+            return chunks ? chunks : [];
+        };
+
+        function detect(str) {
+            return (get_chunks(str).length > 0);
+        }
+
+        function unpack_chunk(str) {
+            var unpacked_source = '';
+            var __eval = eval;
+            if (detect(str)) {
+                try {
+                    eval = function (s) { unpacked_source += s; return unpacked_source; };
+                    __eval(str);
+                    if (typeof unpacked_source == 'string' && unpacked_source) {
+                        str = unpacked_source;
+                    }
+                } catch (e) {
+                    // well, it failed. we'll just return the original, instead of crashing on user.
+               }
+            }
+            eval = __eval;
+            return str;
+        }
+
+        var chunks = get_chunks(str);
+        for(var i = 0; i < chunks.length; i++) {
+            chunk = chunks[i].replace(/\n$/, '');
+            str = str.split(chunk).join(unpack_chunk(chunk));
+        }
+        return str;
+    }
+
     // Index page
     plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*):(.*):(.*)", function(page, hoster, url, title, info) {
         var canonicalUrl = plugin.getDescriptor().id + ":play:" + hoster + ':' + url + ':' + title;
@@ -132,6 +169,7 @@
         var doc = showtime.httpReq(checkLink(unescape(url)), {
             noFollow: true
         });
+        showtime.print(checkLink(doc.headers.Location));
         doc = showtime.httpReq(checkLink(doc.headers.Location), {
             noFollow: true
         });
@@ -167,27 +205,12 @@
                        tmp = url.match(/<param name="src" value="([\S\s]*?)"/);
                 }
                 break;
-            case 'Flashx.tv':
-                var pageUrl = doc.toString().match(/<IFRAME SRC="([\S\s]*?)"/)[1];
-                url = showtime.httpReq(pageUrl).toString();
-                var tmp = url.match(/,\{file: "([\S\s]*?)"/);
-                if (tmp)
-                    url = tmp[1];
-                else {
-                    url = url.match(/<script type='text\/javascript'>eval\(function([\S\s]*?)\}\(([\S\s]*?)<\/script>/);
-                    var decryptedUrl;
-                    eval('try { function decryptParams' + url[1] +
-                        '}; decryptedUrl = (decryptParams(' + url[2] + '} catch (err) {}');
-                    url = decryptedUrl.match(/file:"([\S\s]*?)"/)[1];
-                    url = showtime.httpReq(url).toString().match(/<meta base="([\S\s]*?)"[\S\s]*?<video src="([\S\s]*?)"/);
-                    url = url[1] + ' pageUrl=' + pageUrl + ' swfUrl=http://static.flashx.tv/player6/jwplayer.flash.swf ' + ' playpath=' + url[2];
-                }
-                break;
             case 'Streamin.To':
                 url = showtime.httpReq(doc.toString().match(/<IFRAME SRC="([\S\s]*?)"/)[1]).toString();
                 url = url.match(/streamer: "([\S\s]*?)"/)[1] + '/mp4:' + url.match(/file: "([\S\s]*?)"/)[1];
                 break;
             case 'Letwatch.us':
+            case 'Allvid.ch':
                 url = showtime.httpReq(doc.toString().match(/<IFRAME SRC="([\S\s]*?)"/)[1]).toString();
                 var tmp = url.match(/file:"([\S\s]*?)"/);
                 if (tmp)
@@ -202,6 +225,26 @@
                 break;
             case 'Vidzi.tv':
                 url = 'hls:' + showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/file: "([\S\s]*?)"/)[1];
+                break;
+            case 'Flashx.tv':
+                var param = showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/name="op" value="([\S\s]*?)"[\S\s]*?name="id" value="([\S\s]*?)"[\S\s]*?name="fname" value="([\S\s]*?)"[\S\s]*?name="hash" value="([\S\s]*?)"/);
+                if (param) {
+                    sleep(page, 6000);
+                    url = showtime.httpReq(checkLink(doc.headers.Location), {
+                         postdata: {
+                             op:param[1],
+                             usr_login:'',
+                             id:param[2],
+                             fname:param[3],
+                             referer:checkLink(doc.headers.Location),
+                             hash:param[4]
+                         }, debug: 1
+                    }).toString();
+                    url = unpack(url).match(/file:"([\S\s]*?)"/)[1];
+                } else {
+                    page.error("Can't get the link :(");
+                    return;
+                }
                 break;
             case 'VidToMe':
                 var param = showtime.httpReq(checkLink(doc.headers.Location)).toString().match(/name="op" value="([\S\s]*?)"[\S\s]*?name="id" value="([\S\s]*?)"[\S\s]*?name="fname" value="([\S\s]*?)"[\S\s]*?name="hash" value="([\S\s]*?)"/);
