@@ -68,7 +68,7 @@
         var text = '';
         if (showDialog) {
            text = 'Введите email и пароль';
-           logged = false;
+           config = users = logged = false;
         }
 
         if (!logged) {

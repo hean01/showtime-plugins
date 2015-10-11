@@ -19,7 +19,6 @@
 
 (function(plugin) {
     var PREFIX = 'ex_ua';
-    var BASE_URL = 'http://www.ex.ua';
     var logo = plugin.path + "logo.png";
     var doc;
     var service = plugin.createService(plugin.getDescriptor().id, PREFIX + ":start", "video", true, logo);
@@ -38,6 +37,10 @@
         ['kk', 'қазақ']
     ], function(l) {
         service.lang = l;
+    });
+
+    settings.createString('baseUrl', "Base URL without '/' at the end", 'http://www.ex.ua', function(v) {
+        service.baseUrl = v;
     });
 
     function getType(type) {
@@ -81,7 +84,7 @@
     }
 
     function checkLink(url) {
-        return url.substr(0, 4) == 'http' ? url : BASE_URL + url;
+        return url.substr(0, 4) == 'http' ? url : service.baseUrl + url;
     }
 
     function setPageHeader(page, title) {
@@ -166,7 +169,7 @@
             season: season,
             episode: episode,
             sources: [{
-                url: BASE_URL + unescape(url)
+                url: service.baseUrl + unescape(url)
             }]
         });
         page.loading = false;
@@ -263,7 +266,7 @@
                                 icon: logo
                             });
                         } else
-                            page.appendItem(BASE_URL + match[1], type, {
+                            page.appendItem(service.baseUrl + match[1], type, {
                                 title: showtime.entityDecode(match[2]),
                                 icon: logo
                             });
@@ -339,7 +342,7 @@
     });
 
     plugin.addURI(PREFIX + ":start", function(page) {
-        getDoc(page, BASE_URL);
+        getDoc(page, service.baseUrl);
         setPageHeader(page, doc.match(/<title>([\S\s]*?)<\/title>/)[1]);
         var match = doc.match(/alt='EX'>[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)[\S\s]*?<a href=[\S\s]*?>([^\<]+)/);
         page.appendItem(PREFIX + ':index:/view/81708', 'directory', {
@@ -381,7 +384,7 @@
     });
 
     function getDoc(page, url) {
-        if (url.substr(0, 4) != 'http') url = BASE_URL + url;
+        if (url.substr(0, 4) != 'http') url = service.baseUrl + url;
         page.loading = true;
         doc = showtime.httpReq(url, {
             headers: {

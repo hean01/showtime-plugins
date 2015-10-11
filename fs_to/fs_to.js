@@ -18,12 +18,17 @@
  */
 
 (function(plugin) {
-    var BASE_URL = 'http://fs.to';
     var logo = plugin.path + "logo.jpg";
 
     var folderList = [];
 
     var service = plugin.createService(plugin.getDescriptor().id, plugin.getDescriptor().id + ":start", "video", true, logo);
+
+    var settings = plugin.createSettings(plugin.getDescriptor().id, logo, plugin.getDescriptor().synopsis);
+    settings.createDivider('Settings');
+    settings.createString('baseUrl', "Base URL without '/' at the end", 'http://fs.to', function(v) {
+        service.baseUrl = v;
+    });
 
     function setPageHeader(page, title) {
         if (page.metadata) {
@@ -134,7 +139,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":listRoot:(.*):(.*)", function(page, url, title) {
         title = unescape(title).replace(/(<([^>]+)>)/ig).replace(/undefined/g,'');
         setPageHeader(page, title);
-        var response = showtime.httpReq(BASE_URL + url).toString();
+        var response = showtime.httpReq(service.baseUrl + url).toString();
 
         // Scrape icon
 	var icon = response.match(/<link rel="image_src" href="([^"]+)"/);
@@ -208,7 +213,7 @@
         // Scrape trailer
         htmlBlock = response.match(/window\.location\.hostname \+ '([\S\s]*?)'/);
         if (htmlBlock) {
-            page.appendItem(BASE_URL + htmlBlock[1], "video", {
+            page.appendItem(service.baseUrl + htmlBlock[1], "video", {
                 title: 'Трейлер',
                 icon: icon
             });
@@ -241,7 +246,7 @@
                 page.appendItem("", "separator", {
                     title: 'Год'
                 });
-                page.appendItem(plugin.getDescriptor().id + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + ':no:&sort=rating', "directory", {
+                page.appendItem(plugin.getDescriptor().id + ":index:" + escape(service.baseUrl + year[1]) + ":" + escape(year[2]) + ':no:&sort=rating', "directory", {
                     title: year[2]
                 });
             } else { // handle as serials
@@ -250,7 +255,7 @@
                     page.appendItem("", "separator", {
                         title: 'Год'
                     });
-                    page.appendItem(plugin.getDescriptor().id + ":index:" + escape(BASE_URL + year[1]) + ":" + escape(year[2]) + ':no:&sort=rating', "directory", {
+                    page.appendItem(plugin.getDescriptor().id + ":index:" + escape(service.baseUrl + year[1]) + ":" + escape(year[2]) + ':no:&sort=rating', "directory", {
                         title: year[2]
                     });
                 }
@@ -267,7 +272,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(plugin.getDescriptor().id + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по жанру: '+m[2]) + ':no:&sort=year', "directory", {
+                    page.appendItem(plugin.getDescriptor().id + ":index:" + escape(service.baseUrl + m[1]) + ":" + escape('Отбор по жанру: '+m[2]) + ':no:&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -283,7 +288,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<\/span>([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(plugin.getDescriptor().id + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по стране: '+trim(showtime.entityDecode(m[2]))) + ':no:&sort=year', "directory", {
+                    page.appendItem(plugin.getDescriptor().id + ":index:" + escape(service.baseUrl + m[1]) + ":" + escape('Отбор по стране: '+trim(showtime.entityDecode(m[2]))) + ':no:&sort=year', "directory", {
                         title: trim(showtime.entityDecode(m[2]))
                     });
                     m = re.exec(htmlBlock[1]);
@@ -300,7 +305,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(plugin.getDescriptor().id + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по режиссеру: '+m[2]) + ':no:&sort=year', "directory", {
+                    page.appendItem(plugin.getDescriptor().id + ":index:" + escape(service.baseUrl + m[1]) + ":" + escape('Отбор по режиссеру: '+m[2]) + ':no:&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -316,7 +321,7 @@
                 var re = /<a href="([\S\s]*?)"[\S\s]*?<span itemprop="name">([\S\s]*?)<\/span>/g;
                 var m = re.exec(htmlBlock[1]);
                 while (m) {
-                    page.appendItem(plugin.getDescriptor().id + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по актеру: '+m[2]) + ':no:&sort=year', "directory", {
+                    page.appendItem(plugin.getDescriptor().id + ":index:" + escape(service.baseUrl + m[1]) + ":" + escape('Отбор по актеру: '+m[2]) + ':no:&sort=year', "directory", {
                         title: m[2]
                     });
                     m = re.exec(htmlBlock[1]);
@@ -331,7 +336,7 @@
                     var re = /<a href="([\S\s]*?)"[\S\s]*?<span>([\S\s]*?)<\/span>/g;
                     var m = re.exec(htmlBlock[1]);
                     while (m) {
-                        page.appendItem(plugin.getDescriptor().id + ":index:" + escape(BASE_URL + m[1]) + ":" + escape('Отбор по ведущему: '+m[2]) + ':no:&sort=year', "directory", {
+                        page.appendItem(plugin.getDescriptor().id + ":index:" + escape(service.baseUrl + m[1]) + ":" + escape('Отбор по ведущему: '+m[2]) + ':no:&sort=year', "directory", {
                             title: m[2]
                         });
                         m = re.exec(htmlBlock[1]);
@@ -366,7 +371,7 @@
 
             function loader() {
                 if (!tryToSearch) return false;
-                commented = showtime.httpReq(BASE_URL + '/review/list/' + id + '?loadedcount=' + counter).toString();
+                commented = showtime.httpReq(service.baseUrl + '/review/list/' + id + '?loadedcount=' + counter).toString();
                 if (!counter)
                     var count = commented.match(/<p class="b-item-material-comments__count">([\S\s]*?)<\/p>/);
                     if (!count)
@@ -426,8 +431,8 @@
 
     function processAjax(page, url, folder, title, quality) {
         page.loading = true;
-        //showtime.print(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder);
-        var response = showtime.httpReq(BASE_URL + unescape(url) + '?ajax&blocked=0&folder=' + folder).toString();
+        //showtime.print(service.baseUrl + unescape(url) + '?ajax&blocked=0&folder=' + folder);
+        var response = showtime.httpReq(service.baseUrl + unescape(url) + '?ajax&blocked=0&folder=' + folder).toString();
         response = response.substr(response.indexOf('class="filelist'), response.lastIndexOf('</ul>'));
         response = response.replace(/<ul class="filelist([\s\S]*?)<\/ul>/g, '');
         // 1-type(folder/file), 2-body
@@ -458,7 +463,7 @@
                     });
                     pos++;
                 } else {
-                    page.appendItem(BASE_URL + direct_link, getType(direct_link.split('.').pop()), {
+                    page.appendItem(service.baseUrl + direct_link, getType(direct_link.split('.').pop()), {
                         title: new showtime.RichText(name + ' ' + colorStr(size, blue))
                     });
                 }
@@ -558,12 +563,12 @@
     var playOnlineUrl;
     plugin.addURI(plugin.getDescriptor().id + ":playOnline:(.*)", function(page, title) {
         page.loading = true;
-        var response = showtime.httpReq(BASE_URL + playOnlineUrl).toString();
+        var response = showtime.httpReq(service.baseUrl + playOnlineUrl).toString();
         page.loading = false;
         var url = response.match(/playlist: \[[\S\s]*?url: '([^']+)/) // Some clips autoplay
         if (!url) {
             page.loading = true;
-            response = showtime.httpReq(BASE_URL + response.match(/<div id="page-item-viewonline"[\S\s]*?<a href="([^"]+)/)[1]).toString();
+            response = showtime.httpReq(service.baseUrl + response.match(/<div id="page-item-viewonline"[\S\s]*?<a href="([^"]+)/)[1]).toString();
             page.loading = false;
             response = response.match(/<a id="[\S\s]*?" href="([\S\s]*?)" title="([\S\s]*?)"/);
             if (!response) {
@@ -571,7 +576,7 @@
                 return;
             }
             page.loading = true;
-            url = showtime.httpReq(BASE_URL + response[1]).toString().match(/playlist: \[[\S\s]*?url: '([^']+)/);
+            url = showtime.httpReq(service.baseUrl + response[1]).toString().match(/playlist: \[[\S\s]*?url: '([^']+)/);
             page.loading = false;
         }
         page.type = "video";
@@ -580,7 +585,7 @@
             imdbid: getIMDBid(title),
             canonicalUrl: plugin.getDescriptor().id + ":playOnline:" + title,
             sources: [{
-                url: BASE_URL + url[1]
+                url: service.baseUrl + url[1]
             }]
         });
     });
@@ -589,7 +594,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":play:(.*):(.*)", function(page, title, pos) {
         page.type = "video";
         page.loading = true;
-        if (showtime.probe(BASE_URL + folderList[pos].directlink).result == 0) {
+        if (showtime.probe(service.baseUrl + folderList[pos].directlink).result == 0) {
             var season = null, episode = null;
             var name = unescape(title).toUpperCase();
             var series = name.match(/S(\d{1,2})E(\d{3})/); // SxExxx, SxxExxx
@@ -606,7 +611,7 @@
                 season: season,
                 episode: episode,
                 sources: [{
-                    url: BASE_URL + folderList[pos].directlink
+                    url: service.baseUrl + folderList[pos].directlink
                 }],
                 no_fs_scan: true
             });
@@ -614,7 +619,7 @@
             return;
         }
         page.loading = true;
-        var response = showtime.httpReq(BASE_URL + folderList[pos].flvlink).toString();
+        var response = showtime.httpReq(service.baseUrl + folderList[pos].flvlink).toString();
         page.loading = false;
         title = response.match(/<title>([\S\s]*?)<\/title>/)[1];
         var blob = response.match(/class="b-view-material"([\S\s]*?)<\/div>/);
@@ -624,12 +629,12 @@
             var m = response.match(/playlist: \[[\S\s]*?url: '([^']+)/);
         else {
             page.loading = true;
-            var m = showtime.httpReq(BASE_URL + folderList[pos].flvlink).toString().match(/playlist: \[[\S\s]*?url: '([^']+)/);
+            var m = showtime.httpReq(service.baseUrl + folderList[pos].flvlink).toString().match(/playlist: \[[\S\s]*?url: '([^']+)/);
             page.loading = false;
         }
         if (!m) { // first file from the first folder
             page.loading = true;
-            m = showtime.httpReq(BASE_URL + folderList[pos].flvlink + '?ajax&blocked=0&folder=0').toString().match(/class="filelist m-current"[\S\s]*?" href="([^"]+)/);
+            m = showtime.httpReq(service.baseUrl + folderList[pos].flvlink + '?ajax&blocked=0&folder=0').toString().match(/class="filelist m-current"[\S\s]*?" href="([^"]+)/);
             page.loading = false;
         }
         if (m) {
@@ -638,7 +643,7 @@
                 canonicalUrl: plugin.getDescriptor().id + ":play:" + title + ':' + pos,
                 imdbid: getIMDBid(folderList[pos].title),
                 sources: [{
-                    url: BASE_URL + m[1]
+                    url: service.baseUrl + m[1]
                 }]
             });
         } else page.error("Линк не проигрывается :(");
@@ -649,7 +654,7 @@
         if (param == 'noparam') param = ''; // workaround for ps3 regex quirks
         setPageHeader(page, unescape(title));
         try {
-             var doc = showtime.httpReq(url.substr(0,4) == 'http' ? unescape(url) + '?view=detailed'+param : BASE_URL + unescape(url) + '?view=detailed'+param).toString();
+             var doc = showtime.httpReq(url.substr(0,4) == 'http' ? unescape(url) + '?view=detailed'+param : service.baseUrl + unescape(url) + '?view=detailed'+param).toString();
         } catch (err) {}
 
         if (doc) {
@@ -669,7 +674,7 @@
                 var nextPage = doc.match(/<a class="next-link"href="([\S\s]*?)">/);
                 if (nextPage) {
                     page.loading = true;
-                    doc = showtime.httpReq(nextPage[1].substr(0, 4) == 'http' ? nextPage[1] : BASE_URL + nextPage[1]).toString();
+                    doc = showtime.httpReq(nextPage[1].substr(0, 4) == 'http' ? nextPage[1] : service.baseUrl + nextPage[1]).toString();
                     page.loading = false;
                     return true;
                 }
@@ -761,7 +766,7 @@
     function processScroller(page, url) {
         page.loading = true;
         try {
-            var doc = showtime.httpReq(BASE_URL + url).toString();
+            var doc = showtime.httpReq(service.baseUrl + url).toString();
         } catch (err) {}
 
         if (doc) {
@@ -791,7 +796,7 @@
                 var next = response.match(/<a class="next-link"href="([\S\s]*?)">/);
                 if (!next) return tryToSearch = false;
                 page.loading = true;
-                doc = showtime.httpReq(BASE_URL + next[1]).toString();
+                doc = showtime.httpReq(service.baseUrl + next[1]).toString();
                 page.loading = false;
                 return true;
             }
@@ -809,7 +814,7 @@
         var re = /<a class="b-header__menu-subsections-item" href="([\S\s]*?)">[\S\s]*?<span class="b-header__menu-subsections-item-title m-header__menu-subsections-item-title_type_[\S\s]*?">([\S\s]*?)<\/span>/g;
         var match = re.exec(menu);
         while (match) {
-            page.appendItem(plugin.getDescriptor().id + ":index:" + escape(BASE_URL + match[1]) + ':' + trim(match[2]) + ':yes:noparam', 'directory', {
+            page.appendItem(plugin.getDescriptor().id + ":index:" + escape(service.baseUrl + match[1]) + ':' + trim(match[2]) + ':yes:noparam', 'directory', {
                 title: trim(match[2])
             });
             match = re.exec(menu);
@@ -828,7 +833,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
     showtime.print(setIconSize('http://s0.dotua.org/fsua_items/cover/13/31/64/13/00316468.jpg', 2));
         setPageHeader(page, plugin.getDescriptor().synopsis);
-        response = showtime.httpReq(BASE_URL).toString();
+        response = showtime.httpReq(service.baseUrl).toString();
 
         // Building menu
         if (response.match(/<link rel="canonical" href="http:\/\/cxz.to/)) { // cxz.to
@@ -910,7 +915,7 @@
 	function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-	    var response = showtime.httpReq(BASE_URL + '/search.aspx', {
+	    var response = showtime.httpReq(service.baseUrl + '/search.aspx', {
                 args: {
                    search: query,
                    page: fromPage ? fromPage : ''

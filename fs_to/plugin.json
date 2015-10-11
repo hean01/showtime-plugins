@@ -4,7 +4,7 @@
 	"homepage": "http://github.com/lprot/showtime-plugins",
 	"title": "FS.TO",
 	"synopsis": "FS.TO: Рекомендательная медиа сеть",
-	"version": "1.2.8",
+	"version": "1.2.9",
         "file": "fs_to.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",
