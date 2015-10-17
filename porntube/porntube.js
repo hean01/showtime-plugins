@@ -21,8 +21,14 @@
     var BASE_URL = 'http://www.porntube.com';
     var logo = plugin.path + "logo.png";
 
-    function blueStr(str) {
-        return '<font color="6699CC">' + str + '</font>';
+    var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
+
+    function colorStr(str, color) {
+        return '<font color="' + color + '"> (' + str + ')</font>';
+    }
+
+    function coloredStr(str, color) {
+        return '<font color="' + color + '">' + str + '</font>';
     }
 
     function setPageHeader(page, title) {
@@ -126,7 +132,7 @@
             var match = re.exec(htmlBlock[1]);
             while (match) {
                 page.appendItem(plugin.getDescriptor().id + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
-                    title: new showtime.RichText(match[3] + blueStr(" (" + trim(match[2].replace(',','')) + ")")),
+                    title: new showtime.RichText(match[3] + coloredStr(" (" + trim(match[2].replace(',','')) + ")", orange)),
                     icon: match[4]
                 });
                 match = re.exec(htmlBlock[1]);
@@ -142,7 +148,7 @@
             var match = re.exec(htmlBlock[1]);
             while (match) {
                 page.appendItem(plugin.getDescriptor().id + ':videos:' + escape(match[1]) + ":" + escape(trim(match[2])), 'directory', {
-                    title: new showtime.RichText(trim(match[2]) + ' ' + blueStr(trim(match[3])))
+                    title: new showtime.RichText(trim(match[2]) + ' ' + coloredStr(trim(match[3]), orange))
                 });
                 match = re.exec(htmlBlock[1]);
             };
@@ -166,7 +172,7 @@
                 var match = re.exec(htmlBlock[1]);
                 while (match) {
                     page.appendItem(plugin.getDescriptor().id + ':videos:' + escape(match[1]) + ":" + escape(match[3]), 'video', {
-                       title: new showtime.RichText(match[3] + blueStr(" (" + trim(match[2].replace(',','')) + ")")),
+                       title: new showtime.RichText(match[3] + coloredStr(" (" + trim(match[2].replace(',','')) + ")", orange)),
                        icon: match[4]
                     });
                     match = re.exec(htmlBlock[1]);
@@ -223,7 +229,7 @@
                 var match = re.exec(htmlBlock[1]);
                 while (match) {
                     page.appendItem(plugin.getDescriptor().id + ':videos:' + escape(match[1]) + ":" + escape(match[2]), 'video', {
-                       title: new showtime.RichText(match[2] + blueStr(" (" + trim(match[3].replace(',','')) + ")")),
+                       title: new showtime.RichText(match[2] + coloredStr(" (" + trim(match[3].replace(',','')) + ")", orange)),
                        icon: match[5],
                        description: match[4]
                     });
@@ -340,13 +346,13 @@
     function scrape(page, html) {
         var bw = re.exec(v)[1];
         // 1-link, 2-title, 3-icon, 4-HDflag, 5-duration, 6-views, 7-was added
-        re = /button><a href="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?<ul class="thumb-info_top">([\S\s]*?)div class="bottom">[\S\s]*?"icon icon-timer"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-eye"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-up"><\/i>([\S\s]*?)<\/li>/g;
+        re = /button><a href="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?<ul class="thumb-info_top">([\S\s]*?)div class="bottom">[\S\s]*?"icon icon-timer"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-eye"><\/i>([\S\s]*?)<\/li>/g;
         var match = re.exec(bw);
         while (match) {
             page.appendItem(plugin.getDescriptor().id + ':video:' + escape(match[1]) + ":" + escape(match[2]), 'video', {
-                title: new showtime.RichText((match[4].match(/>HD</) ? blueStr("HD ") : "") + match[2]),
+                title: new showtime.RichText((match[4].match(/>HD</) ? coloredStr("HD ", orange) : "") + match[2]),
                 duration: trim(match[5]),
-                description: new showtime.RichText("Views: " + blueStr(trim(match[6])) + "\nAdded: " + blueStr(trim(match[7]))),
+                description: new showtime.RichText("Views: " + coloredStr(trim(match[6]), orange)),
                 icon: match[3]
             });
             page.entries++;

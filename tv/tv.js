@@ -784,43 +784,26 @@
             req.setHeader('User-Agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
         });
 
+        var n = 0;
         // 1-link, 2-title, 3-epg
         var re = /<div class="channel_main channel" onclick="location.href='([\s\S]*?)'[\s\S]*?<div class="program_title">([\s\S]*?)<\/div>([\s\S]*?)<\/span>/g;
-        var tryToSearch = true, n = 0, start = 0;
 
-        function loader() {
-            if (!tryToSearch) return false;
-            page.loading = true;
-            var html = showtime.httpReq('http://sputniktv.in.ua/online/vse.php', {
-                postdata: {
-                    count: 20,
-                    begin: start
-                }
-            }).toString();
-            var match = re.exec(html);
-            while (match) {
-                var epg = match[3].match(/<div class="pstart">([\s\S]*?)<\/div>[\s\S]*?<div class="pstartt">([\s\S]*?)<\/div><div class="progran_translation">([\s\S]*?)<\/div>/);
-                if (epg) epg  = coloredStr(' (' + epg[1] + '-' + epg[2] + ') ' + epg[3], orange)
-                else epg = ''
-                var link = plugin.getDescriptor().id + ':sputniktv:' + escape('http://sputniktv.in.ua/' + match[1]) + ':' + escape(match[2]);
-                var item = page.appendItem(link, 'video', {
-                    title: new showtime.RichText(match[2] + epg),
-                    description: new showtime.RichText(match[2] + epg)
-                });
-                addToFavoritesOption(item, link, match[2], '');
-                n++;
-                match = re.exec(html);
-            }
-            page.metadata.title = new showtime.RichText('Sputniktv.in.ua (' + n + ')');
-            page.loading = false;
-            if (html.trim()) {
-                start+=20;
-                return true;
-            }
-            return tryToSearch = false;
+        var html = showtime.httpReq('http://sputniktv.in.ua/tv.html').toString();
+        var match = re.exec(html);
+        while (match) {
+            var epg = match[3].match(/<div class="pstart">([\s\S]*?)<\/div>[\s\S]*?<div class="pstartt">([\s\S]*?)<\/div><div class="progran_translation">([\s\S]*?)<\/div>/);
+            if (epg) epg  = coloredStr(' (' + epg[1] + '-' + epg[2] + ') ' + epg[3], orange)
+            else epg = ''
+            var link = plugin.getDescriptor().id + ':sputniktv:' + escape('http://sputniktv.in.ua/' + match[1]) + ':' + escape(match[2]);
+            var item = page.appendItem(link, 'video', {
+                title: new showtime.RichText(match[2] + epg),
+                description: new showtime.RichText(match[2] + epg)
+            });
+            addToFavoritesOption(item, link, match[2], '');
+            n++;
+            match = re.exec(html);
         }
-        loader();
-        page.paginator = loader;
+        page.metadata.title = new showtime.RichText('Sputniktv.in.ua (' + n + ')');
         page.loading = false;
     });
 
@@ -1739,18 +1722,20 @@
                         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36'
                     }
                 }).toString();
-                var referer = 'http://sawlive.tv/embed/watch/' + doc.match(/y3s='([\s\S]*?)'/)[1] + '/' + doc.match(/za3='([\s\S]*?)'/)[1] // extract watch link
-                if (!referer) {
-                    referer = doc.match(/swidth[\s\S]*?src="([\s\S]*?)"/); // extract watch link
-                    if (referer) referer = referer[1];
+                if (doc.match(/y3s=/)) {
+                   var referer = 'http://sawlive.tv/embed/watch/' + doc.match(/y3s='([\s\S]*?)'/)[1] + '/' + doc.match(/za3='([\s\S]*?)'/)[1] // extract watch link
+                   if (!referer) {
+                       referer = doc.match(/swidth[\s\S]*?src="([\s\S]*?)"/); // extract watch link
+                       if (referer) referer = referer[1];
+                   }
                 }
                 if (referer) {
                     doc = showtime.httpReq(referer, {
                         headers: {
                             Host: 'www.sawlive.tv',
                             Referer: 'http://goatd.net/' + unescape(url),
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36'
-                        }
+                           'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36'
+                       }
                     }).toString();
                 }
 
@@ -2051,9 +2036,9 @@
 	page.appendItem(plugin.getDescriptor().id + ":streamliveStart", "directory", {
 	    title: "StreamLive.to"
 	});
-	page.appendItem(plugin.getDescriptor().id + ":spbStart", "directory", {
-	    title: "Spbtv.com"
-	});
+	//page.appendItem(plugin.getDescriptor().id + ":spbStart", "directory", {
+	//    title: "Spbtv.com"
+	//});
 	page.appendItem(plugin.getDescriptor().id + ":divanStart", "directory", {
 	    title: "Divan.tv"
 	});
