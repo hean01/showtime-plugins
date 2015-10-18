@@ -183,13 +183,18 @@
             '<span class="file_size">([\\s\\S]*?)</span>';
         var re = new RegExp(regex, "g");
         var match = re.exec(doc);
+        var json = doc.match(/parseJSON\(\'([\s\S]*?)\'\)/);
+        json = showtime.JSONDecode(json[1]);
+
+        var i = 0;
         while (match) {
-           links[trim(match[2])] = match[5];
+           links[trim(match[2])] = json[id][quality][i];
            page.appendItem(plugin.getDescriptor().id + ':play:' + escape(trim(match[2])), 'video', {
                title: new showtime.RichText(trim(match[2]) + (trim(match[6]) ? colorStr(trim(match[6]), blue): '')),
                description: match[3]
            });
            match = re.exec(doc);
+           i++;
         }
         page.loading = false;
     });
