@@ -24,8 +24,7 @@
 
     plugin.addURI(plugin.getDescriptor().id + ':start', function(page) {
 	page.type = 'directory';
-	page.metadata.glwview = plugin.path + 'views/array.view';
-	page.contents = 'items';
+	page.model.contents = 'grid';
 	page.metadata.logo = logo;
 	page.metadata.title = plugin.getDescriptor().title;
         page.loading = true;
@@ -44,5 +43,6 @@
 		album: ''
 	    });
 	};
+        page.metadata.title = plugin.getDescriptor().title + ' (' + i + ')';
     });
 })(this);

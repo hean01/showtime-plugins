@@ -1,5 +1,5 @@
 /**
- * yts.re plugin for Movian Media Center
+ * YTS plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -55,21 +55,8 @@
         service.enableMetadata = v;
     });
 
-    settings.createMultiOpt("protocol", "Protocol", [
-        ['https', 'https', true],
-        ['http', 'http']
-        ], function(v) {
-            service.proto = v;
-    });
-
-    settings.createMultiOpt('baseurl', "Base URL", [
-        ['://yts.to/api/', 'yts.to', true],
-        ['://yify.unlocktorrent.com/api/', 'yify.unlocktorrent.com'],
-        ['://yts.im/api/', 'yts.im'],
-        ['://yts.wf/api/', 'yts.wf'],
-        ['://yify.link/api/', 'yify.link']
-        ], function(v) {
-            service.baseurl = v;
+    settings.createString('baseURL', "Base URL without '/' at the end", 'https://yts.ag', function(v) {
+        service.baseUrl = v;
     });
 
     settings.createMultiOpt('filter', "Filter quality by", [
@@ -133,9 +120,14 @@
             for (var i in query)
                 args[i] = unescape(query[i]);
 
-            var c = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'v2/list_movies.json', {
-                args: args
-            }));
+            try {
+                var c = showtime.JSONDecode(showtime.httpReq(service.baseUrl + '/api/v2/list_movies.json', {
+                    args: args
+                }));
+            } catch(err) {
+                page.error('Seems like API stopped working/changed or website is down. Check that in the browser...');
+                return;
+            }
 
             page.loading = false;
             if (offset == 1 && page.metadata)
@@ -247,14 +239,14 @@
 
     plugin.addURI(PREFIX + ":movie:(.*)", function(page, id) {
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'v2/movie_details.json?movie_id=' + id + '&with_images=true&with_cast=true'));
+        var json = showtime.JSONDecode(showtime.httpReq(service.baseUrl + '/api/v2/movie_details.json?movie_id=' + id + '&with_images=true&with_cast=true'));
         setPageHeader(page, json.data.title);
         page.metadata.background = json.data.images.background_image;
         page.metadata.backgroundAlpha = 0.3;
         for (var i in json.data.torrents) {
             var link = json.data.torrents[i].url.match(/(\/torrent\/download(.*))/);
             if (link)
-                link = service.proto + service.baseurl.replace('/api/', '') + link[1];
+                link = service.baseUrl.replace('/api/', '') + link[1];
             else
                 link = json.data.torrents[i].url;
 
@@ -324,7 +316,7 @@
         }
 
         // Suggestions
-        json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'v2/movie_suggestions.json?movie_id=' + id));
+        json = showtime.JSONDecode(showtime.httpReq(service.baseUrl + '/api/v2/movie_suggestions.json?movie_id=' + id));
         var first = true;
         for (var i in json.data.movie_suggestions) {
             if (first) {
@@ -337,7 +329,7 @@
         }
 
         // Comments
-        json = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'v2/movie_comments.json?movie_id=' + id));
+        json = showtime.JSONDecode(showtime.httpReq(service.baseUrl + '/api/v2/movie_comments.json?movie_id=' + id));
         first = true;
         for (var i in json.data.comments) {
             if (first) {
