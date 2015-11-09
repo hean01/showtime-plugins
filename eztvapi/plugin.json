@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "eztvapi",
 	"synopsis": "eztvapi – Here you can watch all the TV shows you can find on popcorn time",
-	"version": "0.3",
+	"version": "0.3.1",
         "file": "eztvv.js",
 	"showtimeVersion": "4.10",
 	"type": "ecmascript",

@@ -4,7 +4,7 @@
 	"homepage": "https://github.com/lprot/showtime-plugins",
 	"title": "Digitally Imported",
 	"synopsis": "Addictive Electronic Music 24/7",
-	"version": "0.3.2",
+	"version": "0.4",
 	"file": "di.js",
 	"showtimeVersion": "4.8",
 	"type": "ecmascript",

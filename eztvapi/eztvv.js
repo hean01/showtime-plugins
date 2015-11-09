@@ -52,20 +52,10 @@
         service.enableMetadata = v;
     });
 	
-    settings.createMultiOpt("protocol", "Protocol", [
-        ['http', 'http', true],
-        ['https', 'https']
-        ], function(v) {
-            service.proto = v;
+    settings.createString('baseURL', "Base URL without '/' at the end", 'https://eztv.ag', function(v) {
+        service.baseUrl = v;
     });
 
-    settings.createMultiOpt('baseurl', "Base URL", [
-        ['://eztvapi.re/', 'eztvapi.re', true],
-        ['://br.api.ptn.pm/', 'eztvapi.pm']
-        ], function(v) {
-            service.baseurl = v;
-    });
-	
     settings.createMultiOpt('sortby', "Sort by", [
         ['', 'default (popularity)', true],
         ['?sort=name', 'Name'],
@@ -82,7 +72,9 @@
         function loader() {
             if (!offset) return false;
             page.loading = true;
-            var url = service.proto + service.baseurl + 'shows/' + offset + service.sortby;
+            if (!service.sortby)
+                service.sortby = '';
+            var url = service.baseUrl + '/shows/' + offset + service.sortby;
             if (query) {
                 if (url.match(/\?/)) url += '&keywords=' + query;
                 else url += '?keywords=' + query;
@@ -143,7 +135,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":showlist:(.*)", function browseshowItems(page, showid) {
         page.entries = 0;
         page.loading = true;
-        var cde = showtime.JSONDecode(showtime.httpReq(service.proto + service.baseurl + 'show/' + showid));
+        var cde = showtime.JSONDecode(showtime.httpReq(service.baseUrl + '/show/' + showid));
         setPageHeader(page, cde.title);
         page.metadata.background = cde.images.fanart;
         page.metadata.backgroundAlpha = 0.3;
