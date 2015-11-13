@@ -1,5 +1,5 @@
 /*
- *  soma fm
+ *  soma fm plugin for Movian Media Center
  *
  *  Copyright (C) 2012-2015 Henrik Andersson, lprot
  *
@@ -35,22 +35,26 @@
     // Start page
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
 	page.type = "directory";
-	page.metadata.glwview = plugin.path + "views/array.view";
-	page.contents = "items";
-	page.metadata.logo = logo;
 	page.metadata.title = plugin.getDescriptor().title;
+	page.metadata.logo = logo;
+        page.loading = true;
 
-        page.options.createInt('childTilesX', 'Tiles by X', 6, 1, 10, 1, '', function(v) {
-            page.metadata.childTilesX = v;
-        }, true);
+        if (showtime.currentVersionInt < 49900000) {
+   	    page.metadata.glwview = plugin.path + 'views/array.view';
+	    page.contents = 'items';
+            page.options.createInt('childTilesX', 'Tiles by X', 6, 1, 10, 1, '', function(v) {
+                page.metadata.childTilesX = v;
+            }, true);
 
-        page.options.createInt('childTilesY', 'Tiles by Y', 2, 1, 4, 1, '', function(v) {
-            page.metadata.childTilesY = v;
-        }, true);
+            page.options.createInt('childTilesY', 'Tiles by Y', 2, 1, 4, 1, '', function(v) {
+                page.metadata.childTilesY = v;
+            }, true);
 
-        page.options.createBool('informationBar', 'Information Bar', 1, function(v) {
-            page.metadata.informationBar = v;
-        }, true);
+            page.options.createBool('informationBar', 'Information Bar', 1, function(v) {
+                page.metadata.informationBar = v;
+            }, true);
+        } else
+    	    page.model.contents = 'grid';
 
         var doc = showtime.httpReq(BASE_URL + "/listen").toString();
 

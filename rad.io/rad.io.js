@@ -1,5 +1,5 @@
 /*
- *  radio.net plugin for Showtime Media Center
+ *  radio.net plugin for Movian Media Center
  *
  *  Copyright (C) 2012-2015 Henrik Andersson, lprot
  *
@@ -26,20 +26,26 @@
             page.metadata.title = title;
             page.metadata.logo = logo;
         }
-        if (page.options) {
-	    page.metadata.glwview = plugin.path + "views/array.view";
-            page.options.createInt('childTilesX', 'Number of tiles by X', 6, 1, 10, 1, '', function (v) {
-                page.metadata.childTilesX = v;
-            }, true);
-            page.options.createInt('childTilesY', 'Number of tiles by Y', 2, 1, 4, 1, '', function (v) {
-                page.metadata.childTilesY = v;
-            }, true);
-            page.options.createBool('informationBar', 'Show Information Bar', 1, function (v) {
-                page.metadata.informationBar = v;
-            }, true);
-        }
+
 	page.type = "directory";
-	page.contents = "items";
+
+        if (showtime.currentVersionInt < 49900000) {
+            page.contents = "items";
+            if (page.options) {
+                page.metadata.glwview = plugin.path + "views/array.view";
+                page.options.createInt('childTilesX', 'Number of tiles by X', 6, 1, 10, 1, '', function (v) {
+                    page.metadata.childTilesX = v;
+                }, true);
+                page.options.createInt('childTilesY', 'Number of tiles by Y', 2, 1, 4, 1, '', function (v) {
+                    page.metadata.childTilesY = v;
+                }, true);
+                page.options.createBool('informationBar', 'Show Information Bar', 1, function (v) {
+                    page.metadata.informationBar = v;
+                }, true);
+            }
+        } else
+    	    page.model.contents = 'grid';
+
         page.loading = false;
     }
 
