@@ -1,5 +1,5 @@
 /**
- * fs.to plugin for Movian Media Center
+ * fs.ua plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
  *
@@ -831,9 +831,8 @@
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-    showtime.print(setIconSize('http://s0.dotua.org/fsua_items/cover/13/31/64/13/00316468.jpg', 2));
         setPageHeader(page, plugin.getDescriptor().synopsis);
-        response = showtime.httpReq(service.baseUrl).toString();
+        response = showtime.httpReq(service.baseUrl).toString().replace(/<div class="b-header__menu-section m-header__menu-section_type_fsua">/g, '');
 
         // Building menu
         if (response.match(/<link rel="canonical" href="http:\/\/cxz.to/)) { // cxz.to
