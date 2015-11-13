@@ -18,8 +18,8 @@
  */
 
 (function(plugin) {
-    var BASE_URL = 'http://www.porntube.com';
-    var logo = plugin.path + "logo.png";
+    var BASE_URL;
+    var logo = plugin.path + "porntube_white.png";
 
     var blue = '6699CC', orange = 'FFA500', red = 'EE0000', green = '008B45';
 
@@ -123,7 +123,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":categories", function(page) {
         setPageHeader(page, plugin.getDescriptor().title + ' - Categories');
         page.loading = true;
-        var v = showtime.httpReq(BASE_URL + "/tags").toString();
+        var v = showtime.httpReq(BASE_URL + (BASE_URL.indexOf('fux') > -1 ? '/tag' : '/tags')).toString();
         page.loading = false;
         var htmlBlock = v.match(/categories_page([\S\s]*?)class="footer"/);
         if (htmlBlock) {
@@ -163,7 +163,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var v = showtime.httpReq(BASE_URL + '/channels?p=' + fromPage + '&letter=' + Letter + (Order ? '&sort=' + Order : '')).toString();
+            var v = showtime.httpReq(BASE_URL + (BASE_URL.indexOf('fux') > -1 ? '/channel?p=' : '/channels?p=') + fromPage + '&letter=' + Letter + (Order ? '&sort=' + Order : '')).toString();
             page.loading = false;
             var htmlBlock = v.match(/channels_page([\S\s]*?)class="footer"/);
             if (htmlBlock) {
@@ -220,7 +220,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var v = showtime.httpReq(BASE_URL + '/pornstars' + Letter + '?p=' + fromPage + '&sort=' + Order + Hair + Height+ Age + Titties).toString();
+            var v = showtime.httpReq(BASE_URL + (BASE_URL.indexOf('fux') > -1 ? '/pornstar' : '/pornstars') + Letter + '?p=' + fromPage + '&sort=' + Order + Hair + Height+ Age + Titties).toString();
             page.loading = false;
             var htmlBlock = v.match(/pornstars_page([\S\s]*?)class="footer"/);
             if (htmlBlock) {
@@ -346,13 +346,13 @@
     function scrape(page, html) {
         var bw = re.exec(v)[1];
         // 1-link, 2-title, 3-icon, 4-HDflag, 5-duration, 6-views, 7-was added
-        re = /button><a href="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?<ul class="thumb-info_top">([\S\s]*?)div class="bottom">[\S\s]*?"icon icon-timer"><\/i>([\S\s]*?)<\/li><li><i class="icon icon-eye"><\/i>([\S\s]*?)<\/li>/g;
+        re = /button><a href="([\S\s]*?)"[\S\s]*?title="([\S\s]*?)"[\S\s]*?data-original="([\S\s]*?)"[\S\s]*?<ul class="thumb-info_top">([\S\s]*?)class="duration-top">([\S\s]*?)<\/li>/g;
         var match = re.exec(bw);
         while (match) {
             page.appendItem(plugin.getDescriptor().id + ':video:' + escape(match[1]) + ":" + escape(match[2]), 'video', {
                 title: new showtime.RichText((match[4].match(/>HD</) ? coloredStr("HD ", orange) : "") + match[2]),
                 duration: trim(match[5]),
-                description: new showtime.RichText("Views: " + coloredStr(trim(match[6]), orange)),
+                //description: new showtime.RichText("Views: " + coloredStr(trim(match[6]), orange)),
                 icon: match[3]
             });
             page.entries++;
@@ -360,9 +360,11 @@
         }
     }
 
-    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-        setPageHeader(page, plugin.getDescriptor().synopsis);
-        page.appendItem(plugin.getDescriptor().id + ':videos:/videos:Videos', 'directory', {
+    plugin.addURI(plugin.getDescriptor().id + ":site:(.*)", function(page, site) {
+        BASE_URL = 'http://www.' + site + '.com'
+        setPageHeader(page, BASE_URL);
+
+        page.appendItem(plugin.getDescriptor().id + ':videos:' + (BASE_URL.indexOf('fux') > -1 ? '/video' : '/videos') + ':Videos', 'directory', {
             title: 'Videos',
             icon: logo
         });
@@ -399,7 +401,7 @@
                 scrape(page);
             } else {
                 page.loading = true;
-                v = showtime.httpReq(BASE_URL + '/videos?p=' + fromPage).toString();
+                v = showtime.httpReq(BASE_URL + (BASE_URL.indexOf('fux') > -1 ? '/video?p=' : '/videos?p=') + fromPage).toString();
                 page.loading = false;
                 re = /class="video_list"([\S\s]*?)class="pagination"/;
                 scrape(page);
@@ -412,26 +414,46 @@
         page.paginator = loader;
     });
 
-    plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
-        page.entries = 0;
-        var fromPage = 1, tryToSearch = true;
-
-        function loader() {
-          try {
-            if (!tryToSearch) return false;
-            page.loading = true;
-            v = showtime.httpReq(BASE_URL + '/search?q=' + encodeURI(query) + "&p=" + fromPage).toString();
-            page.loading = false;
-            re = /<div class="col thumb_video"([\S\s]*?)class="pagination"/;
-            scrape(page);
-            if (v.match(/"#" id="next"/)) return tryToSearch = false;
-            fromPage++;
-            return true;
-          } catch(err) {
-            return tryToSearch = false;
-          }
-        };
-        loader();
-        page.paginator = loader;
+    plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
+        setPageHeader(page, plugin.getDescriptor().synopsis);
+        page.appendItem(plugin.getDescriptor().id + ':site:porntube', 'video', {
+            title: 'porntube.com',
+            icon: logo
+        });
+        page.appendItem(plugin.getDescriptor().id + ':site:fux', 'video', {
+            title: 'fux.com',
+            icon: plugin.path + "fux-logo.png"
+        });
+        page.appendItem(plugin.getDescriptor().id + ':site:4tube', 'video', {
+            title: '4tube.com',
+            icon: plugin.path + "4tube-logo.png"
+        });
+        page.appendItem(plugin.getDescriptor().id + ':site:pornerbros', 'video', {
+            title: 'pornerbros.com',
+            icon: plugin.path + "pornerbros-logo.png"
+        });
     });
+
+    //plugin.addSearcher(plugin.getDescriptor().title, logo, function(page, query) {
+    //    page.entries = 0;
+    //    var fromPage = 1, tryToSearch = true;
+    //
+    //    function loader() {
+    //      try {
+    //        if (!tryToSearch) return false;
+    //        page.loading = true;
+    //        v = showtime.httpReq(BASE_URL + '/search?q=' + encodeURI(query) + "&p=" + fromPage).toString();
+    //        page.loading = false;
+    //        re = /<div class="col thumb_video"([\S\s]*?)class="pagination"/;
+    //        scrape(page);
+    //        if (v.match(/"#" id="next"/)) return tryToSearch = false;
+    //        fromPage++;
+    //        return true;
+    //      } catch(err) {
+    //        return tryToSearch = false;
+    //      }
+    //    };
+    //    loader();
+    //    page.paginator = loader;
+    //});
 })(this);
