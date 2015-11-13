@@ -454,8 +454,10 @@
     }
 
     plugin.addURI(plugin.getDescriptor().id + ":channel:(.*)", function(page, id) {
-        page.metadata.background = plugin.path + "views/img/background.png";
-        page.metadata.backgroundAlpha = 0.5;
+        if (showtime.currentVersionInt < 49900000) {
+            page.metadata.background = plugin.path + "views/img/background.png";
+            page.metadata.backgroundAlpha = 0.5;
+        }
 
         // My Channel needs user to be authed
         if (id == 'mine' && !store.refresh_token) {
@@ -464,7 +466,9 @@
             return;
         }
 
-        page.metadata.glwview = plugin.path + "views/user2.view";
+        if (showtime.currentVersionInt < 49900000) {
+            page.metadata.glwview = plugin.path + "views/user2.view";
+        }
         page.type = "directory";
 
         // Check if id is mine
@@ -507,9 +511,16 @@
             page.metadata.backgroundAvailable = true;
         }
 
-        if (data.items[0].brandingSettings)
+        if (data.items[0].brandingSettings) {
             page.metadata.banner = data.items[0].brandingSettings.image.bannerTabletExtraHdImageUrl;
+            if (showtime.currentVersionInt < 49900000) {
+                page.appendItem(page.metadata.banner, 'image', {
+                    icon: page.metadata.banner
+                });
+            }
+        }
 
+            showtime.print(page.metadata.banner);
         if (data.items[0].contentDetails) {
             var uploadsPlaylistId = data.items[0].contentDetails.relatedPlaylists.uploads;
             var favoritesPlaylistId = data.items[0].contentDetails.relatedPlaylists.favorites;
@@ -1641,18 +1652,21 @@
     });
 
     plugin.addURI(plugin.getDescriptor().id + ":start", function(page) {
-        page.metadata.background = plugin.path + "views/img/background.png";
-        page.metadata.backgroundAlpha = 0.5;
-        page.metadata.glwview = plugin.path + "views/array2.view";
+        if (showtime.currentVersionInt < 49900000) {
+            page.metadata.background = plugin.path + "views/img/background.png";
+            page.metadata.backgroundAlpha = 0.5;
+            page.metadata.glwview = plugin.path + "views/array2.view";
+        } else
+    	    page.model.contents = 'grid';
+
         page.type = "directory";
-        page.contents = "items";
         page.metadata.logo = logo;
         page.metadata.title = "Youtube - Home Page";
         page.loading = false;
 
         var items = [];
 
-        items.push(page.appendItem(plugin.getDescriptor().id + ':channel:mine', 'directory', {
+        items.push(page.appendItem(plugin.getDescriptor().id + ':channel:mine', 'video', {
             title: 'My Channel',
             icon: plugin.path + "views/img/logos/user.png"
         }));
@@ -1663,7 +1677,7 @@
                 "regionCode": service.region,
                 "hl": service.language
             }
-        })) + ':' + escape('Guide Categories'), 'directory', {
+        })) + ':' + escape('Guide Categories'), 'video', {
             title: 'Guide Categories',
             icon: plugin.path + "views/img/logos/explore.png"
         }));
@@ -1674,7 +1688,7 @@
                 'regionCode': service.region,
                 'hl': service.language
             }
-        })) + ':' + escape('Video Categories'), 'directory', {
+        })) + ':' + escape('Video Categories'), 'video', {
             title: 'Video Categories',
             icon: plugin.path + "views/img/logos/explore.png"
         }));
@@ -1686,7 +1700,7 @@
                 'maxResults': 50,
                 'regionCode': service.region
             }
-        })) + ':' + escape('Most Popular'), 'directory', {
+        })) + ':' + escape('Most Popular'), 'video', {
             title: 'Most popular',
             icon: plugin.path + "views/img/logos/top.png"
         }));
@@ -1698,7 +1712,7 @@
                 'maxResults': 50,
                 "type": "video"
             }
-        })) + ':' + escape('Videos'), 'directory', {
+        })) + ':' + escape('Videos'), 'video', {
             title: 'Videos',
             icon: plugin.path + "views/img/logos/feeds.png"
         }));
@@ -1710,12 +1724,12 @@
                 'maxResults': 50,
                 "type": "channel"
             }
-        })) + ':' + escape('Channels'), 'directory', {
+        })) + ':' + escape('Channels'), 'video', {
             title: 'Channels',
             icon: plugin.path + "views/img/logos/channels.png"
         }));
 
-        items.push(page.appendItem(plugin.getDescriptor().id + ':live', 'directory', {
+        items.push(page.appendItem(plugin.getDescriptor().id + ':live', 'video', {
             title: 'Live Broadcasts',
             icon: plugin.path + "views/img/logos/live.png"
         }));
@@ -1731,7 +1745,7 @@
                 "videoType": "movie"
                 //"videoCaption": "closedCaption"
             }
-        })) + ':' + escape('Youtube Movies'), 'directory', {
+        })) + ':' + escape('Youtube Movies'), 'video', {
             title: 'Youtube Movies',
             icon: plugin.path + "views/img/logos/movies.png"
         }));
@@ -1745,12 +1759,12 @@
                 "type": "channel",
                 "channelType": "show"
             }
-        })) + ':' + escape('Youtube Shows'), 'directory', {
+        })) + ':' + escape('Youtube Shows'), 'video', {
             title: 'Youtube Shows',
             icon: plugin.path + "views/img/logos/shows.png"
         }));
 
-        items.push(page.appendItem(plugin.getDescriptor().id + ':search', 'directory', {
+        items.push(page.appendItem(plugin.getDescriptor().id + ':search', 'video', {
             title: 'Search',
             icon: plugin.path + "views/img/search.png"
         }));
