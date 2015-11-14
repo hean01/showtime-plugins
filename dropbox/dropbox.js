@@ -1,4 +1,6 @@
 /**
+ * Dropbox plugin for Movian Media Center
+ *
  *  Copyright (C) 2011-2015 Andreas Öman, lprot
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -168,13 +170,16 @@
             if (!json[i].is_dir) {
                 var title = json[i].path.split('/');
                 title = title[title.length-1]
+                var icon = '';
+                if (json[i].thumb_exists)
+                    icon = 'https://content.dropboxapi.com/1/thumbnails/auto/' + showtime.pathEscape(json[i].path) + '?access_token=' + store.access_token + '&size=l';
                 var url = 'https://api-content.dropbox.com/1/files/dropbox' + showtime.pathEscape(json[i].path) + '?access_token=' + store.access_token;
                 if (json[i].path.split('.').pop().toUpperCase() == 'PLX')
                     url = 'navi-x:playlist:playlist:' + escape(url)
                 var type = json[i].mime_type.split('/')[0];
-
 	        page.appendItem(url, type, {
-	            title: new showtime.RichText(title + colorStr(json[i].size, blue) + ' ' + json[i].modified.replace( /\+0000/, ''))
+	            title: new showtime.RichText(title + colorStr(json[i].size, blue) + ' ' + json[i].modified.replace( /\+0000/, '')),
+                    icon: icon
 	        });
                 page.entries++;
             }
