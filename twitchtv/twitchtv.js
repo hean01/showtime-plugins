@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TwitchTV plugin for Movian Media Center
  *
  *  Copyright (C) 2015 lprot
@@ -21,6 +21,7 @@
 (function(plugin) {
     var logo = plugin.path + "logo.png", API = 'https://api.twitch.tv/kraken';
     var itemsPerPage = 50;
+	var header={debug:true,headers:{'Client-ID':'awyezs6zu2vcnaekftdjy77evgk9jn'}};
 
     var service = plugin.createService(plugin.getDescriptor().title, plugin.getDescriptor().id + ":start", "video", true, logo);
 
@@ -78,7 +79,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(url));
+            var json = showtime.JSONDecode(showtime.httpReq(url, header));
             page.loading = false;
             for (var i in json.teams) {
                 page.appendItem(plugin.getDescriptor().id + ":team:" + encodeURIComponent(json.teams[i].name), "video", {
@@ -111,13 +112,13 @@
         });
 
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/summary').toString());
+        var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/summary',header).toString());
         page.loading = false;
         page.metadata.title += ' (Channels: ' + json.channels + ' Viewers: ' + json.viewers + ')';
 
         // Featured streams
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/featured'));
+        var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/featured',header));
         page.loading = false;
         page.appendItem("", "separator", {
             title: 'Featured streams (' + json.featured.length + ')'
@@ -142,11 +143,11 @@
 
         // Top Games
         var tryToSearch = true, first = true;
-        var url = API + '/games/top?limit=' + itemsPerPage;
+		var url = API + '/games/top?limit=' + itemsPerPage;
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(url));
+            var json = showtime.JSONDecode(showtime.httpReq(url,header));
             if (first) {
                 page.appendItem("", "separator", {
                     title: 'Top Games (' + json._total + ')'
@@ -213,7 +214,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":team:(.*)", function(page, team) {
         setPageHeader(page, plugin.getDescriptor().title + ' - Channels of: ' + decodeURIComponent(team));
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq('http://api.twitch.tv/api/team/' + team + '/live_channels.json').toString());
+        var json = showtime.JSONDecode(showtime.httpReq('http://api.twitch.tv/api/team/' + team + '/live_channels.json',header).toString());
         page.loading = false;
         for (var i in json.channels) {
             page.appendItem(plugin.getDescriptor().id + ":channel:" + encodeURIComponent(json.channels[i].channel.name)  + ':' + encodeURIComponent(json.channels[i].channel.display_name), "video", {
@@ -237,7 +238,7 @@
     plugin.addURI(plugin.getDescriptor().id + ":video:(.*):(.*)", function (page, id, name) {
         setPageHeader(page, plugin.getDescriptor().title + ' - ' + decodeURIComponent(name));
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq('https://api.twitch.tv/api/videos/' + id));
+        var json = showtime.JSONDecode(showtime.httpReq('https://api.twitch.tv/api/videos/' + id, header ) );
         page.loading = false;
         var start_offset = 0, end_offset = 0;
         var n = 0;
@@ -267,13 +268,13 @@
         // Get sig and token
         page.loading = true;
         var json = showtime.JSONDecode(
-            showtime.httpReq('http://api.twitch.tv/api/channels/' + name + '/access_token')
+            showtime.httpReq('http://api.twitch.tv/api/channels/' + name + '/access_token', header)
         );
 
         // Download playlist and split it into multilines
         var playlist = showtime.httpReq('http://usher.twitch.tv/api/channel/hls/' + name +
             '.m3u8?sig=' + json.sig + '&token=' + json.token +
-            '&allow_source=true').toString().split('\n');
+            '&allow_source=true',header).toString().split('\n');
 
         page.loading = false;
         var url = null;
@@ -311,7 +312,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(url));
+            var json = showtime.JSONDecode(showtime.httpReq(url,header));
             page.loading = false;
             for (var i in json.videos) {
                 page.appendItem(plugin.getDescriptor().id + ":video:" + json.videos[i]._id + ':' + encodeURIComponent(json.videos[i].title), "video", {
@@ -342,7 +343,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(url));
+            var json = showtime.JSONDecode(showtime.httpReq(url,header));
             page.loading = false;
             if (first && page.metadata) {
                 page.metadata.title +=  ' (' + json._total + ')';
@@ -386,7 +387,7 @@
 
         var tryToSearch = true, first = true;
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/' + name));
+        var json = showtime.JSONDecode(showtime.httpReq(API + '/streams/' + name, header));
         page.loading = false;
         if (json.stream) {
             page.appendItem("", "separator", {
@@ -417,7 +418,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(url));
+            var json = showtime.JSONDecode(showtime.httpReq(url,header));
             page.loading = false;
             if (json.videos.length && first) {
                 page.appendItem("", "separator", {
@@ -458,7 +459,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(url));
+            var json = showtime.JSONDecode(showtime.httpReq(url,header));
             page.loading = false;
             if (first && page.metadata) {
                 page.metadata.title +=  ' (' + json._total + ')';
@@ -495,7 +496,7 @@
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(url));
+            var json = showtime.JSONDecode(showtime.httpReq(url,header));
             page.loading = false;
             if (first && page.metadata) {
                 page.metadata.title +=  ' (' + json._total + ')';
@@ -530,11 +531,11 @@
     plugin.addURI(plugin.getDescriptor().id + ":game:(.*)", function (page, name) {
         setPageHeader(page, 'Channels casting: ' + decodeURIComponent(name));
         var tryToSearch = true, first = true;
-        var url = API + '/streams?game=' + name + '&limit=' + itemsPerPage;
+        var url = API + '/streams?game=' + name + '&limit=' + itemsPerPage ;
         function loader() {
             if (!tryToSearch) return false;
             page.loading = true;
-            var json = showtime.JSONDecode(showtime.httpReq(url));
+            var json = showtime.JSONDecode(showtime.httpReq(url,header));
             if (first) {
                 page.metadata.title +=  ' (' + json._total + ')';
                 first = false;
@@ -569,7 +570,7 @@
     plugin.addSearcher(plugin.getDescriptor().title + ' - Games', logo, function (page, query) {
         setPageHeader(page, plugin.getDescriptor().title + ' - Games');
         page.loading = true;
-        var json = showtime.JSONDecode(showtime.httpReq(API + '/search/games?type=suggest&q=' + encodeURIComponent(query) + '&live=true'));
+        var json = showtime.JSONDecode(showtime.httpReq(API + '/search/games?type=suggest&q=' + encodeURIComponent(query) + '&live=true',header));
         page.loading = false;
         for (var i in json.games) {
             page.appendItem(plugin.getDescriptor().id + ":game:" + encodeURIComponent(json.games[i].name), "video", {
